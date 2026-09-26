@@ -139,3 +139,7 @@ body .v4-site-header{grid-template-columns:auto minmax(0,1fr) auto auto auto!imp
 .hub-delivery-gate article[data-status="blocked"]>strong{color:#b94e47}
 .hub-delivery-gate>small{color:#71858d;font-size:6px;line-height:1.55}
 .hub-control-actions button:disabled{opacity:.42;cursor:not-allowed}
+
+.hub-delivery-gate .hub-delivery-blockers{display:grid;gap:4px;padding:10px 12px;border:1px solid #b94e47;background:#fff4f1}
+.hub-delivery-blockers p{margin:0;color:#69362d;font:650 9px/1.45 var(--font-manrope)}
+.hub-delivery-blockers p>b{font-size:8px;letter-spacing:.04em}
