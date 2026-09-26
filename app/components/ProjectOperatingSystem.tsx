@@ -78,14 +78,23 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const [copilot, setCopilot] = useState("risk");
   const [workStates, setWorkStates] = useState<Record<string, ProjectOperatingWorkStatus>>({});
   const [operatingGeneratedAt] = useState(() => project.updatedAt);
-  const handedOffCoordination = (project.modules["project-os"] as { coordination?: { bimCoordination?: Parameters<typeof createProjectOperatingModel>[0]["bimCoordination"] } } | undefined)?.coordination?.bimCoordination;
+  const coordinationHandoff = (project.modules["project-os"] as { coordination?: { bimCoordination?: Parameters<typeof createProjectOperatingModel>[0]["bimCoordination"]; issueGate?: { blocked?: boolean; activeCriticalClashes?: number; reviewedCriticalClashes?: number; technicalApproval?: boolean } } } | undefined)?.coordination;
+  const handedOffCoordination = coordinationHandoff?.bimCoordination;
+  const issueGate = coordinationHandoff?.issueGate;
   const operatingModel = useMemo(() => createProjectOperatingModel({
     projectId: project.id,
     projectRevision: project.revision,
     generatedAt: operatingGeneratedAt,
     bimCoordination: handedOffCoordination,
   }), [handedOffCoordination, operatingGeneratedAt, project.id, project.revision]);
-  const workItems = useMemo(() => operatingModel.workItems.map((item) => ({ ...item, status: workStates[item.id] ?? item.status })), [operatingModel.workItems, workStates]);
+  // A project manager may acknowledge a critical BIM issue, but cannot close
+  // a still-active rule without a verified revised model / authorized approval.
+  const workItems = useMemo(() => operatingModel.workItems.map((item) => ({
+    ...item,
+    status: item.sourceGuid && item.priority === "critical"
+      ? workStates[item.id] === "in-review" ? "in-review" as const : "blocked" as const
+      : workStates[item.id] ?? item.status,
+  })), [operatingModel.workItems, workStates]);
   const currentModule = modules.find((item) => item.id === active) ?? modules[0];
   const filteredDocuments = docFilter === "Tümü" ? documents : documents.filter((item) => item.status === docFilter);
   const completion = Math.round((handover.filter(Boolean).length / handover.length) * 100);
@@ -118,7 +127,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     <ProjectKernelBar module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />
     <header className="project-os-topbar">
       <div className="os-project-id"><span>V116 / PROJECT OS 2.0</span><b>Endüstriyel Yapı · Dijital Proje Merkezi</b></div>
-      <div className="os-live"><i></i><span>{operatingModel.source.coordinationConnected ? "V115 BAĞLI" : "ÖRNEK VERİ"}</span><b>{operatingModel.source.coordinationConnected ? "Koordinasyon issue’ları aktarıldı" : "Kaynak bağlantısı bekleniyor"}</b></div>
+      <div className="os-live" data-issue-gate={issueGate?.blocked ? "blocked" : "conceptual"}><i></i><span>{issueGate?.blocked ? "KRİTİK BIM BLOKAJI" : operatingModel.source.coordinationConnected ? "V115 BAĞLI" : "ÖRNEK VERİ"}</span><b>{issueGate?.blocked ? `${issueGate.activeCriticalClashes ?? 0} kritik çakışma · 4B/5B onay kapısı kapalı` : operatingModel.source.coordinationConnected ? "Koordinasyon issue’ları aktarıldı" : "Kaynak bağlantısı bekleniyor"}</b></div>
       <div className="os-profile"><span>ÖÖ</span><div><b>Proje Yetkisi</b><small>İşveren görünümü</small></div></div>
     </header>
     <div className="project-os-workspace">
@@ -128,6 +137,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
       <main className="project-os-main">
         <header className="os-module-head"><div><span>{currentModule.no} / PROJE MODÜLÜ</span><h3>{currentModule.label}</h3></div><div><button>22 TEM 2026</button><button onClick={exportRegister}>KAYIT JSON ↓</button></div></header>
 
+        {issueGate?.blocked && <aside className="os-issue-gate-notice" data-testid="project-os-issue-gate" role="status"><b>4B / 5B ONAY KAPISI BLOKE</b><p>{issueGate.activeCriticalClashes ?? 0} aktif kritik BIM çakışması mevcut. {issueGate.reviewedCriticalClashes ?? 0} tanesi incelendi; inceleme işareti teknik çözüm değildir. Gösterilen süre ve maliyetler kavramsaldır.</p></aside>}
         {active === "overview" && <div className="os-overview">
           <div className="os-kpi-grid">
             <article><span>PROJE SAĞLIĞI</span><strong>%{projectHealth}</strong><i className="up">+3</i><small>karar ve saha verisinden</small></article>
@@ -145,7 +155,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
 
         {active === "work" && <div className="v116-workspace">
           <div className="os-tool-row"><div><span>Koordinasyondan gelen işler</span><b>Sorumlu ve hedef tarih olmadan iş açılmaz</b></div><span className="os-capture-time">{workItems.filter((item)=>item.status!=="closed").length} AÇIK KAYIT</span></div>
-          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner} · {item.dueDate}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button onClick={()=>setWorkStates((values)=>({...values,[item.id]:item.status==="in-review"?"closed":"in-review"}))}>{item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
+          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner} · {item.dueDate}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={()=>setWorkStates((values)=>({...values,[item.id]:item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"blocked":"in-review" : item.status==="in-review"?"closed":"in-review"}))}>{item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"İnceleme işaretini kaldır":"İncelemeye al · kapatılamaz" : item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
           <p className="os-inline-note"><b>Kaynak sürekliliği:</b> V115 BCF uyumlu issue GUID’i, model konumu, disiplinler ve revizyon bilgisi görev kapanana kadar korunur.</p>
         </div>}
 
