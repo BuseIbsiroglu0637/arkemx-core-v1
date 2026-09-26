@@ -369,10 +369,22 @@ try {
     const gate = page.getByTestId("delivery-release-gate");
     await gate.waitFor();
     assert.match(await gate.textContent(), /Resmî\/onaylı teslim:\s*UYGUN DEĞİL/);
+    assert.equal(await gate.getAttribute("data-state"), "review-required",
+      "Eksik taşıyıcı nesneler yanlışlıkla kritik BIM-052 sonucuna dönüşmemeli");
     const official = page.getByTestId("official-delivery-release");
     assert.equal(await official.isDisabled(), true);
     const p = await project();
     assert.equal(p.modules["project-os"].coordination.issueGate.technicalApproval, false);
+  });
+
+  await check("Eksik KM-KR nesneleri kritik yerine inceleme konusu oldu", async () => {
+    await page.getByRole("tab", { name: /Kural \/ konu/ }).click();
+    const reviewIssue = page.locator(".hub-rules article").filter({ hasText: "BIM-053" });
+    await reviewIssue.waitFor();
+    assert.match(await reviewIssue.textContent(), /KM–KR ön kontrolü/);
+    assert.equal(await page.locator(".hub-rules article").filter({ hasText: "BIM-052" }).count(), 0);
+    await page.getByRole("tab", { name: "Proje kontrol merkezi" }).click();
+    console.log("BILGI KM-KR: Kavramsal planın kolon/perde verisi yok; BIM-053 inceleme açık, BIM-052 kritik yok.");
   });
 
   await check("Calisma teslim manifestosu resmi onay iddiasi uretmedi", async () => {
@@ -389,6 +401,10 @@ try {
     assert.equal(manifest.nativeIfcAttached, false);
     assert.equal(manifest.nativeBcfZipAttached, false);
     assert.equal(manifest.gate.blockingIssues.length, manifest.gate.criticalIssueCount);
+    assert.equal(manifest.gate.criticalIssueCount, 0,
+      "Kütle/rijitlik veri eksikliği sahte kritik BIM-052 oluşturdu");
+    assert.equal(manifest.gate.state, "review-required");
+    assert.equal(manifest.gate.checks.find(check => check.code === "DEL-04")?.status, "review");
     assert.match(manifest.boundary, /resmî dijital teslim değildir/);
     console.log("BILGI TESLIM: " + JSON.stringify({
       state: manifest.gate.state,
@@ -399,7 +415,7 @@ try {
     }));
   });
 
-  console.log("\nSONUC: " + passed.length + "/12 Mimari -> Plan -> Tasiyici -> BIM -> Proje OS -> Teslim testi basarili.");
+  console.log("\nSONUC: " + passed.length + "/13 Mimari -> Plan -> Tasiyici -> BIM -> Proje OS -> Teslim testi basarili.");
   console.log("SINIR: Taslak geometri kullanildi; ruhsat, statik emniyet, onayli IFC/BCF ve imar hakki dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
