@@ -6,7 +6,7 @@ export type CoordinationTopic = {
   evidence: string;
   action: string;
   source: string;
-  closed: boolean;
+  reviewed?: boolean;
   assignee?: string;
   location?: string;
   type?: string;
@@ -69,7 +69,9 @@ export function createCoordinationPackage(input: {
       clashType: topic.type ?? "coordination",
       description: topic.evidence,
       requiredAction: topic.action,
-      status: topic.closed ? "Closed" : "Open",
+      status: topic.reviewed ? "InReview" : "Open",
+      closureVerified: false,
+      note: "İnceleme kaydı, teknik çözüm veya yetkili onayı olarak yorumlanamaz.",
       source: topic.source,
       sourceRefs: topic.sourceRefs ?? [topic.source],
       nativeViewpoint: false,
