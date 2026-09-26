@@ -471,6 +471,10 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const coordination = record(modules["engineering-coordination"]);
       if (!coordination.result && !coordination.issues) return;
       const bimCoordination = record(coordination.bimCoordination);
+      const clashes = Array.isArray(bimCoordination.clashes) ? bimCoordination.clashes.map(record) : [];
+      const criticalClashes = clashes.filter((clash) => clash.severity === "critical");
+      const reviewedIds = Array.isArray(coordination.reviewed) ? coordination.reviewed.filter((id): id is string => typeof id === "string") : [];
+      const reviewedCriticalClashes = criticalClashes.filter((clash) => reviewedIds.includes(stringValue(clash.guid)));
       const target = record(modules["project-os"]);
       modules["project-os"] = {
         ...target,
@@ -478,6 +482,15 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           ...record(target.coordination),
           source: coordination,
           bimCoordination,
+          reviewedIssueIds: reviewedIds,
+          issueGate: {
+            blocked: criticalClashes.length > 0,
+            activeCriticalClashes: criticalClashes.length,
+            reviewedCriticalClashes: reviewedCriticalClashes.length,
+            technicalApproval: false,
+            state: criticalClashes.length ? "review-blocked" : "conceptual-only",
+            limitation: "İnceleme işareti teknik çözüm değildir; 4B/5B sonuçları onaylı program veya bütçe değildir.",
+          },
           openIssues: thread.canonical.coordination.openIssues,
           schedule4D: bimCoordination.schedule4D,
           cost5D: bimCoordination.cost5D,
@@ -486,7 +499,9 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           synchronizedAt,
         },
         handoff: { id: handoffId, source: "engineering-coordination", target: "project-os", synchronizedAt, payload: ["IFC/BCF hazırlık", "çakışma", "issue", "metraj", "karbon", "4B süre", "5B göreli maliyet"], state: "synchronized" },
-        status: "V115 BIM koordinasyonu, 4B ve 5B göstergeleri Proje OS'e bağlandı",
+        status: criticalClashes.length > 0
+          ? "V115 kritik çakışmalar Proje OS'e taşındı; 4B/5B onay kararı bekletiliyor"
+          : "V115 BIM koordinasyonu ile kavramsal 4B/5B göstergeleri Proje OS'e bağlandı",
       };
       applied.push(handoffId);
     }
