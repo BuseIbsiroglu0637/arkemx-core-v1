@@ -159,6 +159,65 @@ try {
     console.log("BILGI: GeoJSON yalnizca YAPAY TEST verisidir; kadastro kaniti degildir.");
   });
 
+  await check("Belge yuklemek onayli imar statüsü olusturmadi", async () => {
+    await page.locator(".geo-workflow button")
+      .filter({ hasText: "İmarı doğrula" }).click();
+    await page.locator('.geo-zoning-control input[type="file"]')
+      .setInputFiles({
+        name: "SAHTE-TEST-IMAR-BELGESI.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4\n% SYNTHETIC TEST FILE ONLY\n"),
+      });
+    await waitForStored(() => {
+      try {
+        const geo = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))
+          ?.payload?.modules?.["geo-parcel"];
+        return geo?.zoning?.sourceDocument === "SAHTE-TEST-IMAR-BELGESI.pdf"
+          && geo?.zoning?.verification === "document-pending-review"
+          && geo?.zoningProvenance?.authoritative === false
+          && geo?.massingModel?.source?.authoritative === false;
+      } catch { return false; }
+    });
+    assert.equal(
+      await page.locator(".geo-zoning-status").getAttribute("data-state"),
+      "document-pending-review"
+    );
+    console.log("BILGI: Yalnizca PDF dosya adi saklandi; icerik/onay dogrulanmadi.");
+  });
+
+  await check("TAKS KAKS Hmax ve on cekme kosullari kaynakli taslaga islendi", async () => {
+    const zoning = page.locator(".geo-zoning-control");
+    const change = async (label, value) => {
+      await zoning.locator("label").filter({ hasText: label })
+        .locator('input[type="number"]').first().fill(value);
+    };
+    await change("TAKS", "0.15");
+    await change("KAKS / Emsal", "0.35");
+    await change("Hmax / Yençok", "14");
+    await change("Ön bahçe", "8");
+    await waitForStored(() => {
+      try {
+        const geo = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))
+          ?.payload?.modules?.["geo-parcel"];
+        const model = geo?.massingModel;
+        const area = geo?.metrics?.area;
+        return geo?.zoning?.verification === "document-pending-review"
+          && geo?.zoning?.taks === 0.15
+          && geo?.zoning?.kaks === 0.35
+          && geo?.zoning?.hmax === 14
+          && geo?.zoning?.frontSetback === 8
+          && geo?.planning?.maxCoverage === 15
+          && geo?.planning?.maxFar === 0.35
+          && geo?.planning?.maxHeight === 14
+          && geo?.planning?.requiredSetback === 8
+          && Math.abs(model?.limits?.allowedFootprint - area * 0.15) < 1
+          && Math.abs(model?.limits?.allowedGrossArea - area * 0.35) < 1
+          && model?.envelope?.setbacks?.front === 8
+          && model?.source?.authoritative === false;
+      } catch { return false; }
+    });
+  });
+
   await check("30 x 40 m ve 3 kat geometri proje kasasina ve mimariye akti", async () => {
     await page.locator(".geo-workflow button")
       .filter({ hasText: "Yapıyı yerleştir" }).click();
@@ -200,7 +259,13 @@ try {
         return geo?.buildingWidth === 30 && geo?.buildingDepth === 40
           && geo?.floors === 3
           && geo?.parcelRecord?.evidence?.sourceKind === "user-file"
-          && geo?.parcelRecord?.evidence?.officialCadastre === false;
+          && geo?.parcelRecord?.evidence?.officialCadastre === false
+          && geo?.zoning?.verification === "document-pending-review"
+          && geo?.zoning?.sourceDocument === "SAHTE-TEST-IMAR-BELGESI.pdf"
+          && geo?.zoning?.taks === 0.15
+          && geo?.zoning?.kaks === 0.35
+          && geo?.zoning?.hmax === 14
+          && geo?.zoning?.frontSetback === 8;
       } catch { return false; }
     });
   });
@@ -221,6 +286,12 @@ try {
     }, undefined, { timeout: 16000 });
     const p = await readProject();
     assert.equal(p.modules["geo-parcel"].parcelRecord.evidence.officialCadastre, false);
+    assert.equal(p.modules["geo-parcel"].zoning.verification, "document-pending-review");
+    assert.equal(
+      p.modules["architectural-program"]?.input?.siteContext?.massingModel?.source?.authoritative,
+      false,
+      "Insan onayi olmayan belge mimari kütleye onayli kaynak olarak aktarılamaz"
+    );
     assert.notEqual(
       await page.locator(".v113-source-band").getAttribute("data-state"),
       "verified",
@@ -228,7 +299,7 @@ try {
     );
   });
 
-  console.log("\nSONUC: " + passed.length + "/6 GeoJSON -> Arsa -> Mimari testi basarili.");
+  console.log("\nSONUC: " + passed.length + "/8 GeoJSON -> Arsa -> Mimari testi basarili.");
   console.log("SINIR: Test verisi sentetiktir. Resmî kadastro, imar ve statik hesap dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
