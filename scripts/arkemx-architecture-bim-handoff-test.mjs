@@ -184,6 +184,14 @@ try {
 
 
   await check("Kritik MEP yukseklik cakismasi gercekten yakalandi", async () => {
+    // A reload remounts the device-local kernel asynchronously. Do not edit
+    // before its saved input has been restored: hydration would overwrite it.
+    await page.locator('[data-testid="engineering-coordination-studio"][data-transfer-ready="true"]')
+      .waitFor({ state: "visible" });
+    await wait(() => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      return p?.modules?.["engineering-coordination"]?.input?.serviceZone === .45;
+    });
     const mep = page.locator(".coordination-input-grid label")
       .filter({ hasText: "MEP servis zonu" }).locator("input").first();
     await mep.fill("2");
@@ -279,6 +287,8 @@ try {
       '[data-testid="engineering-coordination-studio"]');
     const mep = page.locator(".coordination-input-grid label")
       .filter({ hasText: "MEP servis zonu" }).locator("input").first();
+    await page.locator('[data-testid="engineering-coordination-studio"][data-transfer-ready="true"]')
+      .waitFor({ state: "visible" });
     await mep.fill("0.45");
     await wait(() => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
