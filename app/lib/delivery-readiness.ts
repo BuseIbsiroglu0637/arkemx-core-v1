@@ -66,6 +66,9 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
   const threadCritical = (input.threadIssues ?? [])
     .filter((issue) => issue.severity === "critical")
     .map((issue) => ({ id: issue.id, title: issue.title, severity: issue.severity }));
+  const reviewIssues = (input.threadIssues ?? [])
+    .filter((issue) => issue.severity === "review")
+    .map((issue) => ({ id: issue.id, title: issue.title, source: "PROJECT_THREAD" as const, status: "REVIEW_REQUIRED" as const }));
   const osSnapshotCritical = !bimPresent && originalBim.schema === "ARKEM-BIM-COORDINATION/3.0"
     && Array.isArray(originalBim.clashes)
     ? originalBim.clashes.map(safeIssue).filter((issue) => issue.severity === "critical")
@@ -185,6 +188,8 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
     officialReleaseEligible: false as const,
     workingExportEligible: true as const,
     criticalIssueCount: activeCriticalCount,
+    reviewIssueCount: reviewIssues.length,
+    reviewIssues,
     blockingIssues,
     checks,
     reasons,
