@@ -113,8 +113,13 @@ try {
 
   await check("Aks ve mimari geometri tasiyici on tasarima aktarildi", async () => {
     await page.locator('[data-testid="structural-designer"]').first().waitFor();
-    await page.locator('[data-testid="structural-designer"]')
-      .first().getByRole("button", { name: /V113 \/ Plan \/ program verisini aktar/ }).click();
+    // A second canvas is initialized below the heading. Give the page's
+    // smooth scrolling and Three.js layout time to settle before the click.
+    const handoff = page.locator('[data-testid="structural-designer"]')
+      .first().getByRole("button", { name: /V113 \/ Plan \/ program verisini aktar/ });
+    await handoff.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(350);
+    await handoff.click();
     await wait(() => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const structure = p?.modules?.["structural-concept"];
