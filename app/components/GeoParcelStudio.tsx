@@ -879,12 +879,14 @@ export function GeoParcelStudio() {
 
   const handleZoningDocument = (file?: File) => {
     if (!file) return;
+    // A browser upload proves only that a file was selected. It cannot establish
+    // authenticity, current plan status or correspondence to this parcel.
     setZoning((current) => ({
       ...current,
       sourceDocument: file.name,
-      verification: "certified-document",
+      verification: "document-pending-review",
     }));
-    setFileNotice(`${file.name}: imar kaynağı olarak oturuma bağlandı. Belgedeki plan kararları ekrandaki alanlarla karşılaştırılmalıdır.`);
+    setFileNotice(`${file.name}: belge adı proje kaydına eklendi; içeriği veya resmî geçerliliği doğrulanmadı. Yetkili idare ve uzman incelemesi bekleniyor.`);
   };
 
   const exportGeoJson = () => downloadBlob(`${reference}.geojson`, JSON.stringify({ type: "FeatureCollection", name: reference, metadata: { schema: "ARKEM-GEO/1.3", sourceCrs, dataStatus, generatedAt: new Date().toISOString(), parcelRecord, terrainModel, massingModel, planning: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 }, zoning: createZoningProvenance(zoning, reference) }, features: [{ type: "Feature", properties: { reference, source: "Arkem Parcel Studio", crs: "EPSG:4326", validation: metrics.geometryValid ? "geometry-pass" : "review" }, geometry: { type: "Polygon", coordinates: [[...parcel, parcel[0]].map((point) => [point.lng, point.lat, point.alt].filter((value) => value !== undefined))] } }, { type: "Feature", properties: { reference: `${reference}-ON-YAPI`, system, usage, floors, floorHeight, selectedMassingId: activeMassingId, coverage: metrics.coverage, far: metrics.far }, geometry: { type: "Polygon", coordinates: [[...building, building[0]].map((point) => [point.lng, point.lat])] } }] }, null, 2), "application/geo+json");
@@ -1022,6 +1024,7 @@ export function GeoParcelStudio() {
       <label>Doğrulama statüsü
         <select value={zoning.verification} onChange={(event) => updateZoning("verification", event.target.value as ZoningVerification)}>
           <option value="user-declared">Kullanıcı girdisi · doğrulanmadı</option>
+          <option value="document-pending-review">Belge eklendi · uzman doğrulaması bekliyor</option>
           <option value="municipal-viewer">Belediye e-İmar ekranından aktarıldı</option>
           <option value="approved-plan">Onaylı plan ve plan notundan aktarıldı</option>
           <option value="certified-document">Onaylı imar durumu belgesiyle doğrulandı</option>
