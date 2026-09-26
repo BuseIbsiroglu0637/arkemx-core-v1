@@ -31,6 +31,7 @@ const defaultWeights: Record<CriterionId, number> = { schedule: 5, certainty: 4,
 
 export function SystemComparisonTool() {
   const transferApplied = useRef(false);
+  const [transferReady, setTransferReady] = useState(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [usage, setUsage] = useState("industrial");
   const [floors, setFloors] = useState(2);
@@ -65,8 +66,10 @@ export function SystemComparisonTool() {
   }, [area, fireRating, floors, repetition, span, transport, usage, weights]);
 
   useEffect(() => {
+    // Do not overwrite the intake's saved MCDA values before state restoration.
+    if (!hydrated || !transferReady) return;
     patchModule("system-comparison", { input: { usage, floors, span, area, repetition, transport, fireRating }, weights, ranking, shortlist, status: "mcda-pre-screen" });
-  }, [area, fireRating, floors, patchModule, ranking, repetition, shortlist, span, transport, usage, weights]);
+  }, [area, fireRating, floors, hydrated, patchModule, ranking, repetition, shortlist, span, transferReady, transport, usage, weights]);
 
   const updateWeight = (id: CriterionId, value: number) => setWeights((current) => ({ ...current, [id]: value }));
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -81,8 +84,9 @@ export function SystemComparisonTool() {
   }, [thread.canonical]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
     const timer = window.setTimeout(() => {
+    if (transferApplied.current) return;
+    transferApplied.current = true;
     const saved = project.modules["system-comparison"] as { input?: Record<string, unknown>; weights?: Record<CriterionId, number>; shortlist?: SystemId[] } | undefined;
     if (saved?.input) {
       const input = saved.input;
@@ -98,6 +102,7 @@ export function SystemComparisonTool() {
     } else {
       importProjectGeometry();
     }
+    setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, importProjectGeometry, project.modules]);
