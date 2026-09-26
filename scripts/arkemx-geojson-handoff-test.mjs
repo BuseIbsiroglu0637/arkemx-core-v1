@@ -168,8 +168,25 @@ try {
     );
     assert.equal(values.includes("approved-plan"), false);
     assert.equal(values.includes("certified-document"), false);
+    // Playwright's isDisabled() does not reliably reflect <option disabled>
+    // in every browser version. Inspect the native DOM option property.
+    const pendingOption = status.locator('option[value="document-pending-review"]');
+    const pendingState = await pendingOption.evaluate(option => ({
+      disabled: option.disabled,
+      hasDisabledAttribute: option.hasAttribute("disabled"),
+      text: option.textContent,
+    }));
+    if (!pendingState.disabled) {
+      const saved = await readProject();
+      console.error("TANI IMAR SECENEGI: " + JSON.stringify({
+        pendingState,
+        savedSourceDocument: saved?.modules?.["geo-parcel"]?.zoning?.sourceDocument ?? null,
+        savedVerification: saved?.modules?.["geo-parcel"]?.zoning?.verification ?? null,
+        selectedStatus: await status.inputValue(),
+      }));
+    }
     assert.equal(
-      await status.locator('option[value="document-pending-review"]').isDisabled(),
+      pendingState.disabled,
       true,
       "Belge olmadan inceleme bekliyor secilememeli"
     );
