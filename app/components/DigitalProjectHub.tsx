@@ -16,6 +16,14 @@ export function DigitalProjectHub() {
   const [view, setView] = useState<View>("control");
   const [notice, setNotice] = useState("Yerel proje oturumu bağlı");
   const fileRef = useRef<HTMLInputElement>(null);
+  const deliveryGate = createDeliveryReadiness({
+    projectId: project.id,
+    projectRevision: project.revision,
+    projectName: project.name,
+    projectPhase: project.phase,
+    modules: project.modules,
+    threadIssues: thread.issues,
+  });
 
   const loadProject = async (file?: File) => {
     if (!file) return;
@@ -59,7 +67,7 @@ export function DigitalProjectHub() {
     { code: "ARC", label: "Mimari program ve mahal kaydı", ready: thread.canonical.architecture.grossArea > 0, format: "CSV / JSON" },
     { code: "STR", label: "Taşıyıcı sistem ön değerlendirmesi", ready: Boolean(thread.canonical.structure.system), format: "PDF / DXF" },
     { code: "ICE", label: "Disiplin koordinasyon ve issue kaydı", ready: thread.canonical.coordination.openIssues > 0 || Boolean(project.modules["engineering-coordination"]), format: "CSV / BCF-LIKE" },
-    { code: "CDE", label: "Dijital teslim ve proje pasaportu", ready: thread.canonical.delivery.informationMaturity > 0, format: "JSON / XLSX-READY" },
+    { code: "CDE", label: "Dijital teslim ve proje pasaportu", ready: deliveryGate.workingExportEligible, format: deliveryGate.officialReleaseEligible ? "RESMÎ TESLİM" : "ÇALIŞMA MANİFESTOSU" },
   ];
   const readyOutputs = projectOutputs.filter((item) => item.ready).length;
   const readinessRows = PROJECT_JOURNEY.map((step, index) => ({
@@ -95,6 +103,19 @@ export function DigitalProjectHub() {
     setNotice("Kurumsal proje çalışma paketi indirildi");
   };
 
+  const exportWorkingDelivery = () => {
+    const manifest = createWorkingDeliveryManifest({
+      projectId: project.id,
+      projectRevision: project.revision,
+      projectName: project.name,
+      projectPhase: project.phase,
+      modules: project.modules,
+      threadIssues: thread.issues,
+    });
+    downloadTextFile(`${project.id}-${project.revision}-CALISMA-TESLIM-MANIFESTOSU.json`, JSON.stringify(manifest, null, 2), "application/json");
+    setNotice("Çalışma teslim manifestosu indirildi · resmî/onaylı teslim değildir");
+  };
+
   const exportReadinessCsv = () => {
     const rows = [
       ["sira", "asama", "durum", "beklenen_cikti", "mevcut_ozet"],
@@ -126,7 +147,13 @@ export function DigitalProjectHub() {
         <aside className="hub-control-side">
           <header><div><span>VERİ DEVİR TESLİMİ / TEKNİK ÇIKTI KAYDI</span><h3>{readyOutputs}/{projectOutputs.length} paket hazır</h3></div></header>
           <div className="hub-output-register">{projectOutputs.map((output) => <article key={output.code}><i>{output.code}</i><div><b>{output.label}</b><small>{output.ready ? "Kaynak veri proje çekirdeğinde mevcut" : "İlgili modül verisi bekleniyor"}</small></div><span>{output.format}</span></article>)}</div>
-          <div className="hub-control-actions"><button type="button" className="primary" onClick={exportExecutivePackage}>Proje paketini indir ↓</button><button type="button" onClick={exportReadinessCsv}>Hazırlık matrisini indir ↓</button></div>
+          <section className="hub-delivery-gate" data-testid="delivery-release-gate" data-state={deliveryGate.state}>
+            <header><span>V117 / TESLİM YAYIN KAPISI</span><b>{deliveryGate.officialReleaseEligible ? "RESMÎ YAYIN UYGUN" : deliveryGate.state === "critical-blocked" ? "KRİTİK BLOKAJ" : "İNCELEME GEREKLİ"}</b></header>
+            <p>Resmî/onaylı teslim: <strong>{deliveryGate.officialReleaseEligible ? "UYGUN" : "UYGUN DEĞİL"}</strong> · Çalışma manifestosu: <strong>{deliveryGate.workingExportEligible ? "ÜRETİLEBİLİR" : "BEKLİYOR"}</strong></p>
+            <div>{deliveryGate.checks.map((check) => <article key={check.code} data-status={check.status}><i>{check.code}</i><span><b>{check.label}</b><small>{check.detail}</small></span><strong>{check.status === "blocked" ? "BLOKE" : check.status === "missing" ? "EKSİK" : "İNCELE"}</strong></article>)}</div>
+            <small>Elektronik imza, yetkili belge doğrulaması ve sunucu tabanlı CDE onayı yapılandırılmadığı için kullanıcı girdileri veya kayıtlı statüler resmî teslim yetkisi oluşturmaz.</small>
+          </section>
+          <div className="hub-control-actions"><button type="button" className="primary" onClick={exportExecutivePackage}>Proje paketini indir ↓</button><button type="button" onClick={exportReadinessCsv}>Hazırlık matrisini indir ↓</button><button type="button" data-testid="working-delivery-export" onClick={exportWorkingDelivery}>Çalışma teslim manifestosu ↓</button><button type="button" data-testid="official-delivery-release" disabled={!deliveryGate.officialReleaseEligible}>Resmî teslimi yayımla</button></div>
         </aside>
       </div>}
       {view === "journey" && <div className="hub-journey">
