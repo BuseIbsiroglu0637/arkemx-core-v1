@@ -103,12 +103,37 @@ try {
     const area = labelInput(".architect-input-grid", "Hedef brüt");
     const floors = page.locator(".architect-input-grid label")
       .filter({ hasText: /^Kat$/ }).locator("input");
-    await page.waitForFunction(() => {
-      const labels = [...document.querySelectorAll(".architect-input-grid label")];
-      const area = labels.find(x => x.textContent?.includes("Hedef brüt"))?.querySelector("input");
-      const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
-      return area?.value === "2400" && floors?.value === "2";
-    }, undefined, { timeout: 12000 });
+    try {
+      await page.waitForFunction(() => {
+        const labels = [...document.querySelectorAll(".architect-input-grid label")];
+        const area = labels.find(x => x.textContent?.includes("Hedef brüt"))?.querySelector("input");
+        const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
+        return area?.value === "2400" && floors?.value === "2";
+      }, undefined, { timeout: 12000 });
+    } catch {
+      const snapshot = await page.evaluate(() => {
+        const labels = [...document.querySelectorAll(".architect-input-grid label")];
+        const area = labels.find(x => x.textContent?.includes("Hedef brüt"))?.querySelector("input");
+        const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
+        const raw = localStorage.getItem("arkem-project-kernel-v2");
+        const modules = raw ? JSON.parse(raw)?.payload?.modules : null;
+        const source = modules?.["architectural-program"];
+        return {
+          displayed: { targetGross: area?.value ?? null, floors: floors?.value ?? null },
+          storedArchitectureInput: {
+            targetGross: source?.input?.targetGross ?? null,
+            floors: source?.input?.floors ?? null,
+          },
+          storedGeo: {
+            reference: modules?.["geo-parcel"]?.reference ?? null,
+            floors: modules?.["geo-parcel"]?.floors ?? null,
+          },
+          architectureStatus: document.querySelector(".architect-status b")?.textContent ?? null,
+        };
+      });
+      console.error("TANI (yalnizca test proje verileri): " + JSON.stringify(snapshot));
+      throw new Error("Mimari aktarim 12 saniyede 2400 m² / 2 kat degerlerine ulasmadi.");
+    }
     assert.equal(await area.inputValue(), "2400");
     assert.equal(await floors.inputValue(), "2");
   });
