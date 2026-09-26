@@ -388,12 +388,14 @@ try {
     assert.equal(manifest.electronicSignatureVerified, false);
     assert.equal(manifest.nativeIfcAttached, false);
     assert.equal(manifest.nativeBcfZipAttached, false);
+    assert.equal(manifest.gate.blockingIssues.length, manifest.gate.criticalIssueCount);
     assert.match(manifest.boundary, /resmî dijital teslim değildir/);
     console.log("BILGI TESLIM: " + JSON.stringify({
       state: manifest.gate.state,
       officialReleaseEligible: manifest.officialReleaseEligible,
       workingExportEligible: manifest.gate.workingExportEligible,
       criticalIssueCount: manifest.gate.criticalIssueCount,
+      blockingIssues: manifest.gate.blockingIssues.map(issue => ({ source: issue.source, id: issue.id, title: issue.title })),
     }));
   });
 
