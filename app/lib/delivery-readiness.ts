@@ -70,7 +70,14 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
     && Array.isArray(originalBim.clashes)
     ? originalBim.clashes.map(safeIssue).filter((issue) => issue.severity === "critical")
     : [];
-  const activeCriticalCount = criticalClashes.length + threadCritical.length + osSnapshotCritical.length;
+  // Surface every active blocker with its originating module. A current BIM
+  // rule may be cleared while an independent project-thread rule remains open.
+  const blockingIssues = [
+    ...criticalClashes.map((issue) => ({ ...issue, source: "CURRENT_BIM" as const })),
+    ...threadCritical.map((issue) => ({ ...issue, source: "PROJECT_THREAD" as const })),
+    ...osSnapshotCritical.map((issue) => ({ ...issue, source: "OS_SNAPSHOT_FALLBACK" as const })),
+  ];
+  const activeCriticalCount = blockingIssues.length;
   const zoningHasValues = ["taks", "kaks", "hmax"].some(
     (key) => typeof zoning[key] === "number" && Number.isFinite(zoning[key]) && zoning[key] > 0,
   ) || Boolean(text(zoning.buildingOrder));
@@ -178,6 +185,7 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
     officialReleaseEligible: false as const,
     workingExportEligible: true as const,
     criticalIssueCount: activeCriticalCount,
+    blockingIssues,
     checks,
     reasons,
     limitations: [
