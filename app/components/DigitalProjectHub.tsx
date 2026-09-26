@@ -151,6 +151,7 @@ export function DigitalProjectHub() {
             <header><span>V117 / TESLİM YAYIN KAPISI</span><b>{deliveryGate.officialReleaseEligible ? "RESMÎ YAYIN UYGUN" : deliveryGate.state === "critical-blocked" ? "KRİTİK BLOKAJ" : "İNCELEME GEREKLİ"}</b></header>
             <p>Resmî/onaylı teslim: <strong>{deliveryGate.officialReleaseEligible ? "UYGUN" : "UYGUN DEĞİL"}</strong> · Çalışma manifestosu: <strong>{deliveryGate.workingExportEligible ? "ÜRETİLEBİLİR" : "BEKLİYOR"}</strong></p>
             {deliveryGate.blockingIssues.length > 0 && <div className="hub-delivery-blockers" data-testid="delivery-active-blockers">{deliveryGate.blockingIssues.map((issue) => <p key={issue.source + issue.id}><b>{issue.source}</b> · {issue.id} · {issue.title}</p>)}</div>}
+            {deliveryGate.reviewIssues.length > 0 && <div className="hub-delivery-reviews" data-testid="delivery-review-issues"><b>AÇIK İNCELEME KONULARI</b>{deliveryGate.reviewIssues.map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}</div>}
             <div>{deliveryGate.checks.map((check) => <article key={check.code} data-status={check.status}><i>{check.code}</i><span><b>{check.label}</b><small>{check.detail}</small></span><strong>{check.status === "blocked" ? "BLOKE" : check.status === "missing" ? "EKSİK" : "İNCELE"}</strong></article>)}</div>
             <small>Elektronik imza, yetkili belge doğrulaması ve sunucu tabanlı CDE onayı yapılandırılmadığı için kullanıcı girdileri veya kayıtlı statüler resmî teslim yetkisi oluşturmaz.</small>
           </section>
