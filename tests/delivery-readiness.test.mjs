@@ -69,6 +69,7 @@ test("reviewed critical BIM issue remains delivery-blocking", () => {
   });
   assert.equal(gate.state, "critical-blocked");
   assert.equal(gate.criticalIssueCount, 1);
+  assert.deepEqual(gate.blockingIssues.map(issue => [issue.source, issue.id]), [["CURRENT_BIM", "CLASH-1"]]);
   const bim = gate.checks.find((check) => check.code === "DEL-04");
   assert.equal(bim?.status, "blocked");
   assert.equal(bim?.evidence.reviewedCritical, 1);
