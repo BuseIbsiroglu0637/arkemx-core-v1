@@ -13,7 +13,7 @@ import {
   type ParcelRecord,
   type ParcelSourceKind,
 } from "../lib/parcel-record";
-import { createZoningProvenance, DEFAULT_ZONING, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningForm, type ZoningVerification } from "../lib/zoning";
+import { createZoningProvenance, DEFAULT_ZONING, normalizeUntrustedZoningVerification, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningForm, type ZoningVerification } from "../lib/zoning";
 import {
   DEFAULT_TERRAIN_LAYERS,
   createTerrainContours,
@@ -385,7 +385,7 @@ export function GeoParcelStudio() {
     if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
     if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
     if (saved.zoning) {
-      setZoning((current) => ({ ...current, ...saved.zoning }));
+      setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
       if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
       if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
       if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
@@ -865,7 +865,9 @@ export function GeoParcelStudio() {
   };
 
   const updateZoning = <K extends keyof ZoningForm>(key: K, value: ZoningForm[K]) => {
-    setZoning((current) => ({ ...current, [key]: value }));
+    setZoning((current) => key === "verification"
+      ? { ...current, verification: normalizeUntrustedZoningVerification(value, Boolean(current.sourceDocument)) }
+      : { ...current, [key]: value });
     if (key === "taks") setMaxCoverage(Number(value) * 100);
     if (key === "kaks") setMaxFar(Number(value));
     if (key === "hmax") setMaxHeight(Number(value));
@@ -1021,14 +1023,13 @@ export function GeoParcelStudio() {
           ? <a href={connector.href} target="_blank" rel="noreferrer" key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>↗</i></a>
           : <article key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>PROJE BAĞLANTISI</i></article>)}
       </div>
-      <label>Doğrulama statüsü
+      <label>Kaynak beyanı / inceleme durumu
         <select value={zoning.verification} onChange={(event) => updateZoning("verification", event.target.value as ZoningVerification)}>
           <option value="user-declared">Kullanıcı girdisi · doğrulanmadı</option>
-          <option value="document-pending-review">Belge eklendi · uzman doğrulaması bekliyor</option>
-          <option value="municipal-viewer">Belediye e-İmar ekranından aktarıldı</option>
-          <option value="approved-plan">Onaylı plan ve plan notundan aktarıldı</option>
-          <option value="certified-document">Onaylı imar durumu belgesiyle doğrulandı</option>
+          <option value="document-pending-review" disabled={!zoning.sourceDocument}>Belge eklendi · uzman doğrulaması bekliyor</option>
+          <option value="municipal-viewer">Kullanıcı beyanı: e-İmar ekranı görüldü · doğrulanmadı</option>
         </select>
+        <small>Bu seçimler resmî onay sağlamaz. Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz.</small>
       </label>
       <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
       <div className="geo-field-grid">
