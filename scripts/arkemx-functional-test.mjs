@@ -36,10 +36,34 @@ try {
   });
 
   await check("Proje adi ve konum ile ilk iki adim tamamlandi", async () => {
-    await page.getByPlaceholder("Örn. Arifiye üretim tesisi").fill(projectName);
-    assert.equal(await next.isEnabled(), true);
+    const nameInput = page.getByPlaceholder("Örn. Arifiye üretim tesisi");
+    await nameInput.fill(projectName);
+    if (!(await next.isEnabled())) {
+      // The server-rendered form can appear before React attaches event handlers.
+      console.log("BILGI: İlk girişte buton etkinleşmedi; etkileşim hazırlanıyor.");
+      await page.waitForTimeout(1200);
+      await nameInput.fill("");
+      await nameInput.fill(projectName);
+    }
+    try {
+      await page.waitForFunction(() => {
+        const name = document.querySelector('input[placeholder="Örn. Arifiye üretim tesisi"]');
+        const button = document.querySelector(".project-start-actions button.primary");
+        return name?.value?.trim()?.length >= 3 && button && !button.disabled;
+      }, undefined, { timeout: 7000 });
+    } catch {
+      throw new Error("Ad girildi fakat ilerleme butonu etkin değil. Girdi: " +
+        JSON.stringify(await nameInput.inputValue()) + ", buton disabled: " +
+        await next.isDisabled());
+    }
     await next.click();
-    await page.getByPlaceholder("İl / ilçe veya bilinen mevki").fill("Ankara / Cankaya");
+    const locationInput = page.getByPlaceholder("İl / ilçe veya bilinen mevki");
+    await locationInput.fill("Ankara / Cankaya");
+    await page.waitForFunction(() => {
+      const input = document.querySelector('input[placeholder="İl / ilçe veya bilinen mevki"]');
+      const button = document.querySelector(".project-start-actions button.primary");
+      return input?.value?.trim()?.length >= 2 && button && !button.disabled;
+    }, undefined, { timeout: 7000 });
     await next.click();
     await page.locator(".start-number-grid").waitFor();
   });
