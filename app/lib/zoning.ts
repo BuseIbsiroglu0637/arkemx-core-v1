@@ -76,11 +76,26 @@ export const DEFAULT_ZONING: ZoningForm = {
   verification: "user-declared",
 };
 
+/**
+ * A browser form or legacy device-local record is user-supplied evidence only.
+ * Verified states remain in the domain model for future authenticated source
+ * adapters; they must never be minted by a dropdown or a local import.
+ */
+export function normalizeUntrustedZoningVerification(value: unknown, hasDocument: boolean): ZoningVerification {
+  if (value === "municipal-viewer") return "municipal-viewer";
+  if (hasDocument && (
+    value === "document-pending-review" ||
+    value === "approved-plan" ||
+    value === "certified-document"
+  )) return "document-pending-review";
+  return "user-declared";
+}
+
 export function zoningVerificationLabel(value: ZoningVerification) {
   return {
     "user-declared": "Kullanıcı girdisi · doğrulanmadı",
     "document-pending-review": "Belge eklendi · uzman doğrulaması bekliyor",
-    "municipal-viewer": "Belediye e-İmar ekranından aktarıldı",
+    "municipal-viewer": "Kullanıcı beyanı: belediye e-İmar ekranı · doğrulanmadı",
     "approved-plan": "Onaylı plan ve plan notundan aktarıldı",
     "certified-document": "Onaylı imar durumu belgesiyle doğrulandı",
   }[value];
