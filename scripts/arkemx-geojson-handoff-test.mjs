@@ -121,7 +121,7 @@ try {
     });
     assert.equal(response?.status(), 200);
     await page.locator(".v109-parcel-center").waitFor();
-    await page.locator(".kernel-identity button").filter({ hasText: name }).waitFor();
+    await page.locator('.geo-parcel-studio [data-testid="project-kernel-bar"] .kernel-identity button').filter({ hasText: name }).waitFor();
     const preview = page.locator(".v109-parcel-center");
     assert.equal(await preview.getAttribute("data-record-state"), "preview");
     assert.equal(
