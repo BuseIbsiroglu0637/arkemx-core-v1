@@ -177,7 +177,63 @@ try {
       before.bimCoordination.spatial.levels.length);
   });
 
-  console.log("\nSONUC: " + passed.length + "/6 Mimari -> Plan -> Tasiyici -> BIM testi basarili.");
+
+  await check("Kritik MEP yukseklik cakismasi gercekten yakalandi", async () => {
+    const mep = page.locator(".coordination-input-grid label")
+      .filter({ hasText: "MEP servis zonu" }).locator("input").first();
+    await mep.fill("2");
+    await wait(() => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      const coordination = p?.modules?.["engineering-coordination"];
+      const bim = coordination?.bimCoordination;
+      return coordination?.input?.serviceZone === 2
+        && bim?.coordination?.clearHeightM < 2.4
+        && bim?.clashes?.some(issue =>
+          issue.title.includes("net kullanım yüksekliğini ihlal")
+          && issue.severity === "critical"
+          && issue.nativeViewpoint === false
+          && issue.sourceRefs?.includes("ARC:LEVELS")
+        );
+    });
+    const bim = (await project()).modules["engineering-coordination"].bimCoordination;
+    console.log("BILGI KASITLI TEST CAKISMASI: " + JSON.stringify({
+      clearHeightM: bim.coordination.clearHeightM,
+      critical: bim.clashes.filter(issue => issue.severity === "critical").length,
+      total: bim.clashes.length,
+    }));
+  });
+
+  await check("Cakisma kaydi incelendi durumuyla saklandi", async () => {
+    await page.locator(".coordination-main nav button")
+      .filter({ hasText: /Çakışmalar/ }).click();
+    const issue = page.locator(".v115-clash-board article")
+      .filter({ hasText: "net kullanım yüksekliğini ihlal" }).first();
+    await issue.waitFor();
+    await issue.getByRole("button", { name: "İncelendi / kapat" }).click();
+    const before = (await project()).modules["engineering-coordination"];
+    const clash = before.bimCoordination.clashes.find(item =>
+      item.title.includes("net kullanım yüksekliğini ihlal")
+    );
+    assert.ok(clash?.guid);
+    await wait(expectedGuid => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      const coordination = p?.modules?.["engineering-coordination"];
+      return coordination?.resolved?.includes(expectedGuid)
+        && coordination?.bimCoordination?.clashes?.some(item => item.guid === expectedGuid);
+    }, clash.guid);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.locator('[data-testid="engineering-coordination-studio"]').waitFor();
+    await wait(expectedGuid => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      const coordination = p?.modules?.["engineering-coordination"];
+      return coordination?.input?.serviceZone === 2
+        && coordination?.resolved?.includes(expectedGuid)
+        && coordination?.bimCoordination?.clashes?.some(item => item.guid === expectedGuid);
+    }, clash.guid);
+    console.log("BILGI: Isaretlenen issue silinmedi; inceleme durumu yenilemede korundu.");
+  });
+
+  console.log("\nSONUC: " + passed.length + "/8 Mimari -> Plan -> Tasiyici -> BIM testi basarili.");
   console.log("SINIR: Taslak geometri kullanildi; ruhsat, statik emniyet, onayli IFC/BCF ve imar hakki dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
@@ -211,6 +267,9 @@ try {
           architectureConnected: bim?.source?.architectureConnected ?? null,
           structureConnected: bim?.source?.structureConnected ?? null,
           geometryMatches: bim?.source?.geometryMatches ?? null,
+          clearHeightM: bim?.coordination?.clearHeightM ?? null,
+          clashCount: bim?.clashes?.length ?? null,
+          resolved: p?.modules?.["engineering-coordination"]?.resolved ?? [],
         },
       }));
       const file = path.join(outDir, "architecture-bim-handoff-failure.png");
