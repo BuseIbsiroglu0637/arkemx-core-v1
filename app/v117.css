@@ -143,3 +143,7 @@ body .v4-site-header{grid-template-columns:auto minmax(0,1fr) auto auto auto!imp
 .hub-delivery-gate .hub-delivery-blockers{display:grid;gap:4px;padding:10px 12px;border:1px solid #b94e47;background:#fff4f1}
 .hub-delivery-blockers p{margin:0;color:#69362d;font:650 9px/1.45 var(--font-manrope)}
 .hub-delivery-blockers p>b{font-size:8px;letter-spacing:.04em}
+
+.hub-delivery-gate .hub-delivery-reviews{display:grid;gap:5px;padding:10px 12px;border:1px solid #c6ad84;background:#fffaf0}
+.hub-delivery-reviews>b{color:#825d2e;font:760 8px var(--font-manrope);letter-spacing:.07em}
+.hub-delivery-reviews p{margin:0;color:#6c6254;font:650 9px/1.5 var(--font-manrope)}
