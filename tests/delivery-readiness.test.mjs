@@ -81,10 +81,12 @@ test("cleared parametric rules still require review and never imply technical ap
     projectId: "TEST-03",
     projectRevision: "P02",
     modules: baseModules(),
-    threadIssues: [],
+    threadIssues: [{ id: "BIM-053", title: "KM–KR ön kontrolü için kaynak nesneler eksik", severity: "review" }],
   });
   assert.equal(gate.state, "review-required");
   assert.equal(gate.criticalIssueCount, 0);
+  assert.equal(gate.reviewIssueCount, 1);
+  assert.deepEqual(gate.reviewIssues.map(issue => issue.id), ["BIM-053"]);
   assert.equal(gate.officialReleaseEligible, false);
   assert.ok(gate.checks.every((check) => check.status !== "blocked"));
 });
