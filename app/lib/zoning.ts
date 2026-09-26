@@ -1,5 +1,6 @@
 export type ZoningVerification =
   | "user-declared"
+  | "document-pending-review"
   | "municipal-viewer"
   | "approved-plan"
   | "certified-document";
@@ -78,6 +79,7 @@ export const DEFAULT_ZONING: ZoningForm = {
 export function zoningVerificationLabel(value: ZoningVerification) {
   return {
     "user-declared": "Kullanıcı girdisi · doğrulanmadı",
+    "document-pending-review": "Belge eklendi · uzman doğrulaması bekliyor",
     "municipal-viewer": "Belediye e-İmar ekranından aktarıldı",
     "approved-plan": "Onaylı plan ve plan notundan aktarıldı",
     "certified-document": "Onaylı imar durumu belgesiyle doğrulandı",
