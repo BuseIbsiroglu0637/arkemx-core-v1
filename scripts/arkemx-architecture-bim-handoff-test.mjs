@@ -363,7 +363,41 @@ try {
     assert.equal(await page.getByTestId("project-os-issue-gate").count(), 0);
   });
 
-  console.log("\nSONUC: " + passed.length + "/10 Mimari -> Plan -> Tasiyici -> BIM testi basarili.");
+
+  await check("Dijital teslim kapisi resmi yayini kilitledi", async () => {
+    await open("/dijital-proje-merkezi", '[data-testid="digital-project-hub"]');
+    const gate = page.getByTestId("delivery-release-gate");
+    await gate.waitFor();
+    assert.match(await gate.textContent(), /Resmî\/onaylı teslim:\s*UYGUN DEĞİL/);
+    const official = page.getByTestId("official-delivery-release");
+    assert.equal(await official.isDisabled(), true);
+    const p = await project();
+    assert.equal(p.modules["project-os"].coordination.issueGate.technicalApproval, false);
+  });
+
+  await check("Calisma teslim manifestosu resmi onay iddiasi uretmedi", async () => {
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("working-delivery-export").click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    let json = "";
+    for await (const chunk of stream) json += chunk.toString();
+    const manifest = JSON.parse(json);
+    assert.equal(manifest.status, "WORKING_DRAFT_NOT_APPROVED");
+    assert.equal(manifest.officialReleaseEligible, false);
+    assert.equal(manifest.electronicSignatureVerified, false);
+    assert.equal(manifest.nativeIfcAttached, false);
+    assert.equal(manifest.nativeBcfZipAttached, false);
+    assert.match(manifest.boundary, /resmî dijital teslim değildir/);
+    console.log("BILGI TESLIM: " + JSON.stringify({
+      state: manifest.gate.state,
+      officialReleaseEligible: manifest.officialReleaseEligible,
+      workingExportEligible: manifest.gate.workingExportEligible,
+      criticalIssueCount: manifest.gate.criticalIssueCount,
+    }));
+  });
+
+  console.log("\nSONUC: " + passed.length + "/12 Mimari -> Plan -> Tasiyici -> BIM -> Proje OS -> Teslim testi basarili.");
   console.log("SINIR: Taslak geometri kullanildi; ruhsat, statik emniyet, onayli IFC/BCF ve imar hakki dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
