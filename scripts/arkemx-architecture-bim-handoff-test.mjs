@@ -194,7 +194,29 @@ try {
     });
     const mep = page.locator(".coordination-input-grid label")
       .filter({ hasText: "MEP servis zonu" }).locator("input").first();
+    console.log("TANI ONCESI: " + JSON.stringify(await page.evaluate(() => ({
+      uiInput: document.querySelector(".coordination-input-grid label:nth-child(4) input")?.value,
+      liveState: document.querySelector('[data-testid="engineering-coordination-studio"]')?.getAttribute("data-service-zone"),
+      ready: document.querySelector('[data-testid="engineering-coordination-studio"]')?.getAttribute("data-transfer-ready"),
+      storedInput: JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload?.modules?.["engineering-coordination"]?.input?.serviceZone,
+    }))));
     await mep.fill("2");
+    await mep.press("Tab");
+    await page.waitForTimeout(850);
+    const inputDiagnostic = await page.evaluate(() => {
+      const stored = JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload?.modules?.["engineering-coordination"];
+      const studio = document.querySelector('[data-testid="engineering-coordination-studio"]');
+      return {
+        uiInput: [...document.querySelectorAll(".coordination-input-grid label")].find(e => e.textContent?.includes("MEP servis zonu"))?.querySelector("input")?.value,
+        liveState: studio?.getAttribute("data-service-zone"),
+        ready: studio?.getAttribute("data-transfer-ready"),
+        storedInput: stored?.input?.serviceZone,
+        storedClearHeight: stored?.bimCoordination?.coordination?.clearHeightM,
+        criticalClashes: stored?.bimCoordination?.clashes?.filter(x => x.severity === "critical").map(x => x.title),
+      };
+    });
+    console.log("TANI MEP DEGİSİMİ: " + JSON.stringify(inputDiagnostic));
+    assert.equal(Number(inputDiagnostic.liveState), 2, "MEP alanı React durumuna yazılmadı");
     await wait(() => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const coordination = p?.modules?.["engineering-coordination"];
