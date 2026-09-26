@@ -171,13 +171,47 @@ try {
     });
     assert.equal(response?.status(), 200);
     await page.locator('[data-testid="system-comparison-tool"]').waitFor();
+    // SSR renders the button before React hydration. The saved MCDA input does not
+    // include span; seeing a persisted span confirms initial state was restored and
+    // the component's first guarded write has reached the shared project vault.
+    await page.waitForFunction(() => {
+      try {
+        const value = JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload;
+        return typeof value?.modules?.["system-comparison"]?.input?.span === "number";
+      } catch { return false; }
+    }, undefined, { timeout: 12000 });
     await page.getByRole("button", { name: /Parsel \/ mimari \/ aks verisini aktar/ }).click();
-    await page.waitForFunction(expected => {
-      const labels = [...document.querySelectorAll(".mcda-number-grid label")];
-      const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
-      const area = labels.find(x => x.textContent?.includes("Brüt alan"))?.querySelector("input");
-      return floors?.value === "3" && Number(area?.value) === expected;
-    }, expectedArea, { timeout: 12000 });
+    try {
+      await page.waitForFunction(expected => {
+        const labels = [...document.querySelectorAll(".mcda-number-grid label")];
+        const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
+        const area = labels.find(x => x.textContent?.includes("Brüt alan"))?.querySelector("input");
+        return floors?.value === "3" && Number(area?.value) === expected;
+      }, expectedArea, { timeout: 12000 });
+    } catch {
+      const snapshot = await page.evaluate(() => {
+        const labels = [...document.querySelectorAll(".mcda-number-grid label")];
+        const floors = labels.find(x => x.textContent?.trim() === "Kat")?.querySelector("input");
+        const area = labels.find(x => x.textContent?.includes("Brüt alan"))?.querySelector("input");
+        const raw = localStorage.getItem("arkem-project-kernel-v2");
+        const modules = raw ? JSON.parse(raw)?.payload?.modules : {};
+        return {
+          displayed: { floors: floors?.value ?? null, area: area?.value ?? null },
+          savedArchitecture: {
+            targetGross: modules?.["architectural-program"]?.input?.targetGross ?? null,
+            floors: modules?.["architectural-program"]?.input?.floors ?? null,
+            grossDemand: modules?.["architectural-program"]?.result?.grossDemand ?? null,
+          },
+          savedMCDA: {
+            floors: modules?.["system-comparison"]?.input?.floors ?? null,
+            area: modules?.["system-comparison"]?.input?.area ?? null,
+            span: modules?.["system-comparison"]?.input?.span ?? null,
+          },
+        };
+      });
+      console.error("TANI MCDA (yalnizca test proje verileri): " + JSON.stringify({ expectedArea, ...snapshot }));
+      throw new Error("Yapi sistemi veri aktarimi hedef kat/alan degerlerine 12 saniyede ulasmadi.");
+    }
     await waitForSaved(() => {
       try {
         const data = JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload;
