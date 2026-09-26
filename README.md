@@ -1,5 +1,10 @@
 # vinext-starter
 
+## ARKEMX: Teknokent yerel demo
+
+Codespaces veya herkese açık web sitesi olmadan kendi bilgisayarınızda çalıştırmak için [Türkçe yerel demo kurulum rehberine](docs/ARKEMX_YEREL_DEMO_KURULUM_REHBERI.md) bakın. Node.js 22.13+ ve ilk seferde `npm ci` gerekir. Sonraki açılışlarda `npm run demo:local` veya kök klasördeki Windows/macOS başlatıcısını kullanın; demo yalnızca `127.0.0.1:5173` adresinde açılır.
+
+
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
 Drizzle support.
