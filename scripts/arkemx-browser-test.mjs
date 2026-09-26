@@ -68,6 +68,7 @@ try {
       await page.screenshot({
         path: path.join(outDir, row.screenshot), fullPage: true,
         animations: "disabled",
+        caret: "initial",
       });
       if (!row.http || row.http >= 400) row.status = "HATA";
       else if (!row.finalUrl.startsWith(`${base}${route}`) || pageErrors.length || httpErrors.length || failedRequests.length || !row.heading) {
@@ -77,7 +78,7 @@ try {
       row.error = error.message;
       row.status = "HATA";
       try {
-        await page.screenshot({ path: path.join(outDir, row.screenshot), fullPage: true });
+        await page.screenshot({ path: path.join(outDir, row.screenshot), fullPage: true, caret: "initial" });
       } catch { /* Browser may already be disconnected. */ }
     } finally {
       rows.push(row);
