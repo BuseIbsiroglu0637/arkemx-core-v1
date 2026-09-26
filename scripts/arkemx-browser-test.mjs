@@ -18,6 +18,10 @@ const modules = [
   ["Proje OS", "/proje-os"],
   ["Dijital Proje Merkezi", "/dijital-proje-merkezi"],
 ];
+const selectedRoutes = process.env.ARKEMX_ROUTE
+  ? modules.filter(([, route]) => route === process.env.ARKEMX_ROUTE)
+  : modules;
+if (selectedRoutes.length === 0) throw new Error("Bilinmeyen rota: " + process.env.ARKEMX_ROUTE);
 const csv = value => `"${String(value ?? "").replaceAll('"', '""').replaceAll(/\r?\n/g, " ")}"`;
 await mkdir(outDir, { recursive: true });
 await writeFile(path.join(outDir, ".gitignore"), "*\n!.gitignore\n");
@@ -25,18 +29,30 @@ let browser;
 const rows = [];
 try {
   browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-  for (let i = 0; i < modules.length; i++) {
-    const [name, route] = modules[i];
+  for (let i = 0; i < selectedRoutes.length; i++) {
+    const [name, route] = selectedRoutes[i];
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const pageErrors = [];
     const consoleErrors = [];
+    const httpErrors = [];
+    const failedRequests = [];
+    page.on("response", response => {
+      if (response.status() >= 400) {
+        const url = new URL(response.url());
+        httpErrors.push({ status: response.status(), origin: url.origin, path: url.pathname });
+      }
+    });
+    page.on("requestfailed", request => {
+      const url = new URL(request.url());
+      failedRequests.push({ origin: url.origin, path: url.pathname, failure: request.failure()?.errorText ?? "unknown" });
+    });
     page.on("pageerror", error => pageErrors.push(error.message));
     page.on("console", message => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     const row = {
       name, route, http: null, finalUrl: "", heading: "", title: "",
-      status: "INCELENECEK", pageErrors, consoleErrors, error: "",
+      status: "INCELENECEK", pageErrors, consoleErrors, httpErrors, failedRequests, error: "",
       screenshot: `${String(i + 1).padStart(2, "0")}-${route.slice(1)}.png`,
     };
     try {
@@ -54,7 +70,7 @@ try {
         animations: "disabled",
       });
       if (!row.http || row.http >= 400) row.status = "HATA";
-      else if (!row.finalUrl.startsWith(`${base}${route}`) || pageErrors.length || !row.heading) {
+      else if (!row.finalUrl.startsWith(`${base}${route}`) || pageErrors.length || httpErrors.length || failedRequests.length || !row.heading) {
         row.status = "INCELENECEK";
       } else row.status = "HTTP+TARAYICI ACILDI";
     } catch (error) {
@@ -66,6 +82,16 @@ try {
     } finally {
       rows.push(row);
       console.log(`${row.status.padEnd(24)} ${String(row.http ?? "---").padEnd(4)} ${route}`);
+      const summary = new Map();
+      for (const entry of httpErrors) {
+        const key = `${entry.status} ${entry.origin}${entry.path}`;
+        summary.set(key, (summary.get(key) ?? 0) + 1);
+      }
+      for (const [url, count] of [...summary.entries()].slice(0, 20)) {
+        console.log(`  KAYNAK HATASI: ${url} (x${count})`);
+      }
+      if (summary.size > 20) console.log(`  ... ve ${summary.size - 20} baska hatali URL`);
+      console.log(`  HTTP>=400: ${httpErrors.length}; Istek basarisiz: ${failedRequests.length}; JS istisnasi: ${pageErrors.length}; Konsol hatasi: ${consoleErrors.length}`);
       await page.close();
     }
   }
@@ -81,11 +107,12 @@ try {
   }, null, 2));
   const fields = [
     "name", "route", "http", "status", "finalUrl", "heading", "title",
-    "screenshot", "pageErrors", "consoleErrors", "error",
+    "screenshot", "pageErrors", "consoleErrors", "httpErrors", "failedRequests", "error",
   ];
   const lines = [fields.map(csv).join(",")].concat(rows.map(row =>
     fields.map(key => csv(Array.isArray(row[key])
-      ? row[key].join(" | ") : row[key])).join(",")));
+      ? row[key].map(item => typeof item === "object" ? JSON.stringify(item) : item).join(" | ")
+      : row[key])).join(",")));
   await writeFile(path.join(outDir, "results.csv"), lines.join("\n") + "\n");
   console.log(`\nSonuclar: ${outDir}/results.csv ve ekran goruntuleri`);
   console.log("Not: Korunan ekranlar ve dinamik rotalar bu testte yok.");
