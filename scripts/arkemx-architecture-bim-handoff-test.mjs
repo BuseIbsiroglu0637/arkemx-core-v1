@@ -214,7 +214,7 @@ try {
     const issue = page.locator(".v115-clash-board article")
       .filter({ hasText: "net kullanım yüksekliğini ihlal" }).first();
     await issue.waitFor();
-    await issue.getByRole("button", { name: "İncelendi / kapat" }).click();
+    await issue.getByRole("button", { name: "İncelendi olarak işaretle" }).click();
     const before = (await project()).modules["engineering-coordination"];
     const clash = before.bimCoordination.clashes.find(item =>
       item.title.includes("net kullanım yüksekliğini ihlal")
@@ -223,7 +223,8 @@ try {
     await wait(expectedGuid => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const coordination = p?.modules?.["engineering-coordination"];
-      return coordination?.resolved?.includes(expectedGuid)
+      return coordination?.reviewed?.includes(expectedGuid)
+        && coordination?.issueGate?.blocked === true
         && coordination?.bimCoordination?.clashes?.some(item => item.guid === expectedGuid);
     }, clash.guid);
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -232,13 +233,75 @@ try {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const coordination = p?.modules?.["engineering-coordination"];
       return coordination?.input?.serviceZone === 2
-        && coordination?.resolved?.includes(expectedGuid)
+        && coordination?.reviewed?.includes(expectedGuid)
+        && coordination?.issueGate?.blocked === true
         && coordination?.bimCoordination?.clashes?.some(item => item.guid === expectedGuid);
     }, clash.guid);
-    console.log("BILGI: Isaretlenen issue silinmedi; inceleme durumu yenilemede korundu.");
+    const afterReview = (await project()).modules["engineering-coordination"];
+    assert.equal(afterReview.issueGate.blocked, true);
+    assert.equal(afterReview.resolved.length, 0);
+    console.log("BILGI: Kritik issue incelendi ancak acik kaldi ve BIM karar kapisi bloke.");
+  
   });
 
-  console.log("\nSONUC: " + passed.length + "/8 Mimari -> Plan -> Tasiyici -> BIM testi basarili.");
+
+  await check("Proje OS kritik BIM kaydini kapatamadi ve 4B-5B kapisini bloke etti", async () => {
+    await open("/proje-os", ".project-os-app");
+    const gate = page.getByTestId("project-os-issue-gate");
+    await gate.waitFor();
+    assert.match(await gate.textContent(), /ONAY KAPISI BLOKE/);
+    await page.locator(".project-os-nav button").filter({ hasText: "Görevler" }).click();
+    const action = page.getByTestId("critical-bim-review-action").first();
+    await action.waitFor();
+    assert.equal(await action.count() > 0, true);
+    const first = await action.textContent();
+    // The issue can change between blocked and in-review, never to closed.
+    await action.click();
+    await wait(() => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      return p?.modules?.["project-os"]?.coordination?.issueGate?.blocked === true;
+    });
+    const p = await project();
+    const items = p.modules["project-os"].workItems.filter(item =>
+      item.sourceGuid && item.priority === "critical");
+    assert.ok(items.length > 0);
+    assert.ok(items.every(item => item.status !== "closed"));
+    assert.equal(p.modules["project-os"].coordination.issueGate.technicalApproval, false);
+    console.log("BILGI OS: " + JSON.stringify({
+      criticalIssues: items.length,
+      statuses: items.map(item => item.status),
+      firstAction: first?.trim(),
+    }));
+  });
+
+  await check("Girdi duzeltmesi kural blokajini kaldirdi; teknik onay vermedi", async () => {
+    await open("/muhendislik-koordinasyon",
+      '[data-testid="engineering-coordination-studio"]');
+    const mep = page.locator(".coordination-input-grid label")
+      .filter({ hasText: "MEP servis zonu" }).locator("input").first();
+    await mep.fill("0.45");
+    await wait(() => {
+      const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
+      const c = p?.modules?.["engineering-coordination"];
+      const gate = p?.modules?.["project-os"]?.coordination?.issueGate;
+      return c?.input?.serviceZone === .45
+        && c?.issueGate?.blocked === false
+        && c?.issueReview?.modelClearedIds?.length > 0
+        && gate?.blocked === false
+        && gate?.technicalApproval === false;
+    });
+    const p = await project();
+    const model = p.modules["engineering-coordination"];
+    console.log("BILGI KURAL DUZELTMESI: " + JSON.stringify({
+      blocked: model.issueGate.blocked,
+      recheckedCount: model.issueReview.modelClearedIds.length,
+      technicalApproval: p.modules["project-os"].coordination.issueGate.technicalApproval,
+    }));
+    await open("/proje-os", ".project-os-app");
+    assert.equal(await page.getByTestId("project-os-issue-gate").count(), 0);
+  });
+
+  console.log("\nSONUC: " + passed.length + "/10 Mimari -> Plan -> Tasiyici -> BIM testi basarili.");
   console.log("SINIR: Taslak geometri kullanildi; ruhsat, statik emniyet, onayli IFC/BCF ve imar hakki dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
@@ -274,7 +337,9 @@ try {
           geometryMatches: bim?.source?.geometryMatches ?? null,
           clearHeightM: bim?.coordination?.clearHeightM ?? null,
           clashCount: bim?.clashes?.length ?? null,
-          resolved: p?.modules?.["engineering-coordination"]?.resolved ?? [],
+          reviewed: p?.modules?.["engineering-coordination"]?.reviewed ?? [],
+          issueGate: p?.modules?.["engineering-coordination"]?.issueGate ?? null,
+          osGate: p?.modules?.["project-os"]?.coordination?.issueGate ?? null,
         },
       }));
       const file = path.join(outDir, "architecture-bim-handoff-failure.png");
