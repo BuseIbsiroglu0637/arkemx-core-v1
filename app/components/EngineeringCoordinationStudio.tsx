@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createBimCoordinationModel } from "../lib/bim-coordination";
 import { createCoordinationPackage } from "../lib/coordination-package";
+import { restoreReviewedIds, summarizeIssueLifecycle } from "../lib/issue-lifecycle";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type View = "federation" | "clashes" | "section" | "foundation" | "delivery" | "issues";
@@ -32,7 +33,8 @@ export function EngineeringCoordinationStudio() {
   const [outletCapacity, setOutletCapacity] = useState(4);
   const [sprinkler, setSprinkler] = useState(true);
   const [facadeTolerance, setFacadeTolerance] = useState(20);
-  const [resolved, setResolved] = useState<string[]>([]);
+  const [reviewed, setReviewed] = useState<string[]>([]);
+  const [transferReady, setTransferReady] = useState(false);
   const [syncMessage, setSyncMessage] = useState("Koordinasyon kesiti varsayılan kabullerle açıldı");
 
   const source = thread.canonical;
@@ -93,11 +95,29 @@ export function EngineeringCoordinationStudio() {
     ...thread.issues.map((issue) => ({ ...issue, source: "DIGITAL THREAD" })),
     ...localIssues.map((issue) => ({ ...issue, route: "/muhendislik-koordinasyon", source: "ICE RULESET" })),
   ], [localIssues, thread.issues]);
-  const openIssues = combinedIssues.filter((issue) => !resolved.includes(issue.id));
+  const openIssues = combinedIssues;
+  const lifecycle = useMemo(
+    () => summarizeIssueLifecycle(combinedIssues, reviewed),
+    [combinedIssues, reviewed],
+  );
+  const activeCriticalClashes = localIssues.filter((issue) => issue.severity === "critical");
 
   useEffect(() => {
-    patchModule("engineering-coordination", { schema: "ARKEM-COORDINATION/3.0", previousSchema: "ARKEM-COORDINATION/2.0", input: { floorHeight, beamDepth, slabDepth, serviceZone, ceilingBuildUp, raisedFloor, shaftArea, plantArea, soilBearing, rainfallIntensity, outletCapacity, sprinkler, facadeTolerance }, result: { ...result, openIssues: localIssues.filter((issue) => !resolved.includes(issue.id)).length }, issues: localIssues, bimCoordination, resolved, status: "v115-bim-discipline-coordination" });
-  }, [beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, resolved, result, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler]);
+    if (!hydrated || !transferReady) return;
+    patchModule("engineering-coordination", {
+      schema: "ARKEM-COORDINATION/3.0",
+      previousSchema: "ARKEM-COORDINATION/2.0",
+      input: { floorHeight, beamDepth, slabDepth, serviceZone, ceilingBuildUp, raisedFloor, shaftArea, plantArea, soilBearing, rainfallIntensity, outletCapacity, sprinkler, facadeTolerance },
+      result: { ...result, openIssues: localIssues.length, criticalOpen: activeCriticalClashes.length },
+      issues: localIssues,
+      bimCoordination,
+      reviewed,
+      resolved: [], // In legacy projects, resolved meant acknowledged, not verified.
+      issueReview: lifecycle,
+      issueGate: { blocked: activeCriticalClashes.length > 0, activeCriticalClashes: activeCriticalClashes.length, reviewedCriticalClashes: activeCriticalClashes.filter((issue) => reviewed.includes(issue.id)).length },
+      status: "v115-bim-discipline-coordination",
+    });
+  }, [activeCriticalClashes.length, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, result, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
 
   const importThread = useCallback(() => {
     const scheme = record(architecturalScheme);
@@ -118,9 +138,10 @@ export function EngineeringCoordinationStudio() {
   }, [architecturalScheme, source.architecture.floorHeight, source.structure.beamDepth, source.structure.slabThickness, structuralStudio]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["engineering-coordination"] as { input?: Record<string, unknown>; resolved?: string[] } | undefined;
+    if (transferApplied.current) return;
+    transferApplied.current = true;
+    const saved = project.modules["engineering-coordination"] as { input?: Record<string, unknown>; reviewed?: string[]; resolved?: string[] } | undefined;
     const input = saved?.input;
     if (input) {
       if (typeof input.floorHeight === "number") setFloorHeight(input.floorHeight);
@@ -136,14 +157,15 @@ export function EngineeringCoordinationStudio() {
       if (typeof input.outletCapacity === "number") setOutletCapacity(input.outletCapacity);
       if (typeof input.sprinkler === "boolean") setSprinkler(input.sprinkler);
       if (typeof input.facadeTolerance === "number") setFacadeTolerance(input.facadeTolerance);
-      if (saved?.resolved) setResolved(saved.resolved);
+      setReviewed(restoreReviewedIds(saved?.reviewed, saved?.resolved));
       setSyncMessage("Kayıtlı koordinasyon modeli otomatik açıldı");
     } else {
       importThread();
     }
+    setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, importThread, project.modules]);
+  }, [hydrated]);
   const exportBcf = () => downloadTextFile("arkem-koordinasyon-issues.bcf.json", JSON.stringify(createCoordinationPackage({
     projectId: project.id,
     coordinateReference: source.site.crs,
@@ -151,9 +173,9 @@ export function EngineeringCoordinationStudio() {
     shaftArea,
     floorPlate: result.floorPlate,
     bimCoordination,
-    topics: combinedIssues.map((issue) => ({ ...issue, closed: resolved.includes(issue.id) })),
+    topics: combinedIssues.map((issue) => ({ ...issue, reviewed: reviewed.includes(issue.id) })),
   }), null, 2), "application/json");
-  const exportCsv = () => downloadTextFile("arkem-koordinasyon-kaydi.csv", ["id,severity,discipline,title,evidence,status", ...combinedIssues.map((issue) => `${issue.id},${issue.severity},"${issue.discipline}","${issue.title}","${issue.evidence}",${resolved.includes(issue.id) ? "closed" : "open"}`)].join("\n"), "text/csv;charset=utf-8");
+  const exportCsv = () => downloadTextFile("arkem-koordinasyon-kaydi.csv", ["id,severity,discipline,title,evidence,status", ...combinedIssues.map((issue) => `${issue.id},${issue.severity},"${issue.discipline}","${issue.title}","${issue.evidence}",${reviewed.includes(issue.id) ? "reviewed-open" : "open"}`)].join("\n"), "text/csv;charset=utf-8");
 
   return <section className="coordination-app" data-testid="engineering-coordination-studio">
     <ProjectKernelBar module="BIM & DISCIPLINE COORDINATION" confidence="V113 + V114 · IFC/BCF hazırlık" />
@@ -162,7 +184,7 @@ export function EngineeringCoordinationStudio() {
     <div className="coordination-workspace">
       <aside className="coordination-controls"><strong>KOORDİNASYON GİRDİLERİ</strong><div className="coordination-input-grid"><label>Kat yüksekliği<input type="number" min="2.6" max="10" step=".05" value={floorHeight} onChange={(event) => setFloorHeight(clamp(Number(event.target.value), 2.6, 10))}/><i>m</i></label><label>Kiriş yüksekliği<input type="number" min=".2" max="2" step=".05" value={beamDepth} onChange={(event) => setBeamDepth(clamp(Number(event.target.value), .2, 2))}/><i>m</i></label><label>Döşeme<input type="number" min=".08" max=".6" step=".01" value={slabDepth} onChange={(event) => setSlabDepth(clamp(Number(event.target.value), .08, .6))}/><i>m</i></label><label>MEP servis zonu<input type="number" min=".15" max="2" step=".05" value={serviceZone} onChange={(event) => setServiceZone(clamp(Number(event.target.value), .15, 2))}/><i>m</i></label><label>Asma tavan<input type="number" min="0" max=".5" step=".01" value={ceilingBuildUp} onChange={(event) => setCeilingBuildUp(clamp(Number(event.target.value), 0, .5))}/><i>m</i></label><label>Yükseltilmiş döşeme<input type="number" min="0" max=".5" step=".01" value={raisedFloor} onChange={(event) => setRaisedFloor(clamp(Number(event.target.value), 0, .5))}/><i>m</i></label><label>Şaft rezervi<input type="number" min="1" max="1000" value={shaftArea} onChange={(event) => setShaftArea(clamp(Number(event.target.value), 1, 1000))}/><i>m²/kat</i></label><label>Teknik hacim<input type="number" min="1" max="5000" value={plantArea} onChange={(event) => setPlantArea(clamp(Number(event.target.value), 1, 5000))}/><i>m²</i></label><label>Zemin taşıma girdisi<input type="number" min="25" max="2000" step="25" value={soilBearing} onChange={(event) => setSoilBearing(clamp(Number(event.target.value), 25, 2000))}/><i>kN/m²</i></label><label>Yağış şiddeti<input type="number" min="10" max="500" step="5" value={rainfallIntensity} onChange={(event) => setRainfallIntensity(clamp(Number(event.target.value), 10, 500))}/><i>mm/h</i></label><label>Çıkış kapasitesi<input type="number" min=".5" max="30" step=".5" value={outletCapacity} onChange={(event) => setOutletCapacity(clamp(Number(event.target.value), .5, 30))}/><i>L/s</i></label><label>Cephe toleransı<input type="number" min="5" max="100" step="1" value={facadeTolerance} onChange={(event) => setFacadeTolerance(clamp(Number(event.target.value), 5, 100))}/><i>mm</i></label></div><button className={sprinkler ? "coordination-toggle active" : "coordination-toggle"} onClick={() => setSprinkler((value) => !value)}><i>{sprinkler ? "✓" : "+"}</i><span>Sprinkler senaryosu</span><b>{sprinkler ? "AKTİF" : "KAPALI"}</b></button><strong>TEKNİK ÇIKTI</strong><div className="coordination-export"><button onClick={exportBcf}>IFC4 + BCF<b>Hazırlık manifestosu</b></button><button onClick={exportCsv}>CSV<b>Koordinasyon kaydı</b></button><Link href="/proje-os">OS<b>Karar merkezine geç</b></Link></div></aside>
       <main className="coordination-main"><header><nav>{(["federation", "clashes", "section", "foundation", "delivery", "issues"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "federation" ? "Federasyon" : item === "clashes" ? `Çakışmalar (${bimCoordination.clashes.length})` : item === "section" ? "Kesit / MEP" : item === "foundation" ? "Zemin / drenaj" : item === "delivery" ? "4B / 5B" : `Issue kaydı (${openIssues.length})`}</button>)}</nav><span>ARKEM-BIM-COORDINATION/3.0 · {source.site.crs}</span></header>
-        <div className="coordination-kpis"><article><span>BAĞLI KATMAN</span><b>{bimCoordination.federation.connectedCount}/6</b><small>{bimCoordination.federation.conceptualCount} kavramsal · {bimCoordination.federation.missingCount} eksik</small></article><article><span>KRİTİK ÇAKIŞMA</span><b className={bimCoordination.clashes.some((issue) => issue.severity === "critical") ? "risk" : "good"}>{bimCoordination.clashes.filter((issue) => issue.severity === "critical" && !resolved.includes(issue.guid)).length}</b><small>{openIssues.length} açık issue</small></article><article><span>4B SÜRE GÖSTERGESİ*</span><b>{bimCoordination.schedule4D.totalWeeks.toFixed(1)} hf</b><small>{bimCoordination.schedule4D.phases.length} koordinasyon fazı</small></article><article><span>5B GÖRELİ MALİYET*</span><b>{bimCoordination.cost5D.relativeStructuralCost.toFixed(0)}</b><small>{bimCoordination.cost5D.linkedQuantities ? "V114 miktarına bağlı" : "kaynak bekleniyor"}</small></article></div>
+        <div className="coordination-kpis"><article><span>BAĞLI KATMAN</span><b>{bimCoordination.federation.connectedCount}/6</b><small>{bimCoordination.federation.conceptualCount} kavramsal · {bimCoordination.federation.missingCount} eksik</small></article><article><span>KRİTİK ÇAKIŞMA</span><b className={bimCoordination.clashes.some((issue) => issue.severity === "critical") ? "risk" : "good"}>{activeCriticalClashes.length}</b><small>{openIssues.length} açık issue</small></article><article><span>4B SÜRE GÖSTERGESİ*</span><b>{bimCoordination.schedule4D.totalWeeks.toFixed(1)} hf</b><small>{bimCoordination.schedule4D.phases.length} koordinasyon fazı</small></article><article><span>5B GÖRELİ MALİYET*</span><b>{bimCoordination.cost5D.relativeStructuralCost.toFixed(0)}</b><small>{bimCoordination.cost5D.linkedQuantities ? "V114 miktarına bağlı" : "kaynak bekleniyor"}</small></article></div>
         {view === "federation" && <section className="federation-view"><div className="federation-stack"><header><span>FEDERE MODEL KATMANLARI</span><b>Ortak koordinat · ortak revizyon · ayrı sorumluluk</b></header>{bimCoordination.federation.layers.map((layer, index) => { const value = layer.code === "ARC" ? `${bimCoordination.quantities.architectural.grossFloorAreaM2.toFixed(0)} m²` : layer.code === "STR" ? String(bimCoordination.source.selectedStructuralSystem ?? "—") : layer.code === "MEP" ? `${serviceZone.toFixed(2)} m zon` : layer.code === "FIRE" ? sprinkler ? "sprinkler aktif" : "senaryo bekliyor" : layer.code === "GEO" ? bimCoordination.coordinateSystem.verified ? "referans bağlı" : "yerel koordinat" : `${openIssues.length} açık`; return <article className={layer.state !== "missing" ? "active" : ""} data-state={layer.state} key={layer.code}><span>{layer.code}</span><div><b>{layer.label}</b><small>{layer.state === "connected" ? "KAYNAĞA BAĞLI" : layer.state === "conceptual" ? "KAVRAMSAL KATMAN" : "KAYNAK BEKLİYOR"}</small></div><strong>{value}</strong><i style={{ "--layer": index } as React.CSSProperties}></i></article>; })}</div><aside className="federation-rules"><span>V115 / OTOMATİK KURAL SETİ VE KOORDİNASYON KAPILARI</span>{bimCoordination.checks.map((check) => <button type="button" className={check.state} key={check.code} onClick={() => setView(check.code === "BIM-115-05" ? "clashes" : "federation")}><i>{check.state === "pass" ? "✓" : check.state === "review" ? "!" : "×"}</i><div><b>{check.code} · {check.label}</b><small>{check.value}</small></div><span>→</span></button>)}</aside></section>}
         {view === "clashes" && <section className="v115-clash-board"><header><div><span>V115 / CLASH DETECTION REGISTER</span><b>Geometri, boşluk, veri ve süreç çakışmaları</b></div><strong>{bimCoordination.clashes.filter((clash) => clash.severity === "critical" && !resolved.includes(clash.guid)).length} kritik · {bimCoordination.clashes.filter((clash) => !resolved.includes(clash.guid)).length} açık</strong></header><div>{bimCoordination.clashes.map((clash) => { const closed = resolved.includes(clash.guid); return <article key={clash.guid} className={`${clash.severity}${closed ? " closed" : ""}`}><header><i>{clash.severity === "critical" ? "×" : clash.severity === "review" ? "!" : "i"}</i><div><span>{clash.guid} · {clash.type.toUpperCase()}</span><b>{clash.title}</b></div><em>{closed ? "KAPALI" : clash.severity === "critical" ? "KRİTİK" : "İNCELE"}</em></header><dl><div><dt>Konum</dt><dd>{clash.location}</dd></div><div><dt>Disiplinler</dt><dd>{clash.disciplines.join(" · ")}</dd></div><div><dt>Sorumlu</dt><dd>{clash.assignee}</dd></div><div><dt>Kaynak</dt><dd>{clash.sourceRefs.join(" · ")}</dd></div></dl><p>{clash.evidence}</p><small>AKSİYON · {clash.requiredAction}</small><button onClick={() => setResolved((current) => current.includes(clash.guid) ? current.filter((id) => id !== clash.guid) : [...current, clash.guid])}>{closed ? "Issue’yu yeniden aç" : "İncelendi / kapat"}</button></article>; })}</div>{!bimCoordination.clashes.length && <p className="coordination-empty large">Açık çakışma üretilmedi. Native IFC elemanları bağlandığında geometrik kontrol kapsamı genişletilir.</p>}</section>}
         {view === "section" && <section className="section-coordination"><div className="technical-section"><header><span>TİP KAT KOORDİNASYON KESİTİ</span><b>±0.000 → +{floorHeight.toFixed(3)}</b></header><div className="section-drawing"><div className="section-slab top" style={{ height: `${Math.max(8, slabDepth * 55)}px` }}><span>DÖŞEME {slabDepth.toFixed(2)} m</span></div><div className="section-beam" style={{ height: `${beamDepth * 115}px` }}><span>KİRİŞ {beamDepth.toFixed(2)} m</span></div><div className="section-services" style={{ top: `${beamDepth * 115 + 15}px`, height: `${serviceZone * 115}px` }}><i></i><i></i><i></i><span>MEP SERVİS ZONU · {serviceZone.toFixed(2)} m</span></div><div className="section-ceiling" style={{ top: `${(beamDepth + serviceZone) * 115 + 20}px` }}><span>ASMA TAVAN</span></div><div className="clear-height-arrow"><i></i><b>{result.clearHeight.toFixed(2)} m<small>NET YÜKSEKLİK</small></b><i></i></div><div className="section-slab bottom"><span>YÜKSELTİLMİŞ DÖŞEME {raisedFloor.toFixed(2)} m</span></div></div></div><aside><span>KESİT BÜTÇESİ</span>{[["Kat yüksekliği", floorHeight],["Kiriş", -beamDepth],["MEP zonu", -serviceZone],["Tavan paketi", -ceilingBuildUp],["Döşeme paketi", -raisedFloor],["Net kullanım", result.clearHeight]].map(([label, value], index) => <p key={String(label)} className={index === 5 ? "total" : ""}><span>{label}</span><b>{Number(value) > 0 && index > 0 ? "+" : ""}{Number(value).toFixed(2)} m</b></p>)}<small>Kesit; çakışma riskini görünür kılan kavramsal zon modelidir. Gerçek kanal/boru kesitleri, eğimler, askılar, yalıtım ve bakım boşlukları tanımlanmamıştır.</small></aside></section>}
