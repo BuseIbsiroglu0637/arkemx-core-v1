@@ -33,7 +33,12 @@ console.log("Tarayici adresi: " + localUrl);
 console.log("GitHub Codespaces veya yayinlanmis site gerekmiyor.");
 console.log("Kapatmak icin bu pencerede Ctrl+C kullanin.\n");
 
-const args = [viteCli, "--host", "127.0.0.1", "--port", "5173", "--strictPort"];
+const localConfig = path.join(projectRoot, "vite.local.config.mjs");
+if (!existsSync(localConfig)) {
+  console.error("ARKEMX: vite.local.config.mjs bulunamadi. Guncel yerel demo dosyalarini indirin.");
+  process.exit(1);
+}
+const args = [viteCli, "--config", localConfig, "--host", "127.0.0.1", "--port", "5173", "--strictPort"];
 if (openBrowser) args.push("--open", "/dijital-proje-merkezi");
 const child = spawn(process.execPath, args, {
   cwd: projectRoot,
