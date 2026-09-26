@@ -2,6 +2,18 @@
 
 **Amaç:** Teknokent görüşmesinde uygulamayı GitHub Codespaces veya yayımlanmış internet sitesi olmadan **kendi bilgisayarında** göstermek. Uygulama yerel tarayıcıda açılır; henüz Windows .exe / macOS .app biçiminde bağımsız bir masaüstü yazılımı değildir.
 
+## Windows ZIP kurulumunda eksik Vite dosyaları (26.09.2026 düzeltmesi)
+
+GitHub ZIP sürümünde sunucuya özgü `.openai/hosting.json` ve `build/sites-vite-plugin` dosyaları bulunmaz. Bu nedenle eskiden `vite.config.ts` kullanan başlatıcı **UNRESOLVED_IMPORT** hatası verebiliyordu.
+
+Güncel ZIP'te bu sorun için `vite.local.config.mjs` dosyası ve yerel başlatıcı düzeltmesi vardır. **Mevcut bir kurulumu güncellerken** yalnızca kökteki `vite.local.config.mjs` ile `scripts/start-local-demo.mjs` dosyasını yeni sürümle değiştirin; `node_modules` klasörünü veya tarayıcıdaki proje kaydınızı silmeyin. Ardından terminalde:
+
+```powershell
+npm run demo:local
+```
+
+Başlatıcı artık `vite.local.config.mjs` üzerinden çalışır ve iki eksik sunucu dosyasını istemez. Lokal demodaki D1 bağlantısı yalnızca geliştirme için ayrılmış yerel bağlamdır; gerçek müşteri kayıtları veya kurumsal kimlik doğrulama altyapısı değildir.
+
 ## 1. Bir defalık hazırlık (internet gerekir)
 
 **Gereksinim:** Node.js **22.13.0 veya üzeri**, npm ve güncel Chrome/Edge (veya desteklenen tarayıcı).
