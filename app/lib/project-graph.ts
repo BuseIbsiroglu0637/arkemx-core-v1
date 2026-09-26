@@ -101,6 +101,18 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const architectureResult = record(architecture.result);
   const plan = record(modules["plan-editor"]);
   const planMetrics = record(plan.metrics);
+  // Legacy plan snapshots lack explicit provenance flags. Only entered mass
+  // zones AND placed columns/walls can support a conceptual KM-KR estimate.
+  // A fallback to the geometric plate centre is never evidence of rigidity.
+  const massBasis = planMetrics.massPointCount !== undefined
+    ? number(planMetrics.massPointCount) > 0
+    : number(planMetrics.rooms) > 0 || number(planMetrics.totalLiveLoad) > 0;
+  const rigidityBasis = planMetrics.rigidityPointCount !== undefined
+    ? number(planMetrics.rigidityPointCount) > 0
+    : number(planMetrics.columns) > 0 || number(planMetrics.walls) > 0;
+  const eccentricityEvaluable = planMetrics.eccentricityEvaluable === false
+    ? false : massBasis && rigidityBasis;
+
   const structure = record(modules["structural-concept"]);
   const structureInput = record(structure.input);
   const structureResult = record(structure.result);
@@ -209,7 +221,8 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Aks modelini senkronize edin.", route: "/tasarim-calismalari" });
   if (canonical.structure.recommendedSystem && canonical.structure.system && !canonical.structure.system.toLocaleLowerCase("tr-TR").includes(canonical.structure.recommendedSystem.toLocaleLowerCase("tr-TR").replace("yapısal ", ""))) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "Farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma" });
   if (canonical.structure.openingRatio > 25) push({ id: "BIM-051", severity: "review", discipline: "Mimari + Statik", title: "Döşeme boşluğu oranı yüksek", evidence: `%${canonical.structure.openingRatio.toFixed(1)} kavramsal boşluk oranı`, action: "Diyafram, kenar elemanı ve düşey sürekliliği inceleyin.", route: "/tasarim-calismalari" });
-  if (canonical.structure.eccentricityRatio > 10) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari" });
+  if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari" });
+  if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari" });
   if (canonical.architecture.travelDistance > 0 && canonical.architecture.targetTravel > 0 && canonical.architecture.travelDistance > canonical.architecture.targetTravel) push({ id: "FIR-061", severity: "review", discipline: "Mimari + Yangın", title: "Kaçış mesafesi ön göstergesi hedefi aşıyor", evidence: `${canonical.architecture.travelDistance.toFixed(1)} m gösterge / ${canonical.architecture.targetTravel.toFixed(1)} m hedef`, action: "Çekirdek, koridor ve çıkış yerleşimini yetkili yangın tasarımıyla doğrulayın.", route: "/mimari-program-studyosu" });
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
 
