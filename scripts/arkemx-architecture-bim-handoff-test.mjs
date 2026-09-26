@@ -12,6 +12,7 @@ const name = "ARKEMX MIMARI STATIK BIM TEST";
 const passed = [];
 await mkdir(outDir, { recursive: true });
 let browser, page;
+let originalBimFloorHeight = null;
 const check = async (label, fn) => {
   await fn();
   passed.push(label);
@@ -196,7 +197,12 @@ try {
         clearHeight: saved?.bimCoordination?.coordination?.clearHeightM,
       };
     });
-    console.log("TANI YUKLEME: " + JSON.stringify(loadedZone));
+    originalBimFloorHeight = (await project()).modules["engineering-coordination"]?.input?.floorHeight;
+    assert.ok(Number.isFinite(originalBimFloorHeight) && originalBimFloorHeight >= 2.6,
+      "Kayıtlı başlangıç kat yüksekliği bulunamadı");
+    console.log("TANI YUKLEME: " + JSON.stringify({
+      ...loadedZone, floorHeight: originalBimFloorHeight,
+    }));
     await wait(() => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       return p?.modules?.["engineering-coordination"]?.input?.serviceZone === .45;
@@ -209,6 +215,13 @@ try {
       ready: document.querySelector('[data-testid="engineering-coordination-studio"]')?.getAttribute("data-transfer-ready"),
       storedInput: JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload?.modules?.["engineering-coordination"]?.input?.serviceZone,
     }))));
+    // With the imported industrial-storey height, a 2 m MEP zone alone
+    // leaves 3.25 m clear: it must NOT trigger the 2.4 m clearance rule.
+    // Stress BOTH the storey height and service zone, then restore both.
+    const floor = page.locator(".coordination-input-grid label")
+      .filter({ hasText: "Kat yüksekliği" }).locator("input").first();
+    await floor.fill("3.4");
+    await floor.press("Tab");
     await mep.fill("2");
     await mep.press("Tab");
     await page.waitForTimeout(850);
@@ -220,6 +233,7 @@ try {
         liveState: studio?.getAttribute("data-service-zone"),
         ready: studio?.getAttribute("data-transfer-ready"),
         storedInput: stored?.input?.serviceZone,
+        storedFloorHeight: stored?.input?.floorHeight,
         storedClearHeight: stored?.bimCoordination?.coordination?.clearHeightM,
         criticalClashes: stored?.bimCoordination?.clashes?.filter(x => x.severity === "critical").map(x => x.title),
       };
@@ -231,6 +245,7 @@ try {
       const coordination = p?.modules?.["engineering-coordination"];
       const bim = coordination?.bimCoordination;
       return coordination?.input?.serviceZone === 2
+        && coordination?.input?.floorHeight === 3.4
         && bim?.coordination?.clearHeightM < 2.4
         && bim?.clashes?.some(issue =>
           issue.title.includes("net kullanım yüksekliğini ihlal")
@@ -272,6 +287,7 @@ try {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const coordination = p?.modules?.["engineering-coordination"];
       return coordination?.input?.serviceZone === 2
+        && coordination?.input?.floorHeight === 3.4
         && coordination?.reviewed?.includes(expectedGuid)
         && coordination?.issueGate?.blocked === true
         && coordination?.bimCoordination?.clashes?.some(item => item.guid === expectedGuid);
@@ -320,17 +336,22 @@ try {
       .filter({ hasText: "MEP servis zonu" }).locator("input").first();
     await page.locator('[data-testid="engineering-coordination-studio"][data-transfer-ready="true"]')
       .waitFor({ state: "visible" });
+    // Restore both synthetic overrides, not only the MEP service zone.
+    const floor = page.locator(".coordination-input-grid label")
+      .filter({ hasText: "Kat yüksekliği" }).locator("input").first();
+    await floor.fill(String(originalBimFloorHeight));
     await mep.fill("0.45");
-    await wait(() => {
+    await wait(expectedFloorHeight => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       const c = p?.modules?.["engineering-coordination"];
       const gate = p?.modules?.["project-os"]?.coordination?.issueGate;
       return c?.input?.serviceZone === .45
+        && c?.input?.floorHeight === expectedFloorHeight
         && c?.issueGate?.blocked === false
         && c?.issueReview?.modelClearedIds?.length > 0
         && gate?.blocked === false
         && gate?.technicalApproval === false;
-    });
+    }, originalBimFloorHeight);
     const p = await project();
     const model = p.modules["engineering-coordination"];
     console.log("BILGI KURAL DUZELTMESI: " + JSON.stringify({
