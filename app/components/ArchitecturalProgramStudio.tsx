@@ -87,6 +87,7 @@ function objectValue(value: unknown) { return value && typeof value === "object"
 export function ArchitecturalProgramStudio() {
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const transferApplied = useRef(false);
+  const [transferReady, setTransferReady] = useState(false);
   const [view, setView] = useState<ProgramView>("schedule");
   const [use, setUse] = useState<ProgramUse>("industrial");
   const [spaces, setSpaces] = useState<Space[]>(templates.industrial.spaces);
@@ -109,8 +110,9 @@ export function ArchitecturalProgramStudio() {
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
     const timer = window.setTimeout(() => {
+    if (transferApplied.current) return;
+    transferApplied.current = true;
     const saved = project.modules["architectural-program"] as { input?: Record<string, unknown>; spaces?: Space[]; relationships?: Relationship[] } | undefined;
     const input = saved?.input;
     if (input) {
@@ -129,6 +131,7 @@ export function ArchitecturalProgramStudio() {
       if (saved.spaces?.length) setSpaces(saved.spaces);
       if (saved.relationships?.length) setRelationships(saved.relationships);
       setStatus("Kayıtlı mimari çalışma otomatik açıldı");
+      setTransferReady(true);
       return;
     }
     const source = thread.canonical;
@@ -143,6 +146,7 @@ export function ArchitecturalProgramStudio() {
     const geo = objectValue(project.modules["geo-parcel"]);
     if (geo.massingModel) setSiteContext({ massingModel: geo.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : undefined });
     setStatus(source.site.parcelArea > 0 ? "Parsel, alan, kullanım ve kat verileri otomatik aktarıldı" : "Yeni mimari program oluşturuldu");
+    setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules, thread.canonical]);
@@ -196,8 +200,10 @@ export function ArchitecturalProgramStudio() {
   const checks = architecturalScheme.checks;
 
   useEffect(() => {
+    // Hydrate the stored brief before publishing editable defaults into the shared project.
+    if (!hydrated || !transferReady) return;
     patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
-  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, netRatio, patchModule, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, use, wwr]);
+  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
 
   const loadTemplate = () => {
     setSpaces(templates[use].spaces.map((space) => ({ ...space })));
