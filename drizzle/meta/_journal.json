@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1785142673995,
+      "tag": "0000_neat_blue_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1786224373816,
+      "tag": "0001_third_mister_fear",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786225543918,
+      "tag": "0002_married_mephisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786230265550,
+      "tag": "0003_spicy_riptide",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786455053715,
+      "tag": "0004_nostalgic_yellowjacket",
+      "breakpoints": true
+    }
+  ]
+}

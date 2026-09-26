@@ -1,0 +1,373 @@
+/* V41 — technical and visual defect correction pass. No new content or feature surface. */
+
+/* Keep the fixed project rail outside every reading column on medium desktops. */
+@media (min-width:761px) and (max-width:1450px){
+  .shell{
+    width:calc(100% - 136px)!important;
+    margin-right:auto!important;
+    margin-left:auto!important;
+  }
+}
+
+.project-thread-dock{
+  left:8px!important;
+  width:46px!important;
+}
+.project-thread-dock>a,
+.project-thread-dock>a.is-empty{
+  min-height:210px;
+  padding:12px 7px!important;
+}
+.project-thread-dock>a>span{font-size:8px!important}
+.project-thread-dock>a>strong{font-size:9px!important}
+.project-thread-dock>a>small{font-size:7px!important}
+
+/* Decorative layers must never enlarge or crop the document canvas. */
+:where(
+  .hero,
+  .home-corporate,
+  .executive-showcase,
+  .arkem-x-hero,
+  .tool-page-hero,
+  .architecture-page-hero,
+  .coordination-page-hero,
+  .thread-page-hero,
+  .os-page-hero,
+  .platform-hero,
+  .service-image-hero
+){
+  overflow:clip;
+}
+:where(main,footer) :where(article,section,div,aside,header,nav,form,fieldset){
+  min-width:0;
+}
+:where(main,footer) :where(h1,h2,h3,h4,p,b,strong,small,span,a,label){
+  overflow-wrap:break-word;
+}
+#main-content main small{
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+
+/* Oversized route heroes were colliding with the project rail and lower strips. */
+:where(
+  .architecture-page-hero,
+  .coordination-page-hero,
+  .thread-page-hero,
+  .tool-page-hero,
+  .os-page-hero,
+  .arkem-x-hero
+) h1{
+  max-width:850px;
+  font-size:clamp(50px,5.6vw,76px)!important;
+  line-height:.98!important;
+  letter-spacing:-.055em!important;
+}
+:where(
+  .architecture-page-hero,
+  .coordination-page-hero,
+  .thread-page-hero,
+  .tool-page-hero,
+  .os-page-hero,
+  .arkem-x-hero
+) .breadcrumb{
+  margin-bottom:34px;
+}
+:where(.architecture-hero-strip,.coordination-hero-strip,.thread-hero-strip)>span{
+  min-width:0;
+  padding:13px 10px!important;
+  font-size:10px!important;
+  line-height:1.35!important;
+  text-align:center;
+  white-space:normal!important;
+}
+
+/* ARKEMX stage layout: a single module no longer leaves a lopsided empty field. */
+.ecosystem-stage-group>.ecosystem-module-grid:has(>a:only-child){
+  grid-template-columns:minmax(300px,430px)!important;
+  justify-content:center;
+}
+.ecosystem-stage-group .ecosystem-module-grid>a>p{
+  font-size:12px!important;
+  line-height:1.58!important;
+}
+.ecosystem-stage-group .ecosystem-module-grid>a>small,
+.ecosystem-stage-group .ecosystem-module-grid footer strong{
+  font-size:10px!important;
+}
+.ecosystem-stage-group .ecosystem-module-grid footer em{
+  font-size:9px!important;
+}
+.ecosystem-stage-header p{
+  max-width:680px;
+  font-size:13px!important;
+}
+
+/* Technical interfaces use a readable baseline without changing their hierarchy. */
+:where(
+  .project-kernel-bar,
+  .project-guided-journey,
+  .project-concierge,
+  .xlab-professional,
+  .site-intelligence-studio,
+  .geo-parcel-studio,
+  .architect-app,
+  .advanced-plan-editor,
+  .engineering-workbench,
+  .coordination-app,
+  .mcda-tool,
+  .demolition-professional,
+  .project-os-app,
+  .digital-hub,
+  .sketchfab-library
+) small{
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+:where(
+  .xlab-professional,
+  .site-intelligence-studio,
+  .geo-parcel-studio,
+  .architect-app,
+  .advanced-plan-editor,
+  .engineering-workbench,
+  .coordination-app,
+  .mcda-tool,
+  .demolition-professional,
+  .project-os-app,
+  .digital-hub,
+  .sketchfab-library
+) :where(label,input,select,textarea){
+  min-width:0;
+  font-size:11px!important;
+  line-height:1.4!important;
+}
+:where(
+  .xlab-professional,
+  .site-intelligence-studio,
+  .geo-parcel-studio,
+  .architect-app,
+  .advanced-plan-editor,
+  .engineering-workbench,
+  .coordination-app,
+  .mcda-tool,
+  .demolition-professional,
+  .project-os-app,
+  .digital-hub,
+  .sketchfab-library
+) button{
+  min-width:0;
+  min-height:38px;
+  font-size:10px!important;
+  line-height:1.35!important;
+  white-space:normal;
+}
+.project-guided-journey{
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.project-guided-journey>div{
+  max-width:100%;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+}
+.project-guided-journey a span strong{font-size:10px!important}
+.project-live-handoff>span,
+.project-live-handoff>a{min-width:0}
+.project-live-handoff b{white-space:normal!important;overflow-wrap:anywhere}
+.project-kernel-bar :where(button,input,select,a){font-size:10px!important}
+.project-kernel-bar :where(span,small){line-height:1.4!important}
+
+/* Specific microcopy that previously rendered at 6–8 px. */
+.architecture-workflow small,
+.design-integrated-flow small,
+.mcda-system>a,
+.mcda-shortlist-panel>a,
+.technology-protocol-grid small,
+.site-map-v2 small,
+.site-map-page small,
+.blog-index small,
+.sketchfab-review :where(label,select,textarea,button),
+.sketchfab-model-list small,
+.sketchfab-library-head small,
+.sketchfab-model-actions :where(button,a){
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+.sketchfab-review :where(select,textarea){
+  min-height:42px;
+}
+.sketchfab-review textarea{padding:11px}
+.mcda-system>a,
+.mcda-shortlist-panel>a,
+.architect-export>a{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  font-size:10px!important;
+}
+.concierge-actions a,
+.immersive-engineering :where(button,select),
+.executive-showcase a{
+  font-size:10px!important;
+  line-height:1.4!important;
+}
+
+/* Form, table and drawing content can shrink instead of being silently clipped. */
+.contact-layout,
+.contact-layout>*,
+.project-brief-form,
+.project-brief-form>*,
+.architect-input-grid,
+.coordination-input-grid,
+.engineering-field-grid,
+.sketchfab-library-body,
+.sketchfab-library-body>*{
+  min-width:0!important;
+  max-width:100%;
+}
+:where(.contact-layout,.project-brief-form) :where(h2,h3,p,label,b,strong){
+  overflow-wrap:anywhere;
+}
+.brief-role-choice input{
+  width:1px!important;
+  height:1px!important;
+  inset:auto!important;
+  clip:rect(0,0,0,0);
+  pointer-events:none;
+}
+:where(.mcda-matrix,.load-trace-table,.resource-table,.hub-stage-row){
+  max-width:100%;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+}
+
+/* Make controls and links visibly operable with keyboard and touch. */
+:where(main,footer) :where(button,a,input,select,textarea):focus-visible{
+  outline:3px solid #e5905f;
+  outline-offset:3px;
+}
+:where(main,footer) button:disabled{
+  cursor:not-allowed;
+  opacity:.55;
+}
+
+/* Navigation overlays stay opaque and above all page copy. */
+.mega-panel{
+  z-index:7200!important;
+  background:#f9f7f2!important;
+}
+.mobile-menu[open]{z-index:8000!important}
+.mobile-menu-panel{
+  z-index:2;
+  background:#fff!important;
+  color:#0b2b3e!important;
+}
+
+@media(max-width:920px){
+  .mobile-menu-panel{
+    top:58px!important;
+    right:0!important;
+    width:min(420px,calc(100vw - 24px))!important;
+    max-height:calc(100dvh - 82px)!important;
+    padding-bottom:max(18px,env(safe-area-inset-bottom))!important;
+  }
+  .mobile-menu .mobile-nav-group>summary{
+    min-height:54px!important;
+    font-size:15px!important;
+    line-height:1.35!important;
+  }
+  .mobile-menu .mobile-nav-group a{
+    min-height:44px;
+    font-size:13px!important;
+    line-height:1.4!important;
+  }
+}
+
+@media(max-width:760px){
+  html,body,#main-content,main,footer{
+    width:100%;
+    max-width:100%;
+    overflow-x:clip;
+  }
+  .shell{
+    width:calc(100% - 32px)!important;
+    margin-right:auto!important;
+    margin-left:auto!important;
+  }
+  :where(
+    .architecture-page-hero,
+    .coordination-page-hero,
+    .thread-page-hero,
+    .tool-page-hero,
+    .os-page-hero,
+    .arkem-x-hero
+  ) h1{
+    max-width:100%;
+    font-size:clamp(39px,12vw,54px)!important;
+    line-height:1.02!important;
+  }
+  :where(.architecture-hero-strip,.coordination-hero-strip,.thread-hero-strip){
+    display:flex!important;
+    max-width:100%;
+    overflow-x:auto;
+    scroll-snap-type:x proximity;
+  }
+  :where(.architecture-hero-strip,.coordination-hero-strip,.thread-hero-strip)>span{
+    flex:0 0 148px;
+    min-height:50px;
+    scroll-snap-align:start;
+  }
+  .ecosystem-stage-group>.ecosystem-module-grid:has(>a:only-child){
+    grid-template-columns:1fr!important;
+  }
+  .ecosystem-stage-group .ecosystem-module-grid>a{
+    width:100%;
+    max-width:100%;
+  }
+  .project-guided-journey{overflow:visible}
+  .project-guided-journey>div{padding-bottom:6px}
+  :where(
+    .xlab-professional,
+    .site-intelligence-studio,
+    .geo-parcel-studio,
+    .architect-app,
+    .advanced-plan-editor,
+    .engineering-workbench,
+    .coordination-app,
+    .mcda-tool,
+    .demolition-professional,
+    .project-os-app,
+    .digital-hub,
+    .sketchfab-library
+  ) button{
+    min-height:42px;
+    font-size:11px!important;
+  }
+  .floating-contact{
+    right:12px!important;
+    bottom:12px!important;
+    min-width:0!important;
+    width:auto!important;
+    padding:11px 14px!important;
+  }
+  .floating-contact small{display:none}
+  .footer-social{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+@media(max-width:420px){
+  .shell{width:calc(100% - 24px)!important}
+  .mobile-menu-panel{width:calc(100vw - 16px)!important}
+  .footer-social{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}

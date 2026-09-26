@@ -1,0 +1,4 @@
+.coordination-main > header > span::before{content:"V85 · ";color:#d17443}
+.coordination-export button:first-child{border-color:rgba(209,116,67,.65);background:linear-gradient(135deg,rgba(209,116,67,.13),transparent)}
+.coordination-input-grid label:has(input:focus){outline:2px solid rgba(209,116,67,.55);outline-offset:2px}
+@media(max-width:760px){.coordination-input-grid{grid-template-columns:1fr}.issue-table article,.issue-table .head{grid-template-columns:1fr}.issue-table .head span:not(:first-child){display:none}}

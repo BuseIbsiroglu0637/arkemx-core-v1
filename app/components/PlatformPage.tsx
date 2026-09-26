@@ -1,0 +1,10 @@
+import { SiteFooter, SiteHeader } from "./SiteChrome";
+import type { PlatformCard } from "../data/platform";
+
+export function PlatformPage({ eyebrow, title, accent, intro, cards, commerce = false }: { eyebrow: string; title: string; accent: string; intro: string; cards: PlatformCard[]; commerce?: boolean }) {
+  return <main className="inner-page platform-page">
+    <section className="inner-hero platform-hero"><SiteHeader /><div className="shell inner-hero-content"><p className="eyebrow light">{eyebrow}</p><h1>{title}<br/><em>{accent}</em></h1><p>{intro}</p></div></section>
+    <section className="section shell">{commerce&&<div className="commerce-status"><span>Satış altyapısı hazır</span><p>Ürün dosyası, lisans kapsamı ve nihai fiyat onaylandığında güvenli ödeme düğmeleri etkinleştirilecektir. Bu aşamada ön talep bırakabilirsiniz.</p></div>}<div className="platform-grid">{cards.map((card, index)=>{const external=Boolean(card.href?.startsWith("http")); return <article className="platform-card" key={card.title}><div className={`card-visual${card.image ? " has-image" : ""}`}>{card.image&&<img src={card.image} alt={card.imageAlt || card.title}/>}<span>{String(index + 1).padStart(2,"0")}</span><b>{card.category}</b></div><div className="card-body"><p className="eyebrow">{card.category}</p><h2>{card.title}</h2><p>{card.description}</p>{card.meta&&<small>{card.meta}</small>}{card.price&&<strong>{card.price}</strong>}<a href={card.href || "/iletisim"} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined}>{commerce ? "Ön Talep Bırak" : external ? "Arşiv Kaydını Aç" : card.href ? "Yazıyı Oku" : "İçeriği İncele"} <span>↗</span></a></div></article>})}</div></section>
+    <section className="service-cta"><div className="shell"><p className="eyebrow light">Arkem Dijital</p><h2>Teknik bilgi,<br/><em>uygulanabilir değere dönüşsün.</em></h2><a className="button copper" href="/iletisim">Bilgi Alın <span>↗</span></a></div></section><SiteFooter />
+  </main>;
+}

@@ -1,0 +1,2 @@
+DROP INDEX `project_evidence_single_published_idx`;--> statement-breakpoint
+CREATE UNIQUE INDEX `project_evidence_single_published_idx` ON `project_evidence_items` (`project_slug`,`target_type`,`target_key`) WHERE "project_evidence_items"."status" = 'published' AND "project_evidence_items"."target_type" IN ('fact', 'stage', 'capability');

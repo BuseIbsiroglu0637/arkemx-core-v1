@@ -1,0 +1,62 @@
+/* V82 — 3D terrain performance screening */
+.geo-terrain-analysis {
+  position: absolute;
+  z-index: 4;
+  inset: auto auto 18px 18px;
+  width: min(640px, calc(100% - 130px));
+  padding: .8rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: rgb(4 20 31 / 88%);
+  backdrop-filter: blur(12px);
+}
+
+.geo-terrain-analysis > span {
+  color: var(--arkem-accent-strong, #ef8d55);
+  font-size: .62rem;
+  font-weight: 760;
+  letter-spacing: .1em;
+}
+
+.geo-terrain-analysis > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: .55rem;
+  border-block: 1px solid rgb(255 255 255 / 12%);
+}
+
+.geo-terrain-analysis p {
+  display: grid;
+  gap: .18rem;
+  margin: 0;
+  padding: .55rem;
+  border-inline-end: 1px solid rgb(255 255 255 / 12%);
+}
+
+.geo-terrain-analysis small {
+  color: #87a0ae;
+  font-size: .56rem;
+  letter-spacing: .06em;
+}
+
+.geo-terrain-analysis b {
+  font-size: .72rem;
+}
+
+.geo-terrain-analysis em {
+  display: block;
+  margin-top: .55rem;
+  color: #aec0c9;
+  font-size: .64rem;
+  font-style: normal;
+}
+
+@media (max-width: 700px) {
+  .geo-terrain-analysis {
+    inset: auto 10px 10px;
+    width: auto;
+  }
+
+  .geo-terrain-analysis > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

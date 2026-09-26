@@ -1,0 +1,308 @@
+/* V76 — cross-site visual QA and responsive containment */
+:root {
+  --arkem-page-gutter: clamp(18px, 4.8vw, 72px);
+  --arkem-readable: 72ch;
+  --arkem-control-height: 44px;
+}
+
+html,
+body,
+#main-content,
+#main-content > main {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip !important;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(main, footer) :where(section, article, aside, header, nav, div, form, fieldset, figure) {
+  min-width: 0;
+}
+
+:where(main, footer) :where(h1, h2, h3, h4, p, a, button, label, span, small, b, strong, em) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:where(main) :where(h1, h2) {
+  text-wrap: balance;
+}
+
+:where(main) :where(p, li) {
+  text-wrap: pretty;
+}
+
+:where(main) :where(input, select, textarea, button, [role="button"], summary) {
+  min-height: var(--arkem-control-height);
+  font-size: max(13px, .78rem);
+}
+
+:where(main) :where(input, select, textarea) {
+  max-width: 100%;
+}
+
+:where(main) :where(img, video, canvas, iframe, svg) {
+  max-width: 100%;
+}
+
+.shell {
+  width: min(1480px, calc(100% - (var(--arkem-page-gutter) * 2))) !important;
+  max-width: 100%;
+}
+
+.site-nav {
+  display: grid !important;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto auto !important;
+  gap: clamp(10px, 1.25vw, 22px) !important;
+  align-items: center;
+}
+
+.site-nav .brand,
+.site-nav .official-logo,
+.site-nav .official-logo img {
+  max-width: 100%;
+}
+
+.site-nav .brand {
+  width: clamp(180px, 18vw, 270px);
+}
+
+.desktop-navigation {
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 2vw, 34px) !important;
+}
+
+.mega-panel {
+  max-width: min(1220px, calc(100vw - (var(--arkem-page-gutter) * 2))) !important;
+  max-height: calc(100dvh - 112px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.language-menu-panel {
+  width: min(310px, calc(100vw - 30px)) !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+.language-menu-panel > button {
+  min-height: 46px !important;
+}
+
+.language-option-label,
+.language-option-code {
+  line-height: 1.25 !important;
+  white-space: nowrap;
+}
+
+:where(
+  .thread-hero,
+  .architecture-hero,
+  .coordination-hero,
+  .geo-hero,
+  .os-hero,
+  .media-hero,
+  .model-library-hero,
+  .technical-hero,
+  .design-hero,
+  .digital-hero,
+  .portal-hero
+) {
+  min-height: clamp(620px, 76vh, 860px) !important;
+  height: auto !important;
+  overflow: clip !important;
+}
+
+:where(
+  .thread-hero,
+  .architecture-hero,
+  .coordination-hero,
+  .geo-hero,
+  .os-hero,
+  .media-hero,
+  .model-library-hero,
+  .technical-hero,
+  .design-hero,
+  .digital-hero,
+  .portal-hero
+) h1 {
+  max-width: min(980px, 100%);
+  font-size: clamp(46px, 6vw, 92px) !important;
+  line-height: .98 !important;
+}
+
+:where(
+  .thread-hero-strip,
+  .architecture-hero-strip,
+  .coordination-hero-strip,
+  .geo-hero-flow,
+  .os-hero-strip,
+  .media-hero-index,
+  .model-library-index,
+  .technical-hero-index,
+  .design-studio-index,
+  .digital-hero-index
+) {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0 !important;
+  translate: none !important;
+}
+
+.social-rail,
+.project-thread-dock,
+.floating-contact {
+  z-index: 1200 !important;
+}
+
+@media (max-width: 1180px) {
+  .site-nav {
+    grid-template-columns: minmax(180px, 1fr) auto auto auto !important;
+  }
+
+  .desktop-navigation {
+    display: none !important;
+  }
+
+  .mobile-menu {
+    display: block !important;
+  }
+
+  .site-nav .nav-cta {
+    display: none !important;
+  }
+
+  :where(.reference-record-card, .tool-sidebar, .client-portal-sidebar) {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --arkem-page-gutter: 18px;
+  }
+
+  .site-nav {
+    grid-template-columns: minmax(150px, 1fr) auto auto !important;
+    min-height: 76px !important;
+  }
+
+  .site-nav .brand {
+    width: min(210px, 54vw);
+  }
+
+  .site-nav .command-launcher {
+    display: none !important;
+  }
+
+  .mobile-menu-panel {
+    inset-inline: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  :where(
+    .thread-hero,
+    .architecture-hero,
+    .coordination-hero,
+    .geo-hero,
+    .os-hero,
+    .media-hero,
+    .model-library-hero,
+    .technical-hero,
+    .design-hero,
+    .digital-hero,
+    .portal-hero
+  ) {
+    min-height: 620px !important;
+    padding-bottom: 36px !important;
+  }
+
+  :where(
+    .thread-hero,
+    .architecture-hero,
+    .coordination-hero,
+    .geo-hero,
+    .os-hero,
+    .media-hero,
+    .model-library-hero,
+    .technical-hero,
+    .design-hero,
+    .digital-hero,
+    .portal-hero
+  ) h1 {
+    font-size: clamp(39px, 12vw, 60px) !important;
+    line-height: 1.02 !important;
+  }
+
+  :where(
+    .thread-hero-strip,
+    .architecture-hero-strip,
+    .coordination-hero-strip,
+    .geo-hero-flow,
+    .os-hero-strip,
+    .media-hero-index,
+    .model-library-index,
+    .technical-hero-index,
+    .design-studio-index,
+    .digital-hero-index
+  ) {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(150px, 1fr);
+    overflow-x: auto !important;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+  }
+
+  .social-rail,
+  .project-thread-dock {
+    display: none !important;
+  }
+
+  .floating-contact {
+    right: 14px !important;
+    bottom: 14px !important;
+    width: 52px !important;
+    min-width: 52px !important;
+    height: 52px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  .floating-contact b,
+  .floating-contact small {
+    display: none !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .language-menu-panel {
+    position: fixed !important;
+    top: 74px !important;
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+  }
+
+  :where(main) :where(.button, button, [role="button"]) {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

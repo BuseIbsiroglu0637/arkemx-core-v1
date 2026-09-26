@@ -1,0 +1,3 @@
+import type { Metadata } from "next"; import { PlatformPage } from "../components/PlatformPage"; import { trainings } from "../data/platform";
+export const metadata: Metadata={title:"Hafif Çelik Yapı Video Eğitimleri",description:"Mühendisler, uygulamacılar ve yatırımcılar için hafif çelik yapı video eğitimleri.",alternates:{canonical:"/egitimler"}};
+export default function Page(){return <PlatformPage eyebrow="Arkem Akademi" title="Saha deneyimini" accent="eğitime dönüştürüyoruz." intro="Hafif çelik yapı tasarımı, proje okuma ve montaj uygulamalarını adım adım anlatan çevrim içi video eğitimleri." cards={trainings} commerce/>}

@@ -1,0 +1,88 @@
+/* V84 — structural alternatives comparison */
+.structural-alternatives > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--arkem-line);
+  border: 1px solid var(--arkem-line);
+}
+
+.structural-alternatives article {
+  display: grid;
+  gap: .9rem;
+  padding: 1rem;
+  background: var(--arkem-ink);
+}
+
+.structural-alternatives article.active {
+  box-shadow: inset 3px 0 var(--arkem-accent-strong);
+  background: color-mix(in srgb, var(--arkem-ink-soft) 90%, var(--arkem-accent) 10%);
+}
+
+.structural-alternatives article header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .65rem;
+}
+
+.structural-alternatives article header span,
+.structural-alternatives article header em {
+  color: var(--arkem-accent-strong);
+  font-size: .6rem;
+  font-style: normal;
+  font-weight: 760;
+  letter-spacing: .08em;
+}
+
+.structural-alternatives article header b {
+  font-size: 1rem;
+}
+
+.structural-alternatives dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+  margin: 0;
+}
+
+.structural-alternatives dl div {
+  display: grid;
+  gap: .2rem;
+  padding: .65rem;
+  border: 1px solid var(--arkem-line);
+}
+
+.structural-alternatives dt {
+  color: var(--arkem-muted);
+  font-size: .62rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.structural-alternatives dd {
+  margin: 0;
+  font-size: .73rem;
+  font-weight: 710;
+  line-height: 1.35;
+}
+
+.structural-alternatives > footer {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .5rem;
+  margin-top: 1rem;
+  color: var(--arkem-muted);
+  font-size: .7rem;
+}
+
+.structural-alternatives > footer p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .structural-alternatives > div,
+  .structural-alternatives dl {
+    grid-template-columns: 1fr;
+  }
+}

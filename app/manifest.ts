@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function manifest(): MetadataRoute.Manifest { return { name: "Arkem Yapı Sistemleri", short_name: "ARKEM", description: "Projelendirme, yapım ve danışmanlıkta bütünleşik mühendislik çözümleri.", start_url: "/", scope: "/", display: "standalone", background_color: "#061a2b", theme_color: "#061a2b", lang: "tr", categories: ["business", "productivity"], icons: [{ src: "/favicon.svg", sizes: "any", type: "image/svg+xml" }] }; }
