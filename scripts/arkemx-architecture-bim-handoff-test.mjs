@@ -188,6 +188,15 @@ try {
     // before its saved input has been restored: hydration would overwrite it.
     await page.locator('[data-testid="engineering-coordination-studio"][data-transfer-ready="true"]')
       .waitFor({ state: "visible" });
+    const loadedZone = await page.evaluate(() => {
+      const saved = JSON.parse(localStorage.getItem("arkem-project-kernel-v2") || "null")?.payload?.modules?.["engineering-coordination"];
+      return {
+        live: document.querySelector('[data-testid="engineering-coordination-studio"]')?.getAttribute("data-service-zone"),
+        stored: saved?.input?.serviceZone,
+        clearHeight: saved?.bimCoordination?.coordination?.clearHeightM,
+      };
+    });
+    console.log("TANI YUKLEME: " + JSON.stringify(loadedZone));
     await wait(() => {
       const p = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload;
       return p?.modules?.["engineering-coordination"]?.input?.serviceZone === .45;
