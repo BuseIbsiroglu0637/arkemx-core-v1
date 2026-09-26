@@ -133,3 +133,10 @@
   .v116-revision-grid article { grid-template-columns: 74px minmax(0, 1fr); }
   .v116-revision-grid article > * { padding: 14px; }
 }
+
+/* Critical BIM issues stay open until the current model passes its checks. */
+.os-issue-gate-notice{display:grid;gap:7px;margin:12px 16px;padding:15px 19px;border:1px solid #ba6652;border-left:4px solid #ba6652;background:#fff3ee;color:#672e26}
+.os-issue-gate-notice b{font:750 11px var(--font-manrope);letter-spacing:.07em}
+.os-issue-gate-notice p{margin:0;font:600 10px/1.6 var(--font-manrope)}
+.os-live[data-issue-gate="blocked"]{border-left:3px solid #ba6652;background:#412422}
+.os-live[data-issue-gate="blocked"] span,.os-live[data-issue-gate="blocked"] b{color:#ffe2d6}
