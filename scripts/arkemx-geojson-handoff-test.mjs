@@ -159,6 +159,40 @@ try {
     console.log("BILGI: GeoJSON yalnizca YAPAY TEST verisidir; kadastro kaniti degildir.");
   });
 
+  await check("Kullanici menusunden resmî imar statüsü atanamadi", async () => {
+    await page.locator(".geo-workflow button")
+      .filter({ hasText: "İmarı doğrula" }).click();
+    const status = page.locator(".geo-zoning-control select").first();
+    const values = await status.locator("option").evaluateAll(
+      options => options.map(option => option.value)
+    );
+    assert.equal(values.includes("approved-plan"), false);
+    assert.equal(values.includes("certified-document"), false);
+    assert.equal(
+      await status.locator('option[value="document-pending-review"]').isDisabled(),
+      true,
+      "Belge olmadan inceleme bekliyor secilememeli"
+    );
+    await status.selectOption("municipal-viewer");
+    await waitForStored(() => {
+      try {
+        const geo = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))
+          ?.payload?.modules?.["geo-parcel"];
+        return geo?.zoning?.verification === "municipal-viewer"
+          && geo?.zoningProvenance?.authoritative === false
+          && geo?.massingModel?.source?.authoritative === false;
+      } catch { return false; }
+    });
+    await status.selectOption("user-declared");
+    await waitForStored(() => {
+      try {
+        const geo = JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))
+          ?.payload?.modules?.["geo-parcel"];
+        return geo?.zoning?.verification === "user-declared";
+      } catch { return false; }
+    });
+  });
+
   await check("Belge yuklemek onayli imar statüsü olusturmadi", async () => {
     await page.locator(".geo-workflow button")
       .filter({ hasText: "İmarı doğrula" }).click();
@@ -299,7 +333,7 @@ try {
     );
   });
 
-  console.log("\nSONUC: " + passed.length + "/8 GeoJSON -> Arsa -> Mimari testi basarili.");
+  console.log("\nSONUC: " + passed.length + "/9 GeoJSON -> Arsa -> Mimari testi basarili.");
   console.log("SINIR: Test verisi sentetiktir. Resmî kadastro, imar ve statik hesap dogrulanmadi.");
 } catch (error) {
   console.error("\nHATA: " + error.message);
