@@ -1,0 +1,154 @@
+/* Simple new-project screen. Only this route is affected. */
+.arx-start-page { min-height: 100vh; padding-bottom: 72px; }
+.arx-start-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #546e79;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 0;
+}
+.arx-start-back:hover, .arx-start-back:focus-visible { color: #bd7244; }
+.arx-start-intro { padding: 41px 0 30px; }
+.arx-start-intro > span {
+  display: block;
+  margin-bottom: 10px;
+  color: #789098;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.arx-start-intro h1 {
+  margin: 0 0 10px;
+  color: #1d2b36;
+  font-size: clamp(28px, 4vw, 37px);
+  font-weight: 675;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+}
+.arx-start-intro p { max-width: 650px; margin: 0; color: #647681; font-size: 14px; line-height: 1.6; }
+.arx-start-page .project-start-studio {
+  width: 100%;
+  border: 1px solid #e0e6e9;
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: none;
+  background: #fff;
+}
+.arx-start-page .start-resume-banner { margin: 0; }
+.arx-start-page .project-start-head {
+  display: block;
+  padding: 15px 24px;
+  background: #fff;
+  border: 0;
+  color: #1d2b36;
+}
+.arx-start-page .project-start-head > div:first-child,
+.arx-start-page .project-start-head > p { display: none; }
+.arx-start-page .start-mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.arx-start-page .start-mode-switch > span {
+  flex: 1;
+  min-width: 125px;
+  padding: 8px 0;
+  color: #647681;
+  font-size: 11px;
+  font-weight: 750;
+}
+.arx-start-page .start-mode-switch button {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border-radius: 7px;
+  background: #f0f3f4;
+  border: 1px solid #dce5e7;
+  color: #34505b;
+  text-align: center;
+}
+.arx-start-page .start-mode-switch button b { font-size: 12px; }
+.arx-start-page .start-mode-switch button small { display: none; }
+.arx-start-page .start-mode-switch button.active {
+  background: #244756;
+  border-color: #244756;
+  color: #fff;
+}
+.arx-start-page .project-start-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 0 14px;
+  border-block: 1px solid #e6ecee;
+  background: #f9fafb;
+  overflow-x: auto;
+}
+.arx-start-page .project-start-steps button {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 65px;
+  gap: 9px;
+  padding: 13px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #627884;
+  box-shadow: none;
+}
+.arx-start-page .project-start-steps button.active {
+  color: #173f53;
+  border-bottom-color: #bd7244;
+  background: #fff;
+  box-shadow: none;
+}
+.arx-start-page .project-start-steps button i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border: 1px solid #d4e0e4;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 750;
+  font-style: normal;
+}
+.arx-start-page .project-start-steps button span { min-width: 0; }
+.arx-start-page .project-start-steps button b { display: block; font-size: 12px; white-space: normal; }
+.arx-start-page .project-start-steps button small { display: none; }
+.arx-start-page .project-start-workspace {
+  display: block;
+  background: #fff;
+}
+.arx-start-page .project-start-workspace > aside { display: none; }
+.arx-start-page .project-start-form {
+  max-width: 850px;
+  min-height: 300px;
+  margin: 0 auto;
+  padding: clamp(22px, 4vw, 42px);
+  background: #fff;
+}
+.arx-start-page .project-start-foot {
+  padding: 20px clamp(22px, 4vw, 42px);
+  background: #f9fafb;
+  border-top: 1px solid #e9eff0;
+  color: #647681;
+}
+.arx-start-page .project-start-foot b { font-size: 11px; }
+.arx-start-page .project-start-foot p { max-width: 800px; font-size: 12px; line-height: 1.6; }
+@media(max-width: 700px) {
+  .arx-start-page .project-start-head { padding: 14px; }
+  .arx-start-page .start-mode-switch { flex-wrap: wrap; }
+  .arx-start-page .start-mode-switch > span { flex-basis: 100%; }
+  .arx-start-page .start-mode-switch button { flex: 1; }
+  .arx-start-page .project-start-steps { grid-template-columns: repeat(5, minmax(78px, 1fr)); padding: 0 4px; }
+  .arx-start-page .project-start-steps button { padding: 10px 8px; min-height: 62px; gap: 5px; }
+  .arx-start-page .project-start-steps button i { display: none; }
+}
