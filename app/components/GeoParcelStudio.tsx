@@ -238,6 +238,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [showSources, setShowSources] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  // The streamlined parcel page opens with only the actual map and boundary.
+  // Conceal conceptual overlays visually without deleting their saved inputs.
+  const [showConceptualOverlays, setShowConceptualOverlays] = useState(!simple);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [parcel, setParcel] = useState<GeoPoint[]>(() => sampleParcel(defaultCenter));
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
@@ -754,22 +757,22 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (terrainLayers["parcel-boundary"] && parcel.length >= 2) {
       parcelLayerRef.current = leaflet.polygon(parcel.map((point) => [point.lat, point.lng]), { color: "#b96636", weight: 3, fillColor: "#d98a5d", fillOpacity: .16, dashArray: parcel.length < 3 ? "6 6" : undefined }).addTo(map);
     }
-    if (terrainLayers["parcel-boundary"] || terrainLayers["elevation-points"]) parcel.forEach((point, index) => {
+    if (showConceptualOverlays && (terrainLayers["parcel-boundary"] || terrainLayers["elevation-points"])) parcel.forEach((point, index) => {
       const hasElevation = Number.isFinite(point.alt);
       if (!terrainLayers["parcel-boundary"] && !(terrainLayers["elevation-points"] && hasElevation)) return;
       leaflet.circleMarker([point.lat, point.lng], { radius: hasElevation && terrainLayers["elevation-points"] ? 6 : 5, color: "#ffffff", weight: 2, fillColor: hasElevation && terrainLayers["elevation-points"] ? "#c66e3d" : "#0a2639", fillOpacity: 1 })
         .bindTooltip(`P${index + 1}<br>${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}${hasElevation && terrainLayers["elevation-points"] ? `<br>Z ${point.alt?.toFixed(2)} m` : ""}`)
         .addTo(pointsLayerRef.current!);
     });
-    if (terrainLayers.contours) terrainContours.forEach((segment) => {
+    if (showConceptualOverlays && terrainLayers.contours) terrainContours.forEach((segment) => {
       const start = fromLocalMeters(segment.start.east, segment.start.north, center);
       const end = fromLocalMeters(segment.end.east, segment.end.north, center);
       leaflet.polyline([[start.lat, start.lng], [end.lat, end.lng]], { color: "#557f75", weight: 1.1, opacity: .68 })
         .bindTooltip(`Eş yükselti ${segment.elevation.toFixed(2)} m`)
         .addTo(contourLayerRef.current!);
     });
-    if (terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
-  }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers]);
+    if (showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
+  }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers, showConceptualOverlays]);
 
   // When an existing, sourced parcel is opened from local storage, fit the map
   // after Leaflet is ready. The initial demo geometry is never mistaken for a lookup result.
@@ -1266,6 +1269,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
               {showSources ? "Kaynak ayrıntılarını gizle" : "Kaynak ayrıntılarını göster"}</button>
             <button type="button" aria-pressed={showLayers} onClick={() => setShowLayers((current) => !current)}>
               {showLayers ? "Harita katmanlarını gizle" : "Harita katmanlarını göster"}</button>
+            <button type="button" aria-pressed={showConceptualOverlays} onClick={() => {
+              setShowConceptualOverlays((visible) => !visible);
+              if (!showConceptualOverlays) setTerrainLayers((current) => ({ ...current, contours: true, "building-mass": true }));
+            }}>
+              {showConceptualOverlays ? "Temsili yapı ve eğrileri gizle" : "Temsili yapı ve eğrileri göster"}
+            </button>
             <button type="button" aria-pressed={showResults} onClick={() => setShowResults((current) => !current)}>
               {showResults ? "Hesap sonuçlarını gizle" : "Hesap sonuçlarını göster"}</button>
           </div>
