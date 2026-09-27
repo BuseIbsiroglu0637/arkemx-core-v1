@@ -169,3 +169,30 @@
 @media (prefers-reduced-motion: reduce) {
   .arx-geo-simple * { transition: none !important; }
 }
+
+/* Tile service is blocked in Codespaces. Show an honest schematic backdrop instead
+   of retrying the same restricted OSM endpoint or misrepresenting a basemap. */
+.arx-geo-simple .geo-map-frame,
+.arx-geo-simple .geo-leaflet-map {
+  background-color: #f0f5f4;
+  background-image:
+    linear-gradient(rgba(86, 128, 129, .14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(86, 128, 129, .14) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.arx-geo-simple .geo-basemap-offline-label {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  z-index: 700;
+  max-width: calc(100% - 100px);
+  padding: 9px 12px;
+  border: 1px solid #d5e2e5;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 93%);
+  color: #476875;
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 650;
+  pointer-events: none;
+}
