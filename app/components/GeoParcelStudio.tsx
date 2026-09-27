@@ -223,7 +223,7 @@ function ascii(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i").replace(/İ/g, "I").replace(/ş/g, "s").replace(/Ş/g, "S").replace(/ğ/g, "g").replace(/Ğ/g, "G").replace(/ç/g, "c").replace(/Ç/g, "C").replace(/ö/g, "o").replace(/Ö/g, "O").replace(/ü/g, "u").replace(/Ü/g, "U").replace(/[^\x20-\x7E]/g, "");
 }
 
-export function GeoParcelStudio() {
+export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const mapHostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const leafletRef = useRef<LeafletModule | null>(null);
@@ -240,6 +240,8 @@ export function GeoParcelStudio() {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
   const [activeStage, setActiveStage] = useState<Stage>("locate");
+  const [showSources, setShowSources] = useState(false);
+  const [showLayers, setShowLayers] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [parcel, setParcel] = useState<GeoPoint[]>(() => sampleParcel(defaultCenter));
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
@@ -1116,9 +1118,33 @@ export function GeoParcelStudio() {
     export: <div className="geo-control-section"><span>07 / TEKNİK ÇIKTI</span><h3>Geometriyi, imar kaynağını ve veri statüsünü kurumsal paftayla aktarın.</h3><div className="geo-export-list"><button onClick={exportPdf} disabled={exportDisabled}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf} disabled={exportDisabled}><span>CAD</span><b>DWG uyumlu antetli DXF</b><i>↓</i></button><button onClick={exportKml} disabled={exportDisabled}><span>KML</span><b>Google Earth aktarımı</b><i>↓</i></button><button onClick={exportGeoJson} disabled={exportDisabled}><span>GJSON</span><b>GeoJSON + arazi metadata</b><i>↓</i></button><button onClick={exportLandXml} disabled={exportDisabled || terrainModel.basis !== "measured-z"}><span>XML</span><b>{terrainModel.basis === "measured-z" ? "LandXML kaynaklı TIN başlangıcı" : "LandXML için üç kaynaklı Z kotu gerekli"}</b><i>↓</i></button><button onClick={exportCsv} disabled={exportDisabled}><span>CSV</span><b>WGS84 koordinat ve kot listesi</b><i>↓</i></button><button onClick={exportManifest} disabled={exportDisabled}><span>MAN</span><b>Parsel · imar · arazi kanıt manifestosu</b><i>↓</i></button></div>{!parcelRecord.projectEligible && <p className="geo-caution"><b>Çıktı bekliyor:</b> Temsili başlangıç geometrisi teknik teslim üretmez. TKGM sınırı, doğrulanmış mekânsal dosya veya kullanıcı sınır düzenlemesi kaynağıyla kaydedilmelidir.</p>}<p className="geo-caution"><b>DWG notu:</b> İndirilen katmanlı DXF; pafta çerçevesi, antet, proje kimliği, imar kaynağı ve revizyon bilgilerini içerir ve CAD ortamında DWG olarak kaydedilebilir. Doğrudan DWG üretimi için lisanslı dönüşüm servisi gerekir.</p></div>,
   };
 
-  return <section className="geo-parcel-studio">
-    <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />
+  return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"}>
+    {simple ? <details className="arx-geo-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} /></details> : <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
     <header className="geo-studio-top"><div><span>ARKEM / GEO·BIM WORKSPACE · V111 GIS + 3B</span><b>Parsel, Kot & Arazi Stüdyosu</b></div><div><span className="geo-status live">ORTAK KATMAN MOTORU</span><small>2B + 3B · WGS84 / yerel ENU</small></div></header>
+    {simple && <>
+      <nav className="arx-geo-quick-nav" aria-label="Arazi parsel temel işlemleri">
+        {([["locate","Parsel bul"],["import","Dosya yükle"],["zoning","İmar bilgileri"],["design","Yapı yerleşimi"]] as const).map(([id,label]) =>
+          <button key={id} type="button" className={activeStage === id ? "active" : ""} aria-current={activeStage === id ? "step" : undefined}
+            onClick={() => setActiveStage(id)}>{label}</button>
+        )}
+        <details className="arx-geo-extra">
+          <summary>Diğer araçlar ▾</summary>
+          <div>
+            {([["draw","Sınır düzenle"],["terrain","3B arazi"],["export","Teknik çıktılar"]] as const).map(([id,label]) =>
+              <button type="button" key={id} className={activeStage === id ? "active" : ""}
+                onClick={() => setActiveStage(id)}>{label}</button>
+            )}
+            <button type="button" aria-pressed={showSources} onClick={() => setShowSources((current) => !current)}>
+              {showSources ? "Kaynak ayrıntılarını gizle" : "Kaynak ayrıntılarını göster"}</button>
+            <button type="button" aria-pressed={showLayers} onClick={() => setShowLayers((current) => !current)}>
+              {showLayers ? "Harita katmanlarını gizle" : "Harita katmanlarını göster"}</button>
+          </div>
+        </details>
+      </nav>
+      <p className="arx-geo-source-note" role="note">{parcelSource.kind === "sample"
+        ? "Örnek parsel gösteriliyor. Bu sınır gerçek kadastro veya aplikasyon verisi değildir."
+        : "Sınır kaynağını ve imar doğrulama durumunu teknik sonuçlardan önce kontrol edin."}</p>
+    </>}
     <section className="v109-parcel-center" data-record-state={parcelRecord.state}>
       <header>
         <div><span>V109 / PARSEL VERİ MERKEZİ</span><h3>Parsel kimliği, sınırı ve kaynağı tek kayıtta.</h3></div>
