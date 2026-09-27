@@ -1,3 +1,5 @@
+// Only the public, read-only TKGM paths listed here are proxied.
+// A blocked or unauthenticated upstream must not be presented as a verified parcel.
 const TKGM_ROOTS = [
   "https://cbsapi.tkgm.gov.tr/megsiswebapi.v3.1/api",
   "https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api",
@@ -21,16 +23,29 @@ export async function GET(request: Request) {
   for (const root of TKGM_ROOTS) {
     try {
       const response = await fetch(`${root}/${path}`, {
-        headers: { Accept: "application/json", "User-Agent": "Arkem-Parcel-Studio/1.0" },
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5_500),
       });
       lastStatus = response.status;
-      if (!response.ok) continue;
-      const body = await response.text();
-      return new Response(body, {
+      if (!response.ok) {
+        // Respect access controls: do not attempt to emulate authenticated sessions.
+        if (response.status === 401 || response.status === 403) {
+          return Response.json(
+            { error: "TKGM bu ortamdan doğrudan sorguya izin vermiyor. Resmî Parsel Sorgu'yu açın veya KML/GeoJSON sınır dosyası yükleyin.", upstreamStatus: response.status },
+            { status: 503, headers: { "Cache-Control": "no-store" } },
+          );
+        }
+        continue;
+      }
+      const body = await response.json();
+      if (!body || typeof body !== "object") {
+        lastStatus = 502;
+        continue;
+      }
+      return Response.json(body, {
         status: 200,
         headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": path === "idariYapi/ilListe" ? "public, max-age=86400" : "public, max-age=1800",
+          "Cache-Control": path === "idariYapi/ilListe" ? "public, max-age=86400" : path.startsWith("idariYapi/") ? "public, max-age=1800" : "no-store",
         },
       });
     } catch {
@@ -39,7 +54,7 @@ export async function GET(request: Request) {
   }
 
   return Response.json(
-    { error: "TKGM servisi şu anda yanıt vermiyor", upstreamStatus: lastStatus },
-    { status: 502 },
+    { error: "TKGM servisine şu anda erişilemiyor. Bu oturumda resmî mahalle veya parsel geometrisi doğrulanamadı.", upstreamStatus: lastStatus },
+    { status: 503, headers: { "Cache-Control": "no-store" } },
   );
 }
