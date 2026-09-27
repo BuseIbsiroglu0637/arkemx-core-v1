@@ -65,12 +65,6 @@ function fallbackDistrictOptions(provinceName: string) {
   }));
 }
 
-function fallbackNeighborhoodOptions() {
-  return [
-    { id: "offline-neighborhood-1", label: "Merkez / mahalle-köy bilgisini proje notunda belirtin" },
-  ];
-}
-
 const stages: { id: Stage; no: string; label: string; sub: string }[] = [
   { id: "locate", no: "01", label: "Parseli bul", sub: "Ada / parsel veya koordinat" },
   { id: "import", no: "02", label: "Veriyi al", sub: "KML · GeoJSON · CSV" },
@@ -97,7 +91,7 @@ function normalizeAdministrativeName(value: unknown) {
 
 async function fetchTkgmJson(path: string) {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 4_500);
+  const timeout = window.setTimeout(() => controller.abort(), 13_500);
   try {
     const response = await fetch(`/api/tkgm?path=${encodeURIComponent(path)}`, { headers: { Accept: "application/json" }, signal: controller.signal });
     if (!response.ok) {
@@ -443,19 +437,20 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     fetchTkgmJson("idariYapi/ilListe").then((data) => {
       if (cancelled) return;
       const options = administrativeOptions(data);
+      if (!options.length) throw new Error("TKGM il listesi boş döndü");
       setProvinceOptions(options);
       const preferred = options.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName("Sakarya"));
       if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("official");
       setAdministrativeLoading("idle");
-    }).catch(() => {
+    }).catch((error: unknown) => {
       if (cancelled) return;
       setProvinceOptions(FALLBACK_PROVINCES);
       const preferred = FALLBACK_PROVINCES.find((option) => option.label === "Sakarya");
       if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("fallback");
       setAdministrativeLoading("idle");
-      setFileNotice("TKGM servisi geçici olarak yanıt vermiyor. İl ve örnek ilçe listeleri açık tutuldu; resmî parsel geometrisi servis döndüğünde sorgulanır.");
+      setFileNotice(`${error instanceof Error ? error.message : "TKGM il listesi yüklenemedi"}. Yerel il/ilçe seçimi mümkün; mahalle adı elle girilir. Resmî parsel verisi yalnızca erişilebilir TKGM yanıtı veya kullanıcı dosyasıyla gösterilir.`);
     });
     return () => { cancelled = true; };
   }, []);
@@ -474,6 +469,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     fetchTkgmJson(`idariYapi/ilceListe/${encodeURIComponent(provinceId)}`).then((data) => {
       if (cancelled) return;
       const options = administrativeOptions(data);
+      if (!options.length) throw new Error("TKGM ilçe listesi boş döndü");
       setDistrictOptions(options);
       setAdministrativeLoading("idle");
     }).catch(() => {
@@ -491,7 +487,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (!districtId) return;
     if (administrativeSource === "fallback" || districtId.startsWith("offline-")) {
       const timer = window.setTimeout(() => {
-        setNeighborhoodOptions(fallbackNeighborhoodOptions());
+        setNeighborhoodOptions([]);
         setAdministrativeLoading("idle");
       }, 0);
       return () => window.clearTimeout(timer);
@@ -499,12 +495,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     let cancelled = false;
     fetchTkgmJson(`idariYapi/mahalleListe/${encodeURIComponent(districtId)}`).then((data) => {
       if (cancelled) return;
-      setNeighborhoodOptions(administrativeOptions(data));
+      const options = administrativeOptions(data);
+      if (!options.length) throw new Error("TKGM mahalle/köy listesi boş döndü");
+      setNeighborhoodOptions(options);
       setAdministrativeLoading("idle");
     }).catch(() => {
       if (!cancelled) {
         setAdministrativeSource("fallback");
-        setNeighborhoodOptions(fallbackNeighborhoodOptions());
+        setNeighborhoodOptions([]);
         setAdministrativeLoading("idle");
         setFileNotice("Mahalle/köy listesi için çevrimdışı seçim modu açıldı; proje notu ve resmî sorgu birlikte kullanılmalıdır.");
       }
@@ -783,6 +781,37 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setDataStatus("Koordinat çevresinde temsili geometri · projeye bağlı değil");
     setFileNotice("Koordinat çevresine temsili, düzensiz örnek parsel üretildi");
     fitMapToPoints(nextParcel, 40);
+  };
+  const retryOfficialLists = async () => {
+    setAdministrativeLoading("province");
+    setFileNotice("TKGM il ve mahalle servislerine yeniden bağlanılıyor…");
+    try {
+      const data = await fetchTkgmJson("idariYapi/ilListe");
+      const options = administrativeOptions(data);
+      if (!options.length) throw new Error("TKGM geçerli il listesi döndürmedi");
+      const currentProvince = options.find((option) =>
+        normalizeAdministrativeName(option.label) === normalizeAdministrativeName(province),
+      );
+      setDistrictId("");
+      setDistrict("");
+      setDistrictOptions([]);
+      setNeighborhoodId("");
+      setNeighborhood("");
+      setNeighborhoodOptions([]);
+      setProvinceOptions(options);
+      setAdministrativeSource("official");
+      setProvinceId(currentProvince?.id ?? "");
+      setAdministrativeLoading(currentProvince ? "district" : "idle");
+      setParcelLookup("idle");
+      setFileNotice(currentProvince
+        ? "TKGM il listesi bağlandı. İlçe ve mahalle listelerini bekleyin; sonra seçimleri tamamlayın."
+        : "TKGM il listesi bağlandı. Önce ilinizi seçin.");
+    } catch (error) {
+      setAdministrativeSource("fallback");
+      setAdministrativeLoading("idle");
+      setParcelLookup("error");
+      setFileNotice(error instanceof Error ? error.message : "TKGM bağlantısı kurulamadı");
+    }
   };
   const locateOfficialParcel = async () => {
     if (!provinceId || !districtId || !neighborhoodId || !block.trim() || !parcelNo.trim()) {
