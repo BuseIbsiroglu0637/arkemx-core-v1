@@ -232,7 +232,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const pointsLayerRef = useRef<LayerGroup | null>(null);
   const contourLayerRef = useRef<LayerGroup | null>(null);
   const basemapLayerRef = useRef<TileLayer | null>(null);
-  const drawingRef = useRef(true);
+  const drawingRef = useRef(!simple);
   const transferApplied = useRef(false);
   const persistedGeoRef = useRef(false);
   const pendingFitRef = useRef<GeoPoint[] | null>(null);
@@ -252,7 +252,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     capturedAt: new Date(0).toISOString(),
     url: "",
   });
-  const [drawEnabled, setDrawEnabled] = useState(true);
+  const [drawEnabled, setDrawEnabled] = useState(!simple);
   const [latitude, setLatitude] = useState(defaultCenter.lat.toFixed(7));
   const [longitude, setLongitude] = useState(defaultCenter.lng.toFixed(7));
   const [province, setProvince] = useState("Sakarya");
