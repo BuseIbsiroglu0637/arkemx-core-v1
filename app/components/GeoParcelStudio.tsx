@@ -659,7 +659,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     import("leaflet").then((leaflet) => {
       if (disposed || !mapHostRef.current || mapRef.current) return;
       leafletRef.current = leaflet;
-      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: true }).setView([defaultCenter.lat, defaultCenter.lng], 17);
+      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: false }).setView([defaultCenter.lat, defaultCenter.lng], 17);
       // No automatic calls to third-party map tiles: the demo shows a local coordinate preview.
       // Streets and satellite imagery require a separately configured, authorized tile provider.
       leaflet.control.zoom({ position: "bottomright" }).addTo(map);
@@ -755,6 +755,23 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     });
     if (terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
   }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers]);
+
+  // When an existing, sourced parcel is opened from local storage, fit the map
+  // after Leaflet is ready. The initial demo geometry is never mistaken for a lookup result.
+  useEffect(() => {
+    if (!mapReady || parcel.length < 3 || parcelSource.kind === "sample") return;
+    const timer = window.setTimeout(() => {
+      const map = mapRef.current;
+      const leaflet = leafletRef.current;
+      if (!map || !leaflet) return;
+      map.invalidateSize();
+      map.fitBounds(leaflet.latLngBounds(parcel.map((point) => [point.lat, point.lng])), {
+        padding: [48, 48],
+        maxZoom: 19,
+      });
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [mapReady, parcel, parcelSource.kind]);
 
   useEffect(() => {
     if (viewMode === "map") window.setTimeout(() => mapRef.current?.invalidateSize(), 20);
@@ -887,6 +904,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const parcelCenter = geoCentroid(points);
       const nextParcel = points.slice(0, 400);
       setParcel(nextParcel);
+      setTerrainLayers((current) => ({ ...current, "parcel-boundary": true }));
       setLatitude(parcelCenter.lat.toFixed(7));
       setLongitude(parcelCenter.lng.toFixed(7));
       setProvince(String(properties.ilAd ?? province));
@@ -920,6 +938,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (points.length < 3) throw new Error("Bu dosyada WGS84 Polygon için en az üç geçerli nokta bulunamadı.");
       const nextParcel = points.slice(0, 200);
       setParcel(nextParcel);
+      setTerrainLayers((current) => ({ ...current, "parcel-boundary": true }));
       setLatitude(geoCentroid(points).lat.toFixed(7));
       setLongitude(geoCentroid(points).lng.toFixed(7));
       setParcelSource({
