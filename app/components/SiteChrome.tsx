@@ -282,7 +282,7 @@ export function FloatingContact() {
   }, []);
 
   // The minimal ARKEMX toolbox home has no floating contact widget.
-  if (pathname === "/") return null;
+  if (pathname === "/" || pathname === "/proje-baslat") return null;
 
   return <a className="floating-contact v4-floating-contact" data-mobile-visible={mobileVisible ? "true" : "false"} data-analytics="whatsapp_click" href={`https://wa.me/${site.whatsappHref}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" aria-label={isEnglish ? "Contact ARKEM via WhatsApp" : "ARKEM Yapı Sistemleri ile WhatsApp üzerinden iletişime geçin"}><MessageCircle className="v4-whatsapp-icon" size={22} strokeWidth={1.8} aria-hidden="true" /><b>WhatsApp</b><small>{isEnglish ? "Quick contact" : "Hızlı iletişim"}</small></a>;
 }
