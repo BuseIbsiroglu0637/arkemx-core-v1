@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LayerGroup, Map as LeafletMap, Polygon as LeafletPolygon, TileLayer } from "leaflet";
+import type { LayerGroup, Map as LeafletMap, Polygon as LeafletPolygon } from "leaflet";
 import { GeoTerrainViewer } from "./GeoTerrainViewer";
 import { buildingFootprint, fromLocalMeters, geoCentroid, localBounds, minimumBoundaryDistance, pointInPolygon, polygonArea, polygonPerimeter, polygonSelfIntersects, sampleParcel, toLocalMeters, type GeoPoint } from "../lib/geo";
 import { createLayeredDxf } from "../lib/engineering";
@@ -231,7 +231,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const buildingLayerRef = useRef<LeafletPolygon | null>(null);
   const pointsLayerRef = useRef<LayerGroup | null>(null);
   const contourLayerRef = useRef<LayerGroup | null>(null);
-  const basemapLayerRef = useRef<TileLayer | null>(null);
   const drawingRef = useRef(!simple);
   const transferApplied = useRef(false);
   const persistedGeoRef = useRef(false);
@@ -279,7 +278,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [usage, setUsage] = useState("Sanayi / Depo");
   const [slope, setSlope] = useState(4);
   const [exaggeration, setExaggeration] = useState(1.5);
-  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({ ...DEFAULT_TERRAIN_LAYERS }));
+  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({ ...DEFAULT_TERRAIN_LAYERS, basemap: false }));
   const [requiredSetback, setRequiredSetback] = useState(5);
   const [maxCoverage, setMaxCoverage] = useState(40);
   const [maxFar, setMaxFar] = useState(1.2);
@@ -649,7 +648,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (disposed || !mapHostRef.current || mapRef.current) return;
       leafletRef.current = leaflet;
       const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: true }).setView([defaultCenter.lat, defaultCenter.lng], 17);
-      basemapLayerRef.current = leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 20, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+      // No automatic calls to third-party map tiles: the demo shows a local coordinate preview.
+      // Streets and satellite imagery require a separately configured, authorized tile provider.
       leaflet.control.zoom({ position: "bottomright" }).addTo(map);
       pointsLayerRef.current = leaflet.layerGroup().addTo(map);
       contourLayerRef.current = leaflet.layerGroup().addTo(map);
@@ -674,7 +674,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       mapRef.current?.remove();
       mapRef.current = null;
       leafletRef.current = null;
-      basemapLayerRef.current = null;
       contourLayerRef.current = null;
     };
   }, []);
@@ -706,14 +705,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     });
     if (terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
   }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    const basemap = basemapLayerRef.current;
-    if (!map || !basemap || !mapReady) return;
-    if (terrainLayers.basemap && !map.hasLayer(basemap)) basemap.addTo(map);
-    if (!terrainLayers.basemap && map.hasLayer(basemap)) map.removeLayer(basemap);
-  }, [mapReady, terrainLayers.basemap]);
 
   useEffect(() => {
     if (viewMode === "map") window.setTimeout(() => mapRef.current?.invalidateSize(), 20);
@@ -1177,10 +1168,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <div className="geo-stage-toolbar"><div>{([{"id":"map","label":"2B Harita"},{"id":"terrain","label":"3B Arazi"},{"id":"data","label":"Veri / Koordinat"}] as const).map((view) => <button key={view.id} className={viewMode === view.id ? "active" : ""} onClick={() => setViewMode(view.id)}>{view.label}</button>)}</div><button onClick={fitToParcel}>Parseli ekrana sığdır ⛶</button></div>
         <section className="v111-layer-dock" aria-label="Ortak GIS ve 3B arazi katmanları">
           <header><div><span>V111 / ORTAK HARİTA + 3B KATMANLARI</span><b>Bir seçim, iki görünüm, tek proje kaydı.</b></div><em data-trust={terrainModel.trust}>{terrainModel.basis === "measured-z" ? `${terrainModel.samples.measured} KOT · ${terrainModel.trust === "verified" ? "YETKİLİ BEYAN" : "KAYNAK DOSYA"}` : "KAVRAMSAL YÜZEY"}</em></header>
-          <div>{terrainModel.layers.map((layer) => <label key={layer.id} data-available={layer.available}><input type="checkbox" checked={terrainLayers[layer.id]} onChange={() => toggleTerrainLayer(layer.id)} disabled={!layer.available} /><span><b>{layer.label}</b><small>{layer.available ? terrainLayers[layer.id] ? "Görünür" : "Gizli" : "Veri bekliyor"}</small></span></label>)}</div>
+          <div>{terrainModel.layers.map((layer) => <label key={layer.id} data-available={layer.available}><input type="checkbox" checked={layer.id !== "basemap" && terrainLayers[layer.id]} onChange={() => toggleTerrainLayer(layer.id)} disabled={layer.id === "basemap" || !layer.available} /><span><b>{layer.label}</b><small>{layer.id === "basemap" ? "Dış harita servisi bağlı değil" : layer.available ? terrainLayers[layer.id] ? "Görünür" : "Gizli" : "Veri bekliyor"}</small></span></label>)}</div>
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
-        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend"><span><i></i>Parsel</span><span><i></i>Ön yapı</span><span><i></i>Sınır noktası</span></div><div className="geo-map-crosshair">+</div></div>
+        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-offline-label" role="note">Koordinat önizlemesi · Gerçek harita altlığı bağlı değil</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend"><span><i></i>Parsel</span><span><i></i>Ön yapı</span><span><i></i>Sınır noktası</span></div><div className="geo-map-crosshair">+</div></div>
         {viewMode === "terrain" && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} />}
         {viewMode === "data" && <div className="geo-data-view"><header><div><span>KAYNAK CRS BEYANI</span><b>{sourceCrs}</b></div><div><span>İŞLEME DÜZLEMİ</span><b>WGS84 → lokal ENU · metre</b></div><div><span>VERİ STATÜSÜ</span><b>{dataStatus}</b></div></header><section className="v111-terrain-ledger"><article><span>YÜZEY TEMELİ</span><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z / IDW" : "Parametrik eğim"}</b><small>{terrainModel.trust.toLocaleUpperCase("tr-TR")}</small></article><article><span>KOT ÖRNEĞİ</span><b>{terrainModel.samples.measured} / {terrainModel.samples.total}</b><small>Ölçülmüş / toplam nokta</small></article><article><span>KOT ARALIĞI</span><b>{terrainModel.elevation.range.toFixed(2)} m</b><small>{terrainModel.elevation.datum === "source-declared" ? "Kaynak datum beyanı" : "Yerel bağıl düzlem"}</small></article><article><span>EŞ YÜKSELTİ</span><b>{terrainContours.length}</b><small>Marching-squares önizleme parçası</small></article></section><div className="geo-data-table"><div className="head"><span>ID</span><span>LATITUDE</span><span>LONGITUDE</span><span>EAST / m</span><span>NORTH / m</span><span>Z / m</span></div>{parcel.map((point, index) => { const local = toLocalMeters(point, center); return <div key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(8)}</span><span>{point.lng.toFixed(8)}</span><span>{local.east.toFixed(3)}</span><span>{local.north.toFixed(3)}</span><span>{point.alt?.toFixed(2) ?? "—"}</span></div>; })}</div><footer><p><b>CRS kontrolü</b> Hesap motoru koordinatları coğrafi derece olarak yorumlar ve parsel merkezi çevresinde lokal ENU düzlemine alır. Kaynak veri WGS84 değilse doğru EPSG dönüşümü yapılmadan alan ve mesafe sonuçları proje verisi sayılmaz.</p><p><b>Arazi kontrolü</b> {terrainModel.limitations[0]}</p></footer></div>}
         <div className="geo-connectors"><a href={`https://www.google.com/maps/search/?api=1&query=${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>G</span><div><b>Google Maps’te aç</b><small>{center.lat.toFixed(6)}, {center.lng.toFixed(6)}</small></div><i>↗</i></a><a href={`https://earth.google.com/web/search/${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>E</span><div><b>Google Earth’te aç</b><small>KML ile sınır ve kütle aktarın</small></div><i>↗</i></a><button onClick={exportKml} disabled={exportDisabled}><span>K</span><div><b>Earth KML paketini indir</b><small>{exportDisabled ? "Önce kaynaklı bir parsel sınırı oluşturun" : "Parsel + ön yapı poligonu"}</small></div><i>↓</i></button></div>
