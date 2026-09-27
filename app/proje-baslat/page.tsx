@@ -1,33 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { ProjectStartStudio } from "../components/ProjectStartStudio";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import "../sade-arac-paneli.css";
+import "./sade-baslangic.css";
 
 export const metadata: Metadata = {
-  title: "ARKEMX Proje Başlat",
-  description: "Proje hedefinizi, parsel hazırlığını, bütçe ve zaman kararlarını beş sade adımda tanımlayın; ARKEMX size kaynak ve doğrulama sınırları açık kişisel proje yol haritası oluştursun.",
+  title: "Yeni Proje | ARKEMX",
+  description: "Yeni projenizi beş adımda oluşturun ve ARKEMX araçlarında kullanın.",
   alternates: { canonical: "/proje-baslat" },
+  robots: { index: false, follow: false },
 };
 
 export default function ProjectStartPage() {
-  return <main className="inner-page project-start-page">
-    <section className="project-start-hero">
-      <SiteHeader />
-      <div className="shell">
-        <nav className="breadcrumb" aria-label="Sayfa yolu"><Link href="/">Ana Sayfa</Link><span>/</span><Link href="/dijital-proje-merkezi">ARKEMX</Link><span>/</span><span>Proje Başlat</span></nav>
-        <p className="eyebrow light">ARKEMX / PROJE BAŞLANGIÇ SİSTEMİ</p>
-        <h1>Bir kez anlatın.<br/><em>Tüm proje birlikte ilerlesin.</em></h1>
-        <p>İhtiyaç, konum, belge hazırlığı, alan, bütçe ve önceliklerinizi bir kez girin. ARKEMX size özel proje yolunu oluşturur; resmî veri, müşteri beyanı ve uzman incelemesini birbirine karıştırmaz.</p>
-        <div className="project-start-hero-flow">{["Hedef", "Arsa", "İmar", "Mimari", "Sistem", "Teslim"].map((item, index) => <span key={item}><i>{String(index + 1).padStart(2, "0")}</i><b>{item}</b>{index < 5 && <small>→</small>}</span>)}</div>
+  return (
+    <main className="arx-simple-home arx-start-page">
+      <div className="arx-simple-shell">
+        <header className="arx-simple-head">
+          <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
+          <Link href="/" className="arx-start-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link>
+        </header>
+        <div className="arx-start-intro">
+          <span>PROJE / BAŞLANGIÇ</span>
+          <h1>Yeni proje oluştur</h1>
+          <p>Proje bilgilerinizi adım adım girin. Çalışmanız bu cihazda taslak olarak saklanır.</p>
+        </div>
+        <ProjectStartStudio />
       </div>
-    </section>
-    <section className="section shell"><ProjectStartStudio /></section>
-    <section className="start-assurance"><div className="shell">{[
-      ["01", "Kişisel proje yolu", "Sıradaki işlem; parsel, belge, bütçe ve teknik hazırlığınıza göre belirlenir."],
-      ["02", "Kaynak görünürlüğü", "Kullanıcı girdisi, resmî veri ve mühendislik sonucu birbirinden ayrılır."],
-      ["03", "Açık teknik çıktı", "Proje JSON, düzenli CSV ve katmanlı DXF ile taşınabilir kalır."],
-      ["04", "Yetki sınırı", "Ön değerlendirme ile yetkili proje ve onay süreçleri açık biçimde ayrılır."],
-    ].map(([no, title, copy]) => <article key={no}><span>{no}</span><h2>{title}</h2><p>{copy}</p></article>)}</div></section>
-    <SiteFooter />
-  </main>;
+    </main>
+  );
 }
