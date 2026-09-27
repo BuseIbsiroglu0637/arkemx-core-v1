@@ -396,7 +396,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
     if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
     if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
-    if (saved.terrain?.layers) setTerrainLayers(normalizeTerrainLayers(saved.terrain.layers));
+    if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: false });
     if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
     if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
     setFileNotice("Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı");
@@ -574,7 +574,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     return matches ? alternative.id : "manual";
   }, [buildingDepth, buildingWidth, floors, massingModel.alternatives, offsetEast, offsetNorth, rotation, selectedMassingId]);
   const exportDisabled = !parcelRecord.projectEligible || !metrics.geometryValid;
-  const toggleTerrainLayer = (layer: TerrainLayerId) => setTerrainLayers((current) => ({ ...current, [layer]: !current[layer] }));
+  const toggleTerrainLayer = (layer: TerrainLayerId) => { if (layer === "basemap") return; setTerrainLayers((current) => ({ ...current, [layer]: !current[layer] })); };
   const applyMassingAlternative = (alternativeId: string) => {
     const alternative = massingModel.alternatives.find((item) => item.id === alternativeId);
     if (!alternative || alternative.status !== "fits") {
