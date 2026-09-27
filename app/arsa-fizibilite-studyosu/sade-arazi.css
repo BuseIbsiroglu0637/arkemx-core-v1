@@ -196,3 +196,58 @@
   font-weight: 650;
   pointer-events: none;
 }
+
+/* Service-aware parcel search: never treat offline administrative labels as TKGM IDs. */
+.arx-geo-simple .arx-geo-offline-alert {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  margin: 0 0 18px;
+  border: 1px solid #edddbc;
+  border-left: 4px solid #bf8946;
+  border-radius: 7px;
+  background: #fffbf2;
+  color: #6e583d;
+}
+.arx-geo-simple .arx-geo-offline-alert > b {
+  font-size: 13px; line-height: 1.45; font-weight: 750;
+}
+.arx-geo-simple .arx-geo-offline-alert > p {
+  margin: 0; font-size: 12px; line-height: 1.6;
+}
+.arx-geo-simple .arx-geo-offline-alert > button {
+  justify-self: start;
+  min-height: 41px;
+  padding: 9px 13px;
+  border: 1px solid #b78347;
+  border-radius: 6px;
+  background: #fff;
+  color: #704e28;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.arx-geo-simple .arx-geo-offline-alert > button:hover { background: #fff3df; }
+.arx-geo-simple .arx-geo-offline-alert > button:disabled { opacity: .65; cursor: wait; }
+.arx-geo-simple .arx-geo-offline-alert > small {
+  display: block; color: #896e4a; font-size: 11px; line-height: 1.55;
+}
+.arx-geo-simple .arx-geo-field-warning {
+  display: block;
+  margin-top: 4px;
+  color: #996a38;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 550;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.arx-geo-simple .arx-geo-offline-query {
+  padding: 13px 15px;
+  border-radius: 6px;
+  border: 1px solid #edddbc;
+  background: #fffbf2;
+  color: #71583b;
+  font-size: 12px;
+  line-height: 1.65;
+}
