@@ -52,7 +52,6 @@ export default function Home() {
             })}
           </div>
         </section>
-        <footer className="arx-simple-footer">ARKEMX · Araç paneli taslağı</footer>
       </div>
     </main>
   );
