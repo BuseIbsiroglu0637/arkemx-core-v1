@@ -251,3 +251,26 @@
   font-size: 12px;
   line-height: 1.65;
 }
+
+/* Optional conceptual graphics stay hidden until explicitly requested. */
+.arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle {
+  margin-left: auto;
+  padding: 9px 13px;
+  border: 1px solid #d8e2e5;
+  border-radius: 6px;
+  background: #f7fafb;
+  color: #466674;
+  font-size: 12px;
+  font-weight: 700;
+}
+.arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle[aria-pressed="true"] {
+  background: #eaf3f0;
+  border-color: #88b3a6;
+  color: #27614d;
+}
+@media (max-width: 700px) {
+  .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle {
+    margin-left: 0;
+    width: 100%;
+  }
+}
