@@ -509,6 +509,16 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     });
     return () => { cancelled = true; };
   }, [administrativeSource, districtId]);
+  // Older local drafts may contain the previous fake offline-neighborhood label.
+  // Discard it instead of treating it as an actual mahalle or parcel lookup ID.
+  useEffect(() => {
+    if (administrativeSource !== "fallback") return;
+    if (neighborhood.includes("mahalle-köy bilgisini proje notunda belirtin")) {
+      setNeighborhood("");
+      setNeighborhoodId("");
+    }
+  }, [administrativeSource, neighborhood]);
+
   const center = useMemo(() => geoCentroid(parcel.length ? parcel : [defaultCenter]), [parcel]);
   const building = useMemo(() => buildingFootprint(center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth), [center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth]);
   const metrics = useMemo(() => {
