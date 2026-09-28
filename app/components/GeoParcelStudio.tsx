@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LayerGroup, Map as LeafletMap, Polygon as LeafletPolygon } from "leaflet";
-import openFreeMapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { GeoTerrainViewer } from "./GeoTerrainViewer";
 import { buildingFootprint, fromLocalMeters, geoCentroid, localBounds, minimumBoundaryDistance, pointInPolygon, polygonArea, polygonPerimeter, polygonSelfIntersects, sampleParcel, toLocalMeters, type GeoPoint } from "../lib/geo";
 import { createLayeredDxf } from "../lib/engineering";
@@ -29,6 +28,7 @@ import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Stage = "locate" | "import" | "draw" | "zoning" | "design" | "terrain" | "export";
 type ViewMode = "map" | "terrain" | "data";
+type BasemapMode = "satellite" | "street" | "hybrid";
 type LeafletModule = typeof import("leaflet");
 type TkgmFeature = { type?: string; geometry?: unknown; properties?: Record<string, unknown> };
 type AdministrativeOption = { id: string; label: string };
@@ -234,6 +234,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
   const [basemapStatus, setBasemapStatus] = useState<"none" | "loading" | "ready" | "error">("none");
+  const [basemapMode, setBasemapMode] = useState<BasemapMode>("satellite");
+  const [basemapWarning, setBasemapWarning] = useState("");
   const [activeStage, setActiveStage] = useState<Stage>("locate");
   const [showSources, setShowSources] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
@@ -691,9 +693,58 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     };
   }, []);
 
-  // Automatically load OpenFreeMap's public, keyless vector basemap as a Leaflet
-  // background layer. The existing Leaflet parcel polygons and editing tools
-  // remain above it; if tiles fail, the coordinate grid remains available.
+  // Basemap layers are independent of editable parcel/building/contour overlays.
+  // Only the requested background tiles change; engineering geometry stays mounted.
+  useEffect(() => {
+    const map = mapRef.current;
+    const leaflet = leafletRef.current;
+    if (!mapReady || !map || !leaflet) return;
+    let disposed = false;
+    let failures = 0;
+    setBasemapStatus("loading");
+    setBasemapWarning("");
+    const imagery = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+    const streets = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const labels = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
+    const imageryCredit = "Tiles &copy; Esri and its imagery providers";
+    const streetCredit = "&copy; OpenStreetMap contributors";
+    const tile = leaflet.tileLayer(basemapMode === "street" ? streets : imagery, {
+      maxNativeZoom: 19, maxZoom: 20, attribution: basemapMode === "street" ? streetCredit : imageryCredit,
+    });
+    if (!map.getPane("arkemx-basemap-labels")) {
+      const pane = map.createPane("arkemx-basemap-labels");
+      pane.style.zIndex = "350"; // above imagery, below editable parcel overlays
+      pane.style.pointerEvents = "none";
+    }
+    const labelLayer = basemapMode === "hybrid"
+      ? leaflet.tileLayer(labels, { maxNativeZoom: 19, maxZoom: 20, pane: "arkemx-basemap-labels", attribution: "Labels &copy; Esri" })
+      : null;
+    const onTileError = () => {
+      if (disposed) return;
+      failures++;
+      if (failures >= 3) {
+        setBasemapStatus("error");
+        setBasemapWarning("Harita karoları yüklenemedi. İnternet veya harita servisi erişimini kontrol edin.");
+      }
+    };
+    tile.on("tileerror", onTileError);
+    tile.on("load", () => { if (!disposed && failures < 3) setBasemapStatus("ready"); });
+    labelLayer?.on("tileerror", onTileError);
+    if (terrainLayers.basemap) {
+      tile.addTo(map).bringToBack();
+      labelLayer?.addTo(map);
+    } else {
+      setBasemapStatus("none");
+    }
+    return () => {
+      disposed = true;
+      tile.off();
+      tile.remove();
+      labelLayer?.off();
+      labelLayer?.remove();
+    };
+  }, [basemapMode, mapReady, terrainLayers.basemap]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
@@ -1316,7 +1367,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <div>{terrainModel.layers.map((layer) => <label key={layer.id} data-available={layer.available}><input type="checkbox" checked={layer.id !== "basemap" && terrainLayers[layer.id]} onChange={() => toggleTerrainLayer(layer.id)} disabled={layer.id === "basemap" || !layer.available} /><span><b>{layer.label}</b><small>{layer.id === "basemap" ? "Dış harita servisi bağlı değil" : layer.available ? terrainLayers[layer.id] ? "Görünür" : "Gizli" : "Veri bekliyor"}</small></span></label>)}</div>
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
-        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : parcelSource.kind === "sample" ? (basemapStatus === "ready" ? "Sokak haritası · ÖRNEK konum (seçili parsel değil)" : "Sokak haritası yükleniyor · ÖRNEK konum") : (basemapStatus === "ready" ? "Sokak haritası · Parsel sınırı TKGM kaydından alınmıştır" : "Sokak haritası yükleniyor · Parsel sınırı mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend"><span><i></i>Parsel sınırı</span>{showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
+        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : parcelSource.kind === "sample" ? (basemapStatus === "ready" ? "Harita altlığı · ÖRNEK konum (seçili parsel değil)" : "Harita yükleniyor · ÖRNEK konum") : (basemapStatus === "ready" ? "Harita altlığı · Parsel sınırı TKGM kaydından alınmıştır" : "Harita yükleniyor · Parsel sınırı mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend"><span><i></i>Parsel sınırı</span>{showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
         {viewMode === "terrain" && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} />}
         {viewMode === "data" && <div className="geo-data-view"><header><div><span>KAYNAK CRS BEYANI</span><b>{sourceCrs}</b></div><div><span>İŞLEME DÜZLEMİ</span><b>WGS84 → lokal ENU · metre</b></div><div><span>VERİ STATÜSÜ</span><b>{dataStatus}</b></div></header><section className="v111-terrain-ledger"><article><span>YÜZEY TEMELİ</span><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z / IDW" : "Parametrik eğim"}</b><small>{terrainModel.trust.toLocaleUpperCase("tr-TR")}</small></article><article><span>KOT ÖRNEĞİ</span><b>{terrainModel.samples.measured} / {terrainModel.samples.total}</b><small>Ölçülmüş / toplam nokta</small></article><article><span>KOT ARALIĞI</span><b>{terrainModel.elevation.range.toFixed(2)} m</b><small>{terrainModel.elevation.datum === "source-declared" ? "Kaynak datum beyanı" : "Yerel bağıl düzlem"}</small></article><article><span>EŞ YÜKSELTİ</span><b>{terrainContours.length}</b><small>Marching-squares önizleme parçası</small></article></section><div className="geo-data-table"><div className="head"><span>ID</span><span>LATITUDE</span><span>LONGITUDE</span><span>EAST / m</span><span>NORTH / m</span><span>Z / m</span></div>{parcel.map((point, index) => { const local = toLocalMeters(point, center); return <div key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(8)}</span><span>{point.lng.toFixed(8)}</span><span>{local.east.toFixed(3)}</span><span>{local.north.toFixed(3)}</span><span>{point.alt?.toFixed(2) ?? "—"}</span></div>; })}</div><footer><p><b>CRS kontrolü</b> Hesap motoru koordinatları coğrafi derece olarak yorumlar ve parsel merkezi çevresinde lokal ENU düzlemine alır. Kaynak veri WGS84 değilse doğru EPSG dönüşümü yapılmadan alan ve mesafe sonuçları proje verisi sayılmaz.</p><p><b>Arazi kontrolü</b> {terrainModel.limitations[0]}</p></footer></div>}
         <div className="geo-connectors"><a href={`https://www.google.com/maps/search/?api=1&query=${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>G</span><div><b>Google Maps’te aç</b><small>{parcelSource.kind === "sample" ? `ÖRNEK KONUM · ${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}` : `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`}</small></div><i>↗</i></a><a href={`https://earth.google.com/web/search/${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>E</span><div><b>Google Earth’te aç</b><small>KML ile sınır ve kütle aktarın</small></div><i>↗</i></a><button onClick={exportKml} disabled={exportDisabled}><span>K</span><div><b>Earth KML paketini indir</b><small>{exportDisabled ? "Önce kaynaklı bir parsel sınırı oluşturun" : "Parsel + ön yapı poligonu"}</small></div><i>↓</i></button></div>
