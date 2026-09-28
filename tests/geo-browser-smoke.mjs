@@ -42,21 +42,19 @@ page.on("response", (response) => {
   }
 });
 async function waitForInteractiveApp() {
-  // Server-rendered controls may be clickable before React hydration.
-  // Use a reversible in-component toggle instead of sleeping for a fixed duration.
-  const show = page.getByRole("button", { name: "Kaynak ayrıntılarını göster" });
-  const hide = page.getByRole("button", { name: "Kaynak ayrıntılarını gizle" });
+  // The page SSR markup can be clicked before React hydration attaches handlers.
+  // The basic "Dosya yükle" navigation is visible in simple mode; other
+  // navigation controls (including source details) are initially collapsed.
+  const importButton = page.getByRole("button", { name: "Dosya yükle", exact: true });
+  const locateButton = page.getByRole("button", { name: "Parsel bul", exact: true });
+  const importHeading = page.getByRole("heading", { name: "Sınırı kaynağı ve statüsüyle içe alın." });
+  const locateHeading = page.getByRole("heading", { name: "Resmî sorgudaki sırayla konumu seçin." });
   for (let attempt = 1; attempt <= 8; attempt++) {
-    if (await hide.count()) {
-      await hide.click();
-      await show.waitFor({ timeout: 3000 });
-      return;
-    }
-    await show.click({ timeout: 5000 });
+    await importButton.click({ timeout: 5000 });
     try {
-      await hide.waitFor({ timeout: 1500 });
-      await hide.click();
-      await show.waitFor({ timeout: 3000 });
+      await importHeading.waitFor({ timeout: 1500 });
+      await locateButton.click();
+      await locateHeading.waitFor({ timeout: 3000 });
       return;
     } catch {
       if (attempt === 8) {
