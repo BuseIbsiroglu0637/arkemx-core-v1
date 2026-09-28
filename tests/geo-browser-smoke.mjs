@@ -31,6 +31,40 @@ const fixture = {
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ acceptDownloads: true });
 const checks = [];
+const browserErrors = [];
+page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.stack || error.message}`));
+page.on("console", (message) => {
+  if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+});
+page.on("response", (response) => {
+  if (response.status() >= 400 && response.url().startsWith(baseUrl)) {
+    browserErrors.push(`HTTP ${response.status()}: ${response.url()}`);
+  }
+});
+async function waitForInteractiveApp() {
+  // Server-rendered controls may be clickable before React hydration.
+  // Use a reversible in-component toggle instead of sleeping for a fixed duration.
+  const show = page.getByRole("button", { name: "Kaynak ayrıntılarını göster" });
+  const hide = page.getByRole("button", { name: "Kaynak ayrıntılarını gizle" });
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    if (await hide.count()) {
+      await hide.click();
+      await show.waitFor({ timeout: 3000 });
+      return;
+    }
+    await show.click({ timeout: 5000 });
+    try {
+      await hide.waitFor({ timeout: 1500 });
+      await hide.click();
+      await show.waitFor({ timeout: 3000 });
+      return;
+    } catch {
+      if (attempt === 8) {
+        throw new Error(`GeoParcelStudio hydration not confirmed after 8 attempts. Browser errors: ${browserErrors.slice(0, 12).join(" | ") || "none observed"}`);
+      }
+    }
+  }
+}
 async function check(label, action) {
   await action();
   checks.push(label);
@@ -50,6 +84,7 @@ try {
     assert.equal(response?.status(), 200);
     await page.getByRole("heading", { name: "Arazi ve parsel" }).waitFor();
     await page.locator(".geo-leaflet-map").waitFor();
+    await waitForInteractiveApp();
   });
 
   await check("Uydu, hibrit ve sokak harita modları değişiyor", async () => {
@@ -143,6 +178,20 @@ try {
   console.log(`SUCCESS: ${checks.length} browser checks. No official cadastre/zoning approval inferred.`);
 } catch (error) {
   console.error(`FAIL after ${checks.length} checks:`, error);
+  console.error("Browser diagnostics:", browserErrors.slice(0, 15));
+  try {
+    const states = await page.locator(".geo-basemap-switch button").evaluateAll((buttons) =>
+      buttons.map((button) => ({
+        name: button.textContent?.trim(),
+        pressed: button.getAttribute("aria-pressed"),
+      })),
+    );
+    console.error("Basemap button states:", states);
+    console.error("Page URL:", page.url());
+    console.error("Page title:", await page.title());
+  } catch (diagnosticError) {
+    console.error("Diagnostics unavailable:", diagnosticError);
+  }
   process.exitCode = 1;
 } finally {
   await browser.close();
