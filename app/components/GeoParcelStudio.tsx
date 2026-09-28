@@ -756,56 +756,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   }, [basemapMode, mapReady, terrainLayers.basemap]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    const leaflet = leafletRef.current;
-    if (!mapReady || !map || !leaflet) return;
-    let disposed = false;
-    let failures = 0;
-    setBasemapStatus("loading");
-    setBasemapWarning("");
-    const imagery = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-    const streets = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    const labels = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
-    const imageryCredit = "Tiles &copy; Esri and its imagery providers";
-    const streetCredit = "&copy; OpenStreetMap contributors";
-    const tile = leaflet.tileLayer(basemapMode === "street" ? streets : imagery, {
-      maxNativeZoom: 19, maxZoom: 20, attribution: basemapMode === "street" ? streetCredit : imageryCredit,
-    });
-    if (!map.getPane("arkemx-basemap-labels")) {
-      const pane = map.createPane("arkemx-basemap-labels");
-      pane.style.zIndex = "350"; // above imagery, below editable parcel overlays
-      pane.style.pointerEvents = "none";
-    }
-    const labelLayer = basemapMode === "hybrid"
-      ? leaflet.tileLayer(labels, { maxNativeZoom: 19, maxZoom: 20, pane: "arkemx-basemap-labels", attribution: "Labels &copy; Esri" })
-      : null;
-    const onTileError = () => {
-      if (disposed) return;
-      failures++;
-      if (failures >= 3) {
-        setBasemapStatus("error");
-        setBasemapWarning("Harita karoları yüklenemedi. İnternet veya harita servisi erişimini kontrol edin.");
-      }
-    };
-    tile.on("tileerror", onTileError);
-    tile.on("load", () => { if (!disposed && failures < 3) setBasemapStatus("ready"); });
-    labelLayer?.on("tileerror", onTileError);
-    if (terrainLayers.basemap) {
-      tile.addTo(map).bringToBack();
-      labelLayer?.addTo(map);
-    } else {
-      setBasemapStatus("none");
-    }
-    return () => {
-      disposed = true;
-      tile.off();
-      tile.remove();
-      labelLayer?.off();
-      labelLayer?.remove();
-    };
-  }, [basemapMode, mapReady, terrainLayers.basemap]);
-
-  useEffect(() => {
     const leaflet = leafletRef.current;
     const map = mapRef.current;
     if (!leaflet || !map || !mapReady) return;
