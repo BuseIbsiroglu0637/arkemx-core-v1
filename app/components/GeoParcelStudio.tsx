@@ -279,7 +279,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [usage, setUsage] = useState("Sanayi / Depo");
   const [slope, setSlope] = useState(4);
   const [exaggeration, setExaggeration] = useState(1.5);
-  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({ ...DEFAULT_TERRAIN_LAYERS, basemap: false }));
+  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({ ...DEFAULT_TERRAIN_LAYERS, basemap: true }));
   const [requiredSetback, setRequiredSetback] = useState(5);
   const [maxCoverage, setMaxCoverage] = useState(40);
   const [maxFar, setMaxFar] = useState(1.2);
@@ -397,7 +397,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
     if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
     if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
-    if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: false });
+    if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
     if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
     if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
     setFileNotice("Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı");
@@ -744,58 +744,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       labelLayer?.remove();
     };
   }, [basemapMode, mapReady, terrainLayers.basemap]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!mapReady || !map) return;
-    let disposed = false;
-    let freeLayer: import("leaflet").Layer | null = null;
-    let credited = false;
-    const credit = '<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>';
-    setBasemapStatus("loading");
-    const attachMap = async () => {
-      try {
-        const [{ setWorkerUrl }, { maplibreGL }] = await Promise.all([
-          import("maplibre-gl"),
-          import("@maplibre/maplibre-gl-leaflet"),
-        ]);
-        if (disposed) return;
-        setWorkerUrl(openFreeMapWorkerUrl);
-        const layer = maplibreGL({
-          style: "https://tiles.openfreemap.org/styles/liberty",
-        });
-        freeLayer = layer;
-        layer.addTo(map);
-        map.attributionControl?.addAttribution(credit);
-        credited = true;
-        const glMap = layer.getMaplibreMap();
-        glMap.on("load", () => {
-          if (disposed) return;
-          setBasemapStatus("ready");
-          setTerrainLayers((current) => ({ ...current, basemap: true }));
-        });
-        let errors = 0;
-        glMap.on("error", () => {
-          if (disposed) return;
-          errors += 1;
-          if (errors >= 2) {
-            setBasemapStatus("error");
-            setTerrainLayers((current) => ({ ...current, basemap: false }));
-          }
-        });
-      } catch {
-        if (disposed) return;
-        setBasemapStatus("error");
-        setTerrainLayers((current) => ({ ...current, basemap: false }));
-      }
-    };
-    void attachMap();
-    return () => {
-      disposed = true;
-      if (freeLayer) freeLayer.remove();
-      if (credited) map.attributionControl?.removeAttribution(credit);
-    };
-  }, [mapReady]);
 
   useEffect(() => {
     const leaflet = leafletRef.current;
