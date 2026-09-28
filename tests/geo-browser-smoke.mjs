@@ -119,7 +119,16 @@ try {
     await page.locator(".geo-leaflet-map").waitFor();
   });
 
-  await page.getByRole("button", { name: "Teknik çıktılar", exact: true }).click();
+  await check("Diğer araçlar menüsünden teknik çıktılar açılıyor", async () => {
+    // The simplified parcel page places this action inside a native <details>
+    // menu. Playwright correctly refuses to click its hidden contents.
+    const extraTools = page.locator("details.arx-geo-extra");
+    if (!(await extraTools.evaluate((details) => details.open))) {
+      await extraTools.locator("summary").click();
+    }
+    await extraTools.getByRole("button", { name: "Teknik çıktılar", exact: true }).click();
+    await page.locator(".geo-export-list").waitFor({ state: "visible" });
+  });
   await check("Resmî teslim kilidi görünür ve çıktılar etkin", async () => {
     await page.getByText("Resmî teslim onayı yoktur.", { exact: false }).first().waitFor();
     const manifestButton = page.locator(".geo-export-list button").filter({ hasText: "MAN" });
