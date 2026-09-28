@@ -705,7 +705,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const leaflet = leafletRef.current;
     if (!mapReady || !map || !leaflet) return;
     const imagery = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-    const streets = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const streets = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
     const labels = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
     if (!map.getPane("arkemx-basemap-labels")) {
       const pane = map.createPane("arkemx-basemap-labels");
@@ -714,7 +714,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
     if (!basemapTileRef.current) {
       const tile = leaflet.tileLayer(imagery, {
-        maxNativeZoom: 19, maxZoom: 20,
+        maxNativeZoom: 18, maxZoom: 20,
         attribution: "Tiles &copy; Esri and its imagery providers",
       });
       tile.on("tileerror", () => {
@@ -732,7 +732,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
     if (!basemapLabelsRef.current) {
       const labelLayer = leaflet.tileLayer(labels, {
-        maxNativeZoom: 19, maxZoom: 20, pane: "arkemx-basemap-labels",
+        maxNativeZoom: 18, maxZoom: 20, pane: "arkemx-basemap-labels",
         attribution: "Labels &copy; Esri",
         opacity: 0,
       });
@@ -743,9 +743,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const labelLayer = basemapLabelsRef.current;
     const targetUrl = basemapMode === "street" ? streets : imagery;
     const credit = basemapMode === "street"
-      ? "&copy; OpenStreetMap contributors"
+      ? "Tiles &copy; Esri, World Street Map contributors"
       : "Tiles &copy; Esri and its imagery providers";
-    if (base.getTileUrl({x:0,y:0,z:0}).split("?")[0] !== targetUrl.replace("{s}", "a").replace("{z}", "0").replace("{y}", "0").replace("{x}", "0")) {
+    if (base.getTileUrl({x:0,y:0,z:0}).split("?")[0] !== targetUrl.replace("{z}", "0").replace("{y}", "0").replace("{x}", "0")) {
       setBasemapStatus("loading");
       base.setUrl(targetUrl);
     }
