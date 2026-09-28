@@ -225,6 +225,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const leafletRef = useRef<LeafletModule | null>(null);
   const basemapTileRef = useRef<import("leaflet").TileLayer | null>(null);
   const basemapLabelsRef = useRef<import("leaflet").TileLayer | null>(null);
+  const basemapUrlRef = useRef<string | null>(null);
   const parcelLayerRef = useRef<LeafletPolygon | null>(null);
   const buildingLayerRef = useRef<LeafletPolygon | null>(null);
   const pointsLayerRef = useRef<LayerGroup | null>(null);
@@ -709,6 +710,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       disposed = true;
       basemapTileRef.current = null;
       basemapLabelsRef.current = null;
+      basemapUrlRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       leafletRef.current = null;
@@ -747,6 +749,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setBasemapWarning("");
       });
       basemapTileRef.current = tile;
+      basemapUrlRef.current = imagery;
       tile.addTo(map).bringToBack();
     }
     if (!basemapLabelsRef.current) {
@@ -764,7 +767,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const credit = basemapMode === "street"
       ? "Tiles &copy; Esri, World Street Map contributors"
       : "Tiles &copy; Esri and its imagery providers";
-    if (base.getTileUrl({x:0,y:0,z:0}).split("?")[0] !== targetUrl.replace("{z}", "0").replace("{y}", "0").replace("{x}", "0")) {
+    if (basemapUrlRef.current !== targetUrl) {
+      basemapUrlRef.current = targetUrl;
       setBasemapStatus("loading");
       base.setUrl(targetUrl);
     }
