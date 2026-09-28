@@ -17,7 +17,8 @@
     "locales:audit": "node scripts/audit-locales.mjs",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "types:cloudflare": "wrangler types worker-configuration.d.ts -c wrangler.types.jsonc",
-    "typecheck": "npm run types:cloudflare && tsc --noEmit"
+    "typecheck": "npm run types:cloudflare && tsc --noEmit",
+    "test:geo:e2e": "node tests/geo-browser-smoke.mjs"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-leaflet": "0.1.4",
