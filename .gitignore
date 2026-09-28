@@ -48,6 +48,7 @@ next-env.d.ts
 /output/
 /arkemx-browser-results/
 /tsconfig.tsbuildinfo
+/worker-configuration.d.ts
 /playwright-report/
 /test-results/
 arkemx-*.log
