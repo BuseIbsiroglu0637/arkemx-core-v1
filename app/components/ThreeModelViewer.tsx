@@ -156,7 +156,8 @@ export function ThreeModelViewer({ modelUrl, title = "Etkileşimli taşıyıcı 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.setAttribute("aria-label", title);
     renderer.domElement.setAttribute("role", "img");
-    host.prepend(renderer.domElement);
+    // Avoid Cloudflare runtime DOM overload conflicts with Element.prepend.
+    host.insertAdjacentElement("afterbegin", renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;

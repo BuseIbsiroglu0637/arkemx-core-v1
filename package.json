@@ -15,7 +15,9 @@
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "locales:audit": "node scripts/audit-locales.mjs",
-    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
+    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
+    "types:cloudflare": "wrangler types worker-configuration.d.ts -c wrangler.types.jsonc",
+    "typecheck": "npm run types:cloudflare && tsc --noEmit"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-leaflet": "0.1.4",
