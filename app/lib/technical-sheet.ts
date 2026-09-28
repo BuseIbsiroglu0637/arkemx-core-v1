@@ -27,6 +27,7 @@ export type TechnicalSheetInput = {
   coordinateSystem?: string;
   preparedBy?: string;
   checkedBy?: string;
+  reviewBanner?: string;
   polylines: TechnicalSheetPolyline[];
   metrics?: Array<[string, string]>;
   notes?: string[];
@@ -228,6 +229,16 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
     font: bold,
     color: COLORS.pale,
   });
+
+  if (input.reviewBanner) {
+    page.drawRectangle({ x: 42, y: 705, width: 1107, height: 19, color: COLORS.warning });
+    const warningText = clean(input.reviewBanner);
+    page.drawText(warningText, {
+      x: 52, y: 710.7,
+      size: fitSize(bold, warningText, 9.3, 1085, 6.8),
+      font: bold, color: COLORS.white,
+    });
+  }
 
   const drawing = { x: 42, y: 172, width: 750, height: 530 };
   const sidebar = { x: 808, y: 172, width: 341, height: 530 };

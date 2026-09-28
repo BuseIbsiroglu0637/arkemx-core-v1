@@ -5,6 +5,7 @@ import type { LayerGroup, Map as LeafletMap, Polygon as LeafletPolygon } from "l
 import { GeoTerrainViewer } from "./GeoTerrainViewer";
 import { buildingFootprint, fromLocalMeters, geoCentroid, localBounds, minimumBoundaryDistance, pointInPolygon, polygonEdgesCross, polygonArea, polygonPerimeter, polygonSelfIntersects, sampleParcel, toLocalMeters, type GeoPoint } from "../lib/geo";
 import { createLayeredDxf } from "../lib/engineering";
+import { assessExportReview, escapeXml } from "../lib/export-review";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { createGeoProvenance, GEO_CONNECTORS } from "../lib/geo-integration";
 import {
@@ -224,6 +225,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const leafletRef = useRef<LeafletModule | null>(null);
   const basemapTileRef = useRef<import("leaflet").TileLayer | null>(null);
   const basemapLabelsRef = useRef<import("leaflet").TileLayer | null>(null);
+  const basemapUrlRef = useRef<string | null>(null);
   const parcelLayerRef = useRef<LeafletPolygon | null>(null);
   const buildingLayerRef = useRef<LeafletPolygon | null>(null);
   const pointsLayerRef = useRef<LayerGroup | null>(null);
@@ -590,6 +592,24 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       && Math.abs(alternative.offsetNorth - offsetNorth) < .11;
     return matches ? alternative.id : "manual";
   }, [buildingDepth, buildingWidth, floors, massingModel.alternatives, offsetEast, offsetNorth, rotation, selectedMassingId]);
+  const exportReview = assessExportReview({
+    geometryValid: metrics.geometryValid,
+    buildingFits: metrics.buildingFits,
+    setbackPass: metrics.setbackPass,
+    coverage: metrics.coverage,
+    maxCoverage,
+    far: metrics.far,
+    maxFar,
+    buildingHeight: metrics.buildingHeight,
+    maxHeight,
+    zoningAuthoritative: createZoningProvenance(zoning, reference).authoritative,
+    officialCadastre: parcelRecord.evidence.officialCadastre,
+    licensedSurvey: dataStatus === "Onaylı aplikasyon verisi" || dataStatus === "Harita mühendisi ölçümü",
+    measuredTerrain: terrainModel.basis === "measured-z",
+  });
+  const exportReviewMessage = exportReview.status === "review-required"
+    ? `İNCELEME GEREKLİ – ${exportReview.reasons.join(" ")}`
+    : "Ön kontroller geçti; resmî teslim için yetkili meslek mensubu onayı gerekir.";
   const exportDisabled = !parcelRecord.projectEligible || !metrics.geometryValid;
   const toggleTerrainLayer = (layer: TerrainLayerId) => { if (layer === "basemap") return; setTerrainLayers((current) => ({ ...current, [layer]: !current[layer] })); };
   const applyMassingAlternative = (alternativeId: string) => {
@@ -690,6 +710,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       disposed = true;
       basemapTileRef.current = null;
       basemapLabelsRef.current = null;
+      basemapUrlRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       leafletRef.current = null;
@@ -728,6 +749,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setBasemapWarning("");
       });
       basemapTileRef.current = tile;
+      basemapUrlRef.current = imagery;
       tile.addTo(map).bringToBack();
     }
     if (!basemapLabelsRef.current) {
@@ -745,7 +767,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const credit = basemapMode === "street"
       ? "Tiles &copy; Esri, World Street Map contributors"
       : "Tiles &copy; Esri and its imagery providers";
-    if (base.getTileUrl({x:0,y:0,z:0}).split("?")[0] !== targetUrl.replace("{z}", "0").replace("{y}", "0").replace("{x}", "0")) {
+    if (basemapUrlRef.current !== targetUrl) {
+      basemapUrlRef.current = targetUrl;
       setBasemapStatus("loading");
       base.setUrl(targetUrl);
     }
@@ -1012,8 +1035,54 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setFileNotice(`${file.name}: belge adı proje kaydına eklendi; içeriği veya resmî geçerliliği doğrulanmadı. Yetkili idare ve uzman incelemesi bekleniyor.`);
   };
 
-  const exportGeoJson = () => downloadBlob(`${reference}.geojson`, JSON.stringify({ type: "FeatureCollection", name: reference, metadata: { schema: "ARKEM-GEO/1.3", sourceCrs, dataStatus, generatedAt: new Date().toISOString(), parcelRecord, terrainModel, massingModel, planning: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 }, zoning: createZoningProvenance(zoning, reference) }, features: [{ type: "Feature", properties: { reference, source: "Arkem Parcel Studio", crs: "EPSG:4326", validation: metrics.geometryValid ? "geometry-pass" : "review" }, geometry: { type: "Polygon", coordinates: [[...parcel, parcel[0]].map((point) => [point.lng, point.lat, point.alt].filter((value) => value !== undefined))] } }, { type: "Feature", properties: { reference: `${reference}-ON-YAPI`, system, usage, floors, floorHeight, selectedMassingId: activeMassingId, coverage: metrics.coverage, far: metrics.far }, geometry: { type: "Polygon", coordinates: [[...building, building[0]].map((point) => [point.lng, point.lat])] } }] }, null, 2), "application/geo+json");
-  const exportKml = () => downloadBlob(`${reference}.kml`, `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${reference}</name><Placemark><name>Parsel</name><Style><LineStyle><color>ff3666b9</color><width>3</width></LineStyle><PolyStyle><color>443666b9</color></PolyStyle></Style><Polygon><outerBoundaryIs><LinearRing><coordinates>${[...parcel, parcel[0]].map((point) => `${point.lng},${point.lat},${point.alt ?? 0}`).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark><Placemark><name>On Yapi Kutlesi</name><Polygon><outerBoundaryIs><LinearRing><coordinates>${[...building, building[0]].map((point) => `${point.lng},${point.lat},0`).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>`, "application/vnd.google-earth.kml+xml");
+  const exportGeoJson = () => downloadBlob(`${reference}.geojson`, JSON.stringify({
+    type: "FeatureCollection", name: reference,
+    metadata: {
+      schema: "ARKEM-GEO/1.4", sourceCrs, dataStatus, generatedAt: new Date().toISOString(),
+      parcelRecord, terrainModel, massingModel, exportReview,
+      planning: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 },
+      zoning: createZoningProvenance(zoning, reference),
+    },
+    features: [
+      {
+        type: "Feature",
+        properties: { reference, source: "Arkem Parcel Studio", crs: "EPSG:4326", geometryValidation: metrics.geometryValid ? "geometry-pass" : "review-required", officialCadastre: false },
+        geometry: { type: "Polygon", coordinates: [[...parcel, parcel[0]].map((point) => [point.lng, point.lat, point.alt].filter((value) => value !== undefined))] },
+      },
+      {
+        type: "Feature",
+        properties: {
+          reference: `${reference}-ON-YAPI`, system, usage, floors, floorHeight,
+          selectedMassingId: activeMassingId, coverage: metrics.coverage, far: metrics.far,
+          reviewStatus: exportReview.status, officialReleaseEligible: false,
+          reviewReasons: exportReview.reasons,
+        },
+        geometry: { type: "Polygon", coordinates: [[...building, building[0]].map((point) => [point.lng, point.lat])] },
+      },
+    ],
+  }, null, 2), "application/geo+json");
+  const exportKml = () => {
+    const reviewReasons = exportReview.reasons.join(" | ");
+    const text = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+<name>${escapeXml(reference)}</name>
+<description>${escapeXml(exportReviewMessage)} Resmî teslim onayı yoktur.</description>
+<ExtendedData>
+  <Data name="reviewStatus"><value>${exportReview.status}</value></Data>
+  <Data name="officialReleaseEligible"><value>false</value></Data>
+  <Data name="reviewReasons"><value>${escapeXml(reviewReasons)}</value></Data>
+</ExtendedData>
+<Placemark><name>Parsel</name>
+<ExtendedData><Data name="geometryValidation"><value>${metrics.geometryValid ? "geometry-pass" : "review-required"}</value></Data></ExtendedData>
+<Style><LineStyle><color>ff3666b9</color><width>3</width></LineStyle><PolyStyle><color>443666b9</color></PolyStyle></Style>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>${[...parcel, parcel[0]].map((point) => `${point.lng},${point.lat},${point.alt ?? 0}`).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>On Yapi Kutlesi – ${exportReview.status}</name>
+<description>${escapeXml(exportReviewMessage)}</description>
+<ExtendedData><Data name="reviewStatus"><value>${exportReview.status}</value></Data><Data name="officialReleaseEligible"><value>false</value></Data></ExtendedData>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>${[...building, building[0]].map((point) => `${point.lng},${point.lat},0`).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+</Document></kml>`;
+    downloadBlob(`${reference}.kml`, text, "application/vnd.google-earth.kml+xml");
+  };
   const exportCsv = () => downloadBlob(`${reference}-koordinatlar.csv`, `point,latitude,longitude,elevation_m\n${parcel.map((point, index) => `P${index + 1},${point.lat.toFixed(8)},${point.lng.toFixed(8)},${point.alt ?? ""}`).join("\n")}`, "text/csv;charset=utf-8");
   const exportDxf = () => {
     const origin = geoCentroid(parcel);
@@ -1034,7 +1103,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       width: Math.max(width, 1),
       depth: Math.max(depth, 1),
       polylines: [{ layer: "PARSEL", points: shiftedParcel }, { layer: "ON_YAPI", points: shiftedBuilding }, ...shiftedContours.map((points) => ({ layer: "ESYUKSELTI", points, closed: false }))],
+      warningNotes: ["INCELEME GEREKLI / RESMI TESLIM ONAYI YOK", ...exportReview.reasons.slice(0, 2)],
       notes: [
+        `CIKTI STATU: ${exportReview.status} / RESMI TESLIM: HAYIR`,
         `WGS84 ORIGIN: ${origin.lat.toFixed(8)}, ${origin.lng.toFixed(8)}`,
         `PARSEL ALANI: ${metrics.area.toFixed(1)} m2 / CEVRE: ${metrics.perimeter.toFixed(1)} m`,
         `ON YAPI: ${buildingWidth} x ${buildingDepth} m / ${floors} KAT / ${system}`,
@@ -1077,6 +1148,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       sheetNo: "GEO-001",
       scale: "OTOMATIK / METRE",
       coordinateSystem: sourceCrs,
+      reviewBanner: exportReview.status === "review-required" ? "İNCELEME GEREKLİ / RESMÎ TESLİME UYGUN DEĞİL" : "ÖN KONTROLLER GEÇTİ / RESMÎ ONAY BEKLİYOR",
       polylines: [
         { role: "secondary", points: toSheet(parcel, true) },
         { role: "primary", points: toSheet(building) },
@@ -1101,6 +1173,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         point.lng.toFixed(7),
       ]),
       notes: [
+        exportReviewMessage,
         `${sourceCrs} koordinat sistemi ve ${dataStatus} veri statüsü kullanılmıştır.`,
         `Kütle: ${buildingWidth.toFixed(1)} × ${buildingDepth.toFixed(1)} m, ${floors} kat, ${rotation}° yönlenme.`,
         `İmar girdisi: TAKS ${zoning.taks.toFixed(2)}, KAKS ${zoning.kaks.toFixed(2)}, Hmax ${zoning.hmax.toFixed(1)} m, ${zoning.buildingOrder}.`,
@@ -1126,7 +1199,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const faces = parcel.length >= 3 ? Array.from({ length: parcel.length - 2 }, (_, index) => `<F>1 ${index + 2} ${index + 3}</F>`).join("") : "";
     downloadBlob(`${reference}.xml`, `<?xml version="1.0" encoding="UTF-8"?><LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" version="1.2" date="${new Date().toISOString().slice(0,10)}"><Units><Metric linearUnit="meter" areaUnit="squareMeter" volumeUnit="cubicMeter"/></Units><Project name="${ascii(reference)}"/><CoordinateSystem name="Local ENU from WGS84" desc="Origin ${origin.lat.toFixed(8)},${origin.lng.toFixed(8)}"/><Surfaces><Surface name="PARSEL_ON_YUZEY"><Definition surfType="TIN"><Pnts>${points}</Pnts><Faces>${faces}</Faces></Definition></Surface></Surfaces></LandXML>`, "application/xml");
   };
-  const exportManifest = () => downloadBlob(`${reference}-veri-manifestosu.json`, JSON.stringify({ schema: "ARKEM-GEO-MANIFEST/2.4", previousSchema: "ARKEM-GEO-MANIFEST/2.3", legacySchema: "ARKEM-GEO-MANIFEST/2.0", reference, sourceCrs, dataStatus, coordinateOrigin: center, parcelRecord, parcelSourceNetwork: sourceNetwork, terrainModel, terrainLayers, massingModel, selectedMassingId: activeMassingId, frontEdge, counts: { parcelVertices: parcel.length, buildingVertices: building.length, contourSegments: terrainContours.length, massingAlternatives: massingModel.alternatives.length }, planningInputs: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 }, zoning: createZoningProvenance(zoning, reference), metrics, provenance: createGeoProvenance({ reference, sourceCrs, dataStatus, administrativeSource, geometryValid: metrics.geometryValid, vertexCount: parcel.length }), connectors: [...GEO_CONNECTORS, ...ZONING_CONNECTORS], verification: { officialCadastre: false, licensedSurvey: dataStatus === "Harita mühendisi ölçümü" || dataStatus === "Onaylı aplikasyon verisi", zoningCertificate: zoning.verification === "certified-document", measuredElevation: terrainModel.basis === "measured-z", massingAuthoritative: massingModel.source.authoritative }, limitations: ["Kadastro sınırı değildir", "İmar uygunluk belgesi değildir", "Aplikasyon veya ruhsat projesi değildir", ...terrainModel.limitations, ...massingModel.limitations] }, null, 2), "application/json");
+  const exportManifest = () => downloadBlob(`${reference}-veri-manifestosu.json`, JSON.stringify({ schema: "ARKEM-GEO-MANIFEST/2.4", previousSchema: "ARKEM-GEO-MANIFEST/2.3", legacySchema: "ARKEM-GEO-MANIFEST/2.0", reference, sourceCrs, dataStatus, exportReview, officialReleaseEligible: false, coordinateOrigin: center, parcelRecord, parcelSourceNetwork: sourceNetwork, terrainModel, terrainLayers, massingModel, selectedMassingId: activeMassingId, frontEdge, counts: { parcelVertices: parcel.length, buildingVertices: building.length, contourSegments: terrainContours.length, massingAlternatives: massingModel.alternatives.length }, planningInputs: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 }, zoning: createZoningProvenance(zoning, reference), metrics, provenance: createGeoProvenance({ reference, sourceCrs, dataStatus, administrativeSource, geometryValid: metrics.geometryValid, vertexCount: parcel.length }), connectors: [...GEO_CONNECTORS, ...ZONING_CONNECTORS], verification: { officialCadastre: false, licensedSurvey: dataStatus === "Harita mühendisi ölçümü" || dataStatus === "Onaylı aplikasyon verisi", zoningCertificate: zoning.verification === "certified-document", measuredElevation: terrainModel.basis === "measured-z", massingAuthoritative: massingModel.source.authoritative }, limitations: ["Kadastro sınırı değildir", "İmar uygunluk belgesi değildir", "Aplikasyon veya ruhsat projesi değildir", ...terrainModel.limitations, ...massingModel.limitations] }, null, 2), "application/json");
 
   const stageContent: Record<Stage, React.ReactNode> = {
     locate: <div className="geo-control-section"><span>01 / PARSELİ BUL</span><h3>Resmî sorgudaki sırayla konumu seçin.</h3>{administrativeSource === "fallback" && <div className="arx-geo-offline-alert" role="status">
@@ -1255,7 +1328,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <button className="geo-wide-action" onClick={() => setViewMode("terrain")}>Ortak 3B arazi modelini açın</button>
       <div className="geo-source-stack"><p><i className={terrainModel.basis === "parametric-slope" ? "live" : ""}></i><span><b>Parametrik yüzey</b><small>{terrainModel.basis === "parametric-slope" ? "Kavramsal çalışma yüzeyi aktif" : "Ölçülmüş kotlar varken kullanılmıyor"}</small></span></p><p><i className={terrainModel.basis === "measured-z" ? "live" : ""}></i><span><b>CSV / KML kot noktası</b><small>{terrainModel.basis === "measured-z" ? `${terrainModel.elevation.minimum?.toFixed(1)}–${terrainModel.elevation.maximum?.toFixed(1)} m · ${terrainModel.surface.contourSegments} eş yükselti parçası` : "Dosyada en az üç Z değeri bekliyor"}</small></span></p><p><i></i><span><b>Cesium / fotogrametri</b><small>Token ve proje veri setiyle bağlanır</small></span></p><p><i></i><span><b>Google 3B Tiles</b><small>API anahtarı + faturalandırma gerekir</small></span></p></div>
     </div>,
-    export: <div className="geo-control-section"><span>07 / TEKNİK ÇIKTI</span><h3>Geometriyi, imar kaynağını ve veri statüsünü kurumsal paftayla aktarın.</h3><div className="geo-export-list"><button onClick={exportPdf} disabled={exportDisabled}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf} disabled={exportDisabled}><span>CAD</span><b>DWG uyumlu antetli DXF</b><i>↓</i></button><button onClick={exportKml} disabled={exportDisabled}><span>KML</span><b>Google Earth aktarımı</b><i>↓</i></button><button onClick={exportGeoJson} disabled={exportDisabled}><span>GJSON</span><b>GeoJSON + arazi metadata</b><i>↓</i></button><button onClick={exportLandXml} disabled={exportDisabled || terrainModel.basis !== "measured-z"}><span>XML</span><b>{terrainModel.basis === "measured-z" ? "LandXML kaynaklı TIN başlangıcı" : "LandXML için üç kaynaklı Z kotu gerekli"}</b><i>↓</i></button><button onClick={exportCsv} disabled={exportDisabled}><span>CSV</span><b>WGS84 koordinat ve kot listesi</b><i>↓</i></button><button onClick={exportManifest} disabled={exportDisabled}><span>MAN</span><b>Parsel · imar · arazi kanıt manifestosu</b><i>↓</i></button></div>{!parcelRecord.projectEligible && <p className="geo-caution"><b>Çıktı bekliyor:</b> Temsili başlangıç geometrisi teknik teslim üretmez. TKGM sınırı, doğrulanmış mekânsal dosya veya kullanıcı sınır düzenlemesi kaynağıyla kaydedilmelidir.</p>}<p className="geo-caution"><b>DWG notu:</b> İndirilen katmanlı DXF; pafta çerçevesi, antet, proje kimliği, imar kaynağı ve revizyon bilgilerini içerir ve CAD ortamında DWG olarak kaydedilebilir. Doğrudan DWG üretimi için lisanslı dönüşüm servisi gerekir.</p></div>,
+    export: <div className="geo-control-section"><span>07 / TEKNİK ÇIKTI</span><h3>Geometriyi, imar kaynağını ve veri statüsünü kurumsal paftayla aktarın.</h3><p className="geo-caution" role="status"><b>{exportReview.status === "review-required" ? "İNCELEME GEREKLİ" : "ÖN KONTROLLER TAMAM"}</b> · Resmî teslim onayı yoktur. {exportReview.reasons.slice(0, 3).join(" ")}</p><div className="geo-export-list"><button onClick={exportPdf} disabled={exportDisabled}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf} disabled={exportDisabled}><span>CAD</span><b>DWG uyumlu antetli DXF</b><i>↓</i></button><button onClick={exportKml} disabled={exportDisabled}><span>KML</span><b>Google Earth aktarımı</b><i>↓</i></button><button onClick={exportGeoJson} disabled={exportDisabled}><span>GJSON</span><b>GeoJSON + arazi metadata</b><i>↓</i></button><button onClick={exportLandXml} disabled={exportDisabled || terrainModel.basis !== "measured-z"}><span>XML</span><b>{terrainModel.basis === "measured-z" ? "LandXML kaynaklı TIN başlangıcı" : "LandXML için üç kaynaklı Z kotu gerekli"}</b><i>↓</i></button><button onClick={exportCsv} disabled={exportDisabled}><span>CSV</span><b>WGS84 koordinat ve kot listesi</b><i>↓</i></button><button onClick={exportManifest} disabled={exportDisabled}><span>MAN</span><b>Parsel · imar · arazi kanıt manifestosu</b><i>↓</i></button></div>{!parcelRecord.projectEligible && <p className="geo-caution"><b>Çıktı bekliyor:</b> Temsili başlangıç geometrisi teknik teslim üretmez. TKGM sınırı, doğrulanmış mekânsal dosya veya kullanıcı sınır düzenlemesi kaynağıyla kaydedilmelidir.</p>}<p className="geo-caution"><b>DWG notu:</b> İndirilen katmanlı DXF; pafta çerçevesi, antet, proje kimliği, imar kaynağı ve revizyon bilgilerini içerir ve CAD ortamında DWG olarak kaydedilebilir. Doğrudan DWG üretimi için lisanslı dönüşüm servisi gerekir.</p></div>,
   };
 
   return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"} data-arx-results={showResults ? "open" : "closed"}>

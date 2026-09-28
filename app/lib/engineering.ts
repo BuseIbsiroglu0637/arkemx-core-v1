@@ -266,6 +266,7 @@ export function createLayeredDxf(input: {
   polylines?: DxfPolyline[];
   grid?: { baysX: number; baysY: number };
   notes?: string[];
+  warningNotes?: string[];
   sheet?: DxfSheetMeta;
 }) {
   const entities: string[] = [];
@@ -429,6 +430,15 @@ export function createLayeredDxf(input: {
     "PAFTA_YAZI",
   );
 
+  if (input.warningNotes?.length) {
+    const warnings = input.warningNotes.slice(0, 3);
+    warnings.forEach((warning, index) => fittedText(
+      frameLeft + innerPad, frameTop - textHeight * (4.4 + index * .95),
+      textHeight * .62, warning, drawingRight - frameLeft - innerPad * 2,
+      "ARKEM_UYARI", 0, "ARKEM_SANS_BOLD",
+    ));
+  }
+
   const logoX = titleX + innerPad;
   const logoY = brandBottom + brandHeight * .23;
   const logoW = Math.min(brandHeight * .55, titleWidth * .13);
@@ -507,7 +517,7 @@ export function createLayeredDxf(input: {
     ["0", 7], ["AKS", 8], ["AKS_BALON", 8], ["AKS_YAZI", 7], ["PARSEL", 1],
     ["ON_YAPI", 30], ["KOLON", 1], ["PERDE", 3], ["MAHAL", 5], ["CEKIRDEK", 4],
     ["BOSLUK", 6], ["NOKTA_YAZI", 7], ["YAZI", 7], ["OLCU", 8], ["OLCU_YAZI", 7], ["PAFTA_YAZI", 7],
-    ["ARKEM_CERCEVE", 8], ["ARKEM_ANTET", 8], ["ARKEM_LOGO", 30], ["ARKEM_BILGI", 7], ["ARKEM_REVIZYON", 30], ["ARKEM_NOTLAR", 8],
+    ["ARKEM_CERCEVE", 8], ["ARKEM_ANTET", 8], ["ARKEM_UYARI", 1], ["ARKEM_LOGO", 30], ["ARKEM_BILGI", 7], ["ARKEM_REVIZYON", 30], ["ARKEM_NOTLAR", 8],
     ...dynamicLayers.filter((name) => !["0", "AKS", "AKS_BALON", "AKS_YAZI", "PARSEL", "ON_YAPI", "KOLON", "PERDE", "MAHAL", "CEKIRDEK", "BOSLUK", "NOKTA_YAZI", "YAZI", "OLCU", "OLCU_YAZI", "PAFTA_YAZI"].includes(name)).map((name) => [name, 7] as [string, number]),
   ];
   const layerTable = layers.map(([name, color]) => `0\nLAYER\n2\n${name}\n70\n0\n62\n${color}\n6\nCONTINUOUS\n`).join("");
