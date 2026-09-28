@@ -54,10 +54,17 @@ try {
 
   await check("Uydu, hibrit ve sokak harita modları değişiyor", async () => {
     const switcher = page.getByRole("group", { name: "Harita altlığı" });
-    for (const mode of ["Uydu", "Hibrit", "Sokak"]) {
-      const button = switcher.getByRole("button", { name: mode });
+    // Start with a genuine state transition (the initial basemap is Uydu).
+    // A Playwright click can finish before React has committed aria-pressed.
+    for (const mode of ["Sokak", "Hibrit", "Uydu"]) {
+      const button = switcher.getByRole("button", { name: mode, exact: true });
       await button.click();
-      assert.equal(await button.getAttribute("aria-pressed"), "true");
+      await page.waitForFunction((label) => {
+        const buttons = Array.from(document.querySelectorAll(".geo-basemap-switch button"));
+        return buttons.some((item) =>
+          item.textContent?.trim() === label && item.getAttribute("aria-pressed") === "true");
+      }, mode, { timeout: 10_000 });
+      assert.equal(await button.getAttribute("aria-pressed"), "true", mode);
     }
     // External tile availability is intentionally not asserted.
   });
