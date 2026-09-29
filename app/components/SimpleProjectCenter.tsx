@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   ArrowRight, ClipboardList, Download, DraftingCompass,
-  FileUp, GitMerge, Layers3, ShieldAlert,
+  FileUp, GitMerge, Layers3, ShieldAlert, Wrench,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
 import { useProjectKernel } from "./ProjectKernel";
@@ -15,6 +15,7 @@ const quickTools = [
   { label: "Mimari program", href: "/mimari-program-studyosu", Icon: Layers3 },
   { label: "Plan ve aks", href: "/plan-ve-aks", Icon: DraftingCompass },
   { label: "BIM koordinasyon", href: "/bim-koordinasyon", Icon: GitMerge },
+  { label: "Proje takibi", href: "/proje-takibi", Icon: Wrench },
 ] as const;
 
 export function SimpleProjectCenter() {
