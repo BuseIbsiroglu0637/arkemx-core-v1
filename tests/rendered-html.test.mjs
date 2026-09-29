@@ -1245,8 +1245,10 @@ test("V103 keeps the full design studio out of the V2.1 homepage", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /MÜHENDİSLİK/);
-  assert.match(html, /Cihan Tat Gıda/);
+  assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(html, /href="\/tasarim-calismalari#plan-editor"/);
+  assert.match(html, /href="\/tasarim-calismalari#tasiyici-on-tasarim"/);
+  assert.doesNotMatch(html, /class="design-studio-hero"/);
 });
 
 test("V105 applies one readable responsive design contract across shared surfaces", () => {
@@ -4136,7 +4138,8 @@ test("Web V4.2 isolates the mobile header and prevents the narrow hero title reg
   assert.match(styles, /grid-template-columns:minmax\(0,1fr\) 48px 48px/);
   assert.match(styles, /@media \(max-width:380px\)[\s\S]*?\.v4-hero-copy h1\{font-size:37px/);
 
-  const response = await render("/");
+  // The corporate mobile header lives on corporate routes, not the tools-only homepage.
+  const response = await render("/giris");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /class="v4-mobile-site-header is-light"/);
