@@ -29,7 +29,7 @@ const profiles: Record<SystemId, { name: string; slug: string; description: stri
 
 const defaultWeights: Record<CriterionId, number> = { schedule: 5, certainty: 4, span: 4, mass: 4, carbon: 3, flexibility: 4, supply: 3, fire: 3 };
 
-export function SystemComparisonTool() {
+export function SystemComparisonTool({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const [transferReady, setTransferReady] = useState(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();
@@ -108,6 +108,124 @@ export function SystemComparisonTool() {
   }, [hydrated, importProjectGeometry, project.modules]);
   const exportJson = () => downloadTextFile("arkem-sistem-mcda.json", JSON.stringify({ schema: "ARKEM-MCDA/1.0", inputs: { usage, floors, span, area, repetition, transport, fireRating }, weights, results: ranking, shortlist }, null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-sistem-karsilastirma.csv", ["rank,system,score,low,high,constraints", ...ranking.map((item, index) => `${index + 1},${item.name},${item.score.toFixed(1)},${item.low.toFixed(1)},${item.high.toFixed(1)},"${item.constraints.join("; ")}"`)].join("\n"), "text/csv;charset=utf-8");
+
+  if (simple) {
+    return <section className="arx-system-tool" data-testid="system-comparison-tool">
+      <ProjectKernelBar module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" compact />
+      <div className="arx-system-grid">
+        <section className="arx-system-panel" aria-labelledby="arx-system-input-title">
+          <header className="arx-system-panel-head">
+            <h2 id="arx-system-input-title">Proje girdileri</h2>
+            <button type="button" onClick={importProjectGeometry}>Proje verilerini aktar ↘</button>
+          </header>
+          <div className="arx-system-fields">
+            <label>Kullanım
+              <select value={usage} onChange={(event) => setUsage(event.target.value)}>
+                <option value="industrial">Sanayi / üretim</option>
+                <option value="storage">Depo / lojistik</option>
+                <option value="residential">Konut</option>
+                <option value="commercial">Ticari / sosyal</option>
+              </select>
+            </label>
+            <label>Kat adedi
+              <input type="number" min="1" max="50" value={floors} onChange={(event) => setFloors(Number(event.target.value))} />
+            </label>
+            <label>En büyük açıklık (m)
+              <input type="number" min="3" max="60" step=".5" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
+            </label>
+            <label>Brüt alan (m²)
+              <input type="number" min="50" max="100000" step="50" value={area} onChange={(event) => setArea(Number(event.target.value))} />
+            </label>
+          </div>
+          <details className="arx-system-detail">
+            <summary>Diğer proje girdileri</summary>
+            <div className="arx-system-fields">
+              <label>Yangın hedefi (dk)
+                <input type="number" min="30" max="240" step="30" value={fireRating} onChange={(event) => setFireRating(Number(event.target.value))} />
+              </label>
+              <label>Tekrar oranı (%)
+                <input type="number" min="0" max="100" step="5" value={repetition} onChange={(event) => setRepetition(Number(event.target.value))} />
+              </label>
+              <label>Taşıma mesafesi (km)
+                <input type="number" min="10" max="1000" step="10" value={transport} onChange={(event) => setTransport(Number(event.target.value))} />
+              </label>
+            </div>
+          </details>
+          <details className="arx-system-detail">
+            <summary>Kriter öncelikleri ve ağırlıkları</summary>
+            <div className="arx-system-weights">
+              {criteria.map((criterion) => <label key={criterion.id}>
+                <span><b>{criterion.label}</b><small>{criterion.note}</small></span>
+                <input type="range" aria-label={criterion.label} min="0" max="5" step="1" value={weights[criterion.id]} onChange={(event) => updateWeight(criterion.id, Number(event.target.value))} />
+                <strong>{weights[criterion.id]}</strong>
+              </label>)}
+              <button type="button" onClick={() => setWeights(defaultWeights)}>Varsayılan ağırlıklar</button>
+            </div>
+          </details>
+        </section>
+        <section className="arx-system-panel arx-system-results" aria-labelledby="arx-system-results-title">
+          <header className="arx-system-panel-head">
+            <div><h2 id="arx-system-results-title">Beş sistemin karşılaştırması</h2><p>Ön tarama puanları, belirsizlik aralıkları ve inceleme gerektiren koşullar.</p></div>
+            <div className="arx-system-exports">
+              <button type="button" onClick={exportJson}>JSON indir</button>
+              <button type="button" onClick={exportCsv}>CSV indir</button>
+            </div>
+          </header>
+          <div className="arx-system-list">
+            {ranking.map((item) => <article key={item.id} className={shortlist.includes(item.id) ? "arx-system-result is-selected" : "arx-system-result"}>
+              <div className="arx-system-result-name">
+                <h3>{item.name}</h3>
+                <p>{item.description}</p>
+                <small>{item.constraints[0] ?? "Ön taramada belirgin kısıt görünmüyor."}</small>
+              </div>
+              <div className="arx-system-score" aria-label={item.name + " ön tarama puanı"}>
+                <div><strong>{item.score.toFixed(1)}</strong><small>± belirsizlik</small></div>
+                <div className="arx-system-score-track" aria-hidden="true">
+                  <i style={{ left: item.low + "%", width: (item.high - item.low) + "%" }} />
+                  <b style={{ left: item.score + "%" }} />
+                </div>
+                <small>{item.low.toFixed(0)}–{item.high.toFixed(0)} aralığı</small>
+              </div>
+              <button type="button" aria-pressed={shortlist.includes(item.id)} onClick={() => toggleShortlist(item.id)}>
+                {shortlist.includes(item.id) ? "✓ Kısa listede" : "+ Kısa listeye ekle"}
+              </button>
+            </article>)}
+          </div>
+          <details className="arx-system-detail">
+            <summary>Teknik puan matrisi</summary>
+            <div className="arx-system-table-wrap">
+              <table className="arx-system-table">
+                <caption className="sr-only">Kriterlere göre beş taşıyıcı sistemin teknik puanları</caption>
+                <thead><tr><th scope="col">Kriter (ağırlık)</th>{(Object.keys(profiles) as SystemId[]).map((id) => <th scope="col" key={id}>{profiles[id].name}</th>)}</tr></thead>
+                <tbody>{criteria.map((criterion) => <tr key={criterion.id}>
+                  <th scope="row">{criterion.label} ({weights[criterion.id]}/5)</th>
+                  {(Object.keys(profiles) as SystemId[]).map((id) => <td key={id}>{profiles[id].scores[criterion.id]}/5</td>)}
+                </tr>)}</tbody>
+              </table>
+            </div>
+          </details>
+          <details className="arx-system-detail">
+            <summary>Duyarlılık ve belirsizlik notları</summary>
+            <div className="arx-system-sensitivity">
+              <p>Sonuçlar zemin, kesin yükler, yerel fiyat ve termin, üretici kapasitesi ve detay seviyesi doğrulanmadan kesin sistem seçimi olarak yorumlanmamalıdır.</p>
+              {ranking.map((item) => <p key={item.id}><b>{item.name}:</b> {item.low.toFixed(0)}–{item.high.toFixed(0)} puan · {item.constraints.length ? item.constraints.join("; ") : "Özel kısıt saptanmadı."}</p>)}
+            </div>
+          </details>
+        </section>
+      </div>
+      <section className="arx-system-panel arx-system-shortlist" aria-labelledby="arx-system-shortlist-title">
+        <div>
+          <h2 id="arx-system-shortlist-title">Birlikte incelenecek sistemler</h2>
+          <div className="arx-system-tags">
+            {ranking.filter((item) => shortlist.includes(item.id)).map((item) => <span key={item.id}>{item.name}</span>)}
+            {shortlist.length === 0 ? <span>Henüz sistem seçilmedi.</span> : null}
+          </div>
+        </div>
+        <Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarıma geç →</Link>
+      </section>
+      <p className="arx-system-note" role="note">Bu karşılaştırma yalnızca kavramsal ön elemedir; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir.</p>
+    </section>;
+  }
 
   return <section className="system-comparison-tool mcda-tool" data-testid="system-comparison-tool">
     <ProjectKernelBar module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" />
