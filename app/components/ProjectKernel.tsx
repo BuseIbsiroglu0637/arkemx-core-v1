@@ -77,7 +77,7 @@ export const PROJECT_JOURNEY = [
   { label: "Mimari programı kur", short: "Mimari", output: "Alan + mahal + plan", href: "/mimari-program-studyosu", modules: ["ARCHITECT", "PROGRAM", "PLAN"], projectKeys: ["architectural-program", "plan-editor"] },
   { label: "Sistemi ve yöntemi seç", short: "Sistem", output: "Taşıyıcı karar", href: "/sistem-karsilastirma", modules: ["MCDA", "STRUCTURAL", "DEMOLITION", "SYSTEM"], projectKeys: ["system-comparison", "demolition-screening"] },
   { label: "Tasarımı koordine et", short: "Koordinasyon", output: "Ortak model", href: "/bim-koordinasyon", modules: ["COORDINATION", "ENGINEERING", "CAD"], projectKeys: ["structural-concept", "engineering-coordination"] },
-  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-os", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
+  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-takibi", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
 
