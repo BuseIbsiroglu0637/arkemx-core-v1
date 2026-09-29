@@ -3977,12 +3977,13 @@ test("Web V4 restores working layered navigation and controlled corporate densit
   assert.match(styles, /\.v4-project-editorial/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,minmax\(0,1fr\)\)/);
 
-  const response = await render("/");
+  // HomeV4 is now mounted on the public English homepage; the Turkish root is the private tools workspace.
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /TEKNİK ÇIKTILAR/);
-  assert.match(html, /PROJE DENEYİMİ/);
-  assert.match(html, /aria-label="Menüyü aç"/);
+  assert.match(html, /TECHNICAL OUTPUTS/);
+  assert.match(html, /PROJECT EXPERIENCE/);
+  assert.match(html, /aria-label="Open menu"/);
 });
 
 test("Web V4 carries the content with working navigation, real locale routes and responsive ARKEMX discovery", () => {
@@ -4175,11 +4176,11 @@ test("Web V4.3 strengthens the corporate hero and closes the page with a complet
   assert.match(styles, /\.v4-contact-actions/);
   assert.match(styles, /\.v4-footer-statement/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /İLETİŞİME GEÇİN/);
-  assert.match(html, /Mühendisliği uygulamaya/);
+  assert.match(html, /CALL ARKEM/);
+  assert.match(html, /Engineering is the chain/);
   assert.doesNotMatch(html, /mailto:|arkemyapisistemleri@gmail\.com/i);
 });
 
@@ -4206,11 +4207,11 @@ test("Web V4.4 keeps the hero copy inside a bounded editorial grid and uses the 
   assert.equal(fs.existsSync(new URL("../public/brand/arkem-logo-master.svg", import.meta.url)), true);
   assert.match(chrome, /\/brand\/arkem-logo-master\.svg#/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /ARKEM proje süreci/);
-  assert.match(html, /Endüstriyel üretim tesisi/);
+  assert.match(html, /ARKEM project process/);
+  assert.match(html, /Completed precast concrete industrial building/);
 });
 
 test("Web V4.7 locks the direct production domain and the final design-system contract", async () => {
@@ -4255,12 +4256,11 @@ test("Web V4.5 binds the editorial hero and ARKEMX relationships to their regist
   assert.match(explorer, /v4-module-network/);
   assert.match(explorer, /getRelatedCodes\(selectedModule\)/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /data-project-code="P-002"/);
-  assert.match(html, /P-002/);
-  assert.match(html, /Seydiler OSB · Kastamonu/);
+  assert.match(html, /REAL PROJECT RECORD · P-002/);
 });
 
 test("Web V4.9 separates project publishing roles and keeps ARKEMX status metadata consistent", async () => {
@@ -4285,7 +4285,7 @@ test("Web V4.9 separates project publishing roles and keeps ARKEMX status metada
   assert.doesNotMatch(structuralSteel.seoDescription, /geliştirme program/i);
   assert.match(explorer, /module\.version \?/);
 
-  const homeResponse = await render("/");
+  const homeResponse = await render("/en");
   assert.equal(homeResponse.status, 200);
   const homeHtml = await homeResponse.text();
   assert.match(homeHtml, /P-002/);
