@@ -4142,7 +4142,7 @@ test("Web V4.2 isolates the mobile header and prevents the narrow hero title reg
   const response = await render("/giris");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /class="v4-mobile-site-header is-light"/);
+  assert.match(html, /class="v4-mobile-site-header is-dark"/);
   assert.match(html, /aria-label="Menüyü aç"/);
 });
 
