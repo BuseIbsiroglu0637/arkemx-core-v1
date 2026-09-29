@@ -14,7 +14,7 @@ const quickTools = [
   { label: "Yeni proje oluştur", href: "/proje-baslat", Icon: ClipboardList },
   { label: "Mimari program", href: "/mimari-program-studyosu", Icon: Layers3 },
   { label: "Plan ve aks", href: "/plan-ve-aks", Icon: DraftingCompass },
-  { label: "BIM koordinasyon", href: "/muhendislik-koordinasyon", Icon: GitMerge },
+  { label: "BIM koordinasyon", href: "/bim-koordinasyon", Icon: GitMerge },
 ] as const;
 
 export function SimpleProjectCenter() {
