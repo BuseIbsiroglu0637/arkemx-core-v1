@@ -26,6 +26,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/plan-ve-aks"/);
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.match(html, /href="\/sistem-karsilastirma"/);
+  assert.match(html, /href="\/bim-koordinasyon"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
@@ -76,5 +77,20 @@ test("local build renders the focused system comparison with working navigation"
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="comparison-hero/);
+  assert.doesNotMatch(html, /class="project-guided-journey/);
+});
+
+test("local build renders the focused BIM coordination workspace", async () => {
+  const response = await render("/bim-koordinasyon");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1>BIM koordinasyon<\/h1>/);
+  assert.match(html, /data-testid="engineering-coordination-studio"/);
+  assert.match(html, /Koordinasyon girdileri/);
+  assert.match(html, /Koordinasyon özeti/);
+  assert.match(html, /Öncelikli açık konular/);
+  assert.match(html, /href="\/proje-os"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /class="coordination-page-hero/);
   assert.doesNotMatch(html, /class="project-guided-journey/);
 });
