@@ -142,6 +142,14 @@ try {
 
   await check("İndirilen tam proje yedeği içe aktarılabiliyor", async () => {
     await page.goto(`${root}/dijital-proje-merkezi`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(
+      () => Boolean(document.documentElement.dataset.arkemMode),
+      null,
+      { timeout: 20_000 },
+    );
+    await page.locator(".arx-center-project-heading")
+      .getByText(original.id, { exact: false })
+      .waitFor();
     await page.getByLabel("ARKEMX proje JSON dosyası seç").setInputFiles({
       name: `${original.id}-test-restore.arkem.json`,
       mimeType: "application/json",
