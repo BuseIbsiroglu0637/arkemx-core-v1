@@ -29,7 +29,7 @@ export default function StructuralConceptPage() {
         <p>Plan ve aks verilerini kullanarak beş taşıyıcı sistemi karşılaştırın. Sonuçlar nihai statik hesap veya uygulama projesi değildir.</p>
       </div>
       <section className="arx-workspace-editor" aria-label="Taşıyıcı ön tasarım çalışma alanı">
-        <StructuralDesigner />
+        <StructuralDesigner compactKernel />
       </section>
     </div>
   </main>;
