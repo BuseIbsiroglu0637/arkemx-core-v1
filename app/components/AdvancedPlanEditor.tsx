@@ -37,7 +37,7 @@ function createId(type: string, level: number, x: number, y: number) {
   return `${type}-${level}-${x}-${y}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function AdvancedPlanEditor() {
+export function AdvancedPlanEditor({ compactKernel = false }: { compactKernel?: boolean } = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
@@ -382,7 +382,7 @@ export function AdvancedPlanEditor() {
   };
 
   return <section className="advanced-plan-editor cad-plan-editor" data-testid="advanced-plan-editor">
-    <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" />
+    <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" compact={compactKernel} />
     <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>
     <div className="cad-editor-app">
       <header className="cad-topbar"><div className="cad-project-id"><span>ARKEM / CONCEPT BIM</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>Kaydet / JSON</button></div></header>
