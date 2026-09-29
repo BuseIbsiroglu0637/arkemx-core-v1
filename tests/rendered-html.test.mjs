@@ -40,6 +40,24 @@ async function render(path = "/", requestInit = {}, runtimeEnv = {}) {
   );
 }
 
+const hostedManifestPath = new URL("../.openai/hosting.json", import.meta.url);
+
+// Keep deployment-specific checks separate from source-level tests: GitHub
+// checkouts do not contain the private hosted deployment manifest.
+test("hosted deployment declares the expected DB and BUCKET bindings", {
+  skip: fs.existsSync(hostedManifestPath) ? false : "Private hosting manifest is unavailable in this checkout",
+}, () => {
+  const hosting = JSON.parse(fs.readFileSync(hostedManifestPath, "utf8"));
+  assert.equal(hosting.d1, "DB");
+  assert.equal(hosting.r2, "BUCKET");
+});
+
+test("local Cloudflare type generation declares DB and BUCKET binding names", () => {
+  const typesConfig = fs.readFileSync(new URL("../wrangler.types.jsonc", import.meta.url), "utf8");
+  assert.match(typesConfig, /"binding"\s*:\s*"DB"/);
+  assert.match(typesConfig, /"binding"\s*:\s*"BUCKET"/);
+});
+
 test("V4.3 declares permanent Turkish canonical redirects for legacy Wix project routes", () => {
   const listing = fs.readFileSync(new URL("../app/projects/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../app/projects/[slug]/page.tsx", import.meta.url), "utf8");
@@ -1035,8 +1053,6 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   const references = fs.readFileSync(new URL("../app/data/references.ts", import.meta.url), "utf8");
   assert.match(references, /DİYANET Taşıyıcı Sistem Modeli/);
   assert.doesNotMatch(references, /title: "DİYAMET/);
-  const hosting = JSON.parse(fs.readFileSync(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
-  assert.equal(hosting.d1, "DB");
   const api = fs.readFileSync(new URL("../app/api/customer-workspace/route.ts", import.meta.url), "utf8");
   for (const expected of ["customer_projects", "customer_meetings", "getArkemAccountUser", "owner_email = ?"]) assert.match(api, new RegExp(expected));
   const response = await render("/giris");
@@ -3154,9 +3170,6 @@ test("Web V3.0-C keeps project evidence private until the verified publication g
   assert.equal(resolveCmsEditorAccess("visitor@arkem.test", "editor@arkem.test"), "forbidden");
   assert.equal(resolveCmsEditorAccess("editor@arkem.test", "editor@arkem.test"), "authorized");
 
-  const hosting = JSON.parse(fs.readFileSync(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
-  assert.equal(hosting.d1, "DB");
-  assert.equal(hosting.r2, "BUCKET");
 
   const schema = fs.readFileSync(new URL("../db/schema.ts", import.meta.url), "utf8");
   assert.match(schema, /project_evidence_items/);
