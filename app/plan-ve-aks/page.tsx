@@ -28,7 +28,7 @@ export default function PlanAndGridPage() {
         <p>Mimari programdaki verilerle aksları ve plan nesnelerini düzenleyin. Çalışmanız aynı proje kaydında saklanır.</p>
       </div>
       <section className="arx-workspace-editor" aria-label="Plan ve aks çalışma alanı">
-        <AdvancedPlanEditor />
+        <AdvancedPlanEditor compactKernel />
       </section>
     </div>
   </main>;
