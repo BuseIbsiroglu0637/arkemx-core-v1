@@ -25,6 +25,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/mimari-program-studyosu"/);
   assert.match(html, /href="\/plan-ve-aks"/);
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
+  assert.match(html, /href="\/sistem-karsilastirma"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
@@ -61,4 +62,19 @@ test("local build opens the dedicated structural concept workspace", async () =>
   assert.match(html, /href="\/plan-ve-aks"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="design-studio-hero"/);
+});
+
+test("local build renders the focused system comparison with working navigation", async () => {
+  const response = await render("/sistem-karsilastirma");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1>Yapı sistemi karşılaştırma<\/h1>/);
+  assert.match(html, /data-testid="system-comparison-tool"/);
+  assert.match(html, /Proje girdileri/);
+  assert.match(html, /Beş sistemin karşılaştırması/);
+  assert.match(html, /Kriter öncelikleri ve ağırlıkları/);
+  assert.match(html, /href="\/tasiyici-on-tasarim"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /class="comparison-hero/);
+  assert.doesNotMatch(html, /class="project-guided-journey/);
 });
