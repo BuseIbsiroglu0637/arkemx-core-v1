@@ -155,7 +155,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
                 {item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "İşareti kaldır" : "İncelemeye al" : item.status === "in-review" ? "Kapat" : "İncele"}
               </button>
             </article>)}
-            {!openWork.length ? <p className="arx-bim-empty">Açık iş bulunmuyor.</p> : null}
+            {!openWork.length ? <p className="arx-track-empty">Açık iş bulunmuyor.</p> : null}
           </div>
           <details className="arx-track-detail">
             <summary>Kararlar ve RFI ({openDecisions.length} açık)</summary>
