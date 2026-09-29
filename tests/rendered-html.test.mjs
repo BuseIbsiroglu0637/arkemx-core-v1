@@ -224,6 +224,7 @@ test("renders the current ARKEMX tools landing experience", async () => {
   assert.match(html, /href="\/proje-baslat"/);
   assert.match(html, /href="\/arsa-fizibilite-studyosu"/);
   assert.match(html, /href="\/bim-koordinasyon"/);
+  assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
