@@ -291,7 +291,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
       </div>
       <section className="arx-bim-panel arx-bim-next">
         <p>Koordinasyon çıktıları erken proje kontrolü içindir. Native IFC/BCFZIP, statik veya MEP tasarımı ve onaylı 4B/5B hesabı yerine geçmez.</p>
-        <Link href="/proje-os">Proje takibine geç →</Link>
+        <Link href="/proje-takibi">Proje takibine geç →</Link>
       </section>
     </section>;
   }
