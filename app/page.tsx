@@ -22,7 +22,7 @@ const tools = [
   { name: "Taşıyıcı ön tasarım", icon: Blocks, href: "/tasiyici-on-tasarim", section: "Mühendislik" },
   { name: "Yapı sistemi", icon: Scale, href: "/sistem-karsilastirma", section: "Mühendislik" },
   { name: "BIM koordinasyon", icon: GitMerge, href: "/bim-koordinasyon", section: "Mühendislik" },
-  { name: "Proje takibi", icon: Wrench, href: "/proje-os", section: "Teslim" },
+  { name: "Proje takibi", icon: Wrench, href: "/proje-takibi", section: "Teslim" },
   { name: "Dijital teslim", icon: FileBox, href: "/dijital-proje-merkezi", section: "Teslim" },
 ] as const;
 
