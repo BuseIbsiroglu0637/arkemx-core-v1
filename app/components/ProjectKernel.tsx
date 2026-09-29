@@ -903,9 +903,9 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
   }, [activeJourneyIndex]);
   const regularNextJourneyStep = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
   const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
-    ? { short: "Plan", href: "/tasarim-calismalari#plan-editor" }
+    ? { short: "Plan", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
-      ? { short: "Taşıyıcı ön tasarım", href: "/tasarim-calismalari#tasiyici-on-tasarim" }
+      ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
       : regularNextJourneyStep;
   const completedJourney = PROJECT_JOURNEY.map((step) => step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)));
   const completedCount = completedJourney.filter(Boolean).length;
