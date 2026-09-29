@@ -1,0 +1,101 @@
+/* ARKEMX project-center prototype — same lightweight visual language as the tools page. */
+.arx-center-page { min-height: 100vh; padding-bottom: 70px; }
+.arx-center-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 0; color: #546e79; font-size: 13px; font-weight: 600;
+}
+.arx-center-back:hover,.arx-center-back:focus-visible { color: #bd7244; }
+.arx-center-intro { padding: 43px 0 28px; }
+.arx-center-intro > span,
+.arx-center-project-heading > div > span {
+  display: block; margin-bottom: 10px;
+  color: #789098; font-size: 11px; font-weight: 750; letter-spacing: .11em;
+}
+.arx-center-intro h1 {
+  margin: 0 0 10px; color: #1d2b36;
+  font-size: clamp(28px,4vw,37px); font-weight: 675;
+  line-height: 1.2; letter-spacing: -.045em;
+}
+.arx-center-intro p { margin: 0; max-width: 740px; color: #647681; font-size: 14px; line-height: 1.6; }
+.arx-center-content { display: grid; gap: 24px; }
+.arx-center-project {
+  padding: clamp(22px,4vw,34px);
+  border: 1px solid #dfe6e9; border-radius: 11px; background: #fff;
+}
+.arx-center-project-heading { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
+.arx-center-project-heading h2 {
+  margin: 0 0 10px; color: #1d2b36; font-size: clamp(20px,3vw,26px);
+  line-height: 1.3; font-weight: 700; letter-spacing: -.025em;
+}
+.arx-center-project-heading p { margin: 0; color: #627784; font-size: 13px; line-height: 1.5; }
+.arx-center-storage {
+  display: inline-flex; padding: 7px 10px; border-radius: 5px;
+  background: #eff5f4; color: #40675d; font-size: 11px; font-weight: 650; white-space: nowrap;
+}
+.arx-center-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 29px; }
+.arx-center-actions > a,.arx-center-actions > button {
+  display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+  min-height: 45px; padding: 10px 15px; border: 1px solid #d7e1e4;
+  border-radius: 7px; background: #fff; color: #234454; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: border-color .15s,background .15s;
+}
+.arx-center-actions > .arx-center-primary {
+  border-color: #244756; background: #244756; color: #fff;
+}
+.arx-center-actions > a:hover,.arx-center-actions > button:not(:disabled):hover { border-color: #94afb6; }
+.arx-center-actions > .arx-center-primary:hover { background: #163441; }
+.arx-center-actions > button:disabled { opacity: .45; cursor: not-allowed; }
+.arx-center-notice {
+  margin: 18px 0 0; padding: 12px 14px; background: #eff5f4;
+  border-left: 3px solid #507b6a; color: #305c50; font-size: 13px; line-height: 1.5;
+}
+.arx-center-overview { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; }
+.arx-center-overview article {
+  min-width: 0; padding: 20px; background: #fff;
+  border: 1px solid #dfe6e9; border-radius: 9px;
+}
+.arx-center-overview article span { display: block; margin-bottom: 11px; font-size: 12px; color: #657b86; }
+.arx-center-overview article strong { display: block; font-size: 25px; font-weight: 700; color: #1f3945; line-height: 1.25; }
+.arx-center-overview article .arx-center-next { font-size: 15px; line-height: 1.5; }
+.arx-center-tool-section { padding: 5px 0 0; }
+.arx-center-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 17px; }
+.arx-center-section-heading h2 { margin: 0; font-size: 19px; font-weight: 700; color: #1d2b36; }
+.arx-center-section-heading > a { display: inline-flex; align-items: center; gap: 6px; color: #476d78; font-size: 13px; font-weight: 650; }
+.arx-center-tool-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.arx-center-tool {
+  display: flex; align-items: center; gap: 14px; min-height: 83px;
+  padding: 19px 22px; background: #fff; border: 1px solid #dfe6e9;
+  border-radius: 9px; color: #355f6c; transition: border-color .15s;
+}
+.arx-center-tool:hover,.arx-center-tool:focus-visible { border-color: #98adb5; }
+.arx-center-tool strong { flex: 1; color: #253d48; font-size: 14px; font-weight: 650; }
+.arx-center-tool > svg:last-child { color: #93a5ad; }
+.arx-center-advanced {
+  min-width: 0; overflow: hidden; border: 1px solid #dfe6e9; border-radius: 9px; background: #fff;
+}
+.arx-center-advanced > summary {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  min-height: 66px; padding: 17px 20px; cursor: pointer; list-style: none;
+}
+.arx-center-advanced > summary::-webkit-details-marker { display: none; }
+.arx-center-advanced > summary span { display: inline-flex; align-items: center; gap: 9px; color: #244756; font-size: 14px; font-weight: 700; }
+.arx-center-advanced > summary small { margin-left: auto; color: #748591; font-size: 12px; }
+.arx-center-advanced[open] > summary { border-bottom: 1px solid #e7edef; }
+.arx-center-advanced-content { padding: 12px; }
+.arx-center-advanced-content .digital-hub { margin: 0; }
+.arx-center-boundary { margin: 0; padding: 0 0 25px; color: #78878f; font-size: 12px; line-height: 1.65; }
+@media (max-width: 730px) {
+  .arx-center-overview { grid-template-columns: 1fr; }
+  .arx-center-tool-grid { grid-template-columns: 1fr; }
+  .arx-center-project-heading { flex-direction: column; gap: 13px; }
+  .arx-center-advanced > summary small { flex-basis: 100%; margin-left: 28px; }
+}
+@media (max-width: 520px) {
+  .arx-center-intro { padding: 34px 0 22px; }
+  .arx-center-actions { flex-direction: column; }
+  .arx-center-actions > a,.arx-center-actions > button { width: 100%; }
+  .arx-center-tool { min-height: 75px; padding: 15px 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arx-center-actions > a,.arx-center-actions > button,.arx-center-tool { transition: none; }
+}

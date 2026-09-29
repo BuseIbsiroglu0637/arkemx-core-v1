@@ -266,6 +266,7 @@ export function SiteFooter() {
 
 export function FloatingContact() {
   const { isEnglish } = useLanguage();
+  const pathname = usePathname();
   const [mobileVisible, setMobileVisible] = useState(false);
   const message = isEnglish ? "Hello ARKEM Yapı Sistemleri, I am contacting you through your website." : "Merhaba ARKEM Yapı Sistemleri, web siteniz üzerinden iletişime geçiyorum.";
 
@@ -279,6 +280,9 @@ export function FloatingContact() {
       window.removeEventListener("resize", updateVisibility);
     };
   }, []);
+
+  // The minimal ARKEMX toolbox home has no floating contact widget.
+  if (pathname === "/" || pathname === "/proje-baslat" || pathname === "/dijital-proje-merkezi" || pathname === "/mimari-program-studyosu" || pathname === "/arsa-fizibilite-studyosu") return null;
 
   return <a className="floating-contact v4-floating-contact" data-mobile-visible={mobileVisible ? "true" : "false"} data-analytics="whatsapp_click" href={`https://wa.me/${site.whatsappHref}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" aria-label={isEnglish ? "Contact ARKEM via WhatsApp" : "ARKEM Yapı Sistemleri ile WhatsApp üzerinden iletişime geçin"}><MessageCircle className="v4-whatsapp-icon" size={22} strokeWidth={1.8} aria-hidden="true" /><b>WhatsApp</b><small>{isEnglish ? "Quick contact" : "Hızlı iletişim"}</small></a>;
 }

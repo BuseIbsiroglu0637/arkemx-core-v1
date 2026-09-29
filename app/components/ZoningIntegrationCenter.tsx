@@ -131,6 +131,7 @@ function clampPositive(value: number, fallback: number) {
 function evidenceSourceType(value: ZoningVerification): ZoningEvidenceSourceType {
   return {
     "user-declared": "user-declaration",
+    "document-pending-review": "user-declaration",
     "municipal-viewer": "municipal-viewer",
     "approved-plan": "approved-plan",
     "certified-document": "certified-document",
@@ -140,6 +141,7 @@ function evidenceSourceType(value: ZoningVerification): ZoningEvidenceSourceType
 function evidenceVerification(value: ZoningVerification): ZoningEvidenceVerification {
   return {
     "user-declared": "self-declared",
+    "document-pending-review": "self-declared",
     "municipal-viewer": "screen-record",
     "approved-plan": "plan-reviewed",
     "certified-document": "document-reviewed",

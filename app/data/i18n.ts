@@ -635,7 +635,6 @@ const exact: Record<string, string> = {
   "Konum": "Location",
   "Program": "Program",
   "Öncelik": "Priority",
-  "Proje adı": "Project name",
   "Proje türü": "Project type",
   "Yapı kullanımı": "Building use",
   "Hedef brüt alan": "Target gross area",

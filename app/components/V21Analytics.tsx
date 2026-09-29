@@ -75,7 +75,7 @@ function initializeAnalytics() {
 
   (["pushState", "replaceState"] as const).forEach((method) => {
     const original = history[method];
-    history[method] = function (...args: Parameters<History[typeof method]>) {
+    history[method] = function (this: History, ...args: Parameters<History[typeof method]>) {
       const result = original.apply(this, args);
       queueMicrotask(trackArkemxPage);
       return result;
