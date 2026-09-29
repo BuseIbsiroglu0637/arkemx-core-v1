@@ -20,7 +20,7 @@ const tools = [
   { name: "Mimari program", icon: Layers3, href: "/mimari-program-studyosu", section: "Tasarım" },
   { name: "Plan ve aks", icon: DraftingCompass, href: "/plan-ve-aks", section: "Tasarım" },
   { name: "Taşıyıcı ön tasarım", icon: Blocks, href: "/tasiyici-on-tasarim", section: "Mühendislik" },
-  { name: "Yapı sistemi", icon: Scale, href: "/yapi-sistemi-karsilastirma", section: "Mühendislik" },
+  { name: "Yapı sistemi", icon: Scale, href: "/sistem-karsilastirma", section: "Mühendislik" },
   { name: "BIM koordinasyon", icon: GitMerge, href: "/muhendislik-koordinasyon", section: "Mühendislik" },
   { name: "Proje takibi", icon: Wrench, href: "/proje-os", section: "Teslim" },
   { name: "Dijital teslim", icon: FileBox, href: "/dijital-proje-merkezi", section: "Teslim" },
