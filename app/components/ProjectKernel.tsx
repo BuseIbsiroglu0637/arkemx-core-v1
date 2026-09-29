@@ -877,7 +877,7 @@ export function useProjectKernel() {
   return value;
 }
 
-export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: { module: string; confidence?: string }) {
+export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", compact = false }: { module: string; confidence?: string; compact?: boolean }) {
   const { project, thread, persistence, setIdentity, setExperience, synchronizeProject, reset } = useProjectKernel();
   const [editing, setEditing] = useState(false);
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
@@ -939,6 +939,26 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
     "PROJECT DELIVERY OS": { code: "OS", label: "Proje işletim sistemi 2.0" },
   };
   const currentModule = moduleMeta[module] ?? { code: "ARKEMX", label: module };
+
+  if (compact) {
+    return <div className="project-kernel-compact" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
+      <div className="project-kernel-compact-main">
+        <span className="project-kernel-compact-code">ARKEMX / {currentModule.code}</span>
+        <button className="project-kernel-compact-name" onClick={() => setEditing(true)}>{project.name}</button>
+        {editing ? <input className="project-kernel-compact-name-input" aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : null}
+      </div>
+      <div className="project-kernel-compact-meta" aria-label="Proje durumu">
+        <span>{project.phase}</span>
+        <span>{project.revision}</span>
+        <span>{persistence.state === "recovered" ? "Yedekten kurtarıldı" : persistence.state === "unavailable" ? "Tarayıcı kaydı kapalı" : "Bu cihazda kayıtlı"}</span>
+      </div>
+      <div className="project-kernel-compact-actions">
+        <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
+        <button onClick={exportProject}>JSON indir</button>
+        {activeJourneyIndex < PROJECT_JOURNEY.length - 1 ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
+      </div>
+    </div>;
+  }
 
   return <><div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
     <div className="kernel-brand"><span>ARKEMX / {currentModule.code}</span><b>{currentModule.label}</b><small>{module}</small></div>
