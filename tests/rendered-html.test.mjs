@@ -188,8 +188,8 @@ test("renders the V25 professional engineering application contracts", async () 
 
 test("renders the V26 federated architectural and engineering contracts", async () => {
   const routes = [
-    ["/dijital-proje-merkezi", ["GELİŞTİRME PROTOTİPİ", "İzlenebilir proje verisi", "DEVİR TESLİM"]],
-    ["/mimari-program-studyosu", ["ARCHITECTURAL PROGRAM ENGINE", "MAHAL LİSTESİ", "PROGRAM BRÜTÜ"]],
+    ["/dijital-proje-merkezi", ["Proje merkezi", "Projenize devam edin", "Proje JSON yükle"]],
+    ["/mimari-program-studyosu", ["Mimari program", "Hedef alanı", "kavramsal plan şemasını"]],
     ["/muhendislik-koordinasyon", ["INTEGRATED COORDINATION ENGINE", "FEDERE MODEL KATMANLARI", "OTOMATİK KURAL SETİ"]],
     ["/tasarim-calismalari", ["MİMARİ PROGRAM", "Üst veriyi aktar", "Plan / program verisini aktar"]],
     ["/dijital-donusum", ["Yeni proje başlat", "Arsa Fizibilitesi", "Proje Kontrolü"]],
@@ -204,7 +204,7 @@ test("renders the V26 federated architectural and engineering contracts", async 
 
 test("renders the V27 premium customer journey contracts", async () => {
   const routes = [
-    ["/", ["MÜHENDİSLİKTEN", "PROJE DENEYİMİ", "NE YAPMAK İSTİYORSUNUZ"]],
+    ["/", ["Araçlar", "Yeni proje", "Proje merkezi"]],
     ["/referanslar", ["PROJE ARŞİVİ", "Teknik kayıt standardı", "kaynaklı kayıt"]],
     ["/iletisim", ["teknik başlangıç kaydı", "PROJE ÖN DEĞERLENDİRME", "Proje Dosyalarını Yükle"]],
   ];
@@ -216,20 +216,22 @@ test("renders the V27 premium customer journey contracts", async () => {
   }
 });
 
-test("renders the V28 engineering evidence experience", async () => {
+test("renders the current ARKEMX tools landing experience", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
   const html = await response.text();
-  for (const expected of ["MÜHENDİSLİKTEN", "MÜHENDİSLİKTEN SAHAYA", "İzlenebilir proje zinciri", "PROJEDEN SAHAYA", "PROJE ÖN DEĞERLENDİRME"]) {
-    assert.match(html, new RegExp(expected, "i"), expected);
-  }
+  assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(html, /href="\/proje-baslat"/);
+  assert.match(html, /href="\/arsa-fizibilite-studyosu"/);
+  assert.match(html, /href="\/muhendislik-koordinasyon"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
 test("renders the V29 guided workflow and corrected module contracts", async () => {
   const routes = [
     ["/yikim-karar-studyosu", ["TEK PROJE", "HESAP MOTORU ÖNERİSİ", "ÖNERİLEN İNCELEME", "Mesafe arttıkça komşu kütleler"]],
     ["/arsa-fizibilite-studyosu", ["TEK PROJE", "MEGSİS", "Resmî Parsel Sorgu’da doğrula"]],
-    ["/", ["PROJE DENEYİMİ", "YAPI SİSTEMLERİ", "ARKEMX"]],
+    ["/", ["Araçlar", "Yapı sistemi", "Proje merkezi"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -265,7 +267,7 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
     ["/dokumanlar", ["57", "Dijital Teslim &amp; BIM", "Zemin &amp; Deprem", "IFC Açık Model Standardı"]],
     ["/blog", ["Teknik Yayın Merkezi", "Teknik konuda arayın", "Dijital Yapı Pasaportu", "Betonarme Prefabrik"]],
     ["/arkemx", ["13 PROJE MÜHENDİSLİĞİ MODÜLÜ", "DOĞRULAMA VE İZLENEBİLİRLİK", "GELİŞİM YOL HARİTASI"]],
-    ["/", ["DİJİTAL PROJE ARAÇLARI", "TEK BİR YOLDAN İLERLEYİN", "PROJE DENEYİMİ"]],
+    ["/", ["Araçlar", "Mimari program", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -277,9 +279,9 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
 
 test("renders the V38 guided project platform contract", async () => {
   const routes = [
-    ["/proje-baslat", ["Yönlendirmeli Başlangıç", "Teknik bilgi gerekmez", "Proje türü", "Doğru soruyla başlayın", "Açık teknik çıktı"]],
-    ["/dijital-proje-merkezi", ["Yönlendirmeli Projeyi Başlatın", "GELİŞTİRME PROTOTİPİ", "Prototip Veri Grafiğini Açın"]],
-    ["/", ["YENİ PROJE BAŞLAT", "DİJİTAL PROJE ARAÇLARI", "MÜŞTERİ PROJE PORTALI"]],
+    ["/proje-baslat", ["Yeni proje oluştur", "Proje bilgilerinizi adım adım girin", "bu cihazda taslak"]],
+    ["/dijital-proje-merkezi", ["Proje merkezi", "Bu cihazdaki çalışma", "Ayrıntılı proje kontrolleri"]],
+    ["/", ["Yeni proje", "Arazi ve parsel", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -292,7 +294,7 @@ test("renders the V38 guided project platform contract", async () => {
 test("renders the V54 continuous parcel-to-structure contract and updated portrait", async () => {
   const routes = [
     ["/arsa-fizibilite-studyosu", ["VERİ DEVAMLILIĞI", "MİMARİ / PLAN"]],
-    ["/mimari-program-studyosu", ["VERİ DEVAMLILIĞI", "Aks modeline geç"]],
+    ["/mimari-program-studyosu", ["Mimari program", "Proje merkezine dön"]],
     ["/tasarim-calismalari", ["VERİ DEVAMLILIĞI", "plan-editor"]],
   ];
   for (const [path, expectedValues] of routes) {
@@ -388,7 +390,7 @@ test("renders the V58 project control center and administrative fallback choices
 
 test("renders the V40 compact corporate and ARKEMX contracts", async () => {
   const routes = [
-    ["/", ["v4-systems-stage", "MÜHENDİSLİKTEN", "DİJİTAL PROJE ARAÇLARI"]],
+    ["/", ["arx-simple-home", "Araçlar", "Proje merkezi"]],
     ["/kurumsal", ["MESLEKİ YAKLAŞIM", "Uygulama gerçekleriyle birlikte gelişen", "id=\"ozenc-ozturk\""]],
     ["/dokumanlar", ["id=\"bilgi-bankasi\"", "id=\"kaynak-3194-sayili-imar-kanunu\""]],
   ];
