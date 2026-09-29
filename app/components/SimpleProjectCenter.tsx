@@ -13,7 +13,7 @@ import { DigitalProjectHub } from "./DigitalProjectHub";
 const quickTools = [
   { label: "Yeni proje oluştur", href: "/proje-baslat", Icon: ClipboardList },
   { label: "Mimari program", href: "/mimari-program-studyosu", Icon: Layers3 },
-  { label: "Plan ve aks", href: "/tasarim-calismalari#plan-editor", Icon: DraftingCompass },
+  { label: "Plan ve aks", href: "/plan-ve-aks", Icon: DraftingCompass },
   { label: "BIM koordinasyon", href: "/muhendislik-koordinasyon", Icon: GitMerge },
 ] as const;
 
