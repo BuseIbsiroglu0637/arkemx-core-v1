@@ -305,7 +305,7 @@ test("renders the V54 continuous parcel-to-structure contract and updated portra
   }
 
   const kernelSource = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
-  for (const expected of ["siteContext", "programPlanElements", "modelContext", "mergeModuleValue", "synchronizeProject", "/tasarim-calismalari#plan-editor", "/tasarim-calismalari#tasiyici-on-tasarim"]) {
+  for (const expected of ["siteContext", "programPlanElements", "modelContext", "mergeModuleValue", "synchronizeProject", "/plan-ve-aks", "/tasiyici-on-tasarim"]) {
     assert.match(kernelSource, new RegExp(expected), expected);
   }
   const portrait = fs.statSync(new URL("../public/ozenc-ozturk.webp", import.meta.url));
@@ -1246,8 +1246,8 @@ test("V103 keeps the full design studio out of the V2.1 homepage", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
-  assert.match(html, /href="\/tasarim-calismalari#plan-editor"/);
-  assert.match(html, /href="\/tasarim-calismalari#tasiyici-on-tasarim"/);
+  assert.match(html, /href="\/plan-ve-aks"/);
+  assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.doesNotMatch(html, /class="design-studio-hero"/);
 });
 
