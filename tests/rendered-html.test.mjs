@@ -1200,7 +1200,8 @@ test("V4 isolates the layered mobile navigation in a viewport-rooted accessible 
   assert.match(chrome, /openMobileGroup === item\.label/);
   assert.doesNotMatch(chrome, /<details className="mobile-menu"/);
 
-  const response = await render("/");
+  // The simplified tools homepage has no corporate SiteHeader; the sign-in page does.
+  const response = await render("/giris");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /class="v4-mobile-nav-trigger"/);
