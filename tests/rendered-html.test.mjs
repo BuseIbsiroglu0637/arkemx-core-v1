@@ -1955,7 +1955,12 @@ test("V109.2 optimizes the highest-traffic local imagery", () => {
 test("V110.1 serves public imagery without the unavailable production optimizer", async () => {
   const layout = fs.readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(layout, /import "leaflet\/dist\/leaflet\.css";\s*import "\.\/globals\.css";/);
+  for (const importPath of ["leaflet/dist/leaflet.css", "maplibre-gl/dist/maplibre-gl.css"]) {
+    const importStatement = `import "${importPath}";`;
+    assert.ok(layout.includes(importStatement), `Missing CSS import: ${importPath}`);
+    assert.ok(layout.indexOf(importStatement) < layout.indexOf('import "./globals.css";'),
+      `${importPath} must be loaded before application styles`);
+  }
   assert.doesNotMatch(globals, /@import\s+["']leaflet\/dist\/leaflet\.css["']/);
 
   for (const relativePath of [
@@ -1986,12 +1991,12 @@ test("V110.1 serves public imagery without the unavailable production optimizer"
     }
   }
 
-  const response = await render("/");
+  // The tools homepage intentionally has no corporate hero imagery.
+  // Check the existing branded sign-in page, which renders the official logo.
+  const response = await render("/giris");
   assert.equal(response.status, 200);
   const html = await response.text();
-  for (const image of ["/projects/v32/cihan-tasiyici.webp", "/ozenc-ozturk.webp"]) {
-    assert.match(html, new RegExp(`src=["']${image.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`));
-  }
+  assert.match(html, /\/brand\/arkem-logo-master\.svg(?:#|%23)(?:on-light|on-dark)/);
   assert.doesNotMatch(html, /\/_vinext\/image\?/);
 });
 
