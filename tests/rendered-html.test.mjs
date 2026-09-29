@@ -3647,14 +3647,26 @@ test("Web V3.1 keeps one corporate truth, one ARKEMX registry and a calm Turkish
   const sitemap = fs.readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8");
   assert.match(sitemap, /alternates:\s*\{\s*languages:/);
 
-  const response = await render("/");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /MÜHENDİSLİKTEN SAHAYA/);
-  assert.match(html, /PROJE DENEYİMİ/);
-  assert.match(html, /DİJİTAL PROJE ARAÇLARI/);
-  assert.match(html, /application\/ld\+json/);
-  assert.doesNotMatch(html, /Öztürk İnşaat Mühendislik|bünyesinde faaliyet göstermektedir/i);
+  // The private ARKEMX workspace has replaced the old corporate homepage.
+  // Check each public contract at its current route rather than treating "/" as corporate.
+  const workspaceResponse = await render("/");
+  assert.equal(workspaceResponse.status, 200);
+  const workspaceHtml = await workspaceResponse.text();
+  assert.match(workspaceHtml, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(workspaceHtml, /href="\/proje-baslat"/);
+  assert.doesNotMatch(workspaceHtml, /Öztürk İnşaat Mühendislik|bünyesinde faaliyet göstermektedir/i);
+
+  const corporateResponse = await render("/arkem");
+  assert.equal(corporateResponse.status, 200);
+  const corporateHtml = await corporateResponse.text();
+  assert.match(corporateHtml, /MÜHENDİSLİĞİNİ ÇÖZER/);
+  assert.match(corporateHtml, /SAHAYA TAŞIR/);
+
+  const moduleResponse = await render("/arkemx");
+  assert.equal(moduleResponse.status, 200);
+  const moduleHtml = await moduleResponse.text();
+  assert.match(moduleHtml, /application\/ld\+json/);
+  assert.match(moduleHtml, /ORTAK PROJE VERİSİ/);
 });
 
 test("Web V3.2 publishes real project records, honest ARKEMX states and crawlable Turkish HTML", async () => {
@@ -3714,26 +3726,22 @@ test("Web V3.2 publishes real project records, honest ARKEMX states and crawlabl
   }
   assert.doesNotMatch(archiveExplorer, /label: ["']Mühendislik["']|label: ["']Uygulama["']/);
 
-  const homeResponse = await render("/");
-  assert.equal(homeResponse.status, 200);
-  const homeHtml = await homeResponse.text();
-  for (const expected of [
-    "ARKEM Yapı Sistemleri",
-    "MÜHENDİSLİKTEN SAHAYA",
-    "PROJE DENEYİMİ",
-    "BETONARME PREFABRİK",
-    "YAPISAL ÇELİK",
-    "HAFİF ÇELİK",
-    "MÜHENDİSLİK",
-    "ARKEMX",
-    "PROJE ÖN DEĞERLENDİRME",
-  ]) assert.match(homeHtml, new RegExp(expected, "i"), expected);
-  assert.match(homeHtml, /projects\/v32\/cihan-tasiyici\.webp/);
-  assert.match(homeHtml, /hrefLang=["']tr-TR["']/i);
-  assert.match(homeHtml, /hrefLang=["']x-default["']/i);
-  assert.doesNotMatch(homeHtml, /<iframe\b/i);
-  assert.doesNotMatch(homeHtml, /© 2025 by Öztürk İnşaat/i);
-  assert.match(homeHtml, /© 2026/i);
+  // The tools workspace is private/noindex. Public Turkish project records
+  // and brand content remain on their own crawlable corporate routes.
+  const workspaceResponse = await render("/");
+  assert.equal(workspaceResponse.status, 200);
+  const workspaceHtml = await workspaceResponse.text();
+  assert.match(workspaceHtml, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(workspaceHtml, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(workspaceHtml, /<iframe\b/i);
+
+  const corporateResponse = await render("/arkem");
+  assert.equal(corporateResponse.status, 200);
+  const corporateHtml = await corporateResponse.text();
+  assert.match(corporateHtml, /ARKEM/);
+  assert.match(corporateHtml, /MÜHENDİSLİĞİNİ ÇÖZER/);
+  assert.doesNotMatch(corporateHtml, /© 2025 by Öztürk İnşaat/i);
+  assert.match(corporateHtml, /© 2026/i);
 
   const projectsResponse = await render("/projeler");
   assert.equal(projectsResponse.status, 200);
