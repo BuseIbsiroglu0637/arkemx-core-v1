@@ -27,6 +27,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.match(html, /href="\/sistem-karsilastirma"/);
   assert.match(html, /href="\/bim-koordinasyon"/);
+  assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
@@ -89,8 +90,23 @@ test("local build renders the focused BIM coordination workspace", async () => {
   assert.match(html, /Koordinasyon girdileri/);
   assert.match(html, /Koordinasyon özeti/);
   assert.match(html, /Öncelikli açık konular/);
-  assert.match(html, /href="\/proje-os"/);
+  assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="coordination-page-hero/);
+  assert.doesNotMatch(html, /class="project-guided-journey/);
+});
+
+test("local build renders the focused project tracking workspace", async () => {
+  const response = await render("/proje-takibi");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1>Proje takibi<\/h1>/);
+  assert.match(html, /data-testid="project-operating-system"/);
+  assert.match(html, /Proje durumu ve açık işler/);
+  assert.match(html, /Teslim hazırlığı/);
+  assert.match(html, /Kararlar ve RFI/);
+  assert.match(html, /href="\/dijital-proje-merkezi"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /class="os-page-hero/);
   assert.doesNotMatch(html, /class="project-guided-journey/);
 });
