@@ -1,0 +1,36 @@
+/* The ARKEMX plan and structural workspaces share a focused, tool-first shell.
+   Keep the existing editor internals and project persistence unchanged. */
+.arx-workspace-page { min-height: 100vh; padding-bottom: 64px; }
+.arx-workspace-page .arx-workspace-shell { width: min(1560px, calc(100% - 48px)); }
+.arx-workspace-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; }
+.arx-workspace-nav a {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; color: #4b6672; font-size: 13px; font-weight: 650;
+}
+.arx-workspace-nav a:hover, .arx-workspace-nav a:focus-visible { color: #a55b32; }
+.arx-workspace-intro { padding: 34px 0 25px; }
+.arx-workspace-intro > span {
+  display: block; margin-bottom: 9px; color: #789098;
+  font-size: 11px; font-weight: 750; letter-spacing: .12em;
+}
+.arx-workspace-intro h1 {
+  margin: 0 0 10px; color: #1d2b36;
+  font-size: clamp(28px, 4vw, 37px); font-weight: 675;
+  letter-spacing: -.045em; line-height: 1.2;
+}
+.arx-workspace-intro p {
+  max-width: 740px; margin: 0; color: #647681;
+  font-size: 14px; line-height: 1.65;
+}
+.arx-workspace-editor { min-width: 0; }
+.arx-workspace-editor > .advanced-plan-editor,
+.arx-workspace-editor > .structural-designer { width: 100%; margin: 0; }
+@media (max-width: 720px) {
+  .arx-workspace-page .arx-workspace-shell { width: calc(100% - 28px); }
+  .arx-workspace-page .arx-simple-head { align-items: flex-start; flex-wrap: wrap; gap: 6px 16px; padding: 14px 0; }
+  .arx-workspace-nav { gap: 4px 18px; }
+  .arx-workspace-intro { padding: 24px 0 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arx-workspace-nav a { scroll-behavior: auto; }
+}
