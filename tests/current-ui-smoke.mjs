@@ -127,7 +127,8 @@ test("local build renders the focused ARKEMX sign-in entry", async () => {
   assert.match(html, /<h1 id="arx-auth-title">ARKEMX’e giriş<\/h1>/);
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
-  assert.match(html, /name="return_to" value="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon"/);
+  assert.doesNotMatch(html, /name="return_to"/);
+  assert.match(html, /href="\/hesap-kurulum"/);
   assert.match(html, /İlk kullanım adımını aç/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
