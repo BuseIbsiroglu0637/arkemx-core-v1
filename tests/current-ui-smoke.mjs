@@ -458,3 +458,13 @@ test("3D terrain opens without massing and labels preliminary calculations", () 
   assert.ok(viewer.includes("Parametrik ön hesap"));
   assert.ok(viewer.includes("Ölçülmüş veri değildir"));
 });
+
+
+test("3D terrain hides building-dependent metrics until conceptual massing is enabled", () => {
+  const viewer = fs.readFileSync(new URL("../app/components/GeoTerrainViewer.tsx", import.meta.url), "utf8");
+  assert.ok(viewer.includes('layers["building-mass"] && <>'));
+  assert.ok(viewer.includes('geo-terrain-analysis'));
+  assert.ok(viewer.includes('terrain-only'));
+  assert.ok(viewer.includes('YAPI ALTI Δ'));
+  assert.ok(viewer.includes('ÖN HAFRİYAT'));
+});
