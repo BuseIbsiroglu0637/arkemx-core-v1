@@ -372,12 +372,13 @@ test("renders the V58 project control center and administrative fallback choices
   assert.equal(projectCenter.status, 200);
   const projectCenterHtml = await projectCenter.text();
   for (const expected of [
-    "Proje kontrol merkezi",
-    "PROJE HAZIRLIK MATRİSİ",
-    "TEKNİK ÇIKTI KAYDI",
+    "Ayrıntılı proje kontrolleri",
+    "Proje kontrol özeti",
+    "Proje adımları",
+    "Teslim hazırlığı ve teknik çıktılar",
     "Proje paketini indir",
-    "Hazırlık matrisini indir",
   ]) assert.match(projectCenterHtml, new RegExp(expected, "i"), expected);
+  assert.doesNotMatch(projectCenterHtml, /Proje kontrol merkezi/i);
 
   const geoSource = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.match(geoSource, /FALLBACK_PROVINCE_NAMES/);
