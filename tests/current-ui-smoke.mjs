@@ -550,7 +550,7 @@ test("2D map warns when conceptual massing breaches parcel or setback pre-check"
   assert.ok(studio.includes("geo-map-placement-warning"));
   assert.ok(studio.includes("Yerleşim ön kontrolü uyarısı."));
   assert.ok(studio.includes("Temsili Ön Kütle parsel sınırını aşıyor veya sınırla kesişiyor."));
-  assert.ok(studio.includes("ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("KENAR BAZLI ÇEKME UYARISI"));
   assert.ok(studio.includes('color: placementWarning ? "#e27b42" : "#ffffff"'));
 });
 
@@ -560,4 +560,13 @@ test("north-relative rotation control supports negative angles", () => {
   assert.ok(studio.includes('min="-180" max="180" step="5"'));
   assert.ok(studio.includes("normalizeSignedRotation"));
   assert.ok(studio.includes("setRotation(normalizeSignedRotation(saved.rotation))"));
+});
+
+
+test("manual placement uses edge-specific front side rear setbacks", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("assessParcelEdgeSetbacks"));
+  assert.ok(studio.includes("setbackRoleLabel"));
+  assert.ok(studio.includes("Ön/yan/arka çekmeler kenar bazında ayrı kontrol edilir"));
+  assert.ok(studio.includes("en kritik"));
 });
