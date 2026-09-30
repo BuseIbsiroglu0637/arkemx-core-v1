@@ -169,6 +169,15 @@
   border-color:#d7e1e4;
   color:#49636e;
 }
+.arx-center-delete-actions button.cancel.icon-only {
+  width:38px;
+  min-width:38px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+}
 .arx-center-delete-actions button:disabled {
   opacity:.5;
   cursor:not-allowed;
