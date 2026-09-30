@@ -1106,8 +1106,18 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(setupGate, /showExistingAccountChoice/);
   assert.match(setupGate, /Hesabınız zaten kurulu/);
   assert.match(setupGate, /Hesabımı aç/);
-  assert.match(setupGate, /Proje merkezine devam et/);
+  assert.match(setupGate, /Aktif projeye devam et/);
+  assert.match(setupGate, /hasActiveProject/);
+  assert.match(setupGate, /Object\.keys\(project\.modules\)\.length > 0/);
+  assert.doesNotMatch(setupGate, /Proje merkezine devam et/);
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
+  const projectCenter = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  assert.match(projectCenter, /Aktif projeyi sil/);
+  assert.match(projectCenter, /Yalnız bu cihazdan sil/);
+  assert.match(projectCenter, /Cihazdan ve hesabımdan sil/);
+  assert.match(projectCenter, /reset\(\)/);
+  assert.match(projectCenter, /resource=project/);
+
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
   assert.match(focusedAccount, /Oturum gerekli/);
