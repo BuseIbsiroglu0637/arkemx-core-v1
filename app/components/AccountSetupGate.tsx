@@ -29,7 +29,11 @@ export function AccountSetupGate({
       }
       if (!response.ok) {
         setState("error");
-        setMessage(body.error || "Hesap bilgileri şu anda kontrol edilemiyor.");
+        setMessage(
+          response.status === 503
+            ? "Oturum doğrulandı ancak hesap veritabanı bağlantısı hazır değil."
+            : body.error || "Hesap bilgileri şu anda kontrol edilemiyor.",
+        );
         return;
       }
       if (body.profile) {
