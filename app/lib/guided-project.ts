@@ -142,7 +142,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
           ? "Parsel biliniyor; koordinatlı sınır ve resmî kimlik kontrol edilmelidir."
           : "Parsel kimliği veya yatırım bölgesi henüz netleştirilmelidir.",
       status: parcelKnown ? "official-review" : "missing",
-      route: parcelKnown ? "/imar-entegrasyon-merkezi" : "/arsa-fizibilite-studyosu",
+      route: "/arsa-fizibilite-studyosu#geo-studyo",
     },
     {
       id: "zoning",
@@ -151,7 +151,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         ? "Belge mevcut olarak işaretlendi; TAKS, KAKS, Hmax, nizam ve çekmeler kaynağından okunmalıdır."
         : "Resmî plan, belediye/e-Plan kaynağı veya imar belgesi henüz eklenmedi.",
       status: zoningProvided ? "expert-review" : "official-review",
-      route: "/imar-entegrasyon-merkezi",
+      route: "/arsa-fizibilite-studyosu#geo-studyo",
     },
     {
       id: "architecture",
@@ -211,7 +211,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         copy: zoningProvided
           ? "Beyan edilen parsel bilgisini, resmî sınırı ve mevcut imar belgesini kaynağıyla doğrulayın."
           : "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
-        route: "/imar-entegrasyon-merkezi",
+        route: "/arsa-fizibilite-studyosu#geo-studyo",
       };
 
   return {
