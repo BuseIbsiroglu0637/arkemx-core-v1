@@ -205,6 +205,7 @@ test("prototype demo session is visible to account diagnostics and account page"
   const html = await accountResponse.text();
   assert.match(html, /<h1>Hesabım<\/h1>/);
   assert.match(html, /demo@arkemx\.local/);
+  assert.match(html, /Görüşmeler ve İşlem Geçmişi/);
   assert.match(html, /href="\/demo-cikis\?return_to=%2Fgiris"/);
 });
 
