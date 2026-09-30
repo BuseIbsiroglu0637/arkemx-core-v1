@@ -34,7 +34,6 @@ export function AccountOnboarding({ displayName, email, returnTo = "/dijital-pro
       <label>Telefon<input autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+90 …"/></label>
       
     </div>
-    <label className="account-consent"><input required type="checkbox"/><span>Proje ve görüşme kayıtlarımın hesabımla ilişkilendirilmesini kabul ediyorum.</span></label>
     <button type="submit" disabled={state === "saving"}>{state === "saving" ? "Hesap hazırlanıyor…" : "ARKEMX hesabımı oluştur"} <span>→</span></button>
   </form>;
 }
