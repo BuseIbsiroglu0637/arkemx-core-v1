@@ -429,3 +429,19 @@ test("active project summary cannot be overwritten by a separate unfinished draf
   assert.match(account, /fetch\("\/api\/project-draft", \{ method: "DELETE" \}\)/);
   assert.match(account, /window\.localStorage\.removeItem\(GUIDED_DRAFT_KEY\)/);
 });
+
+
+test("TKGM parcel boundaries stay read-only until an editable copy is created", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+
+  assert.match(studio, /officialBoundaryLocked/);
+  assert.match(studio, /officialBoundaryLockedRef/);
+  assert.match(studio, /Düzenlenebilir Kopya Oluştur/);
+  assert.match(studio, /Orijinal TKGM Sınırına Dön/);
+  assert.match(studio, /TKGM sınırı salt okunurdur/);
+  assert.match(studio, /officialBoundaryEvidence/);
+  assert.match(studio, /TKGM kaynaklı kullanıcı kopyası · uzman doğrulaması gerekli/);
+  assert.match(studio, /if \(officialBoundaryLockedRef\.current\)/);
+  assert.match(studio, /setOfficialBoundaryEvidence\(\{/);
+  assert.match(studio, /officialBoundaryEvidence,/);
+});
