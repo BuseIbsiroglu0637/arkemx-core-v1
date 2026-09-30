@@ -356,105 +356,141 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (!hydrated || transferApplied.current) return;
     transferApplied.current = true;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["geo-parcel"] as {
-      parcel?: GeoPoint[];
-      province?: string;
-      provinceId?: string;
-      district?: string;
-      districtId?: string;
-      neighborhood?: string;
-      neighborhoodId?: string;
-      block?: string;
-      parcelNo?: string;
-      buildingWidth?: number;
-      buildingDepth?: number;
-      rotation?: number;
-      offsetEast?: number;
-      offsetNorth?: number;
-      usage?: string;
-      system?: string;
-      floors?: number;
-      floorHeight?: number;
-      sourceCrs?: string;
-      dataStatus?: string;
-      planning?: Record<string, unknown>;
-      zoning?: Partial<ZoningForm>;
-      terrain?: Record<string, unknown>;
-      frontEdge?: ParcelFrontEdge;
-      selectedMassingId?: string;
-      parcelRecord?: ParcelRecord;
-      _kernel?: { recordedAt?: string };
-    } | undefined;
-    persistedGeoRef.current = Boolean(saved);
-    if (!saved) return;
-    if (saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
-      setParcelSource({
-        kind: saved.parcelRecord.evidence.sourceKind,
-        authority: saved.parcelRecord.evidence.authority,
-        label: saved.parcelRecord.evidence.label,
-        capturedAt: saved.parcelRecord.evidence.capturedAt,
-        url: saved.parcelRecord.evidence.url ?? "",
-        reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
-      });
-    } else if (saved.parcel?.length) {
-      const savedStatus = saved.dataStatus ?? "";
-      const kind: ParcelSourceKind = savedStatus.includes("TKGM")
-        ? "tkgm-open-service"
-        : savedStatus.includes("ölçüm") || savedStatus.includes("aplikasyon")
-          ? "user-file"
-          : "manual-drawing";
-      setParcelSource({
-        kind,
-        authority: kind === "tkgm-open-service" ? "Tapu ve Kadastro Genel Müdürlüğü" : "Önceki ARKEMX proje kaydı",
-        label: savedStatus || "Önceki proje geometrisi",
-        capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
-        url: kind === "tkgm-open-service" ? "https://parselsorgu.tkgm.gov.tr/" : "",
-      });
-    }
-    if (saved.province) setProvince(saved.province);
-    if (saved.provinceId) setProvinceId(saved.provinceId);
-    if (saved.district) setDistrict(saved.district);
-    if (saved.districtId) setDistrictId(saved.districtId);
-    if (saved.neighborhood) setNeighborhood(saved.neighborhood);
-    if (saved.neighborhoodId) setNeighborhoodId(saved.neighborhoodId);
-    if (saved.block) setBlock(saved.block);
-    if (saved.parcelNo) setParcelNo(saved.parcelNo);
-    if (saved.parcel?.length) {
-      setParcel(saved.parcel);
-      const savedCenter = geoCentroid(saved.parcel);
-      setLatitude(savedCenter.lat.toFixed(7));
-      setLongitude(savedCenter.lng.toFixed(7));
-    }
-    if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
-    if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
-    if (typeof saved.rotation === "number") setRotation(saved.rotation);
-    if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
-    if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
-    if (saved.usage) setUsage(saved.usage);
-    if (saved.system) setSystem(saved.system);
-    if (typeof saved.floors === "number") setFloors(saved.floors);
-    if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
-    if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
-    if (saved.dataStatus) setDataStatus(saved.dataStatus);
-    if (typeof saved.planning?.requiredSetback === "number") setRequiredSetback(saved.planning.requiredSetback);
-    if (typeof saved.planning?.maxCoverage === "number") setMaxCoverage(saved.planning.maxCoverage);
-    if (typeof saved.planning?.maxFar === "number") setMaxFar(saved.planning.maxFar);
-    if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
-    if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
-    if (saved.zoning) {
-      setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
-      if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
-      if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
-      if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
-      const setbacks = [saved.zoning.frontSetback, saved.zoning.sideSetback, saved.zoning.rearSetback].filter((value): value is number => typeof value === "number");
-      if (setbacks.length) setRequiredSetback(Math.max(...setbacks));
-    }
-    if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
-    if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
-    if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
-    if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
-    if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
-    setFileNotice("Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı");
+      const saved = project.modules["geo-parcel"] as {
+        parcel?: GeoPoint[];
+        province?: string;
+        provinceId?: string;
+        district?: string;
+        districtId?: string;
+        neighborhood?: string;
+        neighborhoodId?: string;
+        block?: string;
+        parcelNo?: string;
+        buildingWidth?: number;
+        buildingDepth?: number;
+        rotation?: number;
+        offsetEast?: number;
+        offsetNorth?: number;
+        usage?: string;
+        system?: string;
+        floors?: number;
+        floorHeight?: number;
+        sourceCrs?: string;
+        dataStatus?: string;
+        planning?: Record<string, unknown>;
+        zoning?: Partial<ZoningForm>;
+        terrain?: Record<string, unknown>;
+        frontEdge?: ParcelFrontEdge;
+        selectedMassingId?: string;
+        parcelRecord?: ParcelRecord;
+        _kernel?: { recordedAt?: string };
+      } | undefined;
+      const decision = project.modules["decision-assistant"] as {
+        input?: { location?: string };
+      } | undefined;
+      const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
+      const declared = parseDeclaredLocation(declaredLocation);
+      const hasSavedBoundary = Boolean(saved?.parcel && saved.parcel.length >= 3);
+
+      persistedGeoRef.current = Boolean(saved);
+      if (!saved) return;
+
+      if (hasSavedBoundary && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
+        setParcelSource({
+          kind: saved.parcelRecord.evidence.sourceKind,
+          authority: saved.parcelRecord.evidence.authority,
+          label: saved.parcelRecord.evidence.label,
+          capturedAt: saved.parcelRecord.evidence.capturedAt,
+          url: saved.parcelRecord.evidence.url ?? "",
+          reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
+        });
+      } else if (hasSavedBoundary) {
+        const savedStatus = saved.dataStatus ?? "";
+        const kind: ParcelSourceKind = savedStatus.includes("TKGM")
+          ? "tkgm-open-service"
+          : savedStatus.includes("ölçüm") || savedStatus.includes("aplikasyon")
+            ? "user-file"
+            : "manual-drawing";
+        setParcelSource({
+          kind,
+          authority: kind === "tkgm-open-service" ? "Tapu ve Kadastro Genel Müdürlüğü" : "Önceki ARKEMX proje kaydı",
+          label: savedStatus || "Önceki proje geometrisi",
+          capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
+          url: kind === "tkgm-open-service" ? "https://parselsorgu.tkgm.gov.tr/" : "",
+        });
+      } else {
+        setParcel([]);
+        setParcelSource({
+          kind: "coordinate",
+          authority: "Kullanıcı",
+          label: "Başlangıç konumu / kullanıcı beyanı",
+          capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
+          url: "",
+        });
+        setDataStatus("Kullanıcı beyanı · resmî parsel doğrulaması bekleniyor");
+      }
+
+      if (hasSavedBoundary) {
+        if (saved.province) setProvince(saved.province);
+        if (saved.provinceId) setProvinceId(saved.provinceId);
+        if (saved.district) setDistrict(saved.district);
+        if (saved.districtId) setDistrictId(saved.districtId);
+        if (saved.neighborhood) setNeighborhood(saved.neighborhood);
+        if (saved.neighborhoodId) setNeighborhoodId(saved.neighborhoodId);
+        if (saved.block) setBlock(saved.block);
+        if (saved.parcelNo) setParcelNo(saved.parcelNo);
+        setParcel(saved.parcel ?? []);
+        if (saved.parcel?.length) {
+          const savedCenter = geoCentroid(saved.parcel);
+          setLatitude(savedCenter.lat.toFixed(7));
+          setLongitude(savedCenter.lng.toFixed(7));
+          pendingCenterRef.current = savedCenter;
+        }
+      } else {
+        setProvince(declared.province);
+        setDistrict(declared.district);
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhood("");
+        setNeighborhoodId("");
+        setBlock("");
+        setParcelNo("");
+      }
+
+      if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
+      if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
+      if (typeof saved.rotation === "number") setRotation(saved.rotation);
+      if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
+      if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
+      if (saved.usage) setUsage(saved.usage);
+      if (saved.system) setSystem(saved.system);
+      if (typeof saved.floors === "number") setFloors(saved.floors);
+      if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
+      if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
+      if (hasSavedBoundary && saved.dataStatus) setDataStatus(saved.dataStatus);
+      if (typeof saved.planning?.requiredSetback === "number") setRequiredSetback(saved.planning.requiredSetback);
+      if (typeof saved.planning?.maxCoverage === "number") setMaxCoverage(saved.planning.maxCoverage);
+      if (typeof saved.planning?.maxFar === "number") setMaxFar(saved.planning.maxFar);
+      if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
+      if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
+      if (saved.zoning) {
+        setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
+        if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
+        if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
+        if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
+        const setbacks = [saved.zoning.frontSetback, saved.zoning.sideSetback, saved.zoning.rearSetback].filter((value): value is number => typeof value === "number");
+        if (setbacks.length) setRequiredSetback(Math.max(...setbacks));
+      }
+      if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
+      if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
+      if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
+      if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
+      if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
+      setFileNotice(hasSavedBoundary
+        ? "Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı."
+        : declared.province
+          ? `${declared.province}${declared.district ? ` / ${declared.district}` : ""} proje başlangıcından aktarıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`
+          : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules]);
