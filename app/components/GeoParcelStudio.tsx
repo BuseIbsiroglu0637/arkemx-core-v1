@@ -24,7 +24,7 @@ import {
   type TerrainLayerId,
   type TerrainLayerVisibility,
 } from "../lib/terrain-model";
-import { createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
+import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Stage = "locate" | "import" | "draw" | "zoning" | "design" | "terrain" | "export";
@@ -35,6 +35,10 @@ const normalizeSignedRotation = (value: number) => {
   if (!Number.isFinite(value)) return 0;
   return ((value + 180) % 360 + 360) % 360 - 180;
 };
+
+const setbackRoleLabel = (role: "front" | "side" | "rear") =>
+  role === "front" ? "ön cephe" : role === "rear" ? "arka cephe" : "yan cephe";
+
 type LeafletModule = typeof import("leaflet");
 type TkgmFeature = { type?: string; geometry?: unknown; properties?: Record<string, unknown> };
 type AdministrativeOption = { id: string; label: string };
@@ -784,8 +788,16 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const footprint = buildingWidth * buildingDepth;
     const gross = footprint * floors;
     const altitudes = parcel.map((point) => point.alt).filter((value): value is number => Number.isFinite(value));
-    const buildingFits = building.every((corner) => pointInPolygon(corner, parcel)) && !polygonEdgesCross(parcel, building);
-    const boundaryDistance = minimumBoundaryDistance(parcel, building);
+    const setbackAssessment = assessParcelEdgeSetbacks({
+      parcel,
+      building,
+      frontEdge,
+      front: zoning.frontSetback,
+      side: zoning.sideSetback,
+      rear: zoning.rearSetback,
+    });
+    const buildingFits = setbackAssessment.buildingFits;
+    const boundaryDistance = setbackAssessment.minimumDistance;
     const coverage = area ? (footprint / area) * 100 : 0;
     const far = area ? gross / area : 0;
     const buildingHeight = floors * floorHeight;
@@ -796,7 +808,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const geometryValid = parcel.length >= 3 && !polygonSelfIntersects(parcel) && area > 1;
     const setbackPass = zoningFormReady && buildingFits && boundaryDistance >= requiredSetback;
     return { area, perimeter, width: bounds.width, depth: bounds.depth, footprint, gross, coverage, far, buildingHeight, allowedFootprint, allowedGross, parkingNeed, rainwaterReview, geometryValid, buildingFits, setbackPass, boundaryDistance, minAlt: altitudes.length ? Math.min(...altitudes) : null, maxAlt: altitudes.length ? Math.max(...altitudes) : null };
-  }, [parcel, building, buildingWidth, buildingDepth, floors, floorHeight, maxCoverage, maxFar, parkingPer100, requiredSetback, zoningFormReady]);
+  }, [parcel, building, buildingWidth, buildingDepth, floors, floorHeight, maxCoverage, maxFar, parkingPer100, zoningFormReady, frontEdge, zoning.frontSetback, zoning.sideSetback, zoning.rearSetback]);
   const reference = `${province || "IL"}-${district || "ILCE"}-${block || "ADA"}-${parcelNo || "PARSEL"}`.replace(/\s+/g, "-").toLocaleUpperCase("tr-TR");
   const sourceNetwork = useMemo(
     () => resolveParcelSourceNetwork(province, district),
@@ -1084,7 +1096,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           fillOpacity: placementWarning ? .48 : .64,
         },
       ).bindTooltip(
-        `Temsili Ön Kütle<br>${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat${placementWarning ? "<br>ÖN KONTROL UYARISI" : ""}`,
+        `Temsili Ön Kütle<br>${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat${placementWarning ? "<br>KENAR BAZLI ÇEKME UYARISI" : ""}`,
       ).addTo(map);
     }
   }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers, showConceptualOverlays, zoningFormReady, zoning.frontSetback, zoning.sideSetback, zoning.rearSetback, massingModel, officialBoundaryLocked, metrics.setbackPass]);
@@ -1678,7 +1690,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <select value={frontEdge} onChange={(event) => setFrontEdge(event.target.value as ParcelFrontEdge)}>
             <option value="north">Kuzey</option><option value="east">Doğu</option><option value="south">Güney</option><option value="west">Batı</option>
           </select>
-          <small>Yol cephesi resmî aplikasyon veya halihazır haritayla doğrulanmalıdır.</small>
+          <small>Ön cephe seçimine göre 5/3/3 gibi ön/yan/arka çekmeler parsel kenarlarında ayrı kontrol edilir. Yol cephesi resmî aplikasyon veya halihazır haritayla doğrulanmalıdır.</small>
         </label>
         <div className="v112-envelope-ledger">
           <p><span>YAPI ZARFI</span><b>{massingModel.envelope.width.toFixed(1)} × {massingModel.envelope.depth.toFixed(1)} m</b></p>
@@ -1798,7 +1810,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
         <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : !parcel.length ? (basemapStatus === "ready" ? `Harita altlığı · ${province || "konum"}${district ? ` / ${district}` : ""} · parsel seçimi bekleniyor` : "Harita yükleniyor · parsel seçimi bekleniyor") : parcelRecord.evidence.sourceKind === "tkgm-open-service" ? (basemapStatus === "ready" ? "Harita altlığı · Seçili parsel sınırı TKGM kaydından" : "Harita yükleniyor · seçili parsel sınırı mevcut") : (basemapStatus === "ready" ? "Harita altlığı · seçili sınır önizlemesi" : "Harita yükleniyor · sınır önizlemesi mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend">{parcel.length ? <span className="parcel"><i></i>{parcelRecord.evidence.sourceKind === "tkgm-open-service" ? "TKGM parsel sınırı" : "Seçili parsel sınırı"}</span> : <span>Parsel seçimi bekleniyor</span>}{parcel.length >= 3 && showConceptualOverlays && <>{zoningFormReady && <span className="setback"><i></i>{massingModel.source.authoritative ? "Yapılaşabilir çekme zarfı" : "Kavramsal çekme zarfı · ön kontrol"}</span>}<span className="building"><i></i>Temsili Ön Kütle</span><span className={officialBoundaryLocked ? "point readonly" : "point"}><i></i>{officialBoundaryLocked ? "TKGM sınır noktası · salt okunur" : "Sınır noktası"}</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
-        {viewMode === "map" && showConceptualOverlays && zoningFormReady && !metrics.setbackPass && <p role="alert" className="geo-map-placement-warning"><b>Yerleşim ön kontrolü uyarısı.</b> {metrics.buildingFits ? `Temsili Ön Kütle parsel içinde ancak en yakın sınır mesafesi ${metrics.boundaryDistance.toFixed(1)} m; girilen çekme ön kontrolü ${requiredSetback.toFixed(1)} m.` : "Temsili Ön Kütle parsel sınırını aşıyor veya sınırla kesişiyor."} Bu sonuç kavramsal ön kontroldür; kesin aplikasyon ve imar uygunluğu değildir.</p>}
+        {viewMode === "map" && showConceptualOverlays && zoningFormReady && !metrics.setbackPass && <p role="alert" className="geo-map-placement-warning"><b>Yerleşim ön kontrolü uyarısı.</b> {metrics.buildingFits && metrics.setbackAssessment.governing ? `Temsili Ön Kütle parsel içinde; en kritik ${setbackRoleLabel(metrics.setbackAssessment.governing.role)} kenarında mesafe ${metrics.setbackAssessment.governing.distance.toFixed(1)} m, gerekli ön kontrol mesafesi ${metrics.setbackAssessment.governing.required.toFixed(1)} m.` : "Temsili Ön Kütle parsel sınırını aşıyor veya sınırla kesişiyor."} Ön/yan/arka çekmeler kenar bazında ayrı kontrol edilir; bu sonuç kesin aplikasyon ve imar uygunluğu değildir.</p>}
         {viewMode === "terrain" && <div className="geo-terrain-massing-control">
           <div><b>Temsili Ön Kütle</b><small>İmar ve yerleşim doğrulanmadan otomatik gösterilmez. Yalnız kavramsal ön yerleşimi incelemek için açın.</small></div>
           <button type="button" aria-pressed={showTerrainMassing} onClick={() => {
