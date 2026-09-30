@@ -311,6 +311,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // The streamlined parcel page opens with only the actual map and boundary.
   // Conceal conceptual overlays visually without deleting their saved inputs.
   const [showConceptualOverlays, setShowConceptualOverlays] = useState(!simple);
+  // The 3D terrain view opens as terrain-only. A conceptual building mass is opt-in.
+  const [showTerrainMassing, setShowTerrainMassing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [parcel, setParcel] = useState<GeoPoint[]>([]);
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
@@ -367,6 +369,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     source: parcelSource,
   }), [block, district, neighborhood, parcel, parcelNo, parcelSource, province]);
   const officialBoundaryLocked = parcelSource.kind === "tkgm-open-service" && parcel.length >= 3;
+  const terrainViewerLayers = useMemo<TerrainLayerVisibility>(() => ({
+    ...terrainLayers,
+    "building-mass": showTerrainMassing,
+  }), [showTerrainMassing, terrainLayers]);
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -1097,6 +1103,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const resetParcelSelection = (message: string) => {
     setParcel([]);
     setOfficialBoundaryEvidence(null);
+    setShowTerrainMassing(false);
     setParcelLookup("idle");
     setDrawEnabled(false);
     setShowConceptualOverlays(false);
@@ -1227,6 +1234,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const parcelCenter = geoCentroid(points);
       const nextParcel = points.slice(0, 400);
       setParcel(nextParcel);
+      setShowTerrainMassing(false);
       setTerrainLayers((current) => ({ ...current, "parcel-boundary": true }));
       setLatitude(parcelCenter.lat.toFixed(7));
       setLongitude(parcelCenter.lng.toFixed(7));
@@ -1686,8 +1694,20 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
         <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : !parcel.length ? (basemapStatus === "ready" ? `Harita altlığı · ${province || "konum"}${district ? ` / ${district}` : ""} · parsel seçimi bekleniyor` : "Harita yükleniyor · parsel seçimi bekleniyor") : parcelRecord.evidence.sourceKind === "tkgm-open-service" ? (basemapStatus === "ready" ? "Harita altlığı · Seçili parsel sınırı TKGM kaydından" : "Harita yükleniyor · seçili parsel sınırı mevcut") : (basemapStatus === "ready" ? "Harita altlığı · seçili sınır önizlemesi" : "Harita yükleniyor · sınır önizlemesi mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend">{parcel.length ? <span><i></i>Seçili parsel sınırı</span> : <span>Parsel seçimi bekleniyor</span>}{parcel.length >= 3 && showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
-        {viewMode === "terrain" && !metrics.setbackPass && <p role="alert" className="geo-caution">Ön yerleşim uyarısı: Yapı parsel sınırını aşıyor veya girilen çekme mesafesini karşılamıyor. 3B görünüm teknik uygunluk onayı değildir.</p>}
-        {viewMode === "terrain" && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} />}
+        {viewMode === "terrain" && <div className="geo-terrain-massing-control">
+          <div><b>Temsili Ön Kütle</b><small>İmar ve yerleşim doğrulanmadan otomatik gösterilmez. Yalnız kavramsal ön yerleşimi incelemek için açın.</small></div>
+          <button type="button" aria-pressed={showTerrainMassing} onClick={() => {
+            setShowTerrainMassing((visible) => {
+              const next = !visible;
+              setFileNotice(next
+                ? "Temsili ön kütle açıldı. Bu gösterim imar uygunluğu veya yerleşim onayı değildir."
+                : "Temsili ön kütle gizlendi; 3B görünüm yalnız arazi ve parsel verisini gösteriyor.");
+              return next;
+            });
+          }}>{showTerrainMassing ? "Temsili kütleyi gizle" : "Temsili kütleyi göster"}</button>
+        </div>}
+        {viewMode === "terrain" && showTerrainMassing && !metrics.setbackPass && <p role="alert" className="geo-caution">Temsili ön kütle uyarısı: Yapı parsel sınırını aşıyor veya girilen çekme mesafesini karşılamıyor. Bu kavramsal yerleşim teknik uygunluk onayı değildir.</p>}
+        {viewMode === "terrain" && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainViewerLayers} terrainModel={terrainModel} />}
         {viewMode === "data" && <div className="geo-data-view"><header><div><span>KAYNAK CRS BEYANI</span><b>{sourceCrs}</b></div><div><span>İŞLEME DÜZLEMİ</span><b>WGS84 → lokal ENU · metre</b></div><div><span>VERİ STATÜSÜ</span><b>{dataStatus}</b></div></header><section className="v111-terrain-ledger"><article><span>YÜZEY TEMELİ</span><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z / IDW" : "Parametrik eğim"}</b><small>{terrainModel.trust.toLocaleUpperCase("tr-TR")}</small></article><article><span>KOT ÖRNEĞİ</span><b>{terrainModel.samples.measured} / {terrainModel.samples.total}</b><small>Ölçülmüş / toplam nokta</small></article><article><span>KOT ARALIĞI</span><b>{terrainModel.elevation.range.toFixed(2)} m</b><small>{terrainModel.elevation.datum === "source-declared" ? "Kaynak datum beyanı" : "Yerel bağıl düzlem"}</small></article><article><span>EŞ YÜKSELTİ</span><b>{terrainContours.length}</b><small>Marching-squares önizleme parçası</small></article></section><div className="geo-data-table"><div className="head"><span>ID</span><span>LATITUDE</span><span>LONGITUDE</span><span>EAST / m</span><span>NORTH / m</span><span>Z / m</span></div>{parcel.map((point, index) => { const local = toLocalMeters(point, center); return <div key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(8)}</span><span>{point.lng.toFixed(8)}</span><span>{local.east.toFixed(3)}</span><span>{local.north.toFixed(3)}</span><span>{point.alt?.toFixed(2) ?? "—"}</span></div>; })}</div><footer><p><b>CRS kontrolü</b> Hesap motoru koordinatları coğrafi derece olarak yorumlar ve parsel merkezi çevresinde lokal ENU düzlemine alır. Kaynak veri WGS84 değilse doğru EPSG dönüşümü yapılmadan alan ve mesafe sonuçları proje verisi sayılmaz.</p><p><b>Arazi kontrolü</b> {terrainModel.limitations[0]}</p></footer></div>}
         <div className="geo-connectors"><a href={`https://www.google.com/maps/search/?api=1&query=${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>G</span><div><b>Google Maps’te aç</b><small>{parcelSource.kind === "sample" ? `ÖRNEK KONUM · ${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}` : `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`}</small></div><i>↗</i></a><a href={`https://earth.google.com/web/search/${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>E</span><div><b>Google Earth’te aç</b><small>KML ile sınır ve kütle aktarın</small></div><i>↗</i></a><button onClick={exportKml} disabled={exportDisabled}><span>K</span><div><b>Earth KML paketini indir</b><small>{exportDisabled ? "Önce kaynaklı bir parsel sınırı oluşturun" : "Parsel + ön yapı poligonu"}</small></div><i>↓</i></button></div>
       </main>
