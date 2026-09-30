@@ -20,7 +20,7 @@ export default function StructuralConceptPage() {
         <nav className="arx-workspace-nav" aria-label="Sayfa bağlantıları">
           <Link href="/plan-ve-aks"><ArrowLeft size={16} aria-hidden="true" /> Önceki adıma dön</Link>
           <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
-          <Link href="/">Tüm araçlar</Link>
+          <Link href="/araclar">Tüm araçlar</Link>
         </nav>
       </header>
       <div className="arx-workspace-intro">
