@@ -502,3 +502,16 @@ test("zoning form starts empty and does not invent planning rights", () => {
   assert.ok(studio.includes("zoningFormReady"));
   assert.ok(studio.includes("Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz"));
 });
+
+
+test("unverified zoning massing uses qualified language and flags manual Hmax conflicts", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("Girilen imar koşullarında ön kütleyi sınayın."));
+  assert.ok(studio.includes("GİRDİYE GÖRE AZAMİ TABAN"));
+  assert.ok(studio.includes("GİRDİYE GÖRE AZAMİ EMSAL ALAN"));
+  assert.ok(studio.includes("GİRDİYE GÖRE YÜKSEKLİK / KAT SINIRI"));
+  assert.ok(studio.includes("GİRDİLERLE ÖN UYUMLU"));
+  assert.ok(studio.includes("Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır."));
+  assert.ok(studio.includes("manualHeightExceedsZoning"));
+  assert.ok(studio.includes("Yükseklik sınırı aşılıyor."));
+});
