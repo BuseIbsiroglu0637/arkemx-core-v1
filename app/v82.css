@@ -84,3 +84,25 @@
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+
+
+.geo-terrain-analysis.terrain-only {
+  width: min(430px, calc(100% - 130px));
+}
+
+.geo-terrain-analysis.terrain-only > div {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.geo-terrain-analysis p > b {
+  color: #eef6f8;
+  font-weight: 760;
+}
+
+.geo-terrain-analysis p > small {
+  color: #a3b8c2;
+}
+
+.geo-terrain-analysis p > i {
+  color: #ffad7d;
+}
