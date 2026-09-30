@@ -13,7 +13,7 @@ type WorkspaceData = {
   activities: Array<{ id: number; eventType: string; title: string; detail: string; createdAt: string }>;
 };
 
-export function ClientAccountSettings({ displayName, email }: { displayName: string; email: string }) {
+export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
   const { project, thread } = useProjectKernel();
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
@@ -86,6 +86,78 @@ export function ClientAccountSettings({ displayName, email }: { displayName: str
     setMessage(response.ok ? "Kayıt kaldırıldı." : "Kayıt kaldırılamadı.");
     if (response.ok) await load();
   };
+
+  if (simple) {
+    return <div className="arx-account-panel" data-testid="account-settings-panel">
+      <section className="arx-account-status">
+        <div>
+          <span>AKTİF HESAP</span>
+          <h2>{profile.displayName || displayName}</h2>
+          <p>{email}</p>
+        </div>
+        <small>{message}</small>
+      </section>
+
+      <section className="arx-account-metrics" aria-label="Hesap özeti">
+        <article><span>KAYITLI PROJE</span><b>{data?.projects.length ?? 0}</b></article>
+        <article><span>GÖRÜŞME</span><b>{data?.meetings.length ?? 0}</b></article>
+        <article><span>AKTİF REVİZYON</span><b>{project.revision}</b></article>
+        <article><span>VERİ HAZIRLIĞI</span><b>%{thread.metrics.readiness}</b></article>
+      </section>
+
+      <div className="arx-account-grid">
+        <section className="arx-account-card" aria-labelledby="arx-account-profile-title">
+          <header>
+            <div><span>PROFİL</span><h3 id="arx-account-profile-title">Hesap bilgileri</h3></div>
+          </header>
+          <form className="arx-account-form" onSubmit={saveProfile}>
+            <label>Ad soyad<input value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}/></label>
+            <label>E-posta<input value={email} readOnly/></label>
+            <label>Firma / kurum<input value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })}/></label>
+            <label>Telefon<input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}/></label>
+            <button type="submit">Profili kaydet</button>
+          </form>
+        </section>
+
+        <section className="arx-account-card" aria-labelledby="arx-account-projects-title">
+          <header>
+            <div><span>PROJELER</span><h3 id="arx-account-projects-title">Hesaba bağlı projeler</h3></div>
+            <button type="button" onClick={saveProject}>Aktif projeyi kaydet</button>
+          </header>
+          <div className="arx-account-list">
+            {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
+              <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
+              <button type="button" onClick={() => remove("project", item.id)}>Kaldır</button>
+            </article>)}
+            {data && data.projects.length === 0 ? <p>Henüz hesaba kaydedilmiş proje yok.</p> : null}
+            {!data ? <p>Hesap kayıtları yükleniyor…</p> : null}
+          </div>
+          <footer><Link href="/dijital-proje-merkezi">Proje merkezini aç →</Link></footer>
+        </section>
+      </div>
+
+      <details className="arx-account-detail">
+        <summary>Görüşme ve işlem kayıtları</summary>
+        <div className="arx-account-detail-grid">
+          <section>
+            <h3>Son görüşmeler</h3>
+            {data?.meetings.slice(0, 4).map((item) => <article key={item.id}>
+              <div><b>{item.subject}</b><small>{item.channel} · {formatProjectDateTime(item.meetingAt)}</small></div>
+              <button type="button" onClick={() => remove("meeting", item.id)}>Kaldır</button>
+            </article>)}
+            {data && data.meetings.length === 0 ? <p>Henüz görüşme kaydı yok.</p> : null}
+          </section>
+          <section>
+            <h3>Son işlemler</h3>
+            {data?.activities.slice(0, 5).map((item) => <article key={item.id}>
+              <div><b>{item.title}</b><small>{item.detail || "Hesap işlemi"} · {formatProjectDateTime(item.createdAt)}</small></div>
+            </article>)}
+            {data && data.activities.length === 0 ? <p>Henüz işlem kaydı yok.</p> : null}
+          </section>
+        </div>
+      </details>
+    </div>;
+  }
 
   return <div className="customer-workspace">
     <header className="customer-console-head"><div><span>ARKEMX / GÜVENLİ MÜŞTERİ ALANI</span><h2>{displayName}</h2><p>{email}</p></div><div className="customer-console-state"><b>HESAP AKTİF</b><small>{message}</small></div></header>
