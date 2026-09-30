@@ -515,3 +515,12 @@ test("unverified zoning massing uses qualified language and flags manual Hmax co
   assert.ok(studio.includes("manualHeightExceedsZoning"));
   assert.ok(studio.includes("Yükseklik sınırı aşılıyor."));
 });
+
+
+test("unverified massing terminology avoids implying official zoning rights", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"));
+  assert.ok(studio.includes("Girdi kullanım oranı"));
+  assert.ok(studio.includes('massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU"'));
+  assert.ok(studio.includes('massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"'));
+});
