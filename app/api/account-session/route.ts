@@ -1,18 +1,18 @@
-import { getArkemAccountUser } from "../../chatgpt-auth";
+import { getArkemAccountSession } from "../../chatgpt-auth";
 
 export async function GET() {
-  const user = await getArkemAccountUser();
+  const session = await getArkemAccountSession();
   return Response.json(
-    user
+    session.user
       ? {
           authenticated: true,
-          user: { displayName: user.displayName, email: user.email },
-          identitySource: "hosting-header",
+          user: { displayName: session.user.displayName, email: session.user.email },
+          identitySource: session.identitySource,
         }
       : {
           authenticated: false,
           user: null,
-          identitySource: "hosting-header",
+          identitySource: session.identitySource,
         },
     {
       headers: {
