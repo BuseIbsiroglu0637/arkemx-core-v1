@@ -492,6 +492,9 @@ test("zoning form starts empty and does not invent planning rights", () => {
   assert.ok(zoning.includes('kaks: -1'));
   assert.ok(zoning.includes('hmax: -1'));
   assert.ok(zoning.includes('frontSetback: -1'));
+  assert.ok(zoning.includes('sourceType: ""'));
+  assert.ok(zoning.includes('sourceDate: ""'));
+  assert.ok(zoning.includes('sourceNote: ""'));
   assert.ok(studio.includes("İmar girdileri bekleniyor"));
   assert.ok(studio.includes("Yapı zarfı henüz üretilmedi"));
   assert.ok(studio.includes("Plan ölçeğini seçin"));
@@ -669,18 +672,6 @@ test("account navigation stays inside the Next app so project kernel remains mou
   assert.ok(!accountLink.includes("return <a href={href}>{label}</a>"));
 });
 
-test("account debug inspector exposes runtime, storage and geo draft state", () => {
-  const debug = fs.readFileSync(new URL("../app/components/ProjectStateDebug.tsx", import.meta.url), "utf8");
-  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
-  assert.ok(debug.includes("Teknik debug · proje durumu"));
-  assert.ok(debug.includes("storagePrimary"));
-  assert.ok(debug.includes("storageBackup"));
-  assert.ok(debug.includes("geoDraft"));
-  assert.ok(kernel.includes("provider-mount"));
-  assert.ok(kernel.includes("hydrate-storage"));
-  assert.ok(kernel.includes("persist-storage"));
-  assert.ok(kernel.includes("patch-geo-parcel"));
-});
 
 test("project geocoding cannot erase a restored parcel identity", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
@@ -700,15 +691,6 @@ test("project geocoding cannot erase a restored parcel identity", () => {
 });
 
 
-test("geo debug records live identity transitions before kernel persistence", () => {
-  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
-  const debug = fs.readFileSync(new URL("../app/components/ProjectStateDebug.tsx", import.meta.url), "utf8");
-  assert.ok(studio.includes('event: "geo-local-state"'));
-  assert.ok(studio.includes("neighborhoodId"));
-  assert.ok(studio.includes("parcelVertices: parcel.length"));
-  assert.ok(debug.includes("identityTransitions"));
-  assert.ok(debug.includes("events.slice(-30)"));
-});
 
 
 test("restored parcel identity stays visible while TKGM lists reload", () => {
@@ -733,4 +715,21 @@ test("account project open preserves newer local state and avoids full reload", 
   assert.ok(account.includes("localProjectUpdatedAt >= payloadUpdatedAt(item.payload)"));
   assert.ok(account.includes('router.push("/dijital-proje-merkezi")'));
   assert.ok(!account.includes('window.location.assign("/dijital-proje-merkezi")'));
+});
+
+
+test("zoning source metadata is explicit, persistent and never treated as approval", () => {
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(zoning.includes("sourceType: string"));
+  assert.ok(zoning.includes("sourceDate: string"));
+  assert.ok(zoning.includes("sourceNote: string"));
+  assert.ok(zoning.includes("type: zoning.sourceType || null"));
+  assert.ok(zoning.includes("date: zoning.sourceDate || null"));
+  assert.ok(studio.includes("Kaynak türünü seçin"));
+  assert.ok(studio.includes("Belge / kaynak tarihi"));
+  assert.ok(studio.includes("Kaynak açıklaması"));
+  assert.ok(studio.includes("Kaynak bilgisi eklendi · uzman doğrulaması gerekli"));
+  assert.ok(studio.includes("Kaynak bilgisi eksik"));
+  assert.ok(studio.includes("zoningSourceReady"));
 });
