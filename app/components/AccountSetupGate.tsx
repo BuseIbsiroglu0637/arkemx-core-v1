@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AccountOnboarding } from "./AccountOnboarding";
+import { useProjectKernel } from "./ProjectKernel";
 
 type SetupState = "checking" | "setup" | "existing" | "error";
 
@@ -16,6 +17,8 @@ export function AccountSetupGate({
   returnTo: string;
   showExistingAccountChoice?: boolean;
 }) {
+  const { project, hydrated } = useProjectKernel();
+  const hasActiveProject = hydrated && Object.keys(project.modules).length > 0;
   const [state, setState] = useState<SetupState>("checking");
   const [message, setMessage] = useState("Hesap bilgileri kontrol ediliyor…");
 
@@ -73,10 +76,11 @@ export function AccountSetupGate({
       <span>HESAP HAZIR</span>
       <h2>Hesabınız zaten kurulu</h2>
       <p>{message} Kurulumu yeniden yapmanız gerekmez.</p>
-      <div className="arx-setup-existing-actions">
+      <div className={`arx-setup-existing-actions${hasActiveProject ? "" : " single"}`}>
         <a href="/hesabim">Hesabımı aç</a>
-        <a href={returnTo}>Proje merkezine devam et</a>
+        {hasActiveProject ? <a href="/dijital-proje-merkezi">Aktif projeye devam et</a> : null}
       </div>
+      {hasActiveProject ? <small className="arx-setup-active-project">{project.name} · {project.id}</small> : null}
     </div>;
   }
 
