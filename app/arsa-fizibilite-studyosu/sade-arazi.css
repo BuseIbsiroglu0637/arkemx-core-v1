@@ -385,3 +385,30 @@
 .arx-geo-simple .geo-map-placement-warning b {
   color: #9c4625;
 }
+
+
+.arx-geo-simple .geo-parking-result {
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #d9e3e6;
+  background: #f7fafb;
+  display: grid;
+  gap: 4px;
+}
+.arx-geo-simple .geo-parking-result span {
+  color: #526f7b;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.arx-geo-simple .geo-parking-result b {
+  color: #08283a;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.arx-geo-simple .geo-parking-result small {
+  color: #66808a;
+  font-size: 8px;
+  line-height: 1.45;
+}
