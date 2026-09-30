@@ -1075,6 +1075,16 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(html, /name="return_to" value="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon"/);
   assert.doesNotMatch(html, /ChatGPT/i);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
+
+  const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
+  assert.match(authSource, /accountReturnPath/);
+  assert.match(authSource, /fallback = "\/dijital-proje-merkezi"/);
+  const setupGate = fs.readFileSync(new URL("../app/components/AccountSetupGate.tsx", import.meta.url), "utf8");
+  assert.match(setupGate, /body\.profile/);
+  assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
+  const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
+  assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
+  assert.match(focusedAccount, /redirect\("\/giris\?return_to=%2Fhesabim"\)/);
 });
 
 test("V93 routes every province through an explicit zoning authority chain", async () => {
