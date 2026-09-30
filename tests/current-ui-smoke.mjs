@@ -468,3 +468,15 @@ test("3D terrain hides building-dependent metrics until conceptual massing is en
   assert.ok(viewer.includes('YAPI ALTI Δ'));
   assert.ok(viewer.includes('ÖN HAFRİYAT'));
 });
+
+
+test("coordinate data view distinguishes parametric terrain values from measured data", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("PARAMETRİK KOT FARKI"));
+  assert.ok(studio.includes("Ölçülmüş Z verisi yok"));
+  assert.ok(studio.includes("TEMSİLİ EŞ YÜKSELTİ"));
+  assert.ok(studio.includes("Parametrik yüzeyden üretildi"));
+  assert.ok(studio.includes("Yerel ENU başlangıcı"));
+  assert.ok(studio.includes("Parsel merkezi (0,0) kabul edilir"));
+  assert.ok(studio.includes("resmî pafta koordinatı değil"));
+});
