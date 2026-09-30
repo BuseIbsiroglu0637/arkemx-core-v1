@@ -132,8 +132,7 @@
   text-transform:none;
 }
 .arx-setup-card .account-form-grid label:first-child,
-.arx-setup-card .account-form-grid label:nth-child(2),
-.arx-setup-card .account-form-grid label:last-child { grid-column:1/-1; }
+.arx-setup-card .account-form-grid label:nth-child(2) { grid-column:1/-1; }
 .arx-setup-card .account-form-grid :where(input,select) {
   min-height:42px;
   width:100%;
