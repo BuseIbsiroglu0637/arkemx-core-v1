@@ -1068,7 +1068,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         .bindTooltip(`Eş yükselti ${segment.elevation.toFixed(2)} m`)
         .addTo(contourLayerRef.current!);
     });
-    if (showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
+    if (showConceptualOverlays && zoningFormReady && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`Temsili Ön Kütle<br>${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
   }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers, showConceptualOverlays, zoningFormReady, zoning.frontSetback, zoning.sideSetback, zoning.rearSetback, massingModel, officialBoundaryLocked]);
 
   // When an existing, sourced parcel is opened from local storage, fit the map
@@ -1734,7 +1734,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
               {showLayers ? "Harita katmanlarını gizle" : "Harita katmanlarını göster"}</button>
             {parcel.length >= 3 && <button type="button" aria-pressed={showConceptualOverlays} onClick={() => {
               setShowConceptualOverlays((visible) => !visible);
-              if (!showConceptualOverlays) setTerrainLayers((current) => ({ ...current, contours: true, "building-mass": true }));
+              if (!showConceptualOverlays) setTerrainLayers((current) => ({ ...current, contours: true }));
             }}>
               {showConceptualOverlays ? "Temsili ön kütle ve katmanları gizle" : "Temsili ön kütle ve katmanları göster"}
             </button>}
