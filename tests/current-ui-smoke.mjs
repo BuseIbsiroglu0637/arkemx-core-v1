@@ -646,4 +646,55 @@ test("dark theme uses true black surfaces and high-contrast parcel UI", () => {
   assert.ok(geo.includes("color: #ffffff !important"));
   assert.ok(geo.includes("Keep satellite/terrain imagery natural"));
 });
-\ntest("geo parcel state survives reloads and can recover from project backup", () => {\n  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");\n  assert.ok(studio.includes("arkemx-geo-draft:"));\n  assert.ok(studio.includes("PROJECT_BACKUP_KEY"));\n  assert.ok(studio.includes("decodeProjectEnvelope"));\n  assert.ok(studio.includes("if (!Object.keys(project.modules).length) return"));\n  assert.ok(studio.includes('setNeighborhood(saved.neighborhood ?? "")'));\n  assert.ok(studio.includes('setBlock(saved.block ?? "")'));\n  assert.ok(studio.includes('setParcelNo(saved.parcelNo ?? "")'));\n  assert.ok(studio.includes("if (!hydrated || !transferApplied.current) return"));\n  assert.ok(studio.includes("window.localStorage.setItem(geoDraftKey(project.id)"));\n  assert.ok(studio.includes('patchModule("geo-parcel", moduleSnapshot)'));\n});\n\ntest("account navigation stays inside the Next app so project kernel remains mounted", () => {\n  const accountLink = fs.readFileSync(new URL("../app/components/AccountHeaderLink.tsx", import.meta.url), "utf8");\n  assert.ok(accountLink.includes('import Link from "next/link"'));\n  assert.ok(accountLink.includes("return <Link href={href}>{label}</Link>"));\n  assert.ok(!accountLink.includes("return <a href={href}>{label}</a>"));\n});\n\ntest("account debug inspector exposes runtime, storage and geo draft state", () => {\n  const debug = fs.readFileSync(new URL("../app/components/ProjectStateDebug.tsx", import.meta.url), "utf8");\n  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");\n  assert.ok(debug.includes("Teknik debug · proje durumu"));\n  assert.ok(debug.includes("storagePrimary"));\n  assert.ok(debug.includes("storageBackup"));\n  assert.ok(debug.includes("geoDraft"));\n  assert.ok(kernel.includes("provider-mount"));\n  assert.ok(kernel.includes("hydrate-storage"));\n  assert.ok(kernel.includes("persist-storage"));\n  assert.ok(kernel.includes("patch-geo-parcel"));\n});\n\ntest("project geocoding cannot erase a restored parcel identity", () => {\n  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");\n  assert.ok(studio.includes("const hasExplicitParcelIdentity = Boolean("));\n  assert.ok(studio.includes("saved?.previewParcel?.length"));\n  assert.ok(studio.includes("|| neighborhood"));\n  assert.ok(studio.includes("|| block"));\n  assert.ok(studio.includes("|| parcelNo"));\n  assert.ok(studio.includes("if (result.province && !province) setProvince(result.province)"));\n  assert.ok(studio.includes("if (result.district && !district) setDistrict(result.district)"));\n  assert.ok(!studio.includes('setNeighborhood("");\n      setNeighborhoodId("");\n      setFileNotice(`${result.province || province || "Proje konumu"}'));\n});\n
+
+
+test("geo parcel state survives reloads and can recover from project backup", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("arkemx-geo-draft:"));
+  assert.ok(studio.includes("PROJECT_BACKUP_KEY"));
+  assert.ok(studio.includes("decodeProjectEnvelope"));
+  assert.ok(studio.includes("if (!Object.keys(project.modules).length) return"));
+  assert.ok(studio.includes('setNeighborhood(saved.neighborhood ?? "")'));
+  assert.ok(studio.includes('setBlock(saved.block ?? "")'));
+  assert.ok(studio.includes('setParcelNo(saved.parcelNo ?? "")'));
+  assert.ok(studio.includes("if (!hydrated || !transferApplied.current) return"));
+  assert.ok(studio.includes("window.localStorage.setItem(geoDraftKey(project.id)"));
+  assert.ok(studio.includes('patchModule("geo-parcel", moduleSnapshot)'));
+});
+
+test("account navigation stays inside the Next app so project kernel remains mounted", () => {
+  const accountLink = fs.readFileSync(new URL("../app/components/AccountHeaderLink.tsx", import.meta.url), "utf8");
+  assert.ok(accountLink.includes('import Link from "next/link"'));
+  assert.ok(accountLink.includes("return <Link href={href}>{label}</Link>"));
+  assert.ok(!accountLink.includes("return <a href={href}>{label}</a>"));
+});
+
+test("account debug inspector exposes runtime, storage and geo draft state", () => {
+  const debug = fs.readFileSync(new URL("../app/components/ProjectStateDebug.tsx", import.meta.url), "utf8");
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  assert.ok(debug.includes("Teknik debug · proje durumu"));
+  assert.ok(debug.includes("storagePrimary"));
+  assert.ok(debug.includes("storageBackup"));
+  assert.ok(debug.includes("geoDraft"));
+  assert.ok(kernel.includes("provider-mount"));
+  assert.ok(kernel.includes("hydrate-storage"));
+  assert.ok(kernel.includes("persist-storage"));
+  assert.ok(kernel.includes("patch-geo-parcel"));
+});
+
+test("project geocoding cannot erase a restored parcel identity", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const hasExplicitParcelIdentity = Boolean("));
+  assert.ok(studio.includes("saved?.previewParcel?.length"));
+  assert.ok(studio.includes("|| neighborhood"));
+  assert.ok(studio.includes("|| block"));
+  assert.ok(studio.includes("|| parcelNo"));
+  assert.ok(studio.includes("if (result.province && !province) setProvince(result.province)"));
+  assert.ok(studio.includes("if (result.district && !district) setDistrict(result.district)"));
+  const geocodeEffectStart = studio.indexOf("const hasExplicitParcelIdentity = Boolean(");
+  const geocodeEffectEnd = studio.indexOf("const coordinateCenter = useMemo", geocodeEffectStart);
+  const geocodeEffect = studio.slice(geocodeEffectStart, geocodeEffectEnd);
+  assert.ok(!geocodeEffect.includes('setNeighborhood("")'));
+  assert.ok(!geocodeEffect.includes('setBlock("")'));
+  assert.ok(!geocodeEffect.includes('setParcelNo("")'));
+});
