@@ -731,5 +731,7 @@ test("zoning source metadata is explicit, persistent and never treated as approv
   assert.ok(studio.includes("Kaynak açıklaması"));
   assert.ok(studio.includes("Kaynak bilgisi eklendi · uzman doğrulaması gerekli"));
   assert.ok(studio.includes("Kaynak bilgisi eksik"));
+  assert.ok(studio.includes("zoningSourceReferenceReady"));
+  assert.ok(studio.includes('zoning.sourceType === "Kullanıcı beyanı" && zoning.sourceNote.trim()'));
   assert.ok(studio.includes("zoningSourceReady"));
 });
