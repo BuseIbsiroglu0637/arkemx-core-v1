@@ -159,3 +159,29 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
   font-size:11px;
   font-weight:720;
 }
+
+
+.arx-account-project-actions {
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.arx-account-project-actions button {
+  min-height:31px;
+  padding:6px 8px;
+  border:1px solid #d2dde1;
+  border-radius:5px;
+  background:#fff;
+  color:#456471;
+  font:700 9px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-account-project-actions button:first-child {
+  background:#244756;
+  border-color:#244756;
+  color:#fff;
+}
+.arx-account-card > header > button:disabled {
+  opacity:.45;
+  cursor:not-allowed;
+}
