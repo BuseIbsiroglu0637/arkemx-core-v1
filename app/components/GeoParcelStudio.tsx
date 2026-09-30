@@ -440,6 +440,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     zoning.rearSetback,
   ].every((value) => Number.isFinite(value) && value >= 0);
   const zoningFormReady = zoningNumericReady && Boolean(zoning.planScale && zoning.buildingOrder);
+  const zoningSourceReady = Boolean(
+    zoning.sourceType
+    && zoning.sourceDate
+    && (zoning.sourceDocument || zoning.sourceUrl || zoning.planId),
+  );
   const manualBuildingHeight = floors * floorHeight;
   const manualHeightExceedsZoning = zoningFormReady && manualBuildingHeight > zoning.hmax + 0.001;
   const [frontEdge, setFrontEdge] = useState<ParcelFrontEdge>("north");
@@ -643,6 +648,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           (!saved.zoning.verification || saved.zoning.verification === "user-declared")
           && !saved.zoning.sourceDocument
           && !saved.zoning.sourceUrl
+          && !saved.zoning.sourceType
+          && !saved.zoning.sourceDate
+          && !saved.zoning.sourceNote
           && !saved.zoning.planId
           && !saved.zoning.planNoteReference
           && (!saved.zoning.landUse || saved.zoning.landUse === "Kullanıcı girişi bekleniyor")
@@ -1803,6 +1811,26 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </select>
         <small>Bu seçimler resmî onay sağlamaz. Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz.</small>
       </label>
+      <div className="geo-field-grid geo-zoning-source-grid">
+        <label>Kaynak türü
+          <select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}>
+            <option value="" disabled>Kaynak türünü seçin</option>
+            <option>Belediye imar durumu</option>
+            <option>e-Plan / plan paftası</option>
+            <option>Plan notu / meclis kararı</option>
+            <option>Kullanıcı beyanı</option>
+            <option>Diğer</option>
+          </select>
+        </label>
+        <label>Belge / kaynak tarihi
+          <input type="date" value={zoning.sourceDate} onChange={(event) => updateZoning("sourceDate", event.target.value)} />
+        </label>
+      </div>
+      <div className="geo-zoning-source-status" data-ready={zoningSourceReady ? "ready" : "missing"}>
+        <span>İMAR KAYNAĞI</span>
+        <b>{zoningSourceReady ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli" : "Kaynak bilgisi eksik"}</b>
+        <small>{zoningSourceReady ? "Kaynak türü, tarih ve en az bir belge / URL / plan işlem numarası kayıtlı." : "Kaynak türü, tarih ve belge / URL / plan işlem numarasından en az biri eklenmelidir."}</small>
+      </div>
       <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
       <div className="geo-field-grid">
         <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
@@ -1822,6 +1850,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </div>
       <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
       <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} placeholder="Belediye e-İmar veya e-Plan bağlantısı" /></label>
+      <label>Kaynak açıklaması<textarea rows={2} value={zoning.sourceNote} onChange={(event) => updateZoning("sourceNote", event.target.value)} placeholder="Belgenin kapsamı, nereden alındığı veya kontrol notu…" /></label>
       <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
       {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı veya imar uygunluğu hesabı üretilmez.</p>}
       <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Ulusal ölçekte tek ve açık bir TAKS/KAKS/Hmax servisi bulunmadığından TKGM parsel kimliği; e-Plan/TUCBS, belediye e-İmar adaptörü ve onaylı imar durumu belgesiyle eşleştirilir. Kaynaksız değer resmî imar hakkı olarak gösterilmez.</p>
@@ -1833,6 +1862,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <span>AKTARILAN İMAR KOŞULLARI</span>
         <b>{zoning.buildingOrder} · TAKS {zoning.taks.toFixed(2)} · KAKS {zoning.kaks.toFixed(2)}</b>
         <small>Hmax {zoning.hmax.toFixed(1)} m · Ön/yan/arka {zoning.frontSetback}/{zoning.sideSetback}/{zoning.rearSetback} m</small>
+        <small>Kaynak: {zoningSourceReady ? "bilgisi kayıtlı · uzman doğrulaması gerekli" : "eksik · kullanıcı girdisi"}</small>
         <button onClick={() => setActiveStage("zoning")}>İmar girdilerini düzenleyin</button>
       </div>
       <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
