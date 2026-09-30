@@ -313,3 +313,18 @@ test("completed projects are saved before their recovery draft is cleared", () =
   assert.match(accountSource, /importProject\(item\.payload\)/);
   assert.match(accountSource, />Aç<\/button>/);
 });
+
+
+test("parcel workspace can return to the persistent project start summary", () => {
+  const parcelPage = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/page.tsx", import.meta.url), "utf8");
+  const startPage = fs.readFileSync(new URL("../app/proje-baslat/page.tsx", import.meta.url), "utf8");
+  const startStudio = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+
+  assert.match(parcelPage, /href="\/proje-baslat\?view=summary"/);
+  assert.match(parcelPage, /Önceki adıma dön/);
+  assert.match(startPage, /summaryMode/);
+  assert.match(startPage, /Proje başlangıç özeti/);
+  assert.match(startStudio, /intakeFromProjectModule/);
+  assert.match(startStudio, /summaryReady/);
+  assert.match(startStudio, /if \(completed \|\| summaryReady\)/);
+});
