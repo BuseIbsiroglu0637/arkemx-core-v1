@@ -412,3 +412,198 @@
   font-size: 8px;
   line-height: 1.45;
 }
+
+
+/* ARKEMX geo studio dark theme */
+html[data-theme="dark"] .arx-geo-page {
+  background: #071824;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-back a,
+html[data-theme="dark"] .arx-geo-intro p {
+  color: #9db0b8;
+}
+html[data-theme="dark"] .arx-geo-intro > span {
+  color: #c9845c;
+}
+html[data-theme="dark"] .arx-geo-simple {
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-quick-nav {
+  border-color: #294552;
+  background: #0a2130;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button,
+html[data-theme="dark"] .arx-geo-extra summary {
+  border-color: #31505d;
+  background: #0c2a3a;
+  color: #aec0c7;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button.active,
+html[data-theme="dark"] .arx-geo-quick-nav button[aria-current="step"] {
+  border-color: #c27244;
+  background: #b96636;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-extra > div {
+  border-color: #31505d;
+  background: #0a2231;
+  box-shadow: 0 14px 30px rgba(0,0,0,.3);
+}
+html[data-theme="dark"] .arx-geo-extra > div button {
+  background: #0a2231;
+  color: #b6c6cc;
+}
+html[data-theme="dark"] .arx-geo-extra > div button:hover {
+  background: #123444;
+}
+html[data-theme="dark"] .arx-geo-extra > div button.active,
+html[data-theme="dark"] .arx-geo-extra > div button[aria-pressed="true"] {
+  background: #153b3b;
+  color: #b9ddd0;
+}
+html[data-theme="dark"] .arx-geo-source-note {
+  border-color: #453a2b;
+  background: #2a241b;
+  color: #d9bd92;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center,
+html[data-theme="dark"] .arx-geo-simple .geo-workspace,
+html[data-theme="dark"] .arx-geo-simple .geo-controls,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section {
+  border-color: #294552;
+  background: #091f2d;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary > article {
+  border-color: #31505d;
+  background: #0c2a3a;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > small {
+  color: #91a7b0;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3 {
+  color: #f0f5f6;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section label:not(.geo-file-drop) {
+  color: #a6b8bf;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:not([type="range"]),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea {
+  border-color: #3b5865;
+  background: #0d2b3c;
+  color: #edf4f6;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage {
+  background: #071a27;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar {
+  border-color: #31505d;
+  background: #0a2231;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button {
+  border-color: #31505d;
+  background: #0a2231;
+  color: #9eb1b9;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button[aria-pressed="true"],
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button.active {
+  background: #0d3347;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-frame {
+  border-color: #31505d;
+}
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results {
+  border-color: #294552;
+  background: #091f2d;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot {
+  border-color: #294552;
+  background: #071b29;
+  color: #8ea3ac;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result {
+  border-color: #31505d;
+  background: #0c2a3a;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result span,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result small {
+  color: #8fa6af;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result b {
+  color: #f1f6f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control {
+  border-color: #31505d;
+  background: #0a2231;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control b {
+  color: #e7eff2;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control small {
+  color: #92a7af;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button {
+  border-color: #54717d;
+  background: #0d2b3c;
+  color: #dce7ea;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button[aria-pressed="true"] {
+  border-color: #c27244;
+  background: #b96636;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning {
+  border-color: #74432d;
+  border-left-color: #d07947;
+  background: #2c201b;
+  color: #e5bca5;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning b,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning b {
+  color: #f0a272;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock {
+  border-color: #356657;
+  background: #102b29;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > b {
+  color: #9dd2be;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > p {
+  color: #94aaa7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-restore-official {
+  background: #0d2b3c;
+  color: #dce7ea;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-offline-label {
+  border-color: #31505d;
+  background: rgba(7,31,44,.94);
+  color: #aac0c8;
+}
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-query {
+  border-color: #665439;
+  background: #29241b;
+  color: #d6bd96;
+}
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert > button {
+  border-color: #9b7348;
+  background: #33281e;
+  color: #e0c49d;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle {
+  border-color: #3b5965;
+  background: #0d2b3c;
+  color: #afc0c7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle[aria-pressed="true"] {
+  border-color: #548e7a;
+  background: #143d35;
+  color: #b7dfd1;
+}
