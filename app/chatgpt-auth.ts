@@ -19,11 +19,24 @@ const SIGN_OUT_PATH = "/signout-with-chatgpt";
 const CALLBACK_PATH = "/callback";
 const PROTOTYPE_SIGN_OUT_PATH = "/demo-cikis";
 const PROTOTYPE_SESSION_COOKIE = "arkemx_prototype_session";
+const PROTOTYPE_DISPLAY_NAME = process.env.ARKEMX_PROTOTYPE_DEMO_NAME?.trim() || "Buse İbşiroğlu";
+const PROTOTYPE_EMAIL = process.env.ARKEMX_PROTOTYPE_DEMO_EMAIL?.trim().toLowerCase() || "demo@arkemx.local";
+const PROTOTYPE_COMPANY = process.env.ARKEMX_PROTOTYPE_DEMO_COMPANY?.trim() || "ARKEMX";
+
 const PROTOTYPE_USER: ChatGPTUser = {
-  displayName: "ARKEMX Demo Kullanıcısı",
-  email: "demo@arkemx.local",
-  fullName: "ARKEMX Demo Kullanıcısı",
+  displayName: PROTOTYPE_DISPLAY_NAME,
+  email: PROTOTYPE_EMAIL,
+  fullName: PROTOTYPE_DISPLAY_NAME,
 };
+
+export function prototypeDemoProfileDefaults() {
+  return {
+    displayName: PROTOTYPE_DISPLAY_NAME,
+    company: PROTOTYPE_COMPANY,
+    phone: process.env.ARKEMX_PROTOTYPE_DEMO_PHONE?.trim() || "",
+    preferredLanguage: "tr",
+  };
+}
 
 export type ArkemAccountSession = {
   user: ChatGPTUser | null;
