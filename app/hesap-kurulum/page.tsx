@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { accountReturnPath, getArkemAccountUser } from "../chatgpt-auth";
-import { AccountOnboarding } from "../components/AccountOnboarding";
+import { AccountSetupGate } from "../components/AccountSetupGate";
 import "../sade-arac-paneli.css";
 import "../giris/sade-giris.css";
 import "./sade-hesap-kurulum.css";
@@ -45,7 +45,7 @@ export default async function AccountSetupPage({ searchParams }: SetupPageProps)
         </div>
 
         <div className="arx-setup-card">
-          {user ? <AccountOnboarding displayName={user.displayName} email={user.email} returnTo={returnTo}/> : <>
+          {user ? <AccountSetupGate displayName={user.displayName} email={user.email} returnTo={returnTo}/> : <>
             <span>1 / 2</span>
             <h2>Önce güvenli oturumu açın</h2>
             <p>Kimlik doğrulamasından sonra bu kurulum ekranına geri döneceksiniz.</p>
