@@ -529,8 +529,7 @@ test("unverified massing terminology avoids implying official zoning rights", ()
 test("2D map distinguishes TKGM boundary, conceptual setback envelope and read-only points", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes("setbackEnvelopeLayerRef"));
-  assert.ok(studio.includes("Girdiye göre kavramsal çekme zarfı"));
-  assert.ok(studio.includes("Girdiye göre çekme zarfı"));
+  assert.ok(studio.includes("Kavramsal çekme zarfı · ön kontrol"));
   assert.ok(studio.includes("Temsili Ön Kütle"));
   assert.ok(studio.includes("TKGM parsel sınırı"));
   assert.ok(studio.includes("TKGM sınır noktası · salt okunur"));
