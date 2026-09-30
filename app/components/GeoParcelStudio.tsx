@@ -374,6 +374,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     zoning.rearSetback,
   ].every((value) => Number.isFinite(value) && value >= 0);
   const zoningFormReady = zoningNumericReady && Boolean(zoning.planScale && zoning.buildingOrder);
+  const manualBuildingHeight = floors * floorHeight;
+  const manualHeightExceedsZoning = zoningFormReady && manualBuildingHeight > zoning.hmax + 0.001;
   const [frontEdge, setFrontEdge] = useState<ParcelFrontEdge>("north");
   const [selectedMassingId, setSelectedMassingId] = useState("manual");
   const parcelRecord = useMemo<ParcelRecord>(() => createParcelRecord({
@@ -1625,7 +1627,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     </div>,
     design: zoningFormReady ? <div className="geo-control-section">
       <span>05 / YAPI YERLEŞİMİ</span>
-      <h3>Doğrulanan imar koşullarında kütleyi sınayın.</h3>
+      <h3>{massingModel.source.authoritative ? "Doğrulanan imar koşullarında kütleyi sınayın." : "Girilen imar koşullarında ön kütleyi sınayın."}</h3>
       <div className="geo-zoning-summary">
         <span>AKTARILAN İMAR KOŞULLARI</span>
         <b>{zoning.buildingOrder} · TAKS {zoning.taks.toFixed(2)} · KAKS {zoning.kaks.toFixed(2)}</b>
@@ -1634,7 +1636,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </div>
       <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
         <header>
-          <div><span>V112 / İMAR UYUMLU KÜTLE MOTORU</span><b>Çekme zarfı ve yapılaşma haklarından üç açıklanabilir alternatif.</b></div>
+          <div><span>V112 / İMAR UYUMLU KÜTLE MOTORU</span><b>{massingModel.source.authoritative ? "Doğrulanmış koşullardan üç açıklanabilir alternatif." : "Doğrulanmamış kullanıcı imar girdilerine göre üç açıklanabilir ön alternatif."}</b></div>
           <em data-trust={massingModel.source.trust}>{massingModel.source.authoritative ? "İMAR KAYNAĞI DOĞRULANDI" : "ÖN DEĞERLENDİRME"}</em>
         </header>
         <label className="v112-front-edge">Ön cephe yönü
@@ -1645,13 +1647,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </label>
         <div className="v112-envelope-ledger">
           <p><span>YAPI ZARFI</span><b>{massingModel.envelope.width.toFixed(1)} × {massingModel.envelope.depth.toFixed(1)} m</b></p>
-          <p><span>İZİNLİ TABAN</span><b>{massingModel.limits.allowedFootprint.toFixed(0)} m²</b></p>
-          <p><span>İZİNLİ EMSAL</span><b>{massingModel.limits.allowedGrossArea.toFixed(0)} m²</b></p>
-          <p><span>KAT SINIRI</span><b>{massingModel.limits.maxFloors} kat / {massingModel.limits.allowedHeight.toFixed(1)} m</b></p>
+          <p><span>{massingModel.source.authoritative ? "İZİNLİ TABAN" : "GİRDİYE GÖRE AZAMİ TABAN"}</span><b>{massingModel.limits.allowedFootprint.toFixed(0)} m²</b></p>
+          <p><span>{massingModel.source.authoritative ? "İZİNLİ EMSAL" : "GİRDİYE GÖRE AZAMİ EMSAL ALAN"}</span><b>{massingModel.limits.allowedGrossArea.toFixed(0)} m²</b></p>
+          <p><span>{massingModel.source.authoritative ? "KAT SINIRI" : "GİRDİYE GÖRE YÜKSEKLİK / KAT SINIRI"}</span><b>{massingModel.limits.maxFloors} kat / {massingModel.limits.allowedHeight.toFixed(1)} m</b></p>
         </div>
+        {!massingModel.source.authoritative && <p className="v112-unverified-note">Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır.</p>}
         <div className="v112-massing-options">
           {massingModel.alternatives.map((alternative) => <article key={alternative.id} data-state={alternative.status} data-selected={activeMassingId === alternative.id}>
-            <div><span>{alternative.status === "fits" ? "ÖN UYUMLU" : "İNCELEME"}</span><b>{alternative.label}</b></div>
+            <div><span>{alternative.status === "fits" ? (massingModel.source.authoritative ? "ÖN UYUMLU" : "GİRDİLERLE ÖN UYUMLU") : "İNCELEME"}</span><b>{alternative.label}</b></div>
             <strong>{alternative.grossArea.toFixed(0)} <i>m²</i></strong>
             <p>{alternative.width.toFixed(1)} × {alternative.depth.toFixed(1)} m · {alternative.floors} kat</p>
             <dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>Hak kullanımı</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl>
@@ -1666,6 +1669,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(Number(event.target.value))} /></label>
       <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(Number(event.target.value))} /></label>
       <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
+      {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {floors} kat × {floorHeight.toFixed(2)} m = {manualBuildingHeight.toFixed(2)} m → girilen Hmax {zoning.hmax.toFixed(2)} m sınırını aşıyor.</p>}
       <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="0" max="345" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
       <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
       <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
