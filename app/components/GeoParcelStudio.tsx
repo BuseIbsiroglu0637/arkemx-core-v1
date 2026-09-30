@@ -1620,7 +1620,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı veya imar uygunluğu hesabı üretilmez.</p>}
       <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Ulusal ölçekte tek ve açık bir TAKS/KAKS/Hmax servisi bulunmadığından TKGM parsel kimliği; e-Plan/TUCBS, belediye e-İmar adaptörü ve onaylı imar durumu belgesiyle eşleştirilir. Kaynaksız değer resmî imar hakkı olarak gösterilmez.</p>
     </div>,
-    design: <div className="geo-control-section">
+    design: zoningFormReady ? <div className="geo-control-section">
       <span>05 / YAPI YERLEŞİMİ</span>
       <h3>Doğrulanan imar koşullarında kütleyi sınayın.</h3>
       <div className="geo-zoning-summary">
@@ -1666,6 +1666,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="0" max="345" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
       <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
       <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
+    </div> : <div className="geo-control-section geo-zoning-required">
+      <span>05 / YAPI YERLEŞİMİ</span>
+      <h3>Önce imar girdilerini tamamlayın.</h3>
+      <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yapılaşma hakkı veya yerleşim alternatifi hesaplamaz.</p>
+      <button className="geo-wide-action" type="button" onClick={() => setActiveStage("zoning")}>İmar bilgilerine dön</button>
     </div>,
     terrain: <div className="geo-control-section">
       <span>06 / GIS + 3B ARAZİ</span>
