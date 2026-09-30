@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -217,4 +218,16 @@ test("prototype demo sign-out clears the local session", async () => {
   assert.equal(response.headers.get("location"), "/giris");
   assert.match(response.headers.get("set-cookie") ?? "", /arkemx_prototype_session=;/);
   assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=0/);
+});
+
+
+test("project start numeric fields allow temporary empty edits", () => {
+  const source = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  assert.match(source, /const \[numericDrafts, setNumericDrafts\]/);
+  assert.match(source, /if \(rawValue\.trim\(\) === ""\) return;/);
+  assert.match(source, /value=\{numericDrafts\.targetArea\}/);
+  assert.match(source, /value=\{numericDrafts\.floors\}/);
+  assert.match(source, /value=\{numericDrafts\.floorHeight\}/);
+  assert.match(source, /onBlur=\{\(\) => commitNumericDraft\("targetArea", 20, 1_000_000\)\}/);
+  assert.match(source, /onBlur=\{\(\) => commitNumericDraft\("floorHeight", 2\.4, 30\)\}/);
 });
