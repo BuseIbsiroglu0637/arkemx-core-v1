@@ -5,13 +5,48 @@ import { FormEvent, useEffect, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { formatProjectDateTime } from "../lib/date-format";
 
+type WorkspaceActivity = {
+  id: number;
+  eventType: string;
+  title: string;
+  detail: string;
+  createdAt: string;
+};
+
 type WorkspaceData = {
   user: { displayName: string; email: string };
   profile: null | { displayName: string; company: string; phone: string; preferredLanguage: string };
   projects: Array<{ id: string; name: string; phase: string; revision: string; status: string; updatedAt: string }>;
   meetings: Array<{ id: string; projectId: string; subject: string; meetingAt: string; channel: string; status: string; notes: string }>;
-  activities: Array<{ id: number; eventType: string; title: string; detail: string; createdAt: string }>;
+  activities: WorkspaceActivity[];
 };
+
+function summarizeActivities(activities: WorkspaceActivity[]) {
+  const summarized: Array<WorkspaceActivity & { count: number }> = [];
+
+  activities.forEach((activity) => {
+    const normalized = {
+      ...activity,
+      title: activity.eventType === "project" && activity.title === "Proje buluta kaydedildi"
+        ? "Proje hesaba kaydedildi"
+        : activity.title,
+    };
+    const previous = summarized[summarized.length - 1];
+
+    if (
+      normalized.eventType === "project" &&
+      previous?.eventType === "project" &&
+      previous.detail === normalized.detail
+    ) {
+      previous.count += 1;
+      return;
+    }
+
+    summarized.push({ ...normalized, count: 1 });
+  });
+
+  return summarized;
+}
 
 export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
   const { project, thread } = useProjectKernel();
@@ -19,6 +54,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
   const [profile, setProfile] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
+  const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
 
   const load = async () => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
@@ -137,7 +173,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       </div>
 
       <details className="arx-account-detail">
-        <summary>Görüşme ve işlem kayıtları</summary>
+        <summary>Görüşmeler ve İşlem Geçmişi</summary>
         <div className="arx-account-detail-grid">
           <section>
             <h3>Son görüşmeler</h3>
@@ -149,8 +185,14 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
           </section>
           <section>
             <h3>Son işlemler</h3>
-            {data?.activities.slice(0, 5).map((item) => <article key={item.id}>
-              <div><b>{item.title}</b><small>{item.detail || "Hesap işlemi"} · {formatProjectDateTime(item.createdAt)}</small></div>
+            {recentActivities.map((item) => <article key={item.id}>
+              <div>
+                <b>{item.title}</b>
+                <small>
+                  {item.detail || "Hesap işlemi"} · {formatProjectDateTime(item.createdAt)}
+                  {item.count > 1 ? ` · ${item.count} kez güncellendi` : ""}
+                </small>
+              </div>
             </article>)}
             {data && data.activities.length === 0 ? <p>Henüz işlem kaydı yok.</p> : null}
           </section>
@@ -169,7 +211,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     </section>
     <div className="customer-workspace-grid">
       <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={saveProject}>Aktif projeyi kaydet ↗</button></div>
-        <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></article>) : <p>Henüz buluta kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
+        <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></article>) : <p>Henüz hesaba kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
         <Link className="customer-inline-link" href="/proje-baslat">Yeni proje başlatın →</Link>
       </section>
       <section className="customer-panel"><div className="customer-panel-title"><div><span>02 / GÖRÜŞMELERİM</span><h3>Teknik görüşme geçmişi.</h3></div></div>
