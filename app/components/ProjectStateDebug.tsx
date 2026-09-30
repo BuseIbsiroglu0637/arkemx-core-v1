@@ -99,7 +99,7 @@ export function ProjectStateDebug() {
           floors: draftParsed.payload.floors ?? null,
           floorHeight: draftParsed.payload.floorHeight ?? null,
         } : null,
-        events: events.slice(-12),
+        events: events.slice(-30),
       });
     } catch {
       setSnapshot(null);
@@ -111,6 +111,19 @@ export function ProjectStateDebug() {
     return () => window.clearTimeout(timer);
   }, [project.id, project.updatedAt]);
 
+  const recentEvents = snapshot?.events ?? [];
+  const identityTransitions = recentEvents
+    .filter((event) => ["geo-local-state", "patch-geo-parcel", "persist-storage", "hydrate-storage"].includes(String(event.event)))
+    .map((event) => ({
+      at: event.at,
+      event: event.event,
+      neighborhood: event.geo?.neighborhood ?? "",
+      block: event.geo?.block ?? "",
+      parcelNo: event.geo?.parcelNo ?? "",
+      parcelVertices: event.geo?.parcelVertices ?? 0,
+      detail: event.detail ?? "",
+    }));
+
   const report = {
     hydrated,
     persistence,
@@ -118,7 +131,8 @@ export function ProjectStateDebug() {
     storagePrimary: snapshot?.primary ?? null,
     storageBackup: snapshot?.backup ?? null,
     geoDraft: snapshot?.draft ?? null,
-    recentEvents: snapshot?.events ?? [],
+    identityTransitions,
+    recentEvents,
   };
 
   return <details className="arx-project-debug">
