@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { accountReturnPath, accountSignInPath } from "../chatgpt-auth";
+import { accountReturnPath, accountSignInPath, getArkemAccountUser } from "../chatgpt-auth";
 
 function returnTargetFromReferer(request: Request) {
   const referer = request.headers.get("referer");
@@ -12,10 +12,12 @@ function returnTargetFromReferer(request: Request) {
   }
 }
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const url = new URL(request.url);
   const requestedReturn = url.searchParams.get("return_to") ?? returnTargetFromReferer(request);
   const returnTo = accountReturnPath(requestedReturn);
   const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`;
+  const user = await getArkemAccountUser();
+  if (user) redirect(setupReturn);
   redirect(accountSignInPath(setupReturn));
 }
