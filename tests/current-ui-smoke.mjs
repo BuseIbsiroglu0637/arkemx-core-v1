@@ -608,3 +608,13 @@ test("TAKS and KAKS thresholds use displayed allowed areas at dimension-step pre
   assert.equal(22.5 * 21.3, 479.25);
   assert.equal(22.5 * 21.4, 481.5);
 });
+
+
+test("parking demand result is visible beside inputs and in technical summary", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const parkingDemand = gross / 100 * parkingPer100"));
+  assert.ok(studio.includes("const parkingNeed = Math.ceil(parkingDemand)"));
+  assert.ok(studio.includes("Hesaplanan park ihtiyacı"));
+  assert.ok(studio.includes("→ yukarı yuvarlandı"));
+  assert.ok(studio.includes("<small>Park ihtiyacı</small><b>{metrics.parkingNeed} araç</b>"));
+});
