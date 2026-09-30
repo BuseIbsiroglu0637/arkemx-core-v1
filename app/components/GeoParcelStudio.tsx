@@ -818,7 +818,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     import("leaflet").then((leaflet) => {
       if (disposed || !mapHostRef.current || mapRef.current) return;
       leafletRef.current = leaflet;
-      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: false }).setView([defaultCenter.lat, defaultCenter.lng], 17);
+      const initialCenter = pendingCenterRef.current ?? defaultCenter;
+      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: false }).setView(
+        [initialCenter.lat, initialCenter.lng],
+        pendingCenterRef.current ? 12 : 6,
+      );
       // No automatic calls to third-party map tiles: the demo shows a local coordinate preview.
       // Streets and satellite imagery require a separately configured, authorized tile provider.
       leaflet.control.zoom({ position: "bottomright" }).addTo(map);
@@ -991,13 +995,52 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
   const useDeviceLocation = () => {
     if (!navigator.geolocation) { setFileNotice("Bu tarayıcı konum servisini desteklemiyor"); return; }
-    setFileNotice("Cihaz konumu bekleniyor…");
+    setFileNotice("Cihaz konumu alınıyor ve idari konum çözümleniyor…");
     navigator.geolocation.getCurrentPosition((position) => {
       const point = { lat: position.coords.latitude, lng: position.coords.longitude };
+      pendingCenterRef.current = point;
       setLatitude(point.lat.toFixed(7));
       setLongitude(point.lng.toFixed(7));
-      mapRef.current?.setView([point.lat, point.lng], 18);
-      setFileNotice(`Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı`);
+      mapRef.current?.setView([point.lat, point.lng], 16);
+      setParcel([]);
+      setBlock("");
+      setParcelNo("");
+      setParcelLookup("idle");
+      setParcelSource({
+        kind: "coordinate",
+        authority: "Cihaz konumu",
+        label: "Cihaz koordinatı / kullanıcı seçimi",
+        capturedAt: new Date().toISOString(),
+        url: "",
+      });
+      setDataStatus("Cihaz konumu · resmî parsel doğrulaması bekleniyor");
+
+      void fetchGeocode({ lat: point.lat, lng: point.lng }).then((result) => {
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhoodId("");
+        setDistrictOptions([]);
+        setNeighborhoodOptions([]);
+        setProvince(result.province ?? "");
+        setDistrict(result.district ?? "");
+        setNeighborhood(result.neighborhood ?? "");
+        setAdministrativeLoading(result.province ? "district" : "idle");
+        setFileNotice(
+          result.province
+            ? `Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı · ${result.province}${result.district ? ` / ${result.district}` : ""}${result.neighborhood ? ` / ${result.neighborhood}` : ""}. Ada ve parsel seçimini tamamlayın.`
+            : `Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı. İdari konum bulunamadı; il ve ilçeyi elle seçin.`,
+        );
+      }).catch(() => {
+        setProvince("");
+        setDistrict("");
+        setNeighborhood("");
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhoodId("");
+        setDistrictOptions([]);
+        setNeighborhoodOptions([]);
+        setFileNotice(`Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı. İdari konum çözümlenemedi; il ve ilçeyi elle seçin.`);
+      });
     }, () => setFileNotice("Konum izni verilmedi veya konum alınamadı"), { enableHighAccuracy: true, timeout: 10_000 });
   };
   const markBoundaryAsManual = (label: string) => {
