@@ -45,6 +45,7 @@ const child = spawn(process.execPath, args, {
   env: {
     ...process.env,
     ARKEMX_LOCAL_DEMO: "1",
+    ARKEMX_PROTOTYPE_DEMO_AUTH: "1",
     WRANGLER_WRITE_LOGS: "false",
     WRANGLER_LOG_PATH: logFolder,
     MINIFLARE_REGISTRY_PATH: path.join(projectRoot, ".wrangler", "registry"),
