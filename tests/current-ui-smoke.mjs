@@ -359,3 +359,25 @@ test("account and delete flows use clearer project continuation and close contro
   assert.match(centerSource, /aria-label="Silme panelini kapat"/);
   assert.match(centerSource, /<X size=\{17\}/);
 });
+
+
+test("every guided project stage exposes a previous-step action", () => {
+  const pages = [
+    ["../app/arsa-fizibilite-studyosu/page.tsx", "/proje-baslat?view=summary"],
+    ["../app/mimari-program-studyosu/page.tsx", "/arsa-fizibilite-studyosu#geo-studyo"],
+    ["../app/plan-ve-aks/page.tsx", "/mimari-program-studyosu"],
+    ["../app/tasiyici-on-tasarim/page.tsx", "/plan-ve-aks"],
+    ["../app/sistem-karsilastirma/page.tsx", "/tasiyici-on-tasarim"],
+    ["../app/bim-koordinasyon/page.tsx", "/sistem-karsilastirma"],
+    ["../app/proje-takibi/page.tsx", "/bim-koordinasyon"],
+  ];
+  for (const [relativePath, previousHref] of pages) {
+    const source = fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
+    assert.match(source, /Önceki adıma dön/);
+    assert.ok(source.includes(`href="${previousHref}"`));
+  }
+
+  const kernelSource = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  assert.match(kernelSource, /previousJourneyStep/);
+  assert.match(kernelSource, /← Önceki adım/);
+});
