@@ -349,3 +349,13 @@ test("account uses a clear continue-project action for the active project", () =
   assert.match(accountSource, />Projeye Devam Et<\/Link>/);
   assert.match(accountSource, /href="\/dijital-proje-merkezi"/);
 });
+
+
+test("account and delete flows use clearer project continuation and close controls", () => {
+  const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  const centerSource = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  assert.match(accountSource, /Projeye Devam Et/);
+  assert.doesNotMatch(centerSource, />Vazgeç<\/button>/);
+  assert.match(centerSource, /aria-label="Silme panelini kapat"/);
+  assert.match(centerSource, /<X size=\{17\}/);
+});
