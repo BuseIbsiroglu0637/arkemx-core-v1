@@ -118,15 +118,15 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
       noteReference: zoning.planNoteReference || null,
     },
     conditions: {
-      landUse: zoning.landUse,
-      buildingOrder: zoning.buildingOrder,
-      taks: zoning.taks,
-      kaks: zoning.kaks,
-      hmax: zoning.hmax,
+      landUse: zoning.landUse || null,
+      buildingOrder: zoning.buildingOrder || null,
+      taks: zoning.taks >= 0 ? zoning.taks : null,
+      kaks: zoning.kaks >= 0 ? zoning.kaks : null,
+      hmax: zoning.hmax >= 0 ? zoning.hmax : null,
       setbacks: {
-        front: zoning.frontSetback,
-        side: zoning.sideSetback,
-        rear: zoning.rearSetback,
+        front: zoning.frontSetback >= 0 ? zoning.frontSetback : null,
+        side: zoning.sideSetback >= 0 ? zoning.sideSetback : null,
+        rear: zoning.rearSetback >= 0 ? zoning.rearSetback : null,
       },
     },
     authoritative:
