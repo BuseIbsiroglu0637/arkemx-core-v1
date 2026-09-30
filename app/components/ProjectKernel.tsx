@@ -748,7 +748,11 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const floorArea = intake.targetArea / Math.max(1, intake.floors);
     const buildingWidth = Math.sqrt(floorArea * 1.45);
     const buildingDepth = floorArea / buildingWidth;
-    const [province = "", district = ""] = intake.location.split("/").map((value) => value.trim());
+    const locationParts = intake.location.includes("/")
+      ? intake.location.split("/").map((value) => value.trim()).filter(Boolean)
+      : intake.location.trim().split(/\s+/).filter(Boolean);
+    const province = locationParts[0] ?? "";
+    const district = locationParts.slice(1).join(" ");
     const comparisonWeights = {
       schedule: intake.priorities.includes("time") ? 5 : 3,
       certainty: intake.priorities.includes("cost") ? 5 : 3,
