@@ -52,7 +52,12 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     thread.canonical.delivery.projectHealth > 0 ? `%${thread.canonical.delivery.projectHealth} proje sağlığı` : "Program, bütçe ve karar kayıtları bekleniyor",
     thread.canonical.delivery.informationMaturity > 0 ? `%${thread.canonical.delivery.informationMaturity} bilgi olgunluğu` : "Onaylı teslim paketi henüz oluşmadı",
   ];
-  const completedJourney = PROJECT_JOURNEY.map((step) => step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)));
+  const completedJourney = PROJECT_JOURNEY.map((step) => {
+    if (step.short === "Arazi") {
+      return thread.canonical.site.geometryValid && thread.canonical.site.parcelArea > 0;
+    }
+    return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
+  });
   const firstIncompleteJourney = completedJourney.findIndex((completed) => !completed);
   const currentJourneyIndex = firstIncompleteJourney < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteJourney;
 
