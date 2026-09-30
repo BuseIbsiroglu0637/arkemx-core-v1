@@ -29,6 +29,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/bim-koordinasyon"/);
   assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
@@ -41,6 +42,7 @@ test("local build renders the simplified, device-scoped project centre", async (
   assert.match(html, /Bu cihazdaki çalışma/);
   assert.match(html, /Proje JSON yükle/);
   assert.match(html, /Proje yedeğini indir/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /Ayrıntılı proje kontrolleri/);
   assert.match(html, /Proje kontrol özeti/);
   assert.match(html, /Proje adımları/);
