@@ -29,7 +29,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/bim-koordinasyon"/);
   assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
-  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
@@ -42,7 +42,7 @@ test("local build renders the simplified, device-scoped project centre", async (
   assert.match(html, /Bu cihazdaki çalışma/);
   assert.match(html, /Proje JSON yükle/);
   assert.match(html, /Proje yedeğini indir/);
-  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /Ayrıntılı proje kontrolleri/);
   assert.match(html, /Proje kontrol özeti/);
   assert.match(html, /Proje adımları/);
@@ -146,8 +146,11 @@ test("local build renders the first-use account setup entry", async () => {
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
 
-test("anonymous focused account page returns to sign-in", async () => {
+test("anonymous focused account page renders a stable sign-in handoff", async () => {
   const response = await render("/hesabim");
-  assert.equal(response.status, 307);
-  assert.match(response.headers.get("location") ?? "", /\/giris\?return_to=%2Fhesabim/);
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1 id="arx-account-login-title">Oturum gerekli<\/h1>/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
+  assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
