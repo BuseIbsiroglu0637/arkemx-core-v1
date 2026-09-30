@@ -313,3 +313,45 @@
   background: #fff;
   color: #244756;
 }
+
+
+.arx-geo-simple .geo-terrain-massing-control {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:0;
+  padding:13px 14px;
+  border-inline:1px solid #dce5e8;
+  border-top:1px solid #dce5e8;
+  background:#f8faf9;
+}
+.arx-geo-simple .geo-terrain-massing-control > div {
+  display:grid;
+  gap:3px;
+}
+.arx-geo-simple .geo-terrain-massing-control b {
+  color:#244756;
+  font-size:12px;
+}
+.arx-geo-simple .geo-terrain-massing-control small {
+  max-width:620px;
+  color:#6d7f86;
+  font-size:10px;
+  line-height:1.45;
+}
+.arx-geo-simple .geo-terrain-massing-control button {
+  flex:0 0 auto;
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid #244756;
+  border-radius:6px;
+  background:#fff;
+  color:#244756;
+  font:700 10px/1.2 var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-geo-simple .geo-terrain-massing-control button[aria-pressed="true"] {
+  background:#244756;
+  color:#fff;
+}
