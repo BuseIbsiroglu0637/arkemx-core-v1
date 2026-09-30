@@ -4471,6 +4471,17 @@ test("new project stays on parcel verification until a real parcel boundary exis
       },
     },
   };
-  const verifiedThread = deriveProjectThread(verifiedModules);
-  assert.notEqual(verifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+  const parcelVerifiedThread = deriveProjectThread(verifiedModules);
+  assert.equal(parcelVerifiedThread.nextAction.label, "İmar koşullarını ve kaynağını doğrula");
+  assert.equal(parcelVerifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+
+  const fullyVerifiedModules = {
+    ...verifiedModules,
+    "geo-parcel": {
+      ...verifiedModules["geo-parcel"],
+      zoningProvenance: { authoritative: true },
+    },
+  };
+  const fullyVerifiedThread = deriveProjectThread(fullyVerifiedModules);
+  assert.notEqual(fullyVerifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
 });
