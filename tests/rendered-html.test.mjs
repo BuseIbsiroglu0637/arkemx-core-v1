@@ -1095,7 +1095,6 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(sessionRoute, /identitySource:\s*session\.identitySource/);
   assert.doesNotMatch(sessionRoute, /cloudflare:workers|customer_profiles|env\.DB/);
 
-  const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
   assert.match(authSource, /ARKEMX_PROTOTYPE_DEMO_AUTH/);
   assert.match(authSource, /prototype-demo/);
   assert.match(authSource, /arkemx_prototype_session/);
