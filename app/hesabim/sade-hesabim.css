@@ -1,0 +1,113 @@
+/* Focused ARKEMX account page */
+body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
+.arx-account-page { padding-bottom:60px; }
+.arx-account-intro {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
+  padding:34px 0 22px;
+}
+.arx-account-intro > div > span {
+  display:block; margin-bottom:8px; color:#a65d36; font-size:10px; font-weight:800; letter-spacing:.1em;
+}
+.arx-account-intro h1 {
+  margin:0; color:#1f3440; font-size:clamp(29px,4vw,38px); line-height:1.12; letter-spacing:-.045em;
+}
+.arx-account-intro p { margin:10px 0 0; color:#687b84; font-size:12px; line-height:1.55; }
+.arx-account-intro aside {
+  min-width:250px; padding:13px 15px; border:1px solid #dfe6e9; border-radius:8px; background:#fff;
+}
+.arx-account-intro aside small,
+.arx-account-intro aside b,
+.arx-account-intro aside span { display:block; }
+.arx-account-intro aside small { color:#7b8c94; font-size:8px; font-weight:800; letter-spacing:.08em; }
+.arx-account-intro aside b { margin-top:5px; color:#294652; font-size:11px; }
+.arx-account-intro aside span { margin-top:2px; color:#70828b; font-size:9px; }
+.arx-account-intro aside a { display:inline-block; margin-top:9px; color:#9b5935; font-size:9px; font-weight:720; }
+
+.arx-account-panel { display:grid; gap:14px; color:#243b46; font-family:var(--font-inter),Arial,sans-serif; }
+.arx-account-status {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:15px 17px; border:1px solid #e0e7e9; border-radius:8px; background:#fff;
+}
+.arx-account-status span { color:#a65d36; font-size:8px; font-weight:800; letter-spacing:.1em; }
+.arx-account-status h2 { margin:4px 0 2px; font-size:15px; }
+.arx-account-status p { margin:0; color:#71838b; font-size:9px; }
+.arx-account-status > small { color:#6b7f88; font-size:9px; text-align:right; }
+
+.arx-account-metrics {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); overflow:hidden;
+  border:1px solid #e0e7e9; border-radius:8px; background:#fff;
+}
+.arx-account-metrics article { padding:13px 15px; border-right:1px solid #e6ecee; }
+.arx-account-metrics article:last-child { border-right:0; }
+.arx-account-metrics span { display:block; margin-bottom:5px; color:#788a92; font-size:8px; font-weight:800; letter-spacing:.06em; }
+.arx-account-metrics b { display:block; font-size:18px; font-variant-numeric:tabular-nums; }
+
+.arx-account-grid { display:grid; grid-template-columns:minmax(300px,.8fr) minmax(0,1.2fr); gap:14px; }
+.arx-account-card { min-width:0; overflow:hidden; border:1px solid #e0e7e9; border-radius:8px; background:#fff; }
+.arx-account-card > header {
+  display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid #e7edef;
+}
+.arx-account-card > header span { display:block; color:#a65d36; font-size:8px; font-weight:800; letter-spacing:.08em; }
+.arx-account-card > header h3 { margin:4px 0 0; font-size:12px; }
+.arx-account-card > header > button,
+.arx-account-form button,
+.arx-account-list article > button,
+.arx-account-detail-grid article > button {
+  min-height:31px; padding:6px 8px; border:1px solid #d2dde1; border-radius:5px; background:#fff;
+  color:#456471; font:700 9px var(--font-inter),Arial,sans-serif; cursor:pointer;
+}
+.arx-account-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:15px 16px 16px; }
+.arx-account-form label { display:grid; gap:5px; color:#526d78; font-size:9px; font-weight:700; }
+.arx-account-form label:nth-child(1),
+.arx-account-form label:nth-child(2) { grid-column:1/-1; }
+.arx-account-form input {
+  width:100%; min-height:39px; border:1px solid #cfdade; border-radius:5px; background:#fff; padding:7px 9px;
+  color:#243c48; font:600 11px var(--font-inter),Arial,sans-serif;
+}
+.arx-account-form input[readonly] { background:#f5f8f9; color:#6d8089; }
+.arx-account-form button { grid-column:1/-1; justify-self:start; background:#244756; border-color:#244756; color:#fff; padding-inline:12px; }
+
+.arx-account-list { padding:4px 16px 8px; }
+.arx-account-list article {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #ebeff1;
+}
+.arx-account-list article:last-child { border-bottom:0; }
+.arx-account-list b { display:block; font-size:10px; }
+.arx-account-list small,.arx-account-list time { display:block; margin-top:2px; color:#798b93; font-size:8px; }
+.arx-account-list p { color:#70828a; font-size:9px; line-height:1.5; }
+.arx-account-card > footer { padding:11px 16px; border-top:1px solid #e7edef; }
+.arx-account-card > footer a { color:#355b69; font-size:9px; font-weight:720; }
+
+.arx-account-detail { overflow:hidden; border:1px solid #e0e7e9; border-radius:8px; background:#fff; }
+.arx-account-detail > summary { padding:13px 16px; cursor:pointer; color:#3d5c69; font-size:10px; font-weight:720; }
+.arx-account-detail[open] > summary { border-bottom:1px solid #e7edef; background:#f8fafb; }
+.arx-account-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 16px 16px; }
+.arx-account-detail-grid section h3 { margin:0 0 8px; font-size:11px; }
+.arx-account-detail-grid article {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #ebeff1;
+}
+.arx-account-detail-grid article:last-child { border-bottom:0; }
+.arx-account-detail-grid b { display:block; font-size:9px; }
+.arx-account-detail-grid small { display:block; margin-top:2px; color:#7b8d95; font-size:8px; }
+.arx-account-detail-grid p { color:#71838c; font-size:9px; }
+
+.arx-account-boundary { margin:12px 0 0; color:#7a8b93; font-size:9px; line-height:1.5; }
+.arx-account-panel :where(input,button,a,summary):focus-visible { outline:2px solid #568b98; outline-offset:2px; }
+
+@media(max-width:860px) {
+  .arx-account-intro { flex-direction:column; }
+  .arx-account-intro aside { width:100%; }
+  .arx-account-grid { grid-template-columns:1fr; }
+  .arx-account-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .arx-account-metrics article:nth-child(2) { border-right:0; }
+  .arx-account-metrics article:nth-child(-n+2) { border-bottom:1px solid #e6ecee; }
+}
+@media(max-width:560px) {
+  .arx-account-metrics { grid-template-columns:1fr; }
+  .arx-account-metrics article { border-right:0; border-bottom:1px solid #e6ecee; }
+  .arx-account-metrics article:last-child { border-bottom:0; }
+  .arx-account-form,.arx-account-detail-grid { grid-template-columns:1fr; }
+  .arx-account-form label { grid-column:auto!important; }
+  .arx-account-status { align-items:flex-start; flex-direction:column; }
+  .arx-account-status > small { text-align:left; }
+}
