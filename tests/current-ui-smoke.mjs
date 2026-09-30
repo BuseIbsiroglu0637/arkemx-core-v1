@@ -342,3 +342,10 @@ test("account automatically reconciles an active local project missing from acco
   assert.match(accountSource, /arx-account-local-project/);
   assert.match(accountSource, /Şimdi kaydet/);
 });
+
+
+test("account uses a clear continue-project action for the active project", () => {
+  const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.match(accountSource, />Projeye Devam Et<\/Link>/);
+  assert.match(accountSource, /href="\/dijital-proje-merkezi"/);
+});
