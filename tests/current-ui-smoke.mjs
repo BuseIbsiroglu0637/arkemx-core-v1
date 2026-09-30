@@ -184,10 +184,19 @@ test("local account session diagnostic reports unauthenticated state without D1"
   assert.match(response.headers.get("cache-control") ?? "", /no-store/);
 });
 
-test("prototype demo sign-in creates a local session and opens account setup", async () => {
+test("prototype demo sign-in reopens the requested account directly", async () => {
   const response = await render("/hesap-baglantisi?return_to=%2Fhesabim");
   assert.equal(response.status, 302);
-  assert.match(response.headers.get("location") ?? "", /^\/hesap-kurulum\?return_to=%2Fhesabim$/);
+  assert.equal(response.headers.get("location"), "/hesabim");
+  assert.match(response.headers.get("set-cookie") ?? "", /arkemx_prototype_session=1/);
+});
+
+test("explicit first-use setup stays on setup after prototype session creation", async () => {
+  const response = await render("/hesap-baglantisi?return_to=%2Fdijital-proje-merkezi", {
+    referer: "http://localhost/hesap-kurulum?return_to=%2Fdijital-proje-merkezi&entry=first-use",
+  });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "/hesap-kurulum?return_to=%2Fdijital-proje-merkezi&entry=first-use");
   assert.match(response.headers.get("set-cookie") ?? "", /arkemx_prototype_session=1/);
 });
 
@@ -230,4 +239,21 @@ test("project start numeric fields allow temporary empty edits", () => {
   assert.match(source, /value=\{numericDrafts\.floorHeight\}/);
   assert.match(source, /onBlur=\{\(\) => commitNumericDraft\("targetArea", 20, 1_000_000\)\}/);
   assert.match(source, /onBlur=\{\(\) => commitNumericDraft\("floorHeight", 2\.4, 30\)\}/);
+});
+
+
+test("guided drafts sync to the account and remain portable between preview origins", () => {
+  const startSource = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  const draftApi = fs.readFileSync(new URL("../app/api/project-draft/route.ts", import.meta.url), "utf8");
+  const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+
+  assert.match(startSource, /fetch\("\/api\/project-draft", \{ cache: "no-store" \}\)/);
+  assert.match(startSource, /method: "POST"/);
+  assert.match(startSource, /method: "DELETE"/);
+  assert.match(startSource, /Taslağı indir/);
+  assert.match(startSource, /Taslak yükle/);
+  assert.match(draftApi, /customer_project_drafts/);
+  assert.match(draftApi, /owner_email TEXT PRIMARY KEY/);
+  assert.match(accountSource, /Devam eden taslak/);
+  assert.match(accountSource, /href="\/proje-baslat"/);
 });
