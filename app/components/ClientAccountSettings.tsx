@@ -227,7 +227,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         <section className="arx-account-card" aria-labelledby="arx-account-projects-title">
           <header>
             <div><span>PROJELER</span><h3 id="arx-account-projects-title">Hesaba bağlı projeler</h3></div>
-            <button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet</button>
+            <Link href="/dijital-proje-merkezi" aria-disabled={!hasActiveProject} className={!hasActiveProject ? "is-disabled" : undefined}>Projeye Devam Et</Link>
           </header>
           <div className="arx-account-list">
             {hasActiveProject && !accountHasActiveProject ? <article className="arx-account-local-project">
