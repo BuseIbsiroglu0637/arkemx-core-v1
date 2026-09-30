@@ -40,6 +40,21 @@ const initial: ProjectIntake = {
   experienceMode: "guided",
 };
 
+function intakeFromProjectModule(value: unknown): ProjectIntake | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const moduleValue = value as Record<string, unknown>;
+  const input = moduleValue.input;
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const candidate = { ...initial, ...(input as Partial<ProjectIntake>) };
+  return typeof candidate.name === "string"
+    && typeof candidate.location === "string"
+    && Number.isFinite(Number(candidate.targetArea))
+    && Number.isFinite(Number(candidate.floors))
+    && Number.isFinite(Number(candidate.floorHeight))
+    ? candidate
+    : null;
+}
+
 const DRAFT_KEY = "arkem-guided-project-draft-v107";
 
 type GuidedProjectDraft = {
@@ -129,7 +144,7 @@ function clampNumber(value: string, min: number, max: number, fallback: number) 
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 }
 
-export function ProjectStartStudio() {
+export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: boolean }) {
   const { project, thread, startProject } = useProjectKernel();
   const { language, translate } = useLanguage();
   const [step, setStep] = useState(0);
@@ -145,6 +160,7 @@ export function ProjectStartStudio() {
   const [draftTransferMessage, setDraftTransferMessage] = useState("");
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [creatingNewProject, setCreatingNewProject] = useState(false);
+  const [summaryReady, setSummaryReady] = useState(false);
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
   const autoSavedProjectRef = useRef("");
 
@@ -181,6 +197,21 @@ export function ProjectStartStudio() {
   ]));
   const hasActiveProject = thread.metrics.activeCount > 0;
   const draftHasMeaningfulInput = step > 0 || intake.name.trim().length >= 3 || intake.location.trim().length >= 2;
+
+  useEffect(() => {
+    if (!summaryMode || !hasActiveProject || summaryReady) return;
+    const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
+    if (!storedIntake) return;
+    setIntake(storedIntake);
+    setNumericDrafts({
+      targetArea: String(storedIntake.targetArea),
+      floors: String(storedIntake.floors),
+      floorHeight: String(storedIntake.floorHeight),
+    });
+    setStep(4);
+    setNotice("Başlangıç kararları proje çekirdeğinden yeniden yüklendi. Sıradaki teknik adıma buradan devam edebilirsiniz.");
+    setSummaryReady(true);
+  }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -478,7 +509,7 @@ export function ProjectStartStudio() {
     downloadTextFile(`${project.id || "arkem"}-kurumsal-baslangic-pafta.pdf`, pdf, "application/pdf");
   };
 
-  if (draftReady && hasActiveProject && !restoredDraft && !creatingNewProject && !completed) {
+  if (draftReady && hasActiveProject && !summaryMode && !restoredDraft && !creatingNewProject && !completed) {
     return <section className="start-active-project" data-testid="project-start-active-project">
       <span>AKTİF PROJE</span>
       <h2>{project.name}</h2>
@@ -501,7 +532,7 @@ export function ProjectStartStudio() {
     </section>;
   }
 
-  if (completed) {
+  if (completed || summaryReady) {
     return <section className="start-success" aria-live="polite">
       <header><span>ARKEMX / PROJE ÇEKİRDEĞİ HAZIR</span><b>{project.id}</b></header>
       <div className="start-success-main">
