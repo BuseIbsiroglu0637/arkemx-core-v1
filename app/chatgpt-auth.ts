@@ -61,6 +61,26 @@ export const requireArkemAccountUser = requireChatGPTUser;
 export const accountSignInPath = chatGPTSignInPath;
 export const accountSignOutPath = chatGPTSignOutPath;
 
+export function accountReturnPath(
+  value: string | null | undefined,
+  fallback = "/dijital-proje-merkezi",
+): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  let url: URL;
+  try {
+    url = new URL(value, "https://app.local");
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== "https://app.local") return fallback;
+  if (
+    url.pathname === "/giris" ||
+    url.pathname === "/hesap-baglantisi" ||
+    isReservedAuthPath(url.pathname)
+  ) return fallback;
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 function safeRelativeReturnPath(value: string): string {
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
 
