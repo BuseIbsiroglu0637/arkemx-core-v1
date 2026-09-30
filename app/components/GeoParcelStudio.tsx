@@ -813,19 +813,43 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
   useEffect(() => {
     if (!hydrated || projectLocationAppliedRef.current) return;
-    const saved = project.modules["geo-parcel"] as { parcel?: GeoPoint[]; reference?: string } | undefined;
-    if (saved?.parcel?.length) {
+    const saved = project.modules["geo-parcel"] as {
+      parcel?: GeoPoint[];
+      previewParcel?: GeoPoint[];
+      reference?: string;
+      neighborhood?: string;
+      block?: string;
+      parcelNo?: string;
+    } | undefined;
+
+    // A declared project location is only a map-centering hint. It must never
+    // overwrite a parcel identity that the user has already selected or typed.
+    const hasExplicitParcelIdentity = Boolean(
+      saved?.parcel?.length
+      || saved?.previewParcel?.length
+      || saved?.neighborhood
+      || saved?.block
+      || saved?.parcelNo
+      || neighborhood
+      || block
+      || parcelNo,
+    );
+    if (hasExplicitParcelIdentity) {
       projectLocationAppliedRef.current = true;
       return;
     }
+
     const decision = project.modules["decision-assistant"] as { input?: { location?: string } } | undefined;
     const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
     if (!declaredLocation) {
       projectLocationAppliedRef.current = true;
       return;
     }
+
     projectLocationAppliedRef.current = true;
+    let cancelled = false;
     void fetchGeocode({ q: declaredLocation }).then((result) => {
+      if (cancelled) return;
       const point = validPoint(Number(result.lat), Number(result.lng));
       if (point) {
         pendingCenterRef.current = point;
@@ -833,23 +857,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setLongitude(point.lng.toFixed(7));
         mapRef.current?.setView([point.lat, point.lng], 12);
       }
-      if (result.province) {
-        setProvince(result.province);
-        setProvinceId("");
-        setDistrictOptions([]);
-      }
-      if (result.district) {
-        setDistrict(result.district);
-        setDistrictId("");
-        setNeighborhoodOptions([]);
-      }
-      setNeighborhood("");
-      setNeighborhoodId("");
-      setFileNotice(`${result.province || province || "Proje konumu"}${result.district ? ` / ${result.district}` : ""} haritada açıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`);
+
+      // Only fill missing coarse location labels. Never clear neighborhood,
+      // block or parcel fields as a side effect of geocoding.
+      if (result.province && !province) setProvince(result.province);
+      if (result.district && !district) setDistrict(result.district);
+      setFileNotice(`${result.province || province || "Proje konumu"}${result.district ? ` / ${result.district}` : ""} haritada açıldı. Mevcut parsel seçimleri korunur.`);
     }).catch(() => {
       // The declared administrative labels remain useful even if map geocoding is unavailable.
     });
-  }, [hydrated, project.modules]);
+
+    return () => { cancelled = true; };
+  }, [block, district, hydrated, neighborhood, parcelNo, project.modules, province]);
 
   const coordinateCenter = useMemo(
     () => validPoint(Number(latitude.replace(",", ".")), Number(longitude.replace(",", "."))) ?? defaultCenter,
