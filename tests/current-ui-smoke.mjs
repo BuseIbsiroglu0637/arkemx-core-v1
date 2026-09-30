@@ -307,7 +307,11 @@ test("completed projects are saved before their recovery draft is cleared", () =
   assert.match(startSource, /persistProjectToAccount/);
   assert.match(startSource, /await clearCompletedDraft\(\)/);
   assert.match(startSource, /if \(!completed \|\| !project\.id/);
-  assert.doesNotMatch(startSource, /const finish = \(\) => \{[\s\S]{0,900}localStorage\.removeItem\(DRAFT_KEY\)/);
+  const finishStart = startSource.indexOf("const finish = () => {");
+  const cleanupStart = startSource.indexOf("const clearCompletedDraft = async", finishStart);
+  assert.ok(finishStart >= 0 && cleanupStart > finishStart);
+  const finishBlock = startSource.slice(finishStart, cleanupStart);
+  assert.doesNotMatch(finishBlock, /localStorage\.removeItem\(DRAFT_KEY\)/);
   assert.match(accountSource, /meaningfulDraft/);
   assert.match(accountSource, /openAccountProject/);
   assert.match(accountSource, /importProject\(item\.payload\)/);
