@@ -288,7 +288,7 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
 test("renders the V38 guided project platform contract", async () => {
   const routes = [
     ["/proje-baslat", ["Yeni proje oluştur", "Proje bilgilerinizi adım adım girin", "bu cihazda taslak"]],
-    ["/dijital-proje-merkezi", ["Proje merkezi", "Bu cihazdaki çalışma", "Ayrıntılı proje kontrolleri"]],
+    ["/dijital-proje-merkezi", ["Proje merkezi", "Yerel çalışma", "Ayrıntılı proje kontrolleri"]],
     ["/", ["Yeni proje", "Arazi ve parsel", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
@@ -1113,10 +1113,17 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
   const projectCenter = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
   assert.match(projectCenter, /Aktif projeyi sil/);
-  assert.match(projectCenter, /Yalnız bu cihazdan sil/);
-  assert.match(projectCenter, /Cihazdan ve hesabımdan sil/);
-  assert.match(projectCenter, /reset\(\)/);
+  assert.match(projectCenter, /Bu tarayıcıdaki çalışma kaydını sil/);
+  assert.match(projectCenter, /Projeyi her yerden sil/);
+  assert.match(projectCenter, /clearLocalProject\(\)/);
+  assert.match(projectCenter, /Hesabınıza kaydedilmiş proje etkilenmez/);
+  assert.match(projectCenter, /Hem bu tarayıcıdaki çalışma hem de hesabınızdaki proje kaydı silinir/);
   assert.match(projectCenter, /resource=project/);
+  const storageSource = fs.readFileSync(new URL("../app/lib/project-storage.ts", import.meta.url), "utf8");
+  assert.match(storageSource, /clearProjectStorage/);
+  assert.match(storageSource, /PROJECT_STORAGE_KEY/);
+  assert.match(storageSource, /PROJECT_BACKUP_KEY/);
+  assert.match(storageSource, /removeItem/);
 
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
