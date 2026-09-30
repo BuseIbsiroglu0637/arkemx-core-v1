@@ -50,6 +50,7 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
 .arx-account-card > header span { display:block; color:#a65d36; font-size:8px; font-weight:800; letter-spacing:.08em; }
 .arx-account-card > header h3 { margin:4px 0 0; font-size:12px; }
 .arx-account-card > header > button,
+.arx-account-card > header > a,
 .arx-account-form button,
 .arx-account-list article > button,
 .arx-account-detail-grid article > button {
@@ -203,4 +204,16 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
   color:#fff;
   font:700 9px var(--font-inter),Arial,sans-serif;
   cursor:pointer;
+}
+
+
+.arx-account-card > header > a {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
+.arx-account-card > header > a.is-disabled {
+  pointer-events:none;
+  opacity:.45;
 }
