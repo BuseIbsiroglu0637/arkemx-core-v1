@@ -1134,6 +1134,8 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   const accountSettings = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
   assert.match(accountSettings, /Görüşmeler ve İşlem Geçmişi/);
   assert.match(accountSettings, /summarizeActivities/);
+  assert.match(accountSettings, /normalized\.eventType === "project" \|\| normalized\.eventType === "profile"/);
+  assert.match(accountSettings, /previous\.title === normalized\.title/);
   assert.match(accountSettings, /kez güncellendi/);
   assert.match(accountSettings, /Proje hesaba kaydedildi/);
   assert.doesNotMatch(accountSettings, /Henüz buluta kaydedilmiş proje yok/);
