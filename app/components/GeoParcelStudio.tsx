@@ -36,6 +36,10 @@ const normalizeSignedRotation = (value: number) => {
   return ((value + 180) % 360 + 360) % 360 - 180;
 };
 
+const normalizeMassingDimension = (value: number) =>
+  Number.isFinite(value) ? Math.round(value * 10) / 10 : 0;
+
+
 const setbackRoleLabel = (role: "front" | "side" | "rear") =>
   role === "front" ? "ön cephe" : role === "rear" ? "arka cephe" : "yan cephe";
 
@@ -531,8 +535,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setParcelNo("");
       }
 
-      if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
-      if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
+      if (typeof saved.buildingWidth === "number") setBuildingWidth(normalizeMassingDimension(saved.buildingWidth));
+      if (typeof saved.buildingDepth === "number") setBuildingDepth(normalizeMassingDimension(saved.buildingDepth));
       if (typeof saved.rotation === "number") setRotation(normalizeSignedRotation(saved.rotation));
       if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
       if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
@@ -785,7 +789,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const area = polygonArea(parcel);
     const perimeter = polygonPerimeter(parcel);
     const bounds = localBounds(parcel);
-    const footprint = buildingWidth * buildingDepth;
+    // Manual rectangular massing uses the displayed 0.1 m dimensions as the
+    // canonical calculation basis. The map polygon is a geometric validation,
+    // not a second source for TAKS/KAKS area.
+    const canonicalWidth = normalizeMassingDimension(buildingWidth);
+    const canonicalDepth = normalizeMassingDimension(buildingDepth);
+    const footprint = canonicalWidth * canonicalDepth;
     const gross = footprint * floors;
     const altitudes = parcel.map((point) => point.alt).filter((value): value is number => Number.isFinite(value));
     const setbackAssessment = assessParcelEdgeSetbacks({
@@ -880,16 +889,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setFileNotice("Bu alternatif parsel geometrisi veya imar sınırlarından en az birini sağlamıyor; uzman incelemesi gerekli.");
       return;
     }
+    const width = normalizeMassingDimension(alternative.width);
+    const depth = normalizeMassingDimension(alternative.depth);
     setSelectedMassingId(alternative.id);
-    setBuildingWidth(alternative.width);
-    setBuildingDepth(alternative.depth);
+    setBuildingWidth(width);
+    setBuildingDepth(depth);
     setFloors(alternative.floors);
     setRotation(alternative.rotation);
     setOffsetEast(alternative.offsetEast);
     setOffsetNorth(alternative.offsetNorth);
     setActiveStage("design");
     setViewMode("map");
-    setFileNotice(`${alternative.label} projeye uygulandı · ${alternative.footprint.toFixed(0)} m² taban · ${alternative.floors} kat`);
+    setFileNotice(`${alternative.label} projeye uygulandı · ${(width * depth).toFixed(1)} m² taban · ${alternative.floors} kat`);
   };
 
   useEffect(() => {
@@ -915,8 +926,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       previewParcel: parcelRecord.projectEligible ? [] : parcel,
       center,
       building,
-      buildingWidth,
-      buildingDepth,
+      buildingWidth: normalizeMassingDimension(buildingWidth),
+      buildingDepth: normalizeMassingDimension(buildingDepth),
+      calculationBasis: "displayed-rectangular-dimensions-0.1m",
       rotation,
       offsetEast,
       offsetNorth,
@@ -1718,8 +1730,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </section>
       <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
       <label>Taşıyıcı sistem<select value={system} onChange={(event) => setSystem(event.target.value)}><option>Karar Bekleniyor</option><option>Betonarme</option><option>Betonarme Prefabrik</option><option>Yapısal Çelik</option><option>Hafif Çelik</option><option>Karma Sistem</option></select></label>
-      <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(Number(event.target.value))} /></label>
-      <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(Number(event.target.value))} /></label>
+      <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(normalizeMassingDimension(Number(event.target.value)))} /></label>
+      <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(normalizeMassingDimension(Number(event.target.value)))} /></label>
       {(taksExceeded || kaksExceeded) && <p className="geo-inline-warning" role="alert"><b>İmar oranı ön kontrolü aşılıyor.</b>{taksExceeded && <> TAKS %{metrics.coverage.toFixed(1)} &gt; %{maxCoverage.toFixed(1)}; taban {metrics.footprint.toFixed(0)} m² / azami {metrics.allowedFootprint.toFixed(0)} m².</>}{kaksExceeded && <> KAKS {metrics.far.toFixed(2)} &gt; {maxFar.toFixed(2)}; toplam {metrics.gross.toFixed(0)} m² / azami {metrics.allowedGross.toFixed(0)} m².</>}</p>}
       <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
       {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {floors} kat × {floorHeight.toFixed(2)} m = {manualBuildingHeight.toFixed(2)} m → girilen Hmax {zoning.hmax.toFixed(2)} m sınırını aşıyor.</p>}
