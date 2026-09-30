@@ -357,6 +357,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     transferApplied.current = true;
     const timer = window.setTimeout(() => {
       const saved = project.modules["geo-parcel"] as {
+        reference?: string;
         parcel?: GeoPoint[];
         province?: string;
         provinceId?: string;
@@ -650,10 +651,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setDistrictId("");
         setNeighborhoodOptions([]);
       }
-      if (result.neighborhood) {
-        setNeighborhood(result.neighborhood);
-        setNeighborhoodId("");
-      }
+      setNeighborhood("");
+      setNeighborhoodId("");
       setFileNotice(`${result.province || province || "Proje konumu"}${result.district ? ` / ${result.district}` : ""} haritada açıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`);
     }).catch(() => {
       // The declared administrative labels remain useful even if map geocoding is unavailable.
