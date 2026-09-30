@@ -42,6 +42,34 @@ const initial: ProjectIntake = {
 
 const DRAFT_KEY = "arkem-guided-project-draft-v107";
 
+type GuidedProjectDraft = {
+  schema: "ARKEM-GUIDED-DRAFT/1.0";
+  savedAt: string;
+  step: number;
+  intake: ProjectIntake;
+};
+
+function normalizeDraft(value: unknown): GuidedProjectDraft | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const candidate = value as Partial<GuidedProjectDraft>;
+  if (candidate.schema !== "ARKEM-GUIDED-DRAFT/1.0" || !candidate.intake) return null;
+  const step = Math.max(0, Math.min(steps.length - 1, Number(candidate.step) || 0));
+  return {
+    schema: "ARKEM-GUIDED-DRAFT/1.0",
+    savedAt: typeof candidate.savedAt === "string" && candidate.savedAt ? candidate.savedAt : new Date(0).toISOString(),
+    step,
+    intake: { ...initial, ...candidate.intake },
+  };
+}
+
+function newerDraft(left: GuidedProjectDraft | null, right: GuidedProjectDraft | null) {
+  if (!left) return right;
+  if (!right) return left;
+  const leftTime = Date.parse(left.savedAt) || 0;
+  const rightTime = Date.parse(right.savedAt) || 0;
+  return rightTime > leftTime ? right : left;
+}
+
 const projectTypeLabels: Record<ProjectIntake["projectType"], string> = {
   new: "Yeni yapı yatırımı",
   existing: "Mevcut yapı / dönüşüm",
@@ -114,6 +142,7 @@ export function ProjectStartStudio() {
   const [completed, setCompleted] = useState(false);
   const [notice, setNotice] = useState("");
   const [draftReady, setDraftReady] = useState(false);
+  const [draftTransferMessage, setDraftTransferMessage] = useState("");
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
 
   const update = <K extends keyof ProjectIntake>(key: K, value: ProjectIntake[K]) => setIntake((current) => ({ ...current, [key]: value }));
@@ -140,46 +169,113 @@ export function ProjectStartStudio() {
   const conceptDepth = floorArea / conceptWidth;
 
   useEffect(() => {
+    let cancelled = false;
     const timer = window.setTimeout(() => {
-      try {
-        const raw = window.localStorage.getItem(DRAFT_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as { schema?: string; intake?: Partial<ProjectIntake>; step?: number };
-          if (parsed.schema === "ARKEM-GUIDED-DRAFT/1.0" && parsed.intake) {
-            const restoredIntake = { ...initial, ...parsed.intake } as ProjectIntake;
-            setIntake(restoredIntake);
-            setNumericDrafts({
-              targetArea: String(restoredIntake.targetArea),
-              floors: String(restoredIntake.floors),
-              floorHeight: String(restoredIntake.floorHeight),
-            });
-            setStep(Math.max(0, Math.min(steps.length - 1, Number(parsed.step) || 0)));
-          }
+      void (async () => {
+        let localDraft: GuidedProjectDraft | null = null;
+        let accountDraft: GuidedProjectDraft | null = null;
+
+        try {
+          const raw = window.localStorage.getItem(DRAFT_KEY);
+          if (raw) localDraft = normalizeDraft(JSON.parse(raw));
+        } catch {
+          // A damaged local draft never blocks project startup.
         }
-      } catch {
-        // A damaged draft never blocks a new project.
-      }
-      setDraftReady(true);
+
+        try {
+          const response = await fetch("/api/project-draft", { cache: "no-store" });
+          if (response.ok) {
+            const body = await response.json() as { draft?: unknown };
+            accountDraft = normalizeDraft(body.draft);
+          }
+        } catch {
+          // Account draft sync is optional in offline/local-only use.
+        }
+
+        const selected = newerDraft(localDraft, accountDraft);
+        if (!cancelled && selected) {
+          const restoredIntake = { ...initial, ...selected.intake } as ProjectIntake;
+          setIntake(restoredIntake);
+          setNumericDrafts({
+            targetArea: String(restoredIntake.targetArea),
+            floors: String(restoredIntake.floors),
+            floorHeight: String(restoredIntake.floorHeight),
+          });
+          setStep(selected.step);
+          setDraftTransferMessage(
+            accountDraft && selected.savedAt === accountDraft.savedAt
+              ? "Hesabınızdaki son taslak geri yüklendi."
+              : "Bu cihazdaki son taslak geri yüklendi.",
+          );
+        }
+        if (!cancelled) setDraftReady(true);
+      })();
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
     if (!draftReady || completed) return;
     const timer = window.setTimeout(() => {
+      const draft: GuidedProjectDraft = {
+        schema: "ARKEM-GUIDED-DRAFT/1.0",
+        savedAt: new Date().toISOString(),
+        step,
+        intake,
+      };
       try {
-        window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
-          schema: "ARKEM-GUIDED-DRAFT/1.0",
-          savedAt: new Date().toISOString(),
-          step,
-          intake,
-        }));
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch {
-        // Device storage is optional; the visible project flow remains usable.
+        // Device storage is optional; account sync remains available.
       }
-    }, 120);
+      void fetch("/api/project-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      }).catch(() => {
+        // Local draft remains available when the account service is offline.
+      });
+    }, 350);
     return () => window.clearTimeout(timer);
   }, [completed, draftReady, intake, step]);
+
+  const exportDraft = () => {
+    const draft: GuidedProjectDraft = {
+      schema: "ARKEM-GUIDED-DRAFT/1.0",
+      savedAt: new Date().toISOString(),
+      step,
+      intake,
+    };
+    const safeName = intake.name.trim().toLowerCase().replace(/[^a-z0-9ğüşöçıİĞÜŞÖÇ]+/gi, "-").replace(/^-+|-+$/g, "") || "arkemx-proje";
+    downloadTextFile(`${safeName}-taslak.json`, JSON.stringify(draft, null, 2), "application/json;charset=utf-8");
+    setDraftTransferMessage("Taslak dosyası indirildi.");
+  };
+
+  const importDraftFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const parsed = normalizeDraft(JSON.parse(await file.text()));
+      if (!parsed) {
+        setDraftTransferMessage("Seçilen dosya geçerli bir ARKEMX taslağı değil.");
+        return;
+      }
+      const restoredIntake = { ...initial, ...parsed.intake } as ProjectIntake;
+      setIntake(restoredIntake);
+      setNumericDrafts({
+        targetArea: String(restoredIntake.targetArea),
+        floors: String(restoredIntake.floors),
+        floorHeight: String(restoredIntake.floorHeight),
+      });
+      setStep(parsed.step);
+      setDraftReady(true);
+      setDraftTransferMessage("Taslak dosyası yüklendi.");
+    } catch {
+      setDraftTransferMessage("Taslak dosyası okunamadı.");
+    }
+  };
 
   const canContinue = step === 0
     ? intake.name.trim().length >= 3
@@ -201,6 +297,9 @@ export function ProjectStartStudio() {
     } catch {
       // Project kernel already holds the completed intake.
     }
+    void fetch("/api/project-draft", { method: "DELETE" }).catch(() => {
+      // Completed project remains in the project kernel even if account cleanup is offline.
+    });
   };
 
   const saveToAccount = async () => {
@@ -378,7 +477,7 @@ export function ProjectStartStudio() {
     </header>
     <nav className="project-start-steps" aria-label="Proje başlatma adımları">{steps.map((item, index) => <button type="button" key={item.code} className={`${index === step ? "active " : ""}${index < step ? "passed" : ""}`.trim()} onClick={() => index <= step && setStep(index)} aria-current={index === step ? "step" : undefined}><i>{index < step ? "✓" : item.code}</i><span><b>{item.title}</b><small>{item.copy}</small></span></button>)}</nav>
     <div className="project-start-workspace">
-      <aside><span>ADIM {steps[step].code} / 05</span><h3>{steps[step].title}</h3><p>{steps[step].copy}</p><div><small>VERİ AKTARIMI</small><b>{step === 0 ? "Brief + proje kimliği" : step === 1 ? "GIS + belge hazırlığı" : step === 2 ? "Mimari program + alan hedefi" : step === 3 ? "MCDA + bütçe + takvim" : "Kişisel yol haritası + aşama kapıları"}</b></div><div className="start-draft-state"><small>TASLAK</small><b>Taslak bu cihazda otomatik kaydedilir</b><span>%{roadmap.readiness} hazırlık</span></div></aside>
+      <aside><span>ADIM {steps[step].code} / 05</span><h3>{steps[step].title}</h3><p>{steps[step].copy}</p><div><small>VERİ AKTARIMI</small><b>{step === 0 ? "Brief + proje kimliği" : step === 1 ? "GIS + belge hazırlığı" : step === 2 ? "Mimari program + alan hedefi" : step === 3 ? "MCDA + bütçe + takvim" : "Kişisel yol haritası + aşama kapıları"}</b></div><div className="start-draft-state"><small>TASLAK</small><b>Taslak cihazda ve oturum açıksa hesabınızda otomatik kaydedilir</b><span>%{roadmap.readiness} hazırlık</span><div className="start-draft-transfer"><button type="button" onClick={exportDraft}>Taslağı indir</button><label>Taslak yükle<input type="file" accept=".json,application/json" onChange={(event) => { void importDraftFile(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }}/></label></div>{draftTransferMessage ? <em role="status">{draftTransferMessage}</em> : null}</div></aside>
       <section className="project-start-form">
         {step === 0 && <div className="start-fieldset"><label><span>Projeye verilecek çalışma adı</span><input autoFocus value={intake.name} onChange={(event) => update("name", event.target.value)} placeholder="Örn. Arifiye üretim tesisi" /></label><fieldset><legend>Proje türü</legend>{(Object.keys(projectTypeLabels) as ProjectIntake["projectType"][]).map((value) => <button type="button" className={intake.projectType === value ? "selected" : ""} onClick={() => update("projectType", value)} key={value}><i>{intake.projectType === value ? "✓" : "+"}</i><b>{projectTypeLabels[value]}</b></button>)}</fieldset></div>}
         {step === 1 && <div className="start-fieldset"><label><span>İlk konum bilgisi</span><input autoFocus value={intake.location} onChange={(event) => update("location", event.target.value)} placeholder="İl / ilçe veya bilinen mevki" /></label><fieldset className="start-parcel-options"><legend>Arsa / parsel hangi durumda?</legend>{(Object.keys(parcelStatusLabels) as ProjectIntake["parcelStatus"][]).map((value) => <button type="button" className={intake.parcelStatus === value ? "selected" : ""} aria-pressed={intake.parcelStatus === value} onClick={() => update("parcelStatus", value)} key={value}><i>{intake.parcelStatus === value ? "✓" : "+"}</i><span><b>{parcelStatusLabels[value].title}</b><small>{parcelStatusLabels[value].copy}</small></span></button>)}</fieldset><fieldset className="start-document-grid"><legend>Şu anda elinizde olanlar</legend>{GUIDED_DOCUMENT_OPTIONS.map((item) => <button type="button" className={intake.documents.includes(item.id) ? "selected" : ""} aria-pressed={intake.documents.includes(item.id)} onClick={() => toggleDocument(item.id)} key={item.id}><i>{intake.documents.includes(item.id) ? "✓" : "+"}</i><span><b>{item.short}</b><small>{item.label}</small></span></button>)}</fieldset><div className="start-info-card"><i>GIS</i><div><b>Belge var demek doğrulandı demek değildir</b><p>Parsel geometrisi TKGM/MEGSİS veya yetkili harita verisiyle; imar hakları ise plan, belediye/e-Plan kaynağı ve gerektiğinde uzman incelemesiyle doğrulanır.</p></div></div></div>}
