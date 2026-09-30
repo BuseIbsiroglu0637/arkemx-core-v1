@@ -584,3 +584,17 @@ test("live massing precheck surfaces TAKS KAKS and Hmax violations", () => {
   assert.ok(studio.includes("İmar oranı ön kontrolü aşılıyor."));
   assert.ok(studio.includes("placementPrecheckWarning"));
 });
+
+
+test("manual massing area uses the same one-decimal dimensions shown in UI", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("normalizeMassingDimension"));
+  assert.ok(studio.includes("const canonicalWidth = normalizeMassingDimension(buildingWidth)"));
+  assert.ok(studio.includes("const canonicalDepth = normalizeMassingDimension(buildingDepth)"));
+  assert.ok(studio.includes("const footprint = canonicalWidth * canonicalDepth"));
+  assert.ok(studio.includes("const gross = footprint * floors"));
+  assert.ok(studio.includes('calculationBasis: "displayed-rectangular-dimensions-0.1m"'));
+  assert.equal(22.5 * 16.6, 373.5);
+  assert.equal(22.5 * 16.6 * 4, 1494);
+  assert.equal(30 * 16.6, 498);
+});
