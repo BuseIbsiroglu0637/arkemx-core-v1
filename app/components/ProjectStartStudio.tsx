@@ -327,7 +327,7 @@ export function ProjectStartStudio() {
         {roadmap.missingDocuments.length > 0 && <aside className="start-missing-documents"><span>EKSİK / DOĞRULANACAK BELGELER</span><p>{roadmap.missingDocuments.join(" · ")}</p></aside>}
       </section>
       <ProjectCoreRegistry compact />
-      <div className="start-success-actions"><Link className="button copper" href={roadmap.nextAction.route}>{roadmap.nextAction.title} <span>→</span></Link><Link className="button navy" href="/dijital-proje-merkezi">Proje kontrol merkezini açın <span>↗</span></Link></div>
+      <div className="start-success-actions"><Link className="button copper" href={roadmap.nextAction.route}>{roadmap.nextAction.title} <span>→</span></Link><Link className="button navy" href="/dijital-proje-merkezi">Proje Çalışma Alanını Aç <span>↗</span></Link></div>
       <div className="start-account-save">
         <div><span>CİHAZLAR ARASI DEVAMLILIK</span><b>Projeyi Arkem hesabınıza bağlayın.</b><p>Bu cihazdaki bütünlük denetimli kayıt korunur. Hesaba kaydettiğinizde proje müşteri çalışma alanınızda da görünür.</p></div>
         <button type="button" onClick={saveToAccount} disabled={cloudState === "saving" || cloudState === "saved"}>
