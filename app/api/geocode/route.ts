@@ -26,11 +26,16 @@ function clean(value: unknown) {
 function normalizeResult(value: NominatimResult) {
   const address = value.address ?? {};
   const province = clean(address.province) || clean(address.state);
-  const district = clean(address.town)
+  const rawDistrict = clean(address.town)
     || clean(address.city_district)
     || clean(address.district)
     || clean(address.county)
     || clean(address.city);
+  const provincePrefix = province.toLocaleLowerCase("tr-TR");
+  const districtLower = rawDistrict.toLocaleLowerCase("tr-TR");
+  const district = province && districtLower.startsWith(`${provincePrefix} `)
+    ? rawDistrict.slice(province.length).trim().replace(/\s+ilçesi$/i, "")
+    : rawDistrict.replace(/\s+ilçesi$/i, "");
   const neighborhood = clean(address.neighbourhood)
     || clean(address.quarter)
     || clean(address.suburb)
@@ -62,8 +67,10 @@ async function nominatim(url: URL) {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const q = clean(requestUrl.searchParams.get("q"));
-  const lat = Number(requestUrl.searchParams.get("lat"));
-  const lng = Number(requestUrl.searchParams.get("lng"));
+  const latRaw = requestUrl.searchParams.get("lat");
+  const lngRaw = requestUrl.searchParams.get("lng");
+  const lat = latRaw === null ? Number.NaN : Number(latRaw);
+  const lng = lngRaw === null ? Number.NaN : Number(lngRaw);
 
   try {
     if (q) {
