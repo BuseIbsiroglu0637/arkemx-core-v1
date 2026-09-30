@@ -132,7 +132,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             {data && data.projects.length === 0 ? <p>Henüz hesaba kaydedilmiş proje yok.</p> : null}
             {!data ? <p>Hesap kayıtları yükleniyor…</p> : null}
           </div>
-          <footer><Link href="/dijital-proje-merkezi">Proje merkezini aç →</Link></footer>
+          <footer><Link href="/dijital-proje-merkezi">Proje Çalışma Alanını Aç →</Link></footer>
         </section>
       </div>
 
