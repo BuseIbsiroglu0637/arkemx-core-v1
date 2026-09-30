@@ -21,6 +21,13 @@ type WorkspaceData = {
   activities: WorkspaceActivity[];
 };
 
+type GuidedDraftSummary = {
+  schema: "ARKEM-GUIDED-DRAFT/1.0";
+  savedAt: string;
+  step: number;
+  intake: { name?: string };
+};
+
 function summarizeActivities(activities: WorkspaceActivity[]) {
   const summarized: Array<WorkspaceActivity & { count: number }> = [];
 
@@ -52,6 +59,7 @@ function summarizeActivities(activities: WorkspaceActivity[]) {
 export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
   const { project, thread } = useProjectKernel();
   const [data, setData] = useState<WorkspaceData | null>(null);
+  const [draft, setDraft] = useState<GuidedDraftSummary | null>(null);
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
   const [profile, setProfile] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
@@ -72,6 +80,15 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       phone: body.profile.phone,
       preferredLanguage: body.profile.preferredLanguage,
     });
+    try {
+      const draftResponse = await fetch("/api/project-draft", { cache: "no-store" });
+      if (draftResponse.ok) {
+        const draftBody = await draftResponse.json() as { draft?: GuidedDraftSummary | null };
+        setDraft(draftBody.draft ?? null);
+      }
+    } catch {
+      // Account/project data remains usable if draft sync is temporarily unavailable.
+    }
     setMessage("Hesabınız ve proje kayıtlarınız güncel.");
   };
 
@@ -163,6 +180,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             <button type="button" onClick={saveProject}>Aktif projeyi kaydet</button>
           </header>
           <div className="arx-account-list">
+            {draft ? <article className="arx-account-draft">
+              <div><b>{draft.intake.name?.trim() || "Adsız proje taslağı"}</b><small>Devam eden taslak · Adım {Math.min(5, Math.max(1, draft.step + 1))}/5</small><time>{formatProjectDateTime(draft.savedAt)}</time></div>
+              <Link href="/proje-baslat">Devam et</Link>
+            </article> : null}
             {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
               <button type="button" onClick={() => remove("project", item.id)}>Kaldır</button>
