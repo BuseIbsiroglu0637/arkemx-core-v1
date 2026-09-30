@@ -1059,12 +1059,15 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.doesNotMatch(references, /title: "DİYAMET/);
   const api = fs.readFileSync(new URL("../app/api/customer-workspace/route.ts", import.meta.url), "utf8");
   for (const expected of ["customer_projects", "customer_meetings", "getArkemAccountUser", "owner_email = ?"]) assert.match(api, new RegExp(expected));
-  const response = await render("/giris");
+  const response = await render("/giris?return_to=%2Fbim-koordinasyon");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /GÜVENLİ PROJE HESABI/);
-  assert.match(html, /Hesabıma giriş yap/);
+  assert.match(html, /ARKEMX’e giriş/);
+  assert.match(html, /Güvenli giriş yap/);
+  assert.match(html, /action="\/hesap-baglantisi"/);
+  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
   assert.doesNotMatch(html, /ChatGPT/i);
+  assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
 
 test("V93 routes every province through an explicit zoning authority chain", async () => {
@@ -1202,8 +1205,8 @@ test("V4 isolates the layered mobile navigation in a viewport-rooted accessible 
   assert.match(chrome, /openMobileGroup === item\.label/);
   assert.doesNotMatch(chrome, /<details className="mobile-menu"/);
 
-  // The simplified tools homepage has no corporate SiteHeader; the sign-in page does.
-  const response = await render("/giris");
+  // Corporate routes keep the corporate header; the focused sign-in entry does not.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /class="v4-mobile-nav-trigger"/);
@@ -1998,9 +2001,9 @@ test("V110.1 serves public imagery without the unavailable production optimizer"
     }
   }
 
-  // The tools homepage intentionally has no corporate hero imagery.
-  // Check the existing branded sign-in page, which renders the official logo.
-  const response = await render("/giris");
+  // The tools and sign-in entries intentionally avoid corporate hero imagery.
+  // Check a corporate route for the official logo asset contract.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /\/brand\/arkem-logo-master\.svg(?:#|%23)(?:on-light|on-dark)/);
@@ -4149,8 +4152,8 @@ test("Web V4.2 isolates the mobile header and prevents the narrow hero title reg
   assert.match(styles, /grid-template-columns:minmax\(0,1fr\) 48px 48px/);
   assert.match(styles, /@media \(max-width:380px\)[\s\S]*?\.v4-hero-copy h1\{font-size:37px/);
 
-  // The corporate mobile header lives on corporate routes, not the tools-only homepage.
-  const response = await render("/giris");
+  // The corporate mobile header lives on corporate routes, not the tools or sign-in entries.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /class="v4-mobile-site-header is-dark"/);
