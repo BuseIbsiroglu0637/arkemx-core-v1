@@ -530,18 +530,52 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
       if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
       if (hasSavedBoundary && saved.dataStatus) setDataStatus(saved.dataStatus);
-      if (typeof saved.planning?.requiredSetback === "number") setRequiredSetback(saved.planning.requiredSetback);
-      if (typeof saved.planning?.maxCoverage === "number") setMaxCoverage(saved.planning.maxCoverage);
-      if (typeof saved.planning?.maxFar === "number") setMaxFar(saved.planning.maxFar);
-      if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
       if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
       if (saved.zoning) {
-        setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
-        if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
-        if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
-        if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
-        const setbacks = [saved.zoning.frontSetback, saved.zoning.sideSetback, saved.zoning.rearSetback].filter((value): value is number => typeof value === "number");
-        if (setbacks.length) setRequiredSetback(Math.max(...setbacks));
+        const looksLikeLegacyPlaceholder =
+          (!saved.zoning.verification || saved.zoning.verification === "user-declared")
+          && !saved.zoning.sourceDocument
+          && !saved.zoning.sourceUrl
+          && !saved.zoning.planId
+          && !saved.zoning.planNoteReference
+          && (!saved.zoning.landUse || saved.zoning.landUse === "Kullanıcı girişi bekleniyor")
+          && saved.zoning.planScale === "1/1000 Uygulama İmar Planı"
+          && saved.zoning.buildingOrder === "Plan notuna göre"
+          && saved.zoning.taks === 0.4
+          && saved.zoning.kaks === 1.2
+          && saved.zoning.hmax === 15.5
+          && saved.zoning.frontSetback === 5
+          && saved.zoning.sideSetback === 3
+          && saved.zoning.rearSetback === 3;
+
+        const restoredZoning: ZoningForm = looksLikeLegacyPlaceholder
+          ? { ...DEFAULT_ZONING }
+          : {
+            ...DEFAULT_ZONING,
+            ...saved.zoning,
+            taks: typeof saved.zoning.taks === "number" ? saved.zoning.taks : -1,
+            kaks: typeof saved.zoning.kaks === "number" ? saved.zoning.kaks : -1,
+            hmax: typeof saved.zoning.hmax === "number" ? saved.zoning.hmax : -1,
+            frontSetback: typeof saved.zoning.frontSetback === "number" ? saved.zoning.frontSetback : -1,
+            sideSetback: typeof saved.zoning.sideSetback === "number" ? saved.zoning.sideSetback : -1,
+            rearSetback: typeof saved.zoning.rearSetback === "number" ? saved.zoning.rearSetback : -1,
+            verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)),
+          };
+        setZoning(restoredZoning);
+        setMaxCoverage(restoredZoning.taks >= 0 ? restoredZoning.taks * 100 : -1);
+        setMaxFar(restoredZoning.kaks >= 0 ? restoredZoning.kaks : -1);
+        setMaxHeight(restoredZoning.hmax >= 0 ? restoredZoning.hmax : -1);
+        const setbacks = [restoredZoning.frontSetback, restoredZoning.sideSetback, restoredZoning.rearSetback];
+        setRequiredSetback(setbacks.every((value) => value >= 0) ? Math.max(...setbacks) : -1);
+        if (looksLikeLegacyPlaceholder) {
+          setFileNotice("Eski örnek imar değerleri temizlendi. TAKS, KAKS, Hmax, çekme mesafeleri ve plan bilgilerini kaynağıyla birlikte girin.");
+        }
+      } else {
+        setZoning({ ...DEFAULT_ZONING });
+        setRequiredSetback(-1);
+        setMaxCoverage(-1);
+        setMaxFar(-1);
+        setMaxHeight(-1);
       }
       if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
       if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
