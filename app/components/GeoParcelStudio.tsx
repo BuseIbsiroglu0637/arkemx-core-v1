@@ -991,13 +991,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!parcelRecord.projectEligible && !persistedGeoRef.current) return;
+    if (!hydrated || !transferApplied.current) return;
     if (parcelRecord.projectEligible) persistedGeoRef.current = true;
     const projectMetrics = parcelRecord.projectEligible
       ? metrics
       : { ...metrics, area: 0, geometryValid: false };
-    patchModule("geo-parcel", {
+    const moduleSnapshot = {
       reference: parcelRecord.reference,
       province,
       provinceId,
@@ -1038,8 +1037,24 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       provenance: createGeoProvenance({ reference: parcelRecord.reference, sourceCrs, dataStatus, administrativeSource, geometryValid: parcelRecord.projectEligible && metrics.geometryValid, vertexCount: parcelRecord.projectEligible ? parcel.length : 0 }),
       zoningProvenance: createZoningProvenance(zoning, parcelRecord.reference),
       status: parcelRecord.projectEligible ? "Parsel kaynağı ve sınırı aktif projeye bağlı" : parcel.length ? "Önizleme geometrisi · doğrulama bekliyor" : "Parsel seçimi bekleniyor",
-    });
-  }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
+    };
+
+    // Save an independent per-project draft before the ProjectKernel write.
+    // This protects in-progress selections and design inputs from reloads,
+    // development hot-reloads, or a transient kernel hydration failure.
+    try {
+      const draft: GeoDraftEnvelope = {
+        projectId: project.id,
+        savedAt: new Date().toISOString(),
+        payload: moduleSnapshot as GeoParcelSavedState,
+      };
+      window.localStorage.setItem(geoDraftKey(project.id), JSON.stringify(draft));
+    } catch {
+      // ProjectKernel remains the primary persistence channel if localStorage fails.
+    }
+
+    patchModule("geo-parcel", moduleSnapshot);
+  }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, project.id, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
 
   useEffect(() => {
     let disposed = false;
