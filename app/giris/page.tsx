@@ -21,8 +21,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const rawReturnTo = Array.isArray(params?.return_to) ? params?.return_to[0] : params?.return_to;
   const returnTo = accountReturnPath(rawReturnTo);
+  const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`;
   const user = await getArkemAccountUser();
-  if (user) redirect(returnTo);
+  if (user) redirect(setupReturn);
 
   return <main className="arx-simple-home arx-auth-page">
     <div className="arx-auth-shell">
@@ -37,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p>Projelerinize ve çalışma araçlarınıza kaldığınız yerden devam edin.</p>
 
         <form action="/hesap-baglantisi" method="get">
-          <input type="hidden" name="return_to" value={returnTo} />
+          <input type="hidden" name="return_to" value={setupReturn} />
           <button className="arx-auth-primary" type="submit">Güvenli giriş yap <b>→</b></button>
         </form>
 
@@ -52,7 +53,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
       <footer className="arx-auth-footer">
         <span>ARKEMX çalışma alanı</span>
-        <small>Giriş tamamlandığında {returnTo === "/dijital-proje-merkezi" ? "Proje merkezine" : "geldiğiniz çalışma alanına"} yönlendirilirsiniz.</small>
+        <small>Girişten sonra hesap durumu kontrol edilir ve {returnTo === "/dijital-proje-merkezi" ? "Proje merkezine" : "geldiğiniz çalışma alanına"} geçilir.</small>
       </footer>
     </div>
   </main>;
