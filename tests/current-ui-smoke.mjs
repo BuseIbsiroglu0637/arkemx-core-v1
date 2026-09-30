@@ -128,7 +128,7 @@ test("local build renders the focused ARKEMX sign-in entry", async () => {
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
   assert.doesNotMatch(html, /name="return_to"/);
-  assert.match(html, /href="\/hesap-kurulum"/);
+  assert.match(html, /href="\/hesap-kurulum\?entry=first-use"/);
   assert.match(html, /İlk kullanım adımını aç/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
@@ -136,12 +136,13 @@ test("local build renders the focused ARKEMX sign-in entry", async () => {
 });
 
 test("local build renders the first-use account setup entry", async () => {
-  const response = await render("/hesap-kurulum?return_to=%2Fdijital-proje-merkezi");
+  const response = await render("/hesap-kurulum?return_to=%2Fdijital-proje-merkezi&entry=first-use");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<h1 id="arx-setup-title">Hesap kurulumunu tamamlayın<\/h1>/);
   assert.match(html, /Güvenli girişle devam et/);
   assert.match(html, /action="\/hesap-baglantisi"/);
+  assert.match(html, /entry=first-use/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
