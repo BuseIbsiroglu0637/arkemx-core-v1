@@ -15,8 +15,14 @@ async function render(pathname, requestHeaders = {}) {
   );
 }
 
-test("local build renders the current ARKEMX tools homepage", async () => {
+test("local build sends unauthenticated root entry to ARKEMX sign-in", async () => {
   const response = await render("/");
+  assert.ok(response.status === 307 || response.status === 308);
+  assert.match(response.headers.get("location") ?? "", /\/giris\?return_to=%2Fdijital-proje-merkezi$/);
+});
+
+test("local build renders the ARKEMX tools catalogue on its dedicated route", async () => {
+  const response = await render("/araclar");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
