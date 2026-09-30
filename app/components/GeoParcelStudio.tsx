@@ -292,6 +292,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const pointsLayerRef = useRef<LayerGroup | null>(null);
   const contourLayerRef = useRef<LayerGroup | null>(null);
   const drawingRef = useRef(!simple);
+  const officialBoundaryLockedRef = useRef(false);
   const transferApplied = useRef(false);
   const persistedGeoRef = useRef(false);
   const pendingFitRef = useRef<GeoPoint[] | null>(null);
@@ -576,6 +577,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   useEffect(() => {
     drawingRef.current = drawEnabled;
   }, [drawEnabled]);
+
+  useEffect(() => {
+    officialBoundaryLockedRef.current = officialBoundaryLocked;
+    if (officialBoundaryLocked && drawEnabled) setDrawEnabled(false);
+  }, [drawEnabled, officialBoundaryLocked]);
 
   useEffect(() => {
     let cancelled = false;
@@ -870,6 +876,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       pointsLayerRef.current = leaflet.layerGroup().addTo(map);
       contourLayerRef.current = leaflet.layerGroup().addTo(map);
       map.on("click", (event) => {
+        if (officialBoundaryLockedRef.current) {
+          setFileNotice("TKGM sınırı salt okunurdur. Haritada değişiklik yapmak için önce Düzenlenebilir Kopya Oluştur seçeneğini kullanın.");
+          return;
+        }
         if (!drawingRef.current) return;
         setParcel((points) => [...points, { lat: event.latlng.lat, lng: event.latlng.lng }].slice(-40));
         setParcelSource({
@@ -1502,7 +1512,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </button>
       : <p className="arx-geo-offline-query">Doğrudan parsel sorgusu bu oturumda kullanılamıyor. Resmî Parsel Sorgu üzerinden kaydı kontrol edin. Varsa sınır KML / GeoJSON dosyasını Dosya Yükle bölümüne aktarın.</p>}<a className="geo-official-link" href="https://parselsorgu.tkgm.gov.tr/" target="_blank" rel="noreferrer"><span>R</span><b>Resmî Parsel Sorgu’da doğrula</b><i>↗</i></a><p className="geo-caution">İl, ilçe ve mahalle/köy listeleri TKGM MEGSİS servisinden bağımlı olarak yüklenir. Ada ve parsel numarası seçili mahalle kimliğiyle sorgulanır. Alınan sınır bilgilendirme amaçlıdır; resmî proje sınırı yetkili harita mühendisi ve aplikasyon verisiyle doğrulanır.</p><div className="geo-coordinate-fields"><label>Enlem<input value={latitude} onChange={(event) => setLatitude(event.target.value)} inputMode="decimal" /></label><label>Boylam<input value={longitude} onChange={(event) => setLongitude(event.target.value)} inputMode="decimal" /></label></div><div className="geo-inline-actions"><button onClick={moveToCoordinate}>Koordinata git</button><button onClick={useDeviceLocation}>Cihaz konumu</button></div></div>,
     import: <div className="geo-control-section"><span>02 / MEKÂNSAL VERİ</span><h3>Sınırı kaynağı ve statüsüyle içe alın.</h3><label>Kaynak koordinat sistemi<select value={sourceCrs} onChange={(event) => setSourceCrs(event.target.value)}><option>EPSG:4326 / WGS84</option><option>ITRF96 / 3° TM — dönüşüm gerekli</option><option>ED50 / UTM — dönüşüm gerekli</option><option>Yerel aplikasyon — sabit nokta gerekli</option></select></label><label>Veri statüsü<select value={dataStatus} onChange={(event) => setDataStatus(event.target.value)}><option>Kavramsal / doğrulanmamış</option><option>TKGM ekranından yaklaşık</option><option>Harita mühendisi ölçümü</option><option>Onaylı aplikasyon verisi</option></select></label><label className="geo-file-drop"><input type="file" accept=".kml,.geojson,.json,.csv,.txt" onChange={(event) => handleFile(event.target.files?.[0])} /><b>KML, GeoJSON veya CSV seçin</b><small>Dosya tarayıcıda okunur; sunucuya yüklenmez.</small></label><div className="geo-format-list"><p><b>KML / KMZ</b><span>Google Earth çalışma akışı</span><i>CANLI: KML</i></p><p><b>GeoJSON</b><span>WGS84 Polygon / MultiPolygon</span><i>CANLI</i></p><p><b>CSV</b><span>enlem, boylam, opsiyonel kot</span><i>CANLI</i></p><p><b>SHP / LandXML</b><span>proje dönüşüm hattı</span><i className="planned">KISMİ</i></p></div><p className="geo-caution">Tarayıcı EPSG:4326 enlem / boylam verisini doğrudan işler. ITRF/TM, ED50 veya yerel koordinatlar doğru EPSG, dönüşüm parametreleri ve sabit aplikasyon noktası olmadan WGS84 kabul edilmez.</p></div>,
-    draw: <div className="geo-control-section"><span>03 / SINIR EDİTÖRÜ</span><h3>Noktaları harita üzerinde düzenleyin.</h3><button className={`geo-toggle-draw${drawEnabled ? " active" : ""}`} onClick={() => setDrawEnabled((value) => !value)}><i></i>{drawEnabled ? "Haritaya tıklayarak nokta ekleniyor" : "Nokta ekleme kapalı"}</button><div className="geo-inline-actions"><button onClick={removeLastBoundaryPoint} disabled={!parcel.length}>Son noktayı geri al</button><button onClick={clearBoundary} disabled={!parcel.length}>Sınırı temizle</button></div>{!simple && <button className="geo-wide-action" onClick={loadSample}>Koordinatta örnek poligon üret</button>}<div className="geo-point-table"><header><span>Nokta</span><span>Enlem</span><span>Boylam</span></header>{parcel.slice(0, 12).map((point, index) => <p key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></p>)}{parcel.length > 12 && <small>+ {parcel.length - 12} ek nokta</small>}</div></div>,
+    draw: <div className="geo-control-section"><span>03 / SINIR EDİTÖRÜ</span><h3>{officialBoundaryLocked ? "TKGM sınırını inceleyin." : "Noktaları harita üzerinde düzenleyin."}</h3>{officialBoundaryLocked ? <div className="geo-official-boundary-lock" role="status"><b>TKGM sınırı salt okunur</b><p>Bu geometri açık servis yanıtından geldi. Orijinal kanıt korunur ve doğrudan değiştirilemez.</p><button type="button" onClick={createEditableBoundaryCopy}>Düzenlenebilir Kopya Oluştur</button></div> : <><button className={`geo-toggle-draw${drawEnabled ? " active" : ""}`} onClick={() => setDrawEnabled((value) => !value)}><i></i>{drawEnabled ? "Haritaya tıklayarak nokta ekleniyor" : "Nokta ekleme kapalı"}</button><div className="geo-inline-actions"><button onClick={removeLastBoundaryPoint} disabled={!parcel.length}>Son noktayı geri al</button><button onClick={clearBoundary} disabled={!parcel.length}>Sınırı temizle</button></div>{officialBoundaryEvidence && <button className="geo-wide-action geo-restore-official" type="button" onClick={restoreOfficialBoundary}>Orijinal TKGM Sınırına Dön</button>}{!simple && <button className="geo-wide-action" onClick={loadSample}>Koordinatta örnek poligon üret</button>}</>}<div className="geo-point-table"><header><span>Nokta</span><span>Enlem</span><span>Boylam</span></header>{parcel.slice(0, 12).map((point, index) => <p key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></p>)}{parcel.length > 12 && <small>+ {parcel.length - 12} ek nokta</small>}</div></div>,
     zoning: <div className="geo-control-section geo-zoning-control">
       <span>04 / PARSEL BAZLI İMAR</span>
       <h3>Plan kararını kaynağıyla birlikte projeye bağlayın.</h3>
