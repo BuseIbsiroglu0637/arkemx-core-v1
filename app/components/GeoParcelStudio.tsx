@@ -355,16 +355,25 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     basemap: true,
     "building-mass": false,
   }));
-  const [requiredSetback, setRequiredSetback] = useState(5);
-  const [maxCoverage, setMaxCoverage] = useState(40);
-  const [maxFar, setMaxFar] = useState(1.2);
-  const [maxHeight, setMaxHeight] = useState(15.5);
+  const [requiredSetback, setRequiredSetback] = useState(-1);
+  const [maxCoverage, setMaxCoverage] = useState(-1);
+  const [maxFar, setMaxFar] = useState(-1);
+  const [maxHeight, setMaxHeight] = useState(-1);
   const [floorHeight, setFloorHeight] = useState(4.5);
   const [parkingPer100, setParkingPer100] = useState(1);
   const [sourceCrs, setSourceCrs] = useState("EPSG:4326 / WGS84");
   const [dataStatus, setDataStatus] = useState("Kavramsal / doğrulanmamış");
   const [parcelLookup, setParcelLookup] = useState<"idle" | "loading" | "found" | "error">("idle");
   const [zoning, setZoning] = useState<ZoningForm>(DEFAULT_ZONING);
+  const zoningNumericReady = [
+    zoning.taks,
+    zoning.kaks,
+    zoning.hmax,
+    zoning.frontSetback,
+    zoning.sideSetback,
+    zoning.rearSetback,
+  ].every((value) => Number.isFinite(value) && value >= 0);
+  const zoningFormReady = zoningNumericReady && Boolean(zoning.planScale && zoning.buildingOrder);
   const [frontEdge, setFrontEdge] = useState<ParcelFrontEdge>("north");
   const [selectedMassingId, setSelectedMassingId] = useState("manual");
   const parcelRecord = useMemo<ParcelRecord>(() => createParcelRecord({
@@ -738,14 +747,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const coverage = area ? (footprint / area) * 100 : 0;
     const far = area ? gross / area : 0;
     const buildingHeight = floors * floorHeight;
-    const allowedFootprint = area * maxCoverage / 100;
-    const allowedGross = area * maxFar;
+    const allowedFootprint = zoningFormReady ? area * maxCoverage / 100 : 0;
+    const allowedGross = zoningFormReady ? area * maxFar : 0;
     const parkingNeed = Math.ceil(gross / 100 * parkingPer100);
     const rainwaterReview = area > 2_000 || footprint > 1_000;
     const geometryValid = parcel.length >= 3 && !polygonSelfIntersects(parcel) && area > 1;
-    const setbackPass = buildingFits && boundaryDistance >= requiredSetback;
+    const setbackPass = zoningFormReady && buildingFits && boundaryDistance >= requiredSetback;
     return { area, perimeter, width: bounds.width, depth: bounds.depth, footprint, gross, coverage, far, buildingHeight, allowedFootprint, allowedGross, parkingNeed, rainwaterReview, geometryValid, buildingFits, setbackPass, boundaryDistance, minAlt: altitudes.length ? Math.min(...altitudes) : null, maxAlt: altitudes.length ? Math.max(...altitudes) : null };
-  }, [parcel, building, buildingWidth, buildingDepth, floors, floorHeight, maxCoverage, maxFar, parkingPer100, requiredSetback]);
+  }, [parcel, building, buildingWidth, buildingDepth, floors, floorHeight, maxCoverage, maxFar, parkingPer100, requiredSetback, zoningFormReady]);
   const reference = `${province || "IL"}-${district || "ILCE"}-${block || "ADA"}-${parcelNo || "PARSEL"}`.replace(/\s+/g, "-").toLocaleUpperCase("tr-TR");
   const sourceNetwork = useMemo(
     () => resolveParcelSourceNetwork(province, district),
@@ -1312,19 +1321,23 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
   };
 
+  const parseOptionalZoningNumber = (value: string) => value.trim() === "" ? -1 : Number(value);
+  const displayOptionalZoningNumber = (value: number) => value >= 0 && Number.isFinite(value) ? value : "";
+
   const updateZoning = <K extends keyof ZoningForm>(key: K, value: ZoningForm[K]) => {
     setZoning((current) => key === "verification"
       ? { ...current, verification: normalizeUntrustedZoningVerification(value, Boolean(current.sourceDocument)) }
       : { ...current, [key]: value });
-    if (key === "taks") setMaxCoverage(Number(value) * 100);
-    if (key === "kaks") setMaxFar(Number(value));
-    if (key === "hmax") setMaxHeight(Number(value));
+    if (key === "taks") setMaxCoverage(Number(value) >= 0 ? Number(value) * 100 : -1);
+    if (key === "kaks") setMaxFar(Number(value) >= 0 ? Number(value) : -1);
+    if (key === "hmax") setMaxHeight(Number(value) >= 0 ? Number(value) : -1);
   };
 
   const updateSetback = (key: "frontSetback" | "sideSetback" | "rearSetback", value: number) => {
     const next = { ...zoning, [key]: value };
     setZoning(next);
-    setRequiredSetback(Math.max(next.frontSetback, next.sideSetback, next.rearSetback));
+    const entered = [next.frontSetback, next.sideSetback, next.rearSetback].filter((item) => Number.isFinite(item) && item >= 0);
+    setRequiredSetback(entered.length === 3 ? Math.max(...entered) : -1);
   };
 
   const handleZoningDocument = (file?: File) => {
