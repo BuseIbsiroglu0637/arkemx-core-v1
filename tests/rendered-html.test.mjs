@@ -1484,7 +1484,7 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     experienceMode: "guided",
   });
   assert.equal(roadmap.schema, "ARKEM-GUIDED-JOURNEY/1.0");
-  assert.equal(roadmap.nextAction.route, "/imar-entegrasyon-merkezi");
+  assert.equal(roadmap.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
   assert.equal(roadmap.gates.find((gate) => gate.id === "zoning")?.status, "official-review");
   assert.equal(roadmap.gates.find((gate) => gate.id === "budget")?.status, "client-decision");
   assert.ok(roadmap.missingDocuments.includes("İmar durumu / plan notu"));
@@ -1510,7 +1510,7 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     },
   });
   assert.equal(declaredReadyRoadmap.gates.find((gate) => gate.id === "parcel")?.status, "official-review");
-  assert.equal(declaredReadyRoadmap.nextAction.route, "/imar-entegrasyon-merkezi");
+  assert.equal(declaredReadyRoadmap.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
   assert.ok(declaredReadyRoadmap.verificationItems.some((item) => item.includes("başlangıç formunda henüz girilmedi")));
 
   const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
@@ -4414,4 +4414,63 @@ test("Web V4.9 separates project publishing roles and keeps ARKEMX status metada
   const arkemxHtml = await arkemxResponse.text();
   assert.match(arkemxHtml, /ARKEMX Yapısal Çelik modülü/);
   assert.match(arkemxHtml, /https:\/\/arkemyapisistemleri\.com\/arkemx#yapisal-celik/);
+});
+
+
+test("new project stays on parcel verification until a real parcel boundary exists", () => {
+  const modules = {
+    "decision-assistant": { status: "Brief hazır" },
+    "geo-parcel": {
+      reference: "Kastamonu Merkez",
+      province: "Kastamonu",
+      district: "Merkez",
+      dataStatus: "Kullanıcı beyanı · ada/parsel hazır · TKGM/MEGSİS doğrulaması bekleniyor",
+      metrics: {},
+      status: "Konum aktarıldı · sınır bekleniyor",
+    },
+    "architectural-program": {
+      input: { use: "residential", targetGross: 1200, floors: 3, floorHeight: 3.4 },
+      status: "Brief verisi aktarıldı",
+    },
+    "system-comparison": {
+      input: { preferredSystem: "undecided" },
+      ranking: [],
+      status: "Alternatif karşılaştırması bekleniyor",
+    },
+  };
+  const thread = deriveProjectThread(modules);
+  assert.equal(thread.nextAction.label, "Parsel kimliğini ve sınırını doğrula");
+  assert.equal(thread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+  assert.equal(thread.nodes.find((node) => node.id === "geo-parcel")?.readiness, 35);
+
+  const project = {
+    id: "ARK-26-TEST",
+    name: "ARKEMX Örnek Konut Projesi 01",
+    revision: "P01",
+    phase: "Ön fizibilite",
+    updatedAt: "2026-09-30T13:00:00.000Z",
+    modules,
+  };
+  const core = deriveProjectCore(project, thread);
+  assert.equal(core.fields.find((item) => item.id === "location")?.trust, "declared");
+  assert.equal(core.fields.find((item) => item.id === "parcel-id")?.trust, "declared");
+
+  const verifiedModules = {
+    ...modules,
+    "geo-parcel": {
+      ...modules["geo-parcel"],
+      block: "210",
+      parcelNo: "15",
+      metrics: { area: 5287.5, geometryValid: true },
+      parcelRecord: {
+        schema: "ARKEM-PARCEL-RECORD/1.0",
+        projectEligible: true,
+        identity: { province: "Kastamonu", district: "Merkez", neighborhood: "Budamış", block: "210", parcelNo: "15" },
+        geometry: { valid: true, computedArea: 5287.5 },
+        evidence: { sourceKind: "tkgm-open-service", trust: "verified" },
+      },
+    },
+  };
+  const verifiedThread = deriveProjectThread(verifiedModules);
+  assert.notEqual(verifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
 });
