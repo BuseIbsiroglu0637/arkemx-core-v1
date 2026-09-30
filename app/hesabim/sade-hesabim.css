@@ -167,20 +167,39 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
   gap:6px;
   align-items:center;
 }
+.arx-account-project-actions a,
 .arx-account-project-actions button {
   min-height:31px;
-  padding:6px 8px;
+  padding:6px 9px;
   border:1px solid #d2dde1;
   border-radius:5px;
   background:#fff;
   color:#456471;
   font:700 9px var(--font-inter),Arial,sans-serif;
+  line-height:1;
+  text-decoration:none;
   cursor:pointer;
 }
-.arx-account-project-actions button:first-child {
+.arx-account-project-actions a {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.arx-account-project-actions button:first-child,
+.arx-account-project-actions a:first-child {
   background:#244756;
   border-color:#244756;
   color:#fff;
+}
+.arx-account-draft-actions a {
+  min-height:34px;
+  padding-inline:12px;
+  border-radius:6px;
+}
+.arx-account-draft-actions a span {
+  font-size:11px;
+  line-height:1;
 }
 .arx-account-card > header > button:disabled {
   opacity:.45;
