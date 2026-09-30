@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -68,6 +68,7 @@ type ProjectKernelContextValue = {
   importProject: (value: unknown) => boolean;
   startProject: (intake: ProjectIntake) => void;
   reset: () => void;
+  clearLocalProject: () => void;
 };
 
 const STORAGE_KEY = "arkem-project-kernel-v1";
@@ -515,6 +516,7 @@ const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(nul
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
   const [hydrated, setHydrated] = useState(false);
+  const skipNextPersistenceRef = useRef(false);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
     state: "loading",
     integrity: "missing",
@@ -562,6 +564,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!hydrated) return;
+    if (skipNextPersistenceRef.current) {
+      skipNextPersistenceRef.current = false;
+      return;
+    }
     const timer = window.setTimeout(() => {
       try {
         const result = saveProjectToStorage(window.localStorage, project);
@@ -848,6 +854,23 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     setHydrated(true);
   }, []);
   const reset = useCallback(() => setProject(createActiveProject()), []);
+  const clearLocalProject = useCallback(() => {
+    try {
+      clearProjectStorage(window.localStorage, STORAGE_KEY);
+    } catch {
+      // Local storage may be unavailable; the in-memory project is still cleared.
+    }
+    skipNextPersistenceRef.current = true;
+    setProject(createActiveProject());
+    setPersistence({
+      state: "device-saved",
+      integrity: "missing",
+      lastSavedAt: "",
+      backupAvailable: false,
+      cloud: "not-configured",
+    });
+    setHydrated(true);
+  }, []);
   const thread = useMemo(() => deriveProjectThread(project.modules), [project.modules]);
   const core = useMemo(() => deriveProjectCore(project, thread), [project, thread]);
 
@@ -866,7 +889,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     importProject,
     startProject,
     reset,
-  }), [applyHandoff, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
+    clearLocalProject,
+  }), [applyHandoff, clearLocalProject, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
 
   return <ProjectKernelContext.Provider value={value}>{children}</ProjectKernelContext.Provider>;
 }
