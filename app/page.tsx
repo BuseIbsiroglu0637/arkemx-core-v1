@@ -4,6 +4,7 @@ import {
   ArrowUpRight, Blocks, ClipboardList, DraftingCompass, FileBox,
   FolderOpen, GitMerge, Layers3, Map, Scale, Wrench,
 } from "lucide-react";
+import { AccountHeaderLink } from "./components/AccountHeaderLink";
 import "./sade-arac-paneli.css";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default function Home() {
       <div className="arx-simple-shell">
         <header className="arx-simple-head">
           <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-          <div className="arx-simple-head-actions"><span className="arx-simple-head-label">Çalışma alanı</span><a href="/hesabim">Hesap</a></div>
+          <div className="arx-simple-head-actions"><span className="arx-simple-head-label">Çalışma alanı</span><AccountHeaderLink /></div>
         </header>
         <section className="arx-simple-tools" aria-labelledby="arx-tools-title">
           <h1 id="arx-tools-title">Araçlar</h1>
