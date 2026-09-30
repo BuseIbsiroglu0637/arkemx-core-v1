@@ -123,6 +123,15 @@ function fallbackDistrictOptions(provinceName: string) {
   }));
 }
 
+function keepSelectedAdministrativeOption(
+  options: AdministrativeOption[],
+  id: string,
+  label: string,
+) {
+  if (!id || !label || options.some((option) => option.id === id)) return options;
+  return [{ id, label }, ...options];
+}
+
 const stages: { id: Stage; no: string; label: string; sub: string }[] = [
   { id: "locate", no: "01", label: "Parseli bul", sub: "Ada / parsel veya koordinat" },
   { id: "import", no: "02", label: "Veriyi al", sub: "KML · GeoJSON · CSV" },
@@ -440,6 +449,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     geometry: parcel,
     source: parcelSource,
   }), [block, district, neighborhood, parcel, parcelNo, parcelSource, province]);
+  const visibleProvinceOptions = useMemo(
+    () => keepSelectedAdministrativeOption(provinceOptions, provinceId, province),
+    [province, provinceId, provinceOptions],
+  );
+  const visibleDistrictOptions = useMemo(
+    () => keepSelectedAdministrativeOption(districtOptions, districtId, district),
+    [district, districtId, districtOptions],
+  );
+  const visibleNeighborhoodOptions = useMemo(
+    () => keepSelectedAdministrativeOption(neighborhoodOptions, neighborhoodId, neighborhood),
+    [neighborhood, neighborhoodId, neighborhoodOptions],
+  );
 
   useEffect(() => {
     if (!hydrated) return;
@@ -637,6 +658,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setNeighborhoodId(saved.neighborhoodId ?? "");
       setBlock(saved.block ?? "");
       setParcelNo(saved.parcelNo ?? "");
+      setParcelLookup(hasSavedBoundary || hasSavedPreviewBoundary ? "found" : "idle");
 
       const restoredParcel = hasSavedBoundary
         ? (saved.parcel ?? [])
@@ -714,8 +736,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (saved.terrain?.layers) setTerrainLayers({
         ...normalizeTerrainLayers(saved.terrain.layers),
         basemap: true,
+        "parcel-boundary": restoredParcel.length >= 3 ? true : normalizeTerrainLayers(saved.terrain.layers)["parcel-boundary"],
         "building-mass": false,
       });
+      else if (restoredParcel.length >= 3) {
+        setTerrainLayers((current) => ({ ...current, "parcel-boundary": true, "building-mass": false }));
+      }
       if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
       if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
       setFileNotice(recoverySource !== "project"
@@ -1788,13 +1814,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </button>
       <small>{fileNotice}</small>
     </div>}
-    <div className="geo-cascade-guide"><b>İl</b><i>→</i><b>İlçe</b><i>→</i><b>Mahalle/Köy</b><i>→</i><b>Ada</b><i>→</i><b>Parsel</b></div><div className="geo-field-grid geo-cascade-fields"><label>İl<select value={provinceId} onChange={(event) => { const selected = provinceOptions.find((item) => item.id === event.target.value); setProvinceId(event.target.value); setProvince(selected?.label ?? ""); setAdministrativeLoading("district"); setDistrictOptions([]); setDistrictId(""); setDistrict(""); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İl değişti. İlçe, mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!provinceOptions.length}><option value="">{administrativeLoading === "province" ? "İller yükleniyor…" : "İl seçin"}</option>{provinceOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>İlçe<select value={districtId} onChange={(event) => { const selected = districtOptions.find((item) => item.id === event.target.value); setDistrictId(event.target.value); setDistrict(selected?.label ?? ""); setAdministrativeLoading("neighborhood"); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İlçe değişti. Mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!provinceId || !districtOptions.length}><option value="">{administrativeLoading === "district" ? "İlçeler yükleniyor…" : provinceId ? "İlçe seçin" : "Önce il seçin"}</option>{districtOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>Mahalle / Köy{administrativeSource === "fallback"
+    <div className="geo-cascade-guide"><b>İl</b><i>→</i><b>İlçe</b><i>→</i><b>Mahalle/Köy</b><i>→</i><b>Ada</b><i>→</i><b>Parsel</b></div><div className="geo-field-grid geo-cascade-fields"><label>İl<select value={provinceId} onChange={(event) => { const selected = visibleProvinceOptions.find((item) => item.id === event.target.value); setProvinceId(event.target.value); setProvince(selected?.label ?? ""); setAdministrativeLoading("district"); setDistrictOptions([]); setDistrictId(""); setDistrict(""); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İl değişti. İlçe, mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!visibleProvinceOptions.length}><option value="">{administrativeLoading === "province" ? "İller yükleniyor…" : "İl seçin"}</option>{visibleProvinceOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>İlçe<select value={districtId} onChange={(event) => { const selected = visibleDistrictOptions.find((item) => item.id === event.target.value); setDistrictId(event.target.value); setDistrict(selected?.label ?? ""); setAdministrativeLoading("neighborhood"); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İlçe değişti. Mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!provinceId || !visibleDistrictOptions.length}><option value="">{administrativeLoading === "district" ? "İlçeler yükleniyor…" : provinceId ? "İlçe seçin" : "Önce il seçin"}</option>{visibleDistrictOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>Mahalle / Köy{administrativeSource === "fallback"
       ? <><input value={neighborhood} onChange={(event) => { const value = event.target.value; setNeighborhood(value); setNeighborhoodId(value.trim() ? "offline-neighborhood-manual" : ""); setBlock(""); setParcelNo(""); resetParcelSelection("Mahalle/köy değişti. Ada ve parsel numarasını yeniden girin."); }}
           placeholder="Mahalle veya köy adını kendiniz yazın" disabled={!districtId} autoComplete="off" />
           <small className="arx-geo-field-warning">Elle girilen ad resmî mahalle kimliği değildir.</small></>
-      : <select value={neighborhoodId} onChange={(event) => { const selected = neighborhoodOptions.find((item) => item.id === event.target.value); setNeighborhoodId(event.target.value); setNeighborhood(selected?.label ?? ""); setBlock(""); setParcelNo(""); resetParcelSelection("Mahalle/köy değişti. Ada ve parsel numarasını girin."); }} disabled={!districtId || !neighborhoodOptions.length}>
+      : <select value={neighborhoodId} onChange={(event) => { const selected = visibleNeighborhoodOptions.find((item) => item.id === event.target.value); setNeighborhoodId(event.target.value); setNeighborhood(selected?.label ?? ""); setBlock(""); setParcelNo(""); resetParcelSelection("Mahalle/köy değişti. Ada ve parsel numarasını girin."); }} disabled={!districtId || !visibleNeighborhoodOptions.length}>
           <option value="">{administrativeLoading === "neighborhood" ? "Mahalleler yükleniyor…" : districtId ? "Mahalle / köy seçin" : "Önce ilçe seçin"}</option>
-          {neighborhoodOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}
+          {visibleNeighborhoodOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}
         </select>}</label><label>Ada<input value={block} onChange={(event) => { setBlock(event.target.value.replace(/\D/g, "")); resetParcelSelection("Ada numarası değişti. Parsel numarasını kontrol edip sorguyu çalıştırın."); }} inputMode="numeric" placeholder="Ada numarası" disabled={!neighborhoodId} /></label><label>Parsel<input value={parcelNo} onChange={(event) => { setParcelNo(event.target.value.replace(/\D/g, "")); resetParcelSelection("Parsel numarası değişti. TKGM sorgusunu çalıştırarak sınırı yükleyin."); }} inputMode="numeric" placeholder="Parsel numarası" disabled={!neighborhoodId} /></label></div><p className={`geo-cascade-status ${administrativeSource === "fallback" ? "fallback" : "official"}`}><i className={neighborhoodId ? "ready" : ""}></i>{administrativeSource === "fallback" ? "Çevrimdışı seçim listesi açık · resmî geometri TKGM/KML ile doğrulanacak." : neighborhoodId ? `${province} / ${district} / ${neighborhood} seçildi. Ada ve parsel numarasını girin.` : "Her seçim bir sonraki resmî idari listeyi açar."}</p>{administrativeSource === "official" && !districtId.startsWith("offline-") && !neighborhoodId.startsWith("offline-")
       ? <button className={"geo-parcel-query " + parcelLookup} onClick={locateOfficialParcel}
           disabled={parcelLookup === "loading" || !neighborhoodId || !block.trim() || !parcelNo.trim()}>
