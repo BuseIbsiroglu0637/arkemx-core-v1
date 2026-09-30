@@ -15,15 +15,20 @@ export const metadata: Metadata = {
 };
 
 type SetupPageProps = {
-  searchParams?: Promise<{ return_to?: string | string[] }>;
+  searchParams?: Promise<{
+    return_to?: string | string[];
+    entry?: string | string[];
+  }>;
 };
 
 export default async function AccountSetupPage({ searchParams }: SetupPageProps) {
   const params = await searchParams;
   const rawReturnTo = Array.isArray(params?.return_to) ? params?.return_to[0] : params?.return_to;
+  const rawEntry = Array.isArray(params?.entry) ? params?.entry[0] : params?.entry;
+  const explicitFirstUse = rawEntry === "first-use";
   const returnTo = accountReturnPath(rawReturnTo);
   const user = await getArkemAccountUser();
-  const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`;
+  const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}${explicitFirstUse ? "&entry=first-use" : ""}`;
 
   return <main className="arx-simple-home arx-auth-page arx-setup-page">
     <div className="arx-auth-shell">
@@ -45,7 +50,7 @@ export default async function AccountSetupPage({ searchParams }: SetupPageProps)
         </div>
 
         <div className="arx-setup-card">
-          {user ? <AccountSetupGate displayName={user.displayName} email={user.email} returnTo={returnTo}/> : <>
+          {user ? <AccountSetupGate displayName={user.displayName} email={user.email} returnTo={returnTo} showExistingAccountChoice={explicitFirstUse}/> : <>
             <span>1 / 2</span>
             <h2>Önce güvenli oturumu açın</h2>
             <p>Kimlik doğrulamasından sonra bu kurulum ekranına geri döneceksiniz.</p>
