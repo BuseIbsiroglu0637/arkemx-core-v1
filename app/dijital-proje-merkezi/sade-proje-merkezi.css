@@ -84,6 +84,87 @@
 .arx-center-advanced-content { padding: 12px; }
 .arx-center-advanced-content .digital-hub { margin: 0; }
 .arx-center-boundary { margin: 0; padding: 0 0 25px; color: #78878f; font-size: 12px; line-height: 1.65; }
+
+.arx-center-actions > .arx-center-delete-trigger {
+  border-color:#ead6d1;
+  color:#8b4a40;
+}
+.arx-center-actions > .arx-center-delete-trigger:hover {
+  border-color:#c98c7e;
+  background:#fff8f6;
+}
+.arx-center-delete-panel {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:18px;
+  align-items:end;
+  margin-top:16px;
+  padding:16px;
+  border:1px solid #ead6d1;
+  border-radius:8px;
+  background:#fff9f7;
+}
+.arx-center-delete-panel span {
+  display:block;
+  margin-bottom:5px;
+  color:#a45b4b;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-center-delete-panel b {
+  display:block;
+  color:#53352f;
+  font-size:14px;
+}
+.arx-center-delete-panel small {
+  display:block;
+  margin-top:3px;
+  color:#8b716b;
+  font-size:9px;
+}
+.arx-center-delete-panel p {
+  max-width:650px;
+  margin:8px 0 0;
+  color:#755f5a;
+  font-size:10px;
+  line-height:1.55;
+}
+.arx-center-delete-actions {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:7px;
+}
+.arx-center-delete-actions button {
+  min-height:38px;
+  padding:8px 10px;
+  border:1px solid #d8c5c0;
+  border-radius:6px;
+  background:#fff;
+  color:#654842;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.arx-center-delete-actions button.danger {
+  border-color:#9c5145;
+  background:#9c5145;
+  color:#fff;
+}
+.arx-center-delete-actions button.cancel {
+  border-color:#d7e1e4;
+  color:#49636e;
+}
+.arx-center-delete-actions button:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+@media (max-width:730px) {
+  .arx-center-delete-panel { grid-template-columns:1fr; align-items:start; }
+  .arx-center-delete-actions { justify-content:flex-start; }
+}
+
 @media (max-width: 730px) {
   .arx-center-overview { grid-template-columns: 1fr; }
   .arx-center-tool-grid { grid-template-columns: 1fr; }
