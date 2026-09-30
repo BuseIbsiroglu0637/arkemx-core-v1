@@ -29,7 +29,7 @@ export default async function AccountSetupPage({ searchParams }: SetupPageProps)
     <div className="arx-auth-shell">
       <header className="arx-auth-header">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <Link href="/giris" className="arx-auth-back">Girişe dön</Link>
+        <Link href={`/giris?return_to=${encodeURIComponent(returnTo)}`} className="arx-auth-back">Girişe dön</Link>
       </header>
 
       <section className="arx-setup-wrap" aria-labelledby="arx-setup-title">
