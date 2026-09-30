@@ -264,3 +264,18 @@
 @media(max-width:520px) {
   .arx-setup-existing-actions { grid-template-columns:1fr; }
 }
+
+.arx-setup-existing-actions.single {
+  grid-template-columns:1fr;
+}
+.arx-setup-existing-actions.single a:last-child {
+  background:#fff;
+  color:#244756;
+}
+.arx-setup-active-project {
+  display:block;
+  margin-top:9px;
+  color:#70828a;
+  font-size:9px;
+  line-height:1.45;
+}
