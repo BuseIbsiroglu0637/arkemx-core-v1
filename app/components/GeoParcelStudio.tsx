@@ -462,49 +462,75 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
     const timer = window.setTimeout(() => {
-      const saved = project.modules["geo-parcel"] as {
-        reference?: string;
-        parcel?: GeoPoint[];
-        province?: string;
-        provinceId?: string;
-        district?: string;
-        districtId?: string;
-        neighborhood?: string;
-        neighborhoodId?: string;
-        block?: string;
-        parcelNo?: string;
-        buildingWidth?: number;
-        buildingDepth?: number;
-        rotation?: number;
-        offsetEast?: number;
-        offsetNorth?: number;
-        usage?: string;
-        system?: string;
-        floors?: number;
-        floorHeight?: number;
-        sourceCrs?: string;
-        dataStatus?: string;
-        planning?: Record<string, unknown>;
-        zoning?: Partial<ZoningForm>;
-        terrain?: Record<string, unknown>;
-        frontEdge?: ParcelFrontEdge;
-        selectedMassingId?: string;
-        parcelRecord?: ParcelRecord;
-        officialBoundaryEvidence?: OfficialBoundaryEvidence;
-        _kernel?: { recordedAt?: string };
-      } | undefined;
+      const currentSaved = project.modules["geo-parcel"] as GeoParcelSavedState | undefined;
+      let saved = currentSaved;
+      let recoverySource: "project" | "draft" | "backup" = "project";
+
+      if (!saved) {
+        try {
+          const rawDraft = window.localStorage.getItem(geoDraftKey(project.id));
+          const draft = rawDraft ? JSON.parse(rawDraft) as GeoDraftEnvelope : null;
+          if (draft?.projectId === project.id && draft.payload) {
+            saved = draft.payload;
+            recoverySource = "draft";
+          }
+        } catch {
+          // A damaged local draft must never block normal project hydration.
+        }
+      }
+
+      if (!saved) {
+        try {
+          const backup = decodeProjectEnvelope<{ id?: string; modules?: Record<string, unknown> }>(
+            window.localStorage.getItem(PROJECT_BACKUP_KEY),
+          );
+          const backupGeo = backup.value?.id === project.id
+            ? backup.value.modules?.["geo-parcel"] as GeoParcelSavedState | undefined
+            : undefined;
+          if (backupGeo) {
+            saved = backupGeo;
+            recoverySource = "backup";
+          }
+        } catch {
+          // Backup recovery is best-effort; the active project remains authoritative.
+        }
+      }
+
       const decision = project.modules["decision-assistant"] as {
         input?: { location?: string };
       } | undefined;
       const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
       const declared = parseDeclaredLocation(declaredLocation);
-      const hasSavedBoundary = Boolean(saved?.parcel && saved.parcel.length >= 3);
 
-      persistedGeoRef.current = Boolean(saved);
-      if (!saved) return;
+      if (!saved) {
+        // ProjectKernel may render once with an empty module map while storage is
+        // still being hydrated. Do not permanently mark transfer as complete in
+        // that transient state; otherwise the real geo module can never restore.
+        if (!Object.keys(project.modules).length) return;
+        transferApplied.current = true;
+        persistedGeoRef.current = false;
+        setProvince(declared.province);
+        setDistrict(declared.district);
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhood("");
+        setNeighborhoodId("");
+        setBlock("");
+        setParcelNo("");
+        setFileNotice(declared.province
+          ? `${declared.province}${declared.district ? ` / ${declared.district}` : ""} proje başlangıcından aktarıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`
+          : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
+        return;
+      }
 
+      transferApplied.current = true;
+      persistedGeoRef.current = true;
+      if (recoverySource !== "project") {
+        patchModule("geo-parcel", saved);
+      }
+
+      const hasSavedBoundary = Boolean(saved.parcel && saved.parcel.length >= 3);
       const restoredOfficialEvidence = saved.officialBoundaryEvidence ?? (
         hasSavedBoundary && saved.parcelRecord?.evidence.sourceKind === "tkgm-open-service"
           ? {
