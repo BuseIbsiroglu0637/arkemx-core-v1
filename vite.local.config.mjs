@@ -9,6 +9,9 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  define: {
+    "process.env.ARKEMX_PROTOTYPE_DEMO_AUTH": JSON.stringify("1"),
+  },
   server: {
     host: "127.0.0.1",
     port: 5173,
