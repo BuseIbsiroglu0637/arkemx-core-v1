@@ -117,3 +117,17 @@ test("local build renders the focused project tracking workspace", async () => {
   assert.doesNotMatch(html, /class="os-page-hero/);
   assert.doesNotMatch(html, /class="project-guided-journey/);
 });
+
+test("local build renders the focused ARKEMX sign-in entry", async () => {
+  const response = await render("/giris?return_to=%2Fbim-koordinasyon");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1 id="arx-auth-title">ARKEMX’e giriş<\/h1>/);
+  assert.match(html, /Güvenli giriş yap/);
+  assert.match(html, /action="\/hesap-baglantisi"/);
+  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
+  assert.match(html, /İlk kullanım adımını aç/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /class="v4-mobile-site-header/);
+  assert.doesNotMatch(html, /class="account-story/);
+});
