@@ -19,7 +19,7 @@ const quickTools = [
 ] as const;
 
 export function SimpleProjectCenter() {
-  const { project, thread, importProject, reset } = useProjectKernel();
+  const { project, thread, importProject, clearLocalProject } = useProjectKernel();
   const fileRef = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -50,30 +50,30 @@ export function SimpleProjectCenter() {
     setNotice("Tam proje JSON yedeği indirildi.");
   }
 
-  function removeFromDevice() {
-    reset();
+  function removeLocalWorkingCopy() {
+    clearLocalProject();
     setDeleteOpen(false);
-    setNotice("Aktif proje bu cihazdaki çalışma alanından kaldırıldı. Hesaba kaydedilmiş kopya varsa korunur.");
+    setNotice("Bu tarayıcıdaki yerel çalışma kaydı silindi. Hesabınıza kaydedilmiş proje etkilenmedi.");
   }
 
-  async function removeFromDeviceAndAccount() {
+  async function removeEverywhere() {
     if (!hasProject || deleteBusy) return;
     setDeleteBusy(true);
-    setNotice("Proje hesabınızdan ve bu cihazdan kaldırılıyor…");
+    setNotice("Proje yerel çalışma alanından ve hesabınızdan siliniyor…");
     try {
       const response = await fetch(`/api/customer-workspace?resource=project&id=${encodeURIComponent(project.id)}`, {
         method: "DELETE",
       });
       const body = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) {
-        setNotice(body.error || "Hesaptaki proje kaydı kaldırılamadı. Bu cihazdaki çalışma korunuyor.");
+        setNotice(body.error || "Hesaptaki proje kaydı silinemedi. Yerel çalışma kaydı korunuyor.");
         return;
       }
-      reset();
+      clearLocalProject();
       setDeleteOpen(false);
-      setNotice("Aktif proje bu cihazdan ve hesabınızdaki proje listesinden kaldırıldı.");
+      setNotice("Proje hem bu tarayıcıdaki yerel çalışma alanından hem de hesabınızdaki proje listesinden silindi.");
     } catch {
-      setNotice("Hesap servisine ulaşılamadı. Bu cihazdaki çalışma korunuyor.");
+      setNotice("Hesap servisine ulaşılamadı. Yerel çalışma kaydı korunuyor.");
     } finally {
       setDeleteBusy(false);
     }
@@ -89,7 +89,7 @@ export function SimpleProjectCenter() {
             ? `${project.id} · ${project.revision} · ${project.phase}`
             : "Yeni bir proje oluşturun veya mevcut proje yedeğinizi yükleyin."}</p>
         </div>
-        <span className="arx-center-storage">Bu cihazdaki çalışma</span>
+        <span className="arx-center-storage">Yerel çalışma</span>
       </div>
       <div className="arx-center-actions">
         <Link className="arx-center-primary" href={hasProject ? thread.nextAction.route : "/proje-baslat"}>
@@ -117,10 +117,16 @@ export function SimpleProjectCenter() {
           <p>Bu işlem proje modüllerindeki mevcut çalışmayı kaldırır. Önce yedek indirmek isterseniz yukarıdaki “Proje yedeğini indir” düğmesini kullanın.</p>
         </div>
         <div className="arx-center-delete-actions">
-          <button type="button" onClick={removeFromDevice} disabled={deleteBusy}>Yalnız bu cihazdan sil</button>
-          <button type="button" className="danger" onClick={() => { void removeFromDeviceAndAccount(); }} disabled={deleteBusy}>
-            {deleteBusy ? "Siliniyor…" : "Cihazdan ve hesabımdan sil"}
-          </button>
+          <article>
+            <button type="button" onClick={removeLocalWorkingCopy} disabled={deleteBusy}>Bu tarayıcıdaki çalışma kaydını sil</button>
+            <small>Hesabınıza kaydedilmiş proje etkilenmez.</small>
+          </article>
+          <article>
+            <button type="button" className="danger" onClick={() => { void removeEverywhere(); }} disabled={deleteBusy}>
+              {deleteBusy ? "Siliniyor…" : "Projeyi her yerden sil"}
+            </button>
+            <small>Hem bu tarayıcıdaki çalışma hem de hesabınızdaki proje kaydı silinir.</small>
+          </article>
           <button type="button" className="cancel" onClick={() => setDeleteOpen(false)} disabled={deleteBusy}>Vazgeç</button>
         </div>
       </section> : null}
