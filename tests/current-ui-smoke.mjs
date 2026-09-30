@@ -270,3 +270,16 @@ test("fresh prototype databases recover the stable demo profile automatically", 
   assert.match(workspaceSource, /prototypeDemoProfileDefaults\(\)/);
   assert.match(workspaceSource, /ON CONFLICT\(email\) DO NOTHING/);
 });
+
+
+test("project roadmap labels readiness and user declarations truthfully", () => {
+  const startSource = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  const guidedSource = fs.readFileSync(new URL("../app/lib/guided-project.ts", import.meta.url), "utf8");
+
+  assert.match(startSource, /BAŞLANGIÇ VERİ HAZIRLIĞI/);
+  assert.match(startSource, /EKSİK \/ DOĞRULANACAK VERİLER VE BELGELER/);
+  assert.match(startSource, /Kullanıcı beyanı: ada\/parsel hazır/);
+  assert.match(guidedSource, /verificationItems/);
+  assert.match(guidedSource, /başlangıç formunda henüz girilmedi/);
+  assert.match(guidedSource, /status: parcelKnown \? "official-review" : "missing"/);
+});
