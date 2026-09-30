@@ -188,7 +188,7 @@ test("renders the V25 professional engineering application contracts", async () 
 
 test("renders the V26 federated architectural and engineering contracts", async () => {
   const routes = [
-    ["/dijital-proje-merkezi", ["Proje merkezi", "Projenize devam edin", "Proje JSON yükle"]],
+    ["/dijital-proje-merkezi", ["Proje Çalışma Alanı", "Projenize devam edin", "Proje JSON yükle"]],
     ["/mimari-program-studyosu", ["Mimari program", "Hedef alanı", "kavramsal plan şemasını"]],
     ["/muhendislik-koordinasyon", ["INTEGRATED COORDINATION ENGINE", "FEDERE MODEL KATMANLARI", "OTOMATİK KURAL SETİ"]],
     ["/tasarim-calismalari", ["MİMARİ PROGRAM", "Üst veriyi aktar", "Plan / program verisini aktar"]],
@@ -204,7 +204,7 @@ test("renders the V26 federated architectural and engineering contracts", async 
 
 test("renders the V27 premium customer journey contracts", async () => {
   const routes = [
-    ["/", ["Araçlar", "Yeni proje", "Proje merkezi"]],
+    ["/", ["Araçlar", "Yeni proje", "Proje Çalışma Alanı"]],
     ["/referanslar", ["PROJE ARŞİVİ", "Teknik kayıt standardı", "kaynaklı kayıt"]],
     ["/iletisim", ["teknik başlangıç kaydı", "PROJE ÖN DEĞERLENDİRME", "Proje Dosyalarını Yükle"]],
   ];
@@ -232,7 +232,7 @@ test("renders the V29 guided workflow and corrected module contracts", async () 
   const routes = [
     ["/yikim-karar-studyosu", ["TEK PROJE", "HESAP MOTORU ÖNERİSİ", "ÖNERİLEN İNCELEME", "Mesafe arttıkça komşu kütleler"]],
     ["/arsa-fizibilite-studyosu", ["TEK PROJE", "MEGSİS", "Resmî Parsel Sorgu’da doğrula"]],
-    ["/", ["Araçlar", "Yapı sistemi", "Proje merkezi"]],
+    ["/", ["Araçlar", "Yapı sistemi", "Proje Çalışma Alanı"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -288,7 +288,7 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
 test("renders the V38 guided project platform contract", async () => {
   const routes = [
     ["/proje-baslat", ["Yeni proje oluştur", "Proje bilgilerinizi adım adım girin", "bu cihazda taslak"]],
-    ["/dijital-proje-merkezi", ["Proje merkezi", "Yerel çalışma", "Ayrıntılı proje kontrolleri"]],
+    ["/dijital-proje-merkezi", ["Proje Çalışma Alanı", "Yerel çalışma", "Ayrıntılı proje kontrolleri"]],
     ["/", ["Yeni proje", "Arazi ve parsel", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
@@ -302,7 +302,7 @@ test("renders the V38 guided project platform contract", async () => {
 test("renders the V54 continuous parcel-to-structure contract and updated portrait", async () => {
   const routes = [
     ["/arsa-fizibilite-studyosu", ["VERİ DEVAMLILIĞI", "MİMARİ / PLAN"]],
-    ["/mimari-program-studyosu", ["Mimari program", "Proje merkezine dön"]],
+    ["/mimari-program-studyosu", ["Mimari program", "Proje Çalışma Alanına Dön"]],
     ["/tasarim-calismalari", ["VERİ DEVAMLILIĞI", "plan-editor"]],
   ];
   for (const [path, expectedValues] of routes) {
@@ -399,7 +399,7 @@ test("renders the V58 project control center and administrative fallback choices
 
 test("renders the V40 compact corporate and ARKEMX contracts", async () => {
   const routes = [
-    ["/", ["arx-simple-home", "Araçlar", "Proje merkezi"]],
+    ["/", ["arx-simple-home", "Araçlar", "Proje Çalışma Alanı"]],
     ["/kurumsal", ["MESLEKİ YAKLAŞIM", "Uygulama gerçekleriyle birlikte gelişen", "id=\"ozenc-ozturk\""]],
     ["/dokumanlar", ["id=\"bilgi-bankasi\"", "id=\"kaynak-3194-sayili-imar-kanunu\""]],
   ];
@@ -1109,7 +1109,7 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(setupGate, /Aktif projeye devam et/);
   assert.match(setupGate, /hasActiveProject/);
   assert.match(setupGate, /Object\.keys\(project\.modules\)\.length > 0/);
-  assert.doesNotMatch(setupGate, /Proje merkezine devam et/);
+  assert.doesNotMatch(setupGate, /Proje Çalışma Alanıne devam et/);
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
   const projectCenter = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
   assert.match(projectCenter, /Aktif projeyi sil/);
