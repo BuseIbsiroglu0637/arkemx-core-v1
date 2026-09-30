@@ -553,3 +553,11 @@ test("2D map warns when conceptual massing breaches parcel or setback pre-check"
   assert.ok(studio.includes("ÖN KONTROL UYARISI"));
   assert.ok(studio.includes('color: placementWarning ? "#e27b42" : "#ffffff"'));
 });
+
+
+test("north-relative rotation control supports negative angles", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('min="-180" max="180" step="5"'));
+  assert.ok(studio.includes("normalizeSignedRotation"));
+  assert.ok(studio.includes("setRotation(normalizeSignedRotation(saved.rotation))"));
+});
