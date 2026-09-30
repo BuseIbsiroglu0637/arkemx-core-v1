@@ -20,7 +20,8 @@ const CALLBACK_PATH = "/callback";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
-  const email = requestHeaders.get(USER_EMAIL_HEADER);
+  const emailHeader = requestHeaders.get(USER_EMAIL_HEADER);
+  const email = emailHeader?.trim().toLowerCase();
   if (!email) return null;
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
@@ -76,6 +77,10 @@ export function accountReturnPath(
   if (
     url.pathname === "/giris" ||
     url.pathname === "/hesap-baglantisi" ||
+    url.pathname === "/hesap-kurulum" ||
+    url.pathname === "/kayit" ||
+    url.pathname === "/uyelik" ||
+    url.pathname === "/uyelik/ayarlar" ||
     isReservedAuthPath(url.pathname)
   ) return fallback;
   return `${url.pathname}${url.search}${url.hash}`;
