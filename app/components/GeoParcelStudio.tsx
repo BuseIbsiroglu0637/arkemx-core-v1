@@ -350,7 +350,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [usage, setUsage] = useState("Sanayi / Depo");
   const [slope, setSlope] = useState(4);
   const [exaggeration, setExaggeration] = useState(1.5);
-  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({ ...DEFAULT_TERRAIN_LAYERS, basemap: true }));
+  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(() => ({
+    ...DEFAULT_TERRAIN_LAYERS,
+    basemap: true,
+    "building-mass": false,
+  }));
   const [requiredSetback, setRequiredSetback] = useState(5);
   const [maxCoverage, setMaxCoverage] = useState(40);
   const [maxFar, setMaxFar] = useState(1.2);
@@ -532,7 +536,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       }
       if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
       if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
-      if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
+      if (saved.terrain?.layers) setTerrainLayers({
+        ...normalizeTerrainLayers(saved.terrain.layers),
+        basemap: true,
+        "building-mass": false,
+      });
       if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
       if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
       setFileNotice(hasSavedBoundary
@@ -1104,6 +1112,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setParcel([]);
     setOfficialBoundaryEvidence(null);
     setShowTerrainMassing(false);
+    setTerrainLayers((current) => ({ ...current, "building-mass": false }));
     setParcelLookup("idle");
     setDrawEnabled(false);
     setShowConceptualOverlays(false);
@@ -1235,7 +1244,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const nextParcel = points.slice(0, 400);
       setParcel(nextParcel);
       setShowTerrainMassing(false);
-      setTerrainLayers((current) => ({ ...current, "parcel-boundary": true }));
+      setTerrainLayers((current) => ({ ...current, "parcel-boundary": true, "building-mass": false }));
       setLatitude(parcelCenter.lat.toFixed(7));
       setLongitude(parcelCenter.lng.toFixed(7));
       setProvince(String(properties.ilAd ?? province));
@@ -1699,6 +1708,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <button type="button" aria-pressed={showTerrainMassing} onClick={() => {
             setShowTerrainMassing((visible) => {
               const next = !visible;
+              setTerrainLayers((current) => ({ ...current, "building-mass": next }));
               setFileNotice(next
                 ? "Temsili ön kütle açıldı. Bu gösterim imar uygunluğu veya yerleşim onayı değildir."
                 : "Temsili ön kütle gizlendi; 3B görünüm yalnız arazi ve parsel verisini gösteriyor.");
