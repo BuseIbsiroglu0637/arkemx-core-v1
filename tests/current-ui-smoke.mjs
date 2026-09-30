@@ -37,7 +37,7 @@ test("local build renders the simplified, device-scoped project centre", async (
   const response = await render("/dijital-proje-merkezi");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<h1>Proje merkezi<\/h1>/);
+  assert.match(html, /<h1>Proje Çalışma Alanı<\/h1>/);
   assert.match(html, /Projenize devam edin/);
   assert.match(html, /Yerel çalışma/);
   assert.match(html, /Proje JSON yükle/);
