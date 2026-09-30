@@ -209,6 +209,7 @@ test("prototype demo session is visible to account diagnostics and account page"
   assert.equal(body.authenticated, true);
   assert.equal(body.identitySource, "prototype-demo");
   assert.equal(body.user.email, "demo@arkemx.local");
+  assert.equal(body.user.displayName, "Buse İbşiroğlu");
 
   const accountResponse = await render("/hesabim", cookie);
   assert.equal(accountResponse.status, 200);
@@ -256,4 +257,17 @@ test("guided drafts sync to the account and remain portable between preview orig
   assert.match(draftApi, /owner_email TEXT PRIMARY KEY/);
   assert.match(accountSource, /Devam eden taslak/);
   assert.match(accountSource, /href="\/proje-baslat"/);
+});
+
+
+test("fresh prototype databases recover the stable demo profile automatically", () => {
+  const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
+  const workspaceSource = fs.readFileSync(new URL("../app/api/customer-workspace/route.ts", import.meta.url), "utf8");
+
+  assert.match(authSource, /ARKEMX_PROTOTYPE_DEMO_NAME/);
+  assert.match(authSource, /Buse İbşiroğlu/);
+  assert.match(authSource, /ARKEMX_PROTOTYPE_DEMO_COMPANY/);
+  assert.match(workspaceSource, /identitySource === "prototype-demo"/);
+  assert.match(workspaceSource, /prototypeDemoProfileDefaults\(\)/);
+  assert.match(workspaceSource, /ON CONFLICT\(email\) DO NOTHING/);
 });
