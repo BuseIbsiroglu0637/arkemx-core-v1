@@ -12,7 +12,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ProjectStartPage() {
+type ProjectStartPageProps = {
+  searchParams?: Promise<{ view?: string | string[] }>;
+};
+
+export default async function ProjectStartPage({ searchParams }: ProjectStartPageProps) {
+  const params = await searchParams;
+  const rawView = Array.isArray(params?.view) ? params?.view[0] : params?.view;
+  const summaryMode = rawView === "summary";
+
   return (
     <main className="arx-simple-home arx-start-page">
       <div className="arx-simple-shell">
@@ -22,10 +30,10 @@ export default function ProjectStartPage() {
         </header>
         <div className="arx-start-intro">
           <span>PROJE / BAŞLANGIÇ</span>
-          <h1>Yeni proje oluştur</h1>
-          <p>Proje bilgilerinizi adım adım girin. Çalışmanız bu cihazda taslak olarak saklanır.</p>
+          <h1>{summaryMode ? "Proje başlangıç özeti" : "Yeni proje oluştur"}</h1>
+          <p>{summaryMode ? "Başlangıç kararlarını, yol haritasını ve doğrulama bekleyen verileri tekrar inceleyin." : "Proje bilgilerinizi adım adım girin. Çalışmanız bu cihazda taslak olarak saklanır."}</p>
         </div>
-        <ProjectStartStudio />
+        <ProjectStartStudio summaryMode={summaryMode} />
       </div>
     </main>
   );
