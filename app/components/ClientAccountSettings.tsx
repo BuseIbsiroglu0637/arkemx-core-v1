@@ -16,7 +16,7 @@ type WorkspaceActivity = {
 type WorkspaceData = {
   user: { displayName: string; email: string };
   profile: null | { displayName: string; company: string; phone: string; preferredLanguage: string };
-  projects: Array<{ id: string; name: string; phase: string; revision: string; status: string; updatedAt: string }>;
+  projects: Array<{ id: string; name: string; phase: string; revision: string; status: string; updatedAt: string; payload?: unknown }>;
   meetings: Array<{ id: string; projectId: string; subject: string; meetingAt: string; channel: string; status: string; notes: string }>;
   activities: WorkspaceActivity[];
 };
@@ -57,7 +57,7 @@ function summarizeActivities(activities: WorkspaceActivity[]) {
 }
 
 export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
-  const { project, thread } = useProjectKernel();
+  const { project, thread, importProject } = useProjectKernel();
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [draft, setDraft] = useState<GuidedDraftSummary | null>(null);
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
@@ -65,6 +65,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
   const hasActiveProject = Object.keys(project.modules).length > 0;
+  const meaningfulDraft = draft && ((draft.intake.name?.trim() ?? "").length >= 3 || draft.step > 0) ? draft : null;
 
   const load = async () => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
@@ -120,15 +121,30 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     void post({ action: "profile", ...profile }, "Profil bilgileriniz güncellendi.");
   };
 
-  const saveProject = () => void post({
-    action: "project",
-    id: project.id,
-    name: project.name,
-    phase: project.phase,
-    revision: project.revision,
-    payload: project,
-    expectedAccountUpdatedAt: data?.projects.find((item) => item.id === project.id)?.updatedAt ?? null,
-  }, "Aktif ARKEMX projesi hesabınıza kaydedildi.");
+  const saveProject = () => {
+    if (!hasActiveProject) {
+      setMessage("Kaydedilecek aktif proje bulunmuyor.");
+      return;
+    }
+    void post({
+      action: "project",
+      id: project.id,
+      name: project.name,
+      phase: project.phase,
+      revision: project.revision,
+      payload: project,
+      expectedAccountUpdatedAt: data?.projects.find((item) => item.id === project.id)?.updatedAt ?? null,
+    }, "Aktif ARKEMX projesi hesabınıza kaydedildi.");
+  };
+
+  const openAccountProject = (item: WorkspaceData["projects"][number]) => {
+    if (!item.payload || !importProject(item.payload)) {
+      setMessage("Hesaptaki proje çalışma alanına yüklenemedi.");
+      return;
+    }
+    setMessage(`${item.name} çalışma alanına yüklendi.`);
+    window.location.assign("/dijital-proje-merkezi");
+  };
 
   const saveMeeting = (event: FormEvent) => {
     event.preventDefault();
@@ -177,16 +193,16 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         <section className="arx-account-card" aria-labelledby="arx-account-projects-title">
           <header>
             <div><span>PROJELER</span><h3 id="arx-account-projects-title">Hesaba bağlı projeler</h3></div>
-            <button type="button" onClick={saveProject}>Aktif projeyi kaydet</button>
+            <button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet</button>
           </header>
           <div className="arx-account-list">
-            {draft ? <article className="arx-account-draft">
-              <div><b>{draft.intake.name?.trim() || "Adsız proje taslağı"}</b><small>Devam eden taslak · Adım {Math.min(5, Math.max(1, draft.step + 1))}/5</small><time>{formatProjectDateTime(draft.savedAt)}</time></div>
+            {meaningfulDraft ? <article className="arx-account-draft">
+              <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Devam eden taslak · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
               <Link href="/proje-baslat">Devam et</Link>
             </article> : null}
             {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
-              <button type="button" onClick={() => remove("project", item.id)}>Kaldır</button>
+              <span className="arx-account-project-actions"><button type="button" onClick={() => openAccountProject(item)}>Aç</button><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></span>
             </article>)}
             {data && data.projects.length === 0 ? <p>Henüz hesaba kaydedilmiş proje yok.</p> : null}
             {!data ? <p>Hesap kayıtları yükleniyor…</p> : null}
@@ -233,7 +249,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       <Link href="/musteri-proje-portali">Tüm proje görünümünü açın ↗</Link>
     </section>
     <div className="customer-workspace-grid">
-      <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={saveProject}>Aktif projeyi kaydet ↗</button></div>
+      <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet ↗</button></div>
         <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></article>) : <p>Henüz hesaba kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
         <Link className="customer-inline-link" href="/proje-baslat">Yeni proje başlatın →</Link>
       </section>
