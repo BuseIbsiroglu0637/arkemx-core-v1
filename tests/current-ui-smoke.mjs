@@ -570,3 +570,17 @@ test("manual placement uses edge-specific front side rear setbacks", () => {
   assert.ok(studio.includes("Ön/yan/arka çekmeler kenar bazında ayrı kontrol edilir"));
   assert.ok(studio.includes("en kritik"));
 });
+
+
+test("live massing precheck surfaces TAKS KAKS and Hmax violations", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const taksExceeded"));
+  assert.ok(studio.includes("const kaksExceeded"));
+  assert.ok(studio.includes("const hmaxExceeded"));
+  assert.ok(studio.includes("İmar ön kontrolü uyarısı."));
+  assert.ok(studio.includes("TAKS ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("KAKS ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("HMAX ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("İmar oranı ön kontrolü aşılıyor."));
+  assert.ok(studio.includes("placementPrecheckWarning"));
+});
