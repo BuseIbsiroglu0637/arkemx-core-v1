@@ -243,24 +243,31 @@ test("renders the V29 guided workflow and corrected module contracts", async () 
 });
 
 test("renders the V32 continuous project handoff on every design stage", async () => {
-  const routes = [
+  const legacyStages = [
     "/arsa-fizibilite-studyosu",
     "/mimari-program-studyosu",
     "/tasarim-calismalari",
     "/yapi-sistemi-karsilastirma",
     "/muhendislik-koordinasyon",
     "/proje-os",
-    "/dijital-proje-merkezi",
   ];
-  for (const path of routes) {
-    const response = await render(path);
-    assert.equal(response.status, 200, path);
+  for (const route of legacyStages) {
+    const response = await render(route);
+    assert.equal(response.status, 200, route);
     const html = await response.text();
-    assert.match(html, /Her modül önceki adımın verisini kullanır/i, path);
-    assert.match(html, /Aktarılan proje verileri/i, path);
-    assert.match(html, /href="\/arsa-fizibilite-studyosu"/i, `${path}: parcel route`);
-    assert.match(html, /href="\/mimari-program-studyosu"/i, `${path}: architecture route`);
+    assert.match(html, /Her modül önceki adımın verisini kullanır/i, route);
+    assert.match(html, /Aktarılan proje verileri/i, route);
+    assert.match(html, /href="\/arsa-fizibilite-studyosu"/i, `${route}: parcel route`);
+    assert.match(html, /href="\/mimari-program-studyosu"/i, `${route}: architecture route`);
   }
+
+  const centerResponse = await render("/dijital-proje-merkezi");
+  assert.equal(centerResponse.status, 200);
+  const centerHtml = await centerResponse.text();
+  assert.match(centerHtml, /data-testid="digital-project-hub"/);
+  assert.match(centerHtml, /Proje kontrol özeti/);
+  assert.match(centerHtml, /Proje adımları/);
+  assert.match(centerHtml, /href="\/mimari-program-studyosu"/i);
 });
 
 test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", async () => {
@@ -1320,8 +1327,9 @@ test("V106 gives every module one traceable project core and source-aware field 
   const response = await render("/dijital-proje-merkezi");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /V106 \/ TEK PROJE VERİSİ/);
-  assert.match(html, /Alan bazlı kaynak ve güven durumu/);
+  assert.match(html, /data-testid="digital-project-hub"/);
+  assert.match(html, /Proje kontrol özeti/);
+  assert.match(html, /Proje adımları/);
 
   const core = fs.readFileSync(new URL("../app/lib/project-core.ts", import.meta.url), "utf8");
   for (const expected of [
