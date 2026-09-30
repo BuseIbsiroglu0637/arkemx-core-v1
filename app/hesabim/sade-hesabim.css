@@ -75,6 +75,13 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
 .arx-account-list b { display:block; font-size:10px; }
 .arx-account-list small,.arx-account-list time { display:block; margin-top:2px; color:#798b93; font-size:8px; }
 .arx-account-list p { color:#70828a; font-size:9px; line-height:1.5; }
+.arx-account-list .arx-account-draft {
+  margin:4px 0 2px; padding:10px; border:1px solid #d9e4e7; border-radius:6px; background:#f7fafb;
+}
+.arx-account-draft > a {
+  display:inline-flex; align-items:center; min-height:31px; padding:6px 9px; border-radius:5px;
+  background:#244756; color:#fff; font-size:9px; font-weight:750;
+}
 .arx-account-card > footer { padding:11px 16px; border-top:1px solid #e7edef; }
 .arx-account-card > footer a { color:#355b69; font-size:9px; font-weight:720; }
 
