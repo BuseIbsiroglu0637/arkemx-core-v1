@@ -73,20 +73,6 @@ type GeoDraftEnvelope = {
 
 const geoDraftKey = (projectId: string) => `arkemx-geo-draft:${projectId}`;
 
-function geoStateScore(value: GeoParcelSavedState | undefined) {
-  if (!value) return -1;
-  let score = 0;
-  if (value.parcel?.length && value.parcel.length >= 3) score += 100;
-  if (value.previewParcel?.length && value.previewParcel.length >= 3) score += 40;
-  if (value.neighborhood) score += 20;
-  if (value.block) score += 15;
-  if (value.parcelNo) score += 15;
-  if (value.zoning) score += 10;
-  if (typeof value.buildingWidth === "number") score += 5;
-  if (typeof value.buildingDepth === "number") score += 5;
-  return score;
-}
-
 
 const normalizeSignedRotation = (value: number) => {
   if (!Number.isFinite(value)) return 0;
