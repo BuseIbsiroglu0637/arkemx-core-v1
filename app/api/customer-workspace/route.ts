@@ -67,7 +67,7 @@ export async function GET() {
       db.prepare("SELECT email, display_name AS displayName, company, phone, preferred_language AS preferredLanguage, created_at AS createdAt, updated_at AS updatedAt FROM customer_profiles WHERE email = ?").bind(user.email).first(),
       db.prepare("SELECT id, name, phase, revision, status, payload, updated_at AS updatedAt FROM customer_projects WHERE owner_email = ? ORDER BY updated_at DESC LIMIT 24").bind(user.email).all(),
       db.prepare("SELECT id, project_id AS projectId, subject, meeting_at AS meetingAt, channel, status, notes, created_at AS createdAt FROM customer_meetings WHERE owner_email = ? ORDER BY meeting_at DESC LIMIT 40").bind(user.email).all(),
-      db.prepare("SELECT id, event_type AS eventType, title, detail, created_at AS createdAt FROM customer_activities WHERE owner_email = ? ORDER BY created_at DESC LIMIT 50").bind(user.email).all(),
+      db.prepare("SELECT id, event_type AS eventType, CASE WHEN event_type = 'project' AND title = 'Proje buluta kaydedildi' THEN 'Proje hesaba kaydedildi' ELSE title END AS title, detail, created_at AS createdAt FROM customer_activities WHERE owner_email = ? ORDER BY created_at DESC LIMIT 50").bind(user.email).all(),
     ]);
     const safeProjects = projects.results.map((value) => {
       const project = value as Record<string, unknown>;
