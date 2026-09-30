@@ -29,7 +29,7 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/bim-koordinasyon"/);
   assert.match(html, /href="\/proje-takibi"/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
-  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
@@ -42,7 +42,7 @@ test("local build renders the simplified, device-scoped project centre", async (
   assert.match(html, /Yerel çalışma/);
   assert.match(html, /Proje JSON yükle/);
   assert.match(html, /Proje yedeğini indir/);
-  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /Ayrıntılı proje kontrolleri/);
   assert.match(html, /Proje kontrol özeti/);
   assert.match(html, /Proje adımları/);
@@ -153,8 +153,24 @@ test("anonymous focused account page renders a stable sign-in handoff", async ()
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<h1 id="arx-account-login-title">Oturum gerekli<\/h1>/);
-  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
+});
+
+test("authenticated prototype headers open the account directly", async () => {
+  const cookie = { cookie: "arkemx_prototype_session=1" };
+
+  const homeResponse = await render("/", cookie);
+  assert.equal(homeResponse.status, 200);
+  const homeHtml = await homeResponse.text();
+  assert.match(homeHtml, /href="\/hesabim">Hesabım<\/a>/);
+  assert.doesNotMatch(homeHtml, /href="\/giris\?return_to=%2Fhesabim">Hesabım<\/a>/);
+
+  const centerResponse = await render("/dijital-proje-merkezi", cookie);
+  assert.equal(centerResponse.status, 200);
+  const centerHtml = await centerResponse.text();
+  assert.match(centerHtml, /href="\/hesabim">Hesabım<\/a>/);
+  assert.doesNotMatch(centerHtml, /href="\/giris\?return_to=%2Fhesabim">Hesabım<\/a>/);
 });
 
 test("local account session diagnostic reports unauthenticated state without D1", async () => {
