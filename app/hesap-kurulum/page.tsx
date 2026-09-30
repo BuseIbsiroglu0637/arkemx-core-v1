@@ -65,7 +65,7 @@ export default async function AccountSetupPage({ searchParams }: SetupPageProps)
 
       <footer className="arx-auth-footer">
         <span>ARKEMX hesap kurulumu</span>
-        <small>Kurulum tamamlandığında {returnTo === "/dijital-proje-merkezi" ? "Proje merkezine" : "seçtiğiniz çalışma alanına"} geçilir.</small>
+        <small>Kurulum tamamlandığında {returnTo === "/dijital-proje-merkezi" ? "Proje Çalışma Alanına" : "seçtiğiniz çalışma alanına"} geçilir.</small>
       </footer>
     </div>
   </main>;
