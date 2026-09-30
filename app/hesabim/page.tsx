@@ -24,7 +24,7 @@ export default async function AccountPage() {
           <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
           <nav className="arx-workspace-nav" aria-label="Hesap bağlantıları">
             <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
-            <Link href="/">Tüm araçlar</Link>
+            <Link href="/araclar">Tüm araçlar</Link>
           </nav>
         </header>
         <section className="arx-account-login-required" aria-labelledby="arx-account-login-title">
@@ -43,7 +43,7 @@ export default async function AccountPage() {
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-workspace-nav" aria-label="Hesap bağlantıları">
           <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
-          <Link href="/">Tüm araçlar</Link>
+          <Link href="/araclar">Tüm araçlar</Link>
         </nav>
       </header>
 
