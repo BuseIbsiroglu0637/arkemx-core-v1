@@ -531,6 +531,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       }
 
       const hasSavedBoundary = Boolean(saved.parcel && saved.parcel.length >= 3);
+      const savedPreviewParcel = saved.previewParcel ?? [];
+      const hasSavedPreviewBoundary = savedPreviewParcel.length >= 3;
       const restoredOfficialEvidence = saved.officialBoundaryEvidence ?? (
         hasSavedBoundary && saved.parcelRecord?.evidence.sourceKind === "tkgm-open-service"
           ? {
@@ -591,31 +593,29 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setDataStatus("Kullanıcı beyanı · resmî parsel doğrulaması bekleniyor");
       }
 
-      if (hasSavedBoundary) {
-        if (saved.province) setProvince(saved.province);
-        if (saved.provinceId) setProvinceId(saved.provinceId);
-        if (saved.district) setDistrict(saved.district);
-        if (saved.districtId) setDistrictId(saved.districtId);
-        if (saved.neighborhood) setNeighborhood(saved.neighborhood);
-        if (saved.neighborhoodId) setNeighborhoodId(saved.neighborhoodId);
-        if (saved.block) setBlock(saved.block);
-        if (saved.parcelNo) setParcelNo(saved.parcelNo);
-        setParcel(saved.parcel ?? []);
-        if (saved.parcel?.length) {
-          const savedCenter = geoCentroid(saved.parcel);
-          setLatitude(savedCenter.lat.toFixed(7));
-          setLongitude(savedCenter.lng.toFixed(7));
-          pendingCenterRef.current = savedCenter;
-        }
-      } else {
-        setProvince(declared.province);
-        setDistrict(declared.district);
-        setProvinceId("");
-        setDistrictId("");
-        setNeighborhood("");
-        setNeighborhoodId("");
-        setBlock("");
-        setParcelNo("");
+      // Identity fields are user work too; restore them even before an official
+      // parcel boundary has been found. Previously they were erased unless a
+      // project-eligible polygon already existed.
+      setProvince(saved.province || declared.province);
+      setDistrict(saved.district || declared.district);
+      setProvinceId(saved.provinceId ?? "");
+      setDistrictId(saved.districtId ?? "");
+      setNeighborhood(saved.neighborhood ?? "");
+      setNeighborhoodId(saved.neighborhoodId ?? "");
+      setBlock(saved.block ?? "");
+      setParcelNo(saved.parcelNo ?? "");
+
+      const restoredParcel = hasSavedBoundary
+        ? (saved.parcel ?? [])
+        : hasSavedPreviewBoundary
+          ? savedPreviewParcel
+          : [];
+      setParcel(restoredParcel);
+      if (restoredParcel.length) {
+        const savedCenter = geoCentroid(restoredParcel);
+        setLatitude(savedCenter.lat.toFixed(7));
+        setLongitude(savedCenter.lng.toFixed(7));
+        pendingCenterRef.current = savedCenter;
       }
 
       if (typeof saved.buildingWidth === "number") setBuildingWidth(normalizeMassingDimension(saved.buildingWidth));
@@ -628,7 +628,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (typeof saved.floors === "number") setFloors(saved.floors);
       if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
       if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
-      if (hasSavedBoundary && saved.dataStatus) setDataStatus(saved.dataStatus);
+      if (saved.dataStatus) setDataStatus(saved.dataStatus);
       if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
       if (saved.zoning) {
         const looksLikeLegacyPlaceholder =
