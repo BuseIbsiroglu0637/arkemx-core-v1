@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { SimpleProjectCenter } from "../components/SimpleProjectCenter";
+import { AccountHeaderLink } from "../components/AccountHeaderLink";
 import "../sade-arac-paneli.css";
 import "./sade-proje-merkezi.css";
 
@@ -17,7 +18,7 @@ export default function DigitalProjectCenterPage() {
     <div className="arx-simple-shell">
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <nav className="arx-simple-head-actions" aria-label="Proje merkezi bağlantıları"><Link href="/" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link><a href="/hesabim">Hesap</a></nav>
+        <nav className="arx-simple-head-actions" aria-label="Proje merkezi bağlantıları"><Link href="/" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link><AccountHeaderLink /></nav>
       </header>
       <div className="arx-center-intro">
         <span>ÇALIŞMA ALANI</span>
