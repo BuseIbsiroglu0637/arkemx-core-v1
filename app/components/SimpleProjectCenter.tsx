@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   ArrowRight, ClipboardList, Download, DraftingCompass,
-  FileUp, GitMerge, Layers3, ShieldAlert, Trash2, Wrench,
+  FileUp, GitMerge, Layers3, ShieldAlert, Trash2, Wrench, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
 import { useProjectKernel } from "./ProjectKernel";
@@ -127,7 +127,7 @@ export function SimpleProjectCenter() {
             </button>
             <small>Hem bu tarayıcıdaki çalışma hem de hesabınızdaki proje kaydı silinir.</small>
           </article>
-          <button type="button" className="cancel" onClick={() => setDeleteOpen(false)} disabled={deleteBusy}>Vazgeç</button>
+          <button type="button" className="cancel icon-only" onClick={() => setDeleteOpen(false)} disabled={deleteBusy} aria-label="Silme panelini kapat" title="Kapat"><X size={17} aria-hidden="true" /></button>
         </div>
       </section> : null}
       {notice && <p className="arx-center-notice" role="status" aria-live="polite">{notice}</p>}
