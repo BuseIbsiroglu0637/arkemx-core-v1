@@ -381,3 +381,28 @@ test("every guided project stage exposes a previous-step action", () => {
   assert.match(kernelSource, /previousJourneyStep/);
   assert.match(kernelSource, /← Önceki adım/);
 });
+
+
+test("parcel workspace starts clean, inherits project location and updates device location dynamically", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const geocode = fs.readFileSync(new URL("../app/api/geocode/route.ts", import.meta.url), "utf8");
+
+  assert.match(studio, /useState<GeoPoint\[\]>\(\[\]\)/);
+  assert.doesNotMatch(studio, /useState<GeoPoint\[\]>\(\(\) => sampleParcel\(defaultCenter\)\)/);
+  assert.match(studio, /parseDeclaredLocation/);
+  assert.match(studio, /Başlangıç konumu \/ kullanıcı beyanı/);
+  assert.match(studio, /fetchGeocode\(\{ q: declaredLocation \}\)/);
+  assert.match(studio, /fetchGeocode\(\{ lat: point\.lat, lng: point\.lng \}\)/);
+  assert.match(studio, /setProvince\(result\.province \?\? ""\)/);
+  assert.match(studio, /setDistrict\(result\.district \?\? ""\)/);
+  assert.match(studio, /Ada \/ parsel seçimi bekleniyor/);
+  assert.match(studio, /disabled=\{!parcel\.length\}/);
+  assert.match(studio, /!simple && <button className="geo-wide-action" onClick=\{loadSample\}/);
+  assert.doesNotMatch(studio, /normalizeAdministrativeName\("Sakarya"\)/);
+
+  assert.match(kernel, /const locationParts = intake\.location\.includes\("\/"\)/);
+  assert.match(geocode, /nominatim\.openstreetmap\.org\/search/);
+  assert.match(geocode, /nominatim\.openstreetmap\.org\/reverse/);
+  assert.match(geocode, /countrycodes/);
+});
