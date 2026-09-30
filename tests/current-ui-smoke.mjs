@@ -297,3 +297,19 @@ test("active projects do not reopen as a blank new-project form", () => {
   assert.match(graphSource, /\/arsa-fizibilite-studyosu#geo-studyo/);
   assert.match(coreSource, /bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"/);
 });
+
+
+test("completed projects are saved before their recovery draft is cleared", () => {
+  const startSource = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+
+  assert.match(startSource, /draftHasMeaningfulInput/);
+  assert.match(startSource, /persistProjectToAccount/);
+  assert.match(startSource, /await clearCompletedDraft\(\)/);
+  assert.match(startSource, /if \(!completed \|\| !project\.id/);
+  assert.doesNotMatch(startSource, /const finish = \(\) => \{[\s\S]{0,900}localStorage\.removeItem\(DRAFT_KEY\)/);
+  assert.match(accountSource, /meaningfulDraft/);
+  assert.match(accountSource, /openAccountProject/);
+  assert.match(accountSource, /importProject\(item\.payload\)/);
+  assert.match(accountSource, />Aç<\/button>/);
+});
