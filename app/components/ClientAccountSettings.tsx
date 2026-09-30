@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { formatProjectDateTime } from "../lib/date-format";
 
@@ -63,8 +63,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
   const [profile, setProfile] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
+  const syncingProjectRef = useRef("");
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
   const hasActiveProject = Object.keys(project.modules).length > 0;
+  const accountHasActiveProject = Boolean(data?.projects.some((item) => item.id === project.id));
   const meaningfulDraft = draft && ((draft.intake.name?.trim() ?? "").length >= 3 || draft.step > 0) ? draft : null;
 
   const load = async () => {
@@ -97,6 +99,38 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!data || !hasActiveProject || !project.id || accountHasActiveProject) return;
+    if (syncingProjectRef.current === project.id) return;
+    syncingProjectRef.current = project.id;
+    setMessage("Aktif proje hesabınızla eşitleniyor…");
+    void fetch("/api/customer-workspace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "project",
+        id: project.id,
+        name: project.name,
+        phase: project.phase,
+        revision: project.revision,
+        payload: project,
+        expectedAccountUpdatedAt: null,
+      }),
+    }).then(async (response) => {
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) {
+        setMessage(body.error || "Aktif proje hesaba otomatik kaydedilemedi.");
+        return;
+      }
+      setMessage("Aktif proje hesabınıza otomatik kaydedildi.");
+      await load();
+    }).catch(() => {
+      setMessage("Aktif proje hesaba otomatik kaydedilemedi.");
+    }).finally(() => {
+      syncingProjectRef.current = "";
+    });
+  }, [accountHasActiveProject, data, hasActiveProject, project.id, project.name, project.phase, project.revision, project.updatedAt]);
 
   const post = async (payload: Record<string, unknown>, success: string) => {
     setMessage("Kaydediliyor…");
@@ -196,6 +230,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             <button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet</button>
           </header>
           <div className="arx-account-list">
+            {hasActiveProject && !accountHasActiveProject ? <article className="arx-account-local-project">
+              <div><b>{project.name}</b><small>{project.id} · {project.revision} · Yerel aktif proje</small><time>Hesap kaydı otomatik eşitleniyor…</time></div>
+              <button type="button" onClick={saveProject}>Şimdi kaydet</button>
+            </article> : null}
             {meaningfulDraft ? <article className="arx-account-draft">
               <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Devam eden taslak · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
               <Link href="/proje-baslat">Devam et</Link>
