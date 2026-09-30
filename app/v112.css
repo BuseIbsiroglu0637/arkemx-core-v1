@@ -223,3 +223,13 @@
   .v112-massing-options { padding: 8px; }
   .v112-massing-options article { padding: 11px; }
 }
+
+
+.v112-unverified-note {
+  margin: 0;
+  padding: 10px 14px;
+  color: #f0b18e;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  background: rgb(185 102 54 / 10%);
+  font: 650 8px/1.5 var(--font-manrope);
+}
