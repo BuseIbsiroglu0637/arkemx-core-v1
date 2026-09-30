@@ -132,7 +132,7 @@ export function ClientProjectPortal({
 
   const saveProjectToAccount = async () => {
     if (loadState === "signed-out") {
-      window.location.assign("/giris");
+      window.location.assign("/giris?return_to=%2Fmusteri-proje-portali");
       return;
     }
     setRecordMessage("Hesap kaydı güncelleniyor…");
@@ -292,7 +292,7 @@ export function ClientProjectPortal({
         {recordState.state === "loading" && <div className="v108-record-skeleton" aria-label="Yükleniyor"><i></i><i></i></div>}
         {recordState.state === "empty" && <Link href="/proje-baslat">İlk projenizi başlatın <span>→</span></Link>}
         {recordState.state === "device-only" && (loadState === "signed-out"
-          ? <Link href="/giris">Hesabıma giriş yap <span>→</span></Link>
+          ? <Link href="/giris?return_to=%2Fmusteri-proje-portali">Hesabıma giriş yap <span>→</span></Link>
           : <button type="button" onClick={() => { void saveProjectToAccount(); }}>Hesabıma kaydet <span>→</span></button>)}
         {recordState.state === "aligned" && <button type="button" onClick={() => { void saveProjectToAccount(); }}>Hesap kaydını güncelle <span>↻</span></button>}
         {recordState.state === "account-only" && recordState.accountProjectCount > 0 && <button type="button" onClick={() => setView("project")}>Hesap projelerini göster <span>→</span></button>}
@@ -430,7 +430,7 @@ export function ClientProjectPortal({
 
     <footer className="v108-portal-footer">
       <p><b>Veri sınırı:</b> Resmî veri, kullanıcı beyanı ve ön değerlendirme birbirine karıştırılmaz.</p>
-      <div><Link href="/teknik-altyapi">Teknik altyapı</Link><Link href="/dokumanlar">Bilgi bankası</Link><Link href="/musteri-proje-portali/teknik-oda">Teknik proje odası</Link>{account && <Link href="/uyelik/ayarlar">Hesap ayarları</Link>}</div>
+      <div><Link href="/teknik-altyapi">Teknik altyapı</Link><Link href="/dokumanlar">Bilgi bankası</Link><Link href="/musteri-proje-portali/teknik-oda">Teknik proje odası</Link>{account && <Link href="/hesabim">Hesabım</Link>}</div>
       {account && <small>{account.displayName} · {account.email}</small>}
     </footer>
   </div>;
