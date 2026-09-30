@@ -39,7 +39,7 @@ test("local build renders the simplified, device-scoped project centre", async (
   const html = await response.text();
   assert.match(html, /<h1>Proje merkezi<\/h1>/);
   assert.match(html, /Projenize devam edin/);
-  assert.match(html, /Bu cihazdaki çalışma/);
+  assert.match(html, /Yerel çalışma/);
   assert.match(html, /Proje JSON yükle/);
   assert.match(html, /Proje yedeğini indir/);
   assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
