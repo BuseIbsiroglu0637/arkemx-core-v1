@@ -1079,8 +1079,8 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(html, /ARKEMX’e giriş/);
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
-  assert.doesNotMatch(html, /name="return_to"/);
-  assert.match(html, /href="\/hesap-kurulum\?entry=first-use"/);
+  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
+  assert.match(html, /href="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon&amp;entry=first-use"/);
   assert.doesNotMatch(html, /ChatGPT/i);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 
