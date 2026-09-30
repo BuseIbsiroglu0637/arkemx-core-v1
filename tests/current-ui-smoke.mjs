@@ -332,3 +332,13 @@ test("parcel workspace can return to the persistent project start summary", () =
   assert.match(startStudio, /summaryReady/);
   assert.match(startStudio, /if \(completed \|\| summaryReady\)/);
 });
+
+
+test("account automatically reconciles an active local project missing from account storage", () => {
+  const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.match(accountSource, /accountHasActiveProject/);
+  assert.match(accountSource, /Aktif proje hesabınızla eşitleniyor/);
+  assert.match(accountSource, /expectedAccountUpdatedAt: null/);
+  assert.match(accountSource, /arx-account-local-project/);
+  assert.match(accountSource, /Şimdi kaydet/);
+});
