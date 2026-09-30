@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile } from "../lib/engineering";
 import {
   deriveGuidedProjectRoadmap,
@@ -146,6 +146,7 @@ export function ProjectStartStudio() {
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [creatingNewProject, setCreatingNewProject] = useState(false);
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
+  const autoSavedProjectRef = useRef("");
 
   const update = <K extends keyof ProjectIntake>(key: K, value: ProjectIntake[K]) => setIntake((current) => ({ ...current, [key]: value }));
   const updateNumericDraft = (key: "targetArea" | "floors" | "floorHeight", rawValue: string, min: number, max: number) => {
@@ -179,6 +180,7 @@ export function ProjectStartStudio() {
     ...roadmap.missingDocuments.map((item) => `${item} — eksik veya doğrulanacak.`),
   ]));
   const hasActiveProject = thread.metrics.activeCount > 0;
+  const draftHasMeaningfulInput = step > 0 || intake.name.trim().length >= 3 || intake.location.trim().length >= 2;
 
   useEffect(() => {
     let cancelled = false;
@@ -231,7 +233,7 @@ export function ProjectStartStudio() {
   }, []);
 
   useEffect(() => {
-    if (!draftReady || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
+    if (!draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
     const timer = window.setTimeout(() => {
       const draft: GuidedProjectDraft = {
         schema: "ARKEM-GUIDED-DRAFT/1.0",
@@ -253,7 +255,7 @@ export function ProjectStartStudio() {
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [completed, creatingNewProject, draftReady, hasActiveProject, intake, restoredDraft, step]);
+  }, [completed, creatingNewProject, draftHasMeaningfulInput, draftReady, hasActiveProject, intake, restoredDraft, step]);
 
   const exportDraft = () => {
     const draft: GuidedProjectDraft = {
@@ -304,20 +306,26 @@ export function ProjectStartStudio() {
 
   const finish = () => {
     if (!canContinue) return;
+    setCloudState("saving");
     startProject(intake);
     setCompleted(true);
-    setNotice(`${roadmap.nextAction.title}. Brief, belge hazırlığı ve kişisel yol haritası aynı proje kimliğine kaydedildi.`);
+    setNotice(`${roadmap.nextAction.title}. Proje çekirdeği oluşturuldu; hesap kaydı güvenli biçimde tamamlanıyor.`);
+  };
+
+  const clearCompletedDraft = async () => {
     try {
       window.localStorage.removeItem(DRAFT_KEY);
     } catch {
-      // Project kernel already holds the completed intake.
+      // The account copy is authoritative after a successful project save.
     }
-    void fetch("/api/project-draft", { method: "DELETE" }).catch(() => {
-      // Completed project remains in the project kernel even if account cleanup is offline.
-    });
+    try {
+      await fetch("/api/project-draft", { method: "DELETE" });
+    } catch {
+      // A stale draft is preferable to losing the completed project.
+    }
   };
 
-  const saveToAccount = async () => {
+  const persistProjectToAccount = async () => {
     setCloudState("saving");
     try {
       const response = await fetch("/api/customer-workspace", {
@@ -333,13 +341,36 @@ export function ProjectStartStudio() {
           expectedAccountUpdatedAt: null,
         }),
       });
-      if (response.status === 401) return setCloudState("login");
-      if (!response.ok) return setCloudState("error");
+      if (response.status === 401) {
+        setCloudState("login");
+        return false;
+      }
+      if (!response.ok) {
+        setCloudState("error");
+        return false;
+      }
       setCloudState("saved");
+      await clearCompletedDraft();
+      setNotice(`${roadmap.nextAction.title}. Proje çekirdeği ve hesap kaydı tamamlandı.`);
+      return true;
     } catch {
       setCloudState("error");
+      return false;
     }
   };
+
+  const saveToAccount = () => {
+    void persistProjectToAccount();
+  };
+
+  useEffect(() => {
+    if (!completed || !project.id || project.name !== intake.name.trim() || thread.metrics.activeCount === 0) return;
+    if (autoSavedProjectRef.current === project.id) return;
+    autoSavedProjectRef.current = project.id;
+    void persistProjectToAccount().then((saved) => {
+      if (!saved) autoSavedProjectRef.current = "";
+    });
+  }, [completed, project.id, project.name, project.updatedAt, thread.metrics.activeCount]);
 
   const exportBrief = () => downloadTextFile(
     `${project.id || "arkem"}-proje-briefi.json`,
