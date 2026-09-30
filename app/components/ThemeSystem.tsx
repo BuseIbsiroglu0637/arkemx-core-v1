@@ -12,7 +12,7 @@ function applyTheme(theme: ArkemTheme) {
 
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) {
-    themeColor.setAttribute("content", theme === "dark" ? "#061a2b" : "#f8f9fa");
+    themeColor.setAttribute("content", theme === "dark" ? "#000000" : "#f8f9fa");
   }
 }
 
