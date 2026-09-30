@@ -445,3 +445,16 @@ test("TKGM parcel boundaries stay read-only until an editable copy is created", 
   assert.match(studio, /setOfficialBoundaryEvidence\(\{/);
   assert.match(studio, /officialBoundaryEvidence,/);
 });
+
+
+test("3D terrain opens without massing and labels preliminary calculations", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const viewer = fs.readFileSync(new URL("../app/components/GeoTerrainViewer.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("showTerrainMassing"));
+  assert.ok(studio.includes("Temsili kütleyi göster"));
+  assert.ok(studio.includes("Temsili Ön Kütle"));
+  assert.ok(studio.includes("\"building-mass\": showTerrainMassing"));
+  assert.ok(viewer.includes("Temsili Ön Kütle"));
+  assert.ok(viewer.includes("Parametrik ön hesap"));
+  assert.ok(viewer.includes("Ölçülmüş veri değildir"));
+});
