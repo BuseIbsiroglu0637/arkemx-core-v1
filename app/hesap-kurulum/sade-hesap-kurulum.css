@@ -183,3 +183,46 @@
   .arx-setup-card .account-form-grid { grid-template-columns:1fr; }
   .arx-setup-card .account-form-grid label { grid-column:auto!important; }
 }
+
+
+.arx-setup-gate {
+  display:grid;
+  gap:8px;
+  padding:4px 0;
+}
+.arx-setup-gate > span {
+  color:#a65d36;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-setup-gate h2 {
+  margin:0;
+  color:#243e4a;
+  font-size:20px;
+  letter-spacing:-.025em;
+}
+.arx-setup-gate p {
+  margin:0;
+  color:#70828a;
+  font-size:10px;
+  line-height:1.55;
+}
+.arx-setup-gate button {
+  justify-self:start;
+  min-height:38px;
+  margin-top:7px;
+  padding:8px 11px;
+  border:1px solid #244756;
+  border-radius:6px;
+  background:#244756;
+  color:#fff;
+  font:700 10px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-setup-gate.is-error {
+  padding:12px;
+  border:1px solid #ecd4ce;
+  border-radius:7px;
+  background:#fff7f5;
+}
