@@ -440,6 +440,54 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     geometry: parcel,
     source: parcelSource,
   }), [block, district, neighborhood, parcel, parcelNo, parcelSource, province]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const key = "arkemx-project-debug-v1";
+      const current = JSON.parse(window.sessionStorage.getItem(key) || "[]") as Array<Record<string, unknown>>;
+      current.push({
+        at: new Date().toISOString(),
+        event: "geo-local-state",
+        projectId: project.id,
+        moduleCount: Object.keys(project.modules).length,
+        geo: {
+          province,
+          district,
+          neighborhood,
+          neighborhoodId,
+          block,
+          parcelNo,
+          parcelVertices: parcel.length,
+          buildingWidth,
+          buildingDepth,
+          floors,
+          floorHeight,
+        },
+        detail: `source=${administrativeSource}; lookup=${parcelLookup}`,
+      });
+      window.sessionStorage.setItem(key, JSON.stringify(current.slice(-80)));
+    } catch {
+      // Debug tracing must never interfere with the parcel workflow.
+    }
+  }, [
+    administrativeSource,
+    block,
+    buildingDepth,
+    buildingWidth,
+    district,
+    floorHeight,
+    floors,
+    hydrated,
+    neighborhood,
+    neighborhoodId,
+    parcel.length,
+    parcelLookup,
+    parcelNo,
+    project.id,
+    project.modules,
+    province,
+  ]);
   const officialBoundaryLocked = parcelSource.kind === "tkgm-open-service" && parcel.length >= 3;
   const terrainViewerLayers = useMemo<TerrainLayerVisibility>(() => ({
     ...terrainLayers,
