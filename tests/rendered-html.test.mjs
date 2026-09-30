@@ -467,7 +467,7 @@ test("renders every public route and keeps internal navigation resolvable", asyn
   const discovered = new Set();
   for (const path of routeSet) {
     const response = await render(path);
-    assert.ok(response.status === 200 || (["/uyelik", "/kayit", "/hesabim", "/arkem-x"].includes(path) && response.status === 307), path);
+    assert.ok(response.status === 200 || (["/uyelik", "/kayit", "/arkem-x"].includes(path) && response.status === 307), path);
     if (response.status !== 200) continue;
     const html = await response.text();
     for (const match of html.matchAll(/\bhref="(\/[^"]*)"/g)) {
@@ -1088,7 +1088,8 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
-  assert.match(focusedAccount, /redirect\("\/giris\?return_to=%2Fhesabim"\)/);
+  assert.match(focusedAccount, /Oturum gerekli/);
+  assert.match(focusedAccount, /href="\/giris\?return_to=%2Fhesabim"/);
 });
 
 test("V93 routes every province through an explicit zoning authority chain", async () => {
