@@ -535,3 +535,11 @@ test("2D map distinguishes TKGM boundary, conceptual setback envelope and read-o
   assert.ok(studio.includes("TKGM sınır noktası · salt okunur"));
   assert.ok(studio.includes('dashArray: "7 6"'));
 });
+
+
+test("2D conceptual massing visibility is independent from 3D massing toggle", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("showConceptualOverlays && zoningFormReady && parcel.length >= 3"));
+  assert.ok(!studio.includes('showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3'));
+  assert.ok(studio.includes("Temsili Ön Kütle<br>"));
+});
