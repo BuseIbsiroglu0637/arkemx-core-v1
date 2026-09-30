@@ -511,10 +511,67 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
   return { modules, applied, synchronizedAt };
 }
 
+
+type ProjectDebugEvent = {
+  at: string;
+  event: string;
+  projectId: string;
+  moduleCount: number;
+  geo?: {
+    province?: string;
+    district?: string;
+    neighborhood?: string;
+    block?: string;
+    parcelNo?: string;
+    parcelVertices?: number;
+    buildingWidth?: number;
+    buildingDepth?: number;
+  };
+  detail?: string;
+};
+
+const PROJECT_DEBUG_KEY = "arkemx-project-debug-v1";
+
+function projectDebugSnapshot(project: ProjectKernelState, event: string, detail = ""): ProjectDebugEvent {
+  const geo = record(project.modules["geo-parcel"]);
+  const parcel = Array.isArray(geo.parcel) ? geo.parcel : Array.isArray(geo.previewParcel) ? geo.previewParcel : [];
+  return {
+    at: new Date().toISOString(),
+    event,
+    projectId: project.id,
+    moduleCount: Object.keys(project.modules).length,
+    geo: {
+      province: stringValue(geo.province),
+      district: stringValue(geo.district),
+      neighborhood: stringValue(geo.neighborhood),
+      block: stringValue(geo.block),
+      parcelNo: stringValue(geo.parcelNo),
+      parcelVertices: parcel.length,
+      buildingWidth: numeric(geo.buildingWidth),
+      buildingDepth: numeric(geo.buildingDepth),
+    },
+    detail,
+  };
+}
+
+function writeProjectDebugEvent(project: ProjectKernelState, event: string, detail = "") {
+  try {
+    const current = JSON.parse(window.sessionStorage.getItem(PROJECT_DEBUG_KEY) || "[]") as ProjectDebugEvent[];
+    current.push(projectDebugSnapshot(project, event, detail));
+    window.sessionStorage.setItem(PROJECT_DEBUG_KEY, JSON.stringify(current.slice(-40)));
+  } catch {
+    // Diagnostics must never affect project persistence.
+  }
+}
+
 const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(null);
 
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
+  useEffect(() => {
+    writeProjectDebugEvent(createDefaultProject(), "provider-mount");
+    return () => writeProjectDebugEvent(createDefaultProject(), "provider-unmount");
+  }, []);
   const [hydrated, setHydrated] = useState(false);
   const skipNextPersistenceRef = useRef(false);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
@@ -529,6 +586,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const timer = window.setTimeout(() => {
       try {
         const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
+        if (stored.value) writeProjectDebugEvent(stored.value, "hydrate-storage", `source=${stored.source}; integrity=${stored.integrity}`);
+        else writeProjectDebugEvent(createDefaultProject(), "hydrate-storage-empty", `source=${stored.source}`);
         if (stored.value) {
           const parsed = stored.value;
           if (parsed?.schema === "ARKEM-PROJECT/1.0" && parsed.id && parsed.modules && typeof parsed.modules === "object") setProject((current) => ({
@@ -571,6 +630,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const timer = window.setTimeout(() => {
       try {
         const result = saveProjectToStorage(window.localStorage, project);
+        writeProjectDebugEvent(project, "persist-storage", `savedAt=${result.savedAt}`);
         setPersistence({
           state: "device-saved",
           integrity: "verified",
@@ -599,6 +659,14 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const patchModule = useCallback((key: string, moduleValue: unknown) => {
     if (!hydrated) return;
     setProject((current) => {
+      if (key === "geo-parcel") {
+        const incoming = record(moduleValue);
+        const debugProject: ProjectKernelState = {
+          ...current,
+          modules: { ...current.modules, "geo-parcel": incoming },
+        };
+        writeProjectDebugEvent(debugProject, "patch-geo-parcel");
+      }
       const mergedValue = mergeModuleValue(current.modules[key], moduleValue);
       if (JSON.stringify(current.modules[key]) === JSON.stringify(mergedValue)) return current;
       const timestamp = new Date().toISOString();
