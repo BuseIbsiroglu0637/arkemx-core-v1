@@ -185,3 +185,22 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
   opacity:.45;
   cursor:not-allowed;
 }
+
+
+.arx-account-list .arx-account-local-project {
+  margin:4px 0 2px;
+  padding:10px;
+  border:1px solid #e6c8b5;
+  border-radius:6px;
+  background:#fff8f3;
+}
+.arx-account-list .arx-account-local-project > button {
+  min-height:31px;
+  padding:6px 8px;
+  border:1px solid #bd7244;
+  border-radius:5px;
+  background:#bd7244;
+  color:#fff;
+  font:700 9px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
