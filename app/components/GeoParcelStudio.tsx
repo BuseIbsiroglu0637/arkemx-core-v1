@@ -544,7 +544,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       );
       setOfficialBoundaryEvidence(restoredOfficialEvidence);
 
-      if (hasSavedBoundary && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
+      if ((hasSavedBoundary || hasSavedPreviewBoundary) && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
         setParcelSource({
           kind: saved.parcelRecord.evidence.sourceKind,
           authority: saved.parcelRecord.evidence.authority,
@@ -553,7 +553,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           url: saved.parcelRecord.evidence.url ?? "",
           reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
         });
-      } else if (hasSavedBoundary) {
+      } else if (hasSavedBoundary || hasSavedPreviewBoundary) {
         const savedStatus = saved.dataStatus ?? "";
         const kind: ParcelSourceKind = savedStatus.includes("TKGM")
           ? "tkgm-open-service"
@@ -568,7 +568,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           url: kind === "tkgm-open-service" ? "https://parselsorgu.tkgm.gov.tr/" : "",
         });
       } else {
-        setParcel([]);
         setParcelSource({
           kind: "coordinate",
           authority: "Kullanıcı",
