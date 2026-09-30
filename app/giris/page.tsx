@@ -30,7 +30,7 @@ export default function LoginPage() {
         <div className="arx-auth-first">
           <b>İlk kez mi kullanıyorsunuz?</b>
           <p>Aynı güvenli giriş adımından sonra kısa profil kurulumunu tamamlayabilirsiniz.</p>
-          <Link href="/hesap-kurulum">İlk kullanım adımını aç</Link>
+          <Link href="/hesap-kurulum?entry=first-use">İlk kullanım adımını aç</Link>
         </div>
 
         <small className="arx-auth-privacy">Parola, ödeme bilgisi veya özel proje dosyası bu sayfada istenmez.</small>
