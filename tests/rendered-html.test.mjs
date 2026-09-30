@@ -1488,6 +1488,30 @@ test("V107 turns project intake into a personal, source-aware customer journey",
   assert.equal(roadmap.gates.find((gate) => gate.id === "zoning")?.status, "official-review");
   assert.equal(roadmap.gates.find((gate) => gate.id === "budget")?.status, "client-decision");
   assert.ok(roadmap.missingDocuments.includes("İmar durumu / plan notu"));
+  assert.ok(roadmap.verificationItems.some((item) => item.includes("Ada / parsel numarası")));
+  assert.ok(roadmap.verificationItems.some((item) => item.includes("Resmî parsel geometrisi")));
+
+  const declaredReadyRoadmap = deriveGuidedProjectRoadmap({
+    ...{
+      name: "Kastamonu Konut Projesi",
+      projectType: "new",
+      usage: "residential",
+      location: "Kastamonu Merkez",
+      parcelStatus: "verified",
+      targetArea: 1200,
+      floors: 3,
+      floorHeight: 3.4,
+      system: "undecided",
+      priorities: ["safety", "cost", "flexibility"],
+      budget: "fifteen-fifty",
+      timeline: "six-months",
+      documents: ["parcel-id"],
+      experienceMode: "technical",
+    },
+  });
+  assert.equal(declaredReadyRoadmap.gates.find((gate) => gate.id === "parcel")?.status, "official-review");
+  assert.equal(declaredReadyRoadmap.nextAction.route, "/imar-entegrasyon-merkezi");
+  assert.ok(declaredReadyRoadmap.verificationItems.some((item) => item.includes("başlangıç formunda henüz girilmedi")));
 
   const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
   for (const expected of [
@@ -1496,6 +1520,9 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     "Kişisel proje yol haritanız",
     "Projeyi hesabıma kaydet",
     "Taslak cihazda ve oturum açıksa hesabınızda otomatik kaydedilir",
+    "BAŞLANGIÇ VERİ HAZIRLIĞI",
+    "EKSİK / DOĞRULANACAK VERİLER VE BELGELER",
+    "Kullanıcı beyanı: ada/parsel hazır",
     "start-roadmap-gates",
   ]) assert.match(start, new RegExp(expected));
   assert.ok(start.includes("key={cloudState}"));
@@ -1508,6 +1535,7 @@ test("V107 turns project intake into a personal, source-aware customer journey",
   for (const expected of [
     ".start-mode-switch",
     ".start-roadmap-gates",
+    ".start-missing-documents ul",
     ".start-document-grid",
     "@media (max-width: 720px)",
   ]) assert.match(stylesheet, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
