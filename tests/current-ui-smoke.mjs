@@ -698,3 +698,14 @@ test("project geocoding cannot erase a restored parcel identity", () => {
   assert.ok(!geocodeEffect.includes('setBlock("")'));
   assert.ok(!geocodeEffect.includes('setParcelNo("")'));
 });
+
+
+test("geo debug records live identity transitions before kernel persistence", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const debug = fs.readFileSync(new URL("../app/components/ProjectStateDebug.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('event: "geo-local-state"'));
+  assert.ok(studio.includes("neighborhoodId"));
+  assert.ok(studio.includes("parcelVertices: parcel.length"));
+  assert.ok(debug.includes("identityTransitions"));
+  assert.ok(debug.includes("events.slice(-30)"));
+});
