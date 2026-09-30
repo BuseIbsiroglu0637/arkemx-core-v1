@@ -143,6 +143,8 @@ export function ProjectStartStudio() {
   const [notice, setNotice] = useState("");
   const [draftReady, setDraftReady] = useState(false);
   const [draftTransferMessage, setDraftTransferMessage] = useState("");
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const [creatingNewProject, setCreatingNewProject] = useState(false);
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
 
   const update = <K extends keyof ProjectIntake>(key: K, value: ProjectIntake[K]) => setIntake((current) => ({ ...current, [key]: value }));
@@ -176,6 +178,7 @@ export function ProjectStartStudio() {
     ...roadmap.verificationItems,
     ...roadmap.missingDocuments.map((item) => `${item} — eksik veya doğrulanacak.`),
   ]));
+  const hasActiveProject = thread.metrics.activeCount > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -211,6 +214,7 @@ export function ProjectStartStudio() {
             floorHeight: String(restoredIntake.floorHeight),
           });
           setStep(selected.step);
+          setRestoredDraft(true);
           setDraftTransferMessage(
             accountDraft && selected.savedAt === accountDraft.savedAt
               ? "Hesabınızdaki son taslak geri yüklendi."
@@ -227,7 +231,7 @@ export function ProjectStartStudio() {
   }, []);
 
   useEffect(() => {
-    if (!draftReady || completed) return;
+    if (!draftReady || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
     const timer = window.setTimeout(() => {
       const draft: GuidedProjectDraft = {
         schema: "ARKEM-GUIDED-DRAFT/1.0",
@@ -249,7 +253,7 @@ export function ProjectStartStudio() {
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [completed, draftReady, intake, step]);
+  }, [completed, creatingNewProject, draftReady, hasActiveProject, intake, restoredDraft, step]);
 
   const exportDraft = () => {
     const draft: GuidedProjectDraft = {
@@ -280,6 +284,8 @@ export function ProjectStartStudio() {
       });
       setStep(parsed.step);
       setDraftReady(true);
+      setRestoredDraft(true);
+      setCreatingNewProject(true);
       setDraftTransferMessage("Taslak dosyası yüklendi.");
     } catch {
       setDraftTransferMessage("Taslak dosyası okunamadı.");
@@ -441,6 +447,29 @@ export function ProjectStartStudio() {
     downloadTextFile(`${project.id || "arkem"}-kurumsal-baslangic-pafta.pdf`, pdf, "application/pdf");
   };
 
+  if (draftReady && hasActiveProject && !restoredDraft && !creatingNewProject && !completed) {
+    return <section className="start-active-project" data-testid="project-start-active-project">
+      <span>AKTİF PROJE</span>
+      <h2>{project.name}</h2>
+      <p>{project.id} · {project.revision} · {project.phase}</p>
+      <strong>Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi.</strong>
+      <small>“Yeni proje oluştur” ekranına geri dönmeniz mevcut projeyi silmez. Mevcut projeye devam etmek için Proje Çalışma Alanını açın; yalnızca gerçekten ikinci bir proje başlatmak istiyorsanız yeni form açın.</small>
+      <div>
+        <Link className="button navy" href="/dijital-proje-merkezi">Proje Çalışma Alanına Dön <span>→</span></Link>
+        <button type="button" onClick={() => {
+          setIntake(initial);
+          setNumericDrafts({
+            targetArea: String(initial.targetArea),
+            floors: String(initial.floors),
+            floorHeight: String(initial.floorHeight),
+          });
+          setStep(0);
+          setCreatingNewProject(true);
+        }}>Yeni Bir Proje Başlat</button>
+      </div>
+    </section>;
+  }
+
   if (completed) {
     return <section className="start-success" aria-live="polite">
       <header><span>ARKEMX / PROJE ÇEKİRDEĞİ HAZIR</span><b>{project.id}</b></header>
@@ -474,7 +503,7 @@ export function ProjectStartStudio() {
   }
 
   return <section className="project-start-studio" data-testid="project-start-studio">
-    {thread.metrics.activeCount > 0 && <div className="start-resume-banner"><div><span>AKTİF PROJE BULUNDU</span><b>{project.name}</b><small>{project.id} · {thread.metrics.activeCount} veri alanı bağlı</small></div><Link href="/dijital-proje-merkezi">Çalışmaya devam edin ↗</Link></div>}
+    {hasActiveProject && <div className="start-resume-banner"><div><span>AKTİF PROJE BULUNDU</span><b>{project.name}</b><small>{project.id} · {thread.metrics.activeCount} veri alanı bağlı</small></div><Link href="/dijital-proje-merkezi">Çalışmaya devam edin ↗</Link></div>}
     <header className="project-start-head">
       <div><p className="eyebrow light">ARKEMX / Yönlendirmeli Başlangıç</p><h2>Teknik bilgi gerekmez.<br/><em>Doğru soruyla başlayın.</em></h2></div>
       <p>Beş sade adımda ihtiyacı, parsel hazırlığını, bütçeyi ve hedef süreyi tanımlayın. ARKEMX yalnızca mevcut veriye göre kişisel yol haritası oluşturur; resmî bilgi olmayan yerde sonuç uydurmaz.</p>
