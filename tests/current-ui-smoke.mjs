@@ -125,9 +125,26 @@ test("local build renders the focused ARKEMX sign-in entry", async () => {
   assert.match(html, /<h1 id="arx-auth-title">ARKEMX’e giriş<\/h1>/);
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
-  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
+  assert.match(html, /name="return_to" value="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon"/);
   assert.match(html, /İlk kullanım adımını aç/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
   assert.doesNotMatch(html, /class="account-story/);
+});
+
+test("local build renders the first-use account setup entry", async () => {
+  const response = await render("/hesap-kurulum?return_to=%2Fdijital-proje-merkezi");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<h1 id="arx-setup-title">Hesap kurulumunu tamamlayın<\/h1>/);
+  assert.match(html, /Güvenli girişle devam et/);
+  assert.match(html, /action="\/hesap-baglantisi"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /class="v4-mobile-site-header/);
+});
+
+test("anonymous focused account page returns to sign-in", async () => {
+  const response = await render("/hesabim");
+  assert.equal(response.status, 307);
+  assert.match(response.headers.get("location") ?? "", /\/giris\?return_to=%2Fhesabim/);
 });
