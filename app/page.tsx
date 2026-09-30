@@ -4,6 +4,7 @@ import {
   ArrowUpRight, Blocks, ClipboardList, DraftingCompass, FileBox,
   FolderOpen, GitMerge, Layers3, Map, Scale, Wrench,
 } from "lucide-react";
+import { AccountHeaderLink } from "./components/AccountHeaderLink";
 import "./sade-arac-paneli.css";
 
 export const dynamic = "force-dynamic";
@@ -15,14 +16,14 @@ export const metadata: Metadata = {
 
 const tools = [
   { name: "Yeni proje", icon: ClipboardList, href: "/proje-baslat", section: "Proje" },
-  { name: "Proje merkezi", icon: FolderOpen, href: "/dijital-proje-merkezi#canli-proje-grafigi", section: "Proje" },
+  { name: "Proje Çalışma Alanı", icon: FolderOpen, href: "/dijital-proje-merkezi#canli-proje-grafigi", section: "Proje" },
   { name: "Arazi ve parsel", icon: Map, href: "/arsa-fizibilite-studyosu", section: "Tasarım" },
   { name: "Mimari program", icon: Layers3, href: "/mimari-program-studyosu", section: "Tasarım" },
-  { name: "Plan ve aks", icon: DraftingCompass, href: "/tasarim-calismalari#plan-editor", section: "Tasarım" },
-  { name: "Taşıyıcı ön tasarım", icon: Blocks, href: "/tasarim-calismalari#tasiyici-on-tasarim", section: "Mühendislik" },
-  { name: "Yapı sistemi", icon: Scale, href: "/yapi-sistemi-karsilastirma", section: "Mühendislik" },
-  { name: "BIM koordinasyon", icon: GitMerge, href: "/muhendislik-koordinasyon", section: "Mühendislik" },
-  { name: "Proje takibi", icon: Wrench, href: "/proje-os", section: "Teslim" },
+  { name: "Plan ve aks", icon: DraftingCompass, href: "/plan-ve-aks", section: "Tasarım" },
+  { name: "Taşıyıcı ön tasarım", icon: Blocks, href: "/tasiyici-on-tasarim", section: "Mühendislik" },
+  { name: "Yapı sistemi", icon: Scale, href: "/sistem-karsilastirma", section: "Mühendislik" },
+  { name: "BIM koordinasyon", icon: GitMerge, href: "/bim-koordinasyon", section: "Mühendislik" },
+  { name: "Proje takibi", icon: Wrench, href: "/proje-takibi", section: "Teslim" },
   { name: "Dijital teslim", icon: FileBox, href: "/dijital-proje-merkezi", section: "Teslim" },
 ] as const;
 
@@ -32,7 +33,7 @@ export default function Home() {
       <div className="arx-simple-shell">
         <header className="arx-simple-head">
           <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-          <span className="arx-simple-head-label">Çalışma alanı</span>
+          <div className="arx-simple-head-actions"><span className="arx-simple-head-label">Çalışma alanı</span><AccountHeaderLink /></div>
         </header>
         <section className="arx-simple-tools" aria-labelledby="arx-tools-title">
           <h1 id="arx-tools-title">Araçlar</h1>

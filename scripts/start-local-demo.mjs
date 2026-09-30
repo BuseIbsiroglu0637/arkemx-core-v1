@@ -31,6 +31,9 @@ mkdirSync(logFolder, { recursive: true });
 console.log("\nARKEMX YEREL DEMO");
 console.log("Tarayici adresi: " + localUrl);
 console.log("GitHub Codespaces veya yayinlanmis site gerekmiyor.");
+console.log(process.env.ARKEMX_REMOTE_D1_DATABASE_ID
+  ? "Hesap/taslak surekliligi: paylasilan uzak D1 etkin."
+  : "Hesap/taslak surekliligi: yerel D1 + taslak indir/yukle yedegi.");
 console.log("Kapatmak icin bu pencerede Ctrl+C kullanin.\n");
 
 const localConfig = path.join(projectRoot, "vite.local.config.mjs");
@@ -45,6 +48,7 @@ const child = spawn(process.execPath, args, {
   env: {
     ...process.env,
     ARKEMX_LOCAL_DEMO: "1",
+    ARKEMX_PROTOTYPE_DEMO_AUTH: "1",
     WRANGLER_WRITE_LOGS: "false",
     WRANGLER_LOG_PATH: logFolder,
     MINIFLARE_REGISTRY_PATH: path.join(projectRoot, ".wrangler", "registry"),

@@ -77,7 +77,7 @@ const stages: { id: Stage; no: string; label: string; sub: string }[] = [
   { id: "export", no: "07", label: "Teknik çıktıyı al", sub: "PDF · DXF · KML" },
 ];
 
-const defaultCenter: GeoPoint = { lat: 40.7607, lng: 30.3675 };
+const defaultCenter: GeoPoint = { lat: 39.0, lng: 35.0 };
 type ParcelSourceState = {
   kind: ParcelSourceKind;
   authority: string;
@@ -89,6 +89,54 @@ type ParcelSourceState = {
 
 function normalizeAdministrativeName(value: unknown) {
   return String(value ?? "").trim().toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(mahallesi|mah\.?|köyü|koyu|köy|koy)\b/g, "").replace(/[^a-z0-9çğıöşü]+/g, "");
+}
+
+function parseDeclaredLocation(value: unknown) {
+  const raw = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return { province: "", district: "" };
+
+  const slashParts = raw.split(/[\/|,]/).map((part) => part.trim()).filter(Boolean);
+  if (slashParts.length >= 2) {
+    const provinceMatch = FALLBACK_PROVINCE_NAMES.find((name) =>
+      normalizeAdministrativeName(name) === normalizeAdministrativeName(slashParts[0]),
+    );
+    if (provinceMatch) return { province: provinceMatch, district: slashParts[1] ?? "" };
+  }
+
+  const normalized = raw.toLocaleLowerCase("tr-TR");
+  const provinceMatch = FALLBACK_PROVINCE_NAMES.find((name) => {
+    const candidate = name.toLocaleLowerCase("tr-TR");
+    return normalized === candidate || normalized.startsWith(`${candidate} `);
+  });
+  if (!provinceMatch) return { province: raw, district: "" };
+
+  return {
+    province: provinceMatch,
+    district: raw.slice(provinceMatch.length).trim(),
+  };
+}
+
+type GeocodeResult = {
+  lat?: number;
+  lng?: number;
+  displayName?: string;
+  province?: string;
+  district?: string;
+  neighborhood?: string;
+  error?: string;
+};
+
+async function fetchGeocode(params: { q?: string; lat?: number; lng?: number }) {
+  const search = new URLSearchParams();
+  if (params.q) search.set("q", params.q);
+  if (Number.isFinite(params.lat) && Number.isFinite(params.lng)) {
+    search.set("lat", String(params.lat));
+    search.set("lng", String(params.lng));
+  }
+  const response = await fetch(`/api/geocode?${search.toString()}`, { cache: "no-store" });
+  const body = await response.json() as GeocodeResult;
+  if (!response.ok) throw new Error(body.error || "Konum bilgisi çözümlenemedi.");
+  return body;
 }
 
 async function fetchTkgmJson(path: string) {
@@ -234,6 +282,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const persistedGeoRef = useRef(false);
   const pendingFitRef = useRef<GeoPoint[] | null>(null);
+  const pendingCenterRef = useRef<GeoPoint | null>(null);
+  const projectLocationAppliedRef = useRef(false);
   const { patchModule, project, hydrated } = useProjectKernel();
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
@@ -248,18 +298,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // Conceal conceptual overlays visually without deleting their saved inputs.
   const [showConceptualOverlays, setShowConceptualOverlays] = useState(!simple);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
-  const [parcel, setParcel] = useState<GeoPoint[]>(() => sampleParcel(defaultCenter));
+  const [parcel, setParcel] = useState<GeoPoint[]>([]);
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
-    kind: "sample",
-    authority: "ARKEMX",
-    label: "Temsili başlangıç geometrisi",
+    kind: "coordinate",
+    authority: "Kullanıcı",
+    label: "Başlangıç konumu / kullanıcı beyanı",
     capturedAt: new Date(0).toISOString(),
     url: "",
   });
   const [drawEnabled, setDrawEnabled] = useState(!simple);
   const [latitude, setLatitude] = useState(defaultCenter.lat.toFixed(7));
   const [longitude, setLongitude] = useState(defaultCenter.lng.toFixed(7));
-  const [province, setProvince] = useState("Sakarya");
+  const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [provinceId, setProvinceId] = useState("");
@@ -272,7 +322,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [administrativeSource, setAdministrativeSource] = useState<"official" | "fallback">("fallback");
   const [block, setBlock] = useState("");
   const [parcelNo, setParcelNo] = useState("");
-  const [fileNotice, setFileNotice] = useState("Örnek parsel verisi yüklendi");
+  const [fileNotice, setFileNotice] = useState("Proje başlangıç konumu yükleniyor. Mahalle/köy, ada ve parsel seçimini tamamlayın.");
   const [buildingWidth, setBuildingWidth] = useState(24);
   const [buildingDepth, setBuildingDepth] = useState(38);
   const [floors, setFloors] = useState(2);
@@ -306,105 +356,142 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (!hydrated || transferApplied.current) return;
     transferApplied.current = true;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["geo-parcel"] as {
-      parcel?: GeoPoint[];
-      province?: string;
-      provinceId?: string;
-      district?: string;
-      districtId?: string;
-      neighborhood?: string;
-      neighborhoodId?: string;
-      block?: string;
-      parcelNo?: string;
-      buildingWidth?: number;
-      buildingDepth?: number;
-      rotation?: number;
-      offsetEast?: number;
-      offsetNorth?: number;
-      usage?: string;
-      system?: string;
-      floors?: number;
-      floorHeight?: number;
-      sourceCrs?: string;
-      dataStatus?: string;
-      planning?: Record<string, unknown>;
-      zoning?: Partial<ZoningForm>;
-      terrain?: Record<string, unknown>;
-      frontEdge?: ParcelFrontEdge;
-      selectedMassingId?: string;
-      parcelRecord?: ParcelRecord;
-      _kernel?: { recordedAt?: string };
-    } | undefined;
-    persistedGeoRef.current = Boolean(saved);
-    if (!saved) return;
-    if (saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
-      setParcelSource({
-        kind: saved.parcelRecord.evidence.sourceKind,
-        authority: saved.parcelRecord.evidence.authority,
-        label: saved.parcelRecord.evidence.label,
-        capturedAt: saved.parcelRecord.evidence.capturedAt,
-        url: saved.parcelRecord.evidence.url ?? "",
-        reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
-      });
-    } else if (saved.parcel?.length) {
-      const savedStatus = saved.dataStatus ?? "";
-      const kind: ParcelSourceKind = savedStatus.includes("TKGM")
-        ? "tkgm-open-service"
-        : savedStatus.includes("ölçüm") || savedStatus.includes("aplikasyon")
-          ? "user-file"
-          : "manual-drawing";
-      setParcelSource({
-        kind,
-        authority: kind === "tkgm-open-service" ? "Tapu ve Kadastro Genel Müdürlüğü" : "Önceki ARKEMX proje kaydı",
-        label: savedStatus || "Önceki proje geometrisi",
-        capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
-        url: kind === "tkgm-open-service" ? "https://parselsorgu.tkgm.gov.tr/" : "",
-      });
-    }
-    if (saved.province) setProvince(saved.province);
-    if (saved.provinceId) setProvinceId(saved.provinceId);
-    if (saved.district) setDistrict(saved.district);
-    if (saved.districtId) setDistrictId(saved.districtId);
-    if (saved.neighborhood) setNeighborhood(saved.neighborhood);
-    if (saved.neighborhoodId) setNeighborhoodId(saved.neighborhoodId);
-    if (saved.block) setBlock(saved.block);
-    if (saved.parcelNo) setParcelNo(saved.parcelNo);
-    if (saved.parcel?.length) {
-      setParcel(saved.parcel);
-      const savedCenter = geoCentroid(saved.parcel);
-      setLatitude(savedCenter.lat.toFixed(7));
-      setLongitude(savedCenter.lng.toFixed(7));
-    }
-    if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
-    if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
-    if (typeof saved.rotation === "number") setRotation(saved.rotation);
-    if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
-    if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
-    if (saved.usage) setUsage(saved.usage);
-    if (saved.system) setSystem(saved.system);
-    if (typeof saved.floors === "number") setFloors(saved.floors);
-    if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
-    if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
-    if (saved.dataStatus) setDataStatus(saved.dataStatus);
-    if (typeof saved.planning?.requiredSetback === "number") setRequiredSetback(saved.planning.requiredSetback);
-    if (typeof saved.planning?.maxCoverage === "number") setMaxCoverage(saved.planning.maxCoverage);
-    if (typeof saved.planning?.maxFar === "number") setMaxFar(saved.planning.maxFar);
-    if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
-    if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
-    if (saved.zoning) {
-      setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
-      if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
-      if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
-      if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
-      const setbacks = [saved.zoning.frontSetback, saved.zoning.sideSetback, saved.zoning.rearSetback].filter((value): value is number => typeof value === "number");
-      if (setbacks.length) setRequiredSetback(Math.max(...setbacks));
-    }
-    if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
-    if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
-    if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
-    if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
-    if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
-    setFileNotice("Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı");
+      const saved = project.modules["geo-parcel"] as {
+        reference?: string;
+        parcel?: GeoPoint[];
+        province?: string;
+        provinceId?: string;
+        district?: string;
+        districtId?: string;
+        neighborhood?: string;
+        neighborhoodId?: string;
+        block?: string;
+        parcelNo?: string;
+        buildingWidth?: number;
+        buildingDepth?: number;
+        rotation?: number;
+        offsetEast?: number;
+        offsetNorth?: number;
+        usage?: string;
+        system?: string;
+        floors?: number;
+        floorHeight?: number;
+        sourceCrs?: string;
+        dataStatus?: string;
+        planning?: Record<string, unknown>;
+        zoning?: Partial<ZoningForm>;
+        terrain?: Record<string, unknown>;
+        frontEdge?: ParcelFrontEdge;
+        selectedMassingId?: string;
+        parcelRecord?: ParcelRecord;
+        _kernel?: { recordedAt?: string };
+      } | undefined;
+      const decision = project.modules["decision-assistant"] as {
+        input?: { location?: string };
+      } | undefined;
+      const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
+      const declared = parseDeclaredLocation(declaredLocation);
+      const hasSavedBoundary = Boolean(saved?.parcel && saved.parcel.length >= 3);
+
+      persistedGeoRef.current = Boolean(saved);
+      if (!saved) return;
+
+      if (hasSavedBoundary && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
+        setParcelSource({
+          kind: saved.parcelRecord.evidence.sourceKind,
+          authority: saved.parcelRecord.evidence.authority,
+          label: saved.parcelRecord.evidence.label,
+          capturedAt: saved.parcelRecord.evidence.capturedAt,
+          url: saved.parcelRecord.evidence.url ?? "",
+          reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
+        });
+      } else if (hasSavedBoundary) {
+        const savedStatus = saved.dataStatus ?? "";
+        const kind: ParcelSourceKind = savedStatus.includes("TKGM")
+          ? "tkgm-open-service"
+          : savedStatus.includes("ölçüm") || savedStatus.includes("aplikasyon")
+            ? "user-file"
+            : "manual-drawing";
+        setParcelSource({
+          kind,
+          authority: kind === "tkgm-open-service" ? "Tapu ve Kadastro Genel Müdürlüğü" : "Önceki ARKEMX proje kaydı",
+          label: savedStatus || "Önceki proje geometrisi",
+          capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
+          url: kind === "tkgm-open-service" ? "https://parselsorgu.tkgm.gov.tr/" : "",
+        });
+      } else {
+        setParcel([]);
+        setParcelSource({
+          kind: "coordinate",
+          authority: "Kullanıcı",
+          label: "Başlangıç konumu / kullanıcı beyanı",
+          capturedAt: saved._kernel?.recordedAt ?? new Date(0).toISOString(),
+          url: "",
+        });
+        setDataStatus("Kullanıcı beyanı · resmî parsel doğrulaması bekleniyor");
+      }
+
+      if (hasSavedBoundary) {
+        if (saved.province) setProvince(saved.province);
+        if (saved.provinceId) setProvinceId(saved.provinceId);
+        if (saved.district) setDistrict(saved.district);
+        if (saved.districtId) setDistrictId(saved.districtId);
+        if (saved.neighborhood) setNeighborhood(saved.neighborhood);
+        if (saved.neighborhoodId) setNeighborhoodId(saved.neighborhoodId);
+        if (saved.block) setBlock(saved.block);
+        if (saved.parcelNo) setParcelNo(saved.parcelNo);
+        setParcel(saved.parcel ?? []);
+        if (saved.parcel?.length) {
+          const savedCenter = geoCentroid(saved.parcel);
+          setLatitude(savedCenter.lat.toFixed(7));
+          setLongitude(savedCenter.lng.toFixed(7));
+          pendingCenterRef.current = savedCenter;
+        }
+      } else {
+        setProvince(declared.province);
+        setDistrict(declared.district);
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhood("");
+        setNeighborhoodId("");
+        setBlock("");
+        setParcelNo("");
+      }
+
+      if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
+      if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
+      if (typeof saved.rotation === "number") setRotation(saved.rotation);
+      if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
+      if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
+      if (saved.usage) setUsage(saved.usage);
+      if (saved.system) setSystem(saved.system);
+      if (typeof saved.floors === "number") setFloors(saved.floors);
+      if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
+      if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
+      if (hasSavedBoundary && saved.dataStatus) setDataStatus(saved.dataStatus);
+      if (typeof saved.planning?.requiredSetback === "number") setRequiredSetback(saved.planning.requiredSetback);
+      if (typeof saved.planning?.maxCoverage === "number") setMaxCoverage(saved.planning.maxCoverage);
+      if (typeof saved.planning?.maxFar === "number") setMaxFar(saved.planning.maxFar);
+      if (typeof saved.planning?.maxHeight === "number") setMaxHeight(saved.planning.maxHeight);
+      if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
+      if (saved.zoning) {
+        setZoning((current) => ({ ...current, ...saved.zoning, verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)) }));
+        if (typeof saved.zoning.taks === "number") setMaxCoverage(saved.zoning.taks * 100);
+        if (typeof saved.zoning.kaks === "number") setMaxFar(saved.zoning.kaks);
+        if (typeof saved.zoning.hmax === "number") setMaxHeight(saved.zoning.hmax);
+        const setbacks = [saved.zoning.frontSetback, saved.zoning.sideSetback, saved.zoning.rearSetback].filter((value): value is number => typeof value === "number");
+        if (setbacks.length) setRequiredSetback(Math.max(...setbacks));
+      }
+      if (typeof saved.terrain?.slope === "number") setSlope(saved.terrain.slope);
+      if (typeof saved.terrain?.exaggeration === "number") setExaggeration(saved.terrain.exaggeration);
+      if (saved.terrain?.layers) setTerrainLayers({ ...normalizeTerrainLayers(saved.terrain.layers), basemap: true });
+      if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
+      if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
+      setFileNotice(hasSavedBoundary
+        ? "Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı."
+        : declared.province
+          ? `${declared.province}${declared.district ? ` / ${declared.district}` : ""} proje başlangıcından aktarıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`
+          : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules]);
@@ -415,7 +502,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (current && normalizeAdministrativeName(current.label) === normalizeAdministrativeName(province)) return;
     const match = provinceOptions.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName(province));
     if (!match) return;
-    const timer = window.setTimeout(() => setProvinceId(match.id), 0);
+    const timer = window.setTimeout(() => {
+      setProvinceId(match.id);
+      setAdministrativeLoading("district");
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [province, provinceId, provinceOptions]);
 
@@ -425,7 +515,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (current && normalizeAdministrativeName(current.label) === normalizeAdministrativeName(district)) return;
     const match = districtOptions.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName(district));
     if (!match) return;
-    const timer = window.setTimeout(() => setDistrictId(match.id), 0);
+    const timer = window.setTimeout(() => {
+      setDistrictId(match.id);
+      setAdministrativeLoading("neighborhood");
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [district, districtId, districtOptions]);
 
@@ -450,18 +543,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const options = administrativeOptions(data);
       if (!options.length) throw new Error("TKGM il listesi boş döndü");
       setProvinceOptions(options);
-      const preferred = options.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName("Sakarya"));
-      if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("official");
       setAdministrativeLoading("idle");
     }).catch((error: unknown) => {
       if (cancelled) return;
       setProvinceOptions(FALLBACK_PROVINCES);
-      const preferred = FALLBACK_PROVINCES.find((option) => option.label === "Sakarya");
-      if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("fallback");
       setAdministrativeLoading("idle");
-      setFileNotice(`${error instanceof Error ? error.message : "TKGM il listesi yüklenemedi"}. Yerel il/ilçe seçimi mümkün; mahalle adı elle girilir. Resmî parsel verisi yalnızca erişilebilir TKGM yanıtı veya kullanıcı dosyasıyla gösterilir.`);
+      setFileNotice(`${error instanceof Error ? error.message : "TKGM il listesi yüklenemedi"}. Projedeki konum korunur; yerel il/ilçe seçimi yapılabilir. Resmî parsel verisi yalnızca erişilebilir TKGM yanıtı veya kullanıcı dosyasıyla gösterilir.`);
     });
     return () => { cancelled = true; };
   }, []);
@@ -530,7 +619,51 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
   }, [administrativeSource, neighborhood]);
 
-  const center = useMemo(() => geoCentroid(parcel.length ? parcel : [defaultCenter]), [parcel]);
+  useEffect(() => {
+    if (!hydrated || projectLocationAppliedRef.current) return;
+    const saved = project.modules["geo-parcel"] as { parcel?: GeoPoint[]; reference?: string } | undefined;
+    if (saved?.parcel?.length) {
+      projectLocationAppliedRef.current = true;
+      return;
+    }
+    const decision = project.modules["decision-assistant"] as { input?: { location?: string } } | undefined;
+    const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
+    if (!declaredLocation) {
+      projectLocationAppliedRef.current = true;
+      return;
+    }
+    projectLocationAppliedRef.current = true;
+    void fetchGeocode({ q: declaredLocation }).then((result) => {
+      const point = validPoint(Number(result.lat), Number(result.lng));
+      if (point) {
+        pendingCenterRef.current = point;
+        setLatitude(point.lat.toFixed(7));
+        setLongitude(point.lng.toFixed(7));
+        mapRef.current?.setView([point.lat, point.lng], 12);
+      }
+      if (result.province) {
+        setProvince(result.province);
+        setProvinceId("");
+        setDistrictOptions([]);
+      }
+      if (result.district) {
+        setDistrict(result.district);
+        setDistrictId("");
+        setNeighborhoodOptions([]);
+      }
+      setNeighborhood("");
+      setNeighborhoodId("");
+      setFileNotice(`${result.province || province || "Proje konumu"}${result.district ? ` / ${result.district}` : ""} haritada açıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`);
+    }).catch(() => {
+      // The declared administrative labels remain useful even if map geocoding is unavailable.
+    });
+  }, [hydrated, project.modules]);
+
+  const coordinateCenter = useMemo(
+    () => validPoint(Number(latitude.replace(",", ".")), Number(longitude.replace(",", "."))) ?? defaultCenter,
+    [latitude, longitude],
+  );
+  const center = useMemo(() => geoCentroid(parcel.length ? parcel : [coordinateCenter]), [coordinateCenter, parcel]);
   const building = useMemo(() => buildingFootprint(center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth), [center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth]);
   const metrics = useMemo(() => {
     const area = polygonArea(parcel);
@@ -675,7 +808,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       parcelSourceNetwork: sourceNetwork,
       provenance: createGeoProvenance({ reference: parcelRecord.reference, sourceCrs, dataStatus, administrativeSource, geometryValid: parcelRecord.projectEligible && metrics.geometryValid, vertexCount: parcelRecord.projectEligible ? parcel.length : 0 }),
       zoningProvenance: createZoningProvenance(zoning, parcelRecord.reference),
-      status: parcelRecord.projectEligible ? "Parsel kaynağı ve sınırı aktif projeye bağlı" : "Temsili geometri · aktif proje verisi değildir",
+      status: parcelRecord.projectEligible ? "Parsel kaynağı ve sınırı aktif projeye bağlı" : parcel.length ? "Önizleme geometrisi · doğrulama bekliyor" : "Parsel seçimi bekleniyor",
     });
   }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
 
@@ -684,7 +817,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     import("leaflet").then((leaflet) => {
       if (disposed || !mapHostRef.current || mapRef.current) return;
       leafletRef.current = leaflet;
-      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: false }).setView([defaultCenter.lat, defaultCenter.lng], 17);
+      const initialCenter = pendingCenterRef.current ?? defaultCenter;
+      const map = leaflet.map(mapHostRef.current, { zoomControl: false, attributionControl: true, preferCanvas: false }).setView(
+        [initialCenter.lat, initialCenter.lng],
+        pendingCenterRef.current ? 12 : 6,
+      );
       // No automatic calls to third-party map tiles: the demo shows a local coordinate preview.
       // Streets and satellite imagery require a separately configured, authorized tile provider.
       leaflet.control.zoom({ position: "bottomright" }).addTo(map);
@@ -857,15 +994,70 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
   const useDeviceLocation = () => {
     if (!navigator.geolocation) { setFileNotice("Bu tarayıcı konum servisini desteklemiyor"); return; }
-    setFileNotice("Cihaz konumu bekleniyor…");
+    setFileNotice("Cihaz konumu alınıyor ve idari konum çözümleniyor…");
     navigator.geolocation.getCurrentPosition((position) => {
       const point = { lat: position.coords.latitude, lng: position.coords.longitude };
+      pendingCenterRef.current = point;
       setLatitude(point.lat.toFixed(7));
       setLongitude(point.lng.toFixed(7));
-      mapRef.current?.setView([point.lat, point.lng], 18);
-      setFileNotice(`Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı`);
+      mapRef.current?.setView([point.lat, point.lng], 16);
+      setParcel([]);
+      setBlock("");
+      setParcelNo("");
+      setParcelLookup("idle");
+      setParcelSource({
+        kind: "coordinate",
+        authority: "Cihaz konumu",
+        label: "Cihaz koordinatı / kullanıcı seçimi",
+        capturedAt: new Date().toISOString(),
+        url: "",
+      });
+      setDataStatus("Cihaz konumu · resmî parsel doğrulaması bekleniyor");
+
+      void fetchGeocode({ lat: point.lat, lng: point.lng }).then((result) => {
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhoodId("");
+        setDistrictOptions([]);
+        setNeighborhoodOptions([]);
+        setProvince(result.province ?? "");
+        setDistrict(result.district ?? "");
+        setNeighborhood(result.neighborhood ?? "");
+        setAdministrativeLoading(result.province ? "district" : "idle");
+        setFileNotice(
+          result.province
+            ? `Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı · ${result.province}${result.district ? ` / ${result.district}` : ""}${result.neighborhood ? ` / ${result.neighborhood}` : ""}. Ada ve parsel seçimini tamamlayın.`
+            : `Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı. İdari konum bulunamadı; il ve ilçeyi elle seçin.`,
+        );
+      }).catch(() => {
+        setProvince("");
+        setDistrict("");
+        setNeighborhood("");
+        setProvinceId("");
+        setDistrictId("");
+        setNeighborhoodId("");
+        setDistrictOptions([]);
+        setNeighborhoodOptions([]);
+        setFileNotice(`Cihaz konumu ±${Math.round(position.coords.accuracy)} m doğrulukla alındı. İdari konum çözümlenemedi; il ve ilçeyi elle seçin.`);
+      });
     }, () => setFileNotice("Konum izni verilmedi veya konum alınamadı"), { enableHighAccuracy: true, timeout: 10_000 });
   };
+  const resetParcelSelection = (message: string) => {
+    setParcel([]);
+    setParcelLookup("idle");
+    setDrawEnabled(false);
+    setShowConceptualOverlays(false);
+    setParcelSource({
+      kind: "coordinate",
+      authority: "Kullanıcı",
+      label: "Parsel kimliği seçimi / sınır bekleniyor",
+      capturedAt: new Date().toISOString(),
+      url: "",
+    });
+    setDataStatus("Kullanıcı seçimi · resmî parsel doğrulaması bekleniyor");
+    setFileNotice(message);
+  };
+
   const markBoundaryAsManual = (label: string) => {
     setParcelSource({
       kind: "manual-drawing",
@@ -1210,14 +1402,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </button>
       <small>{fileNotice}</small>
     </div>}
-    <div className="geo-cascade-guide"><b>İl</b><i>→</i><b>İlçe</b><i>→</i><b>Mahalle/Köy</b><i>→</i><b>Ada</b><i>→</i><b>Parsel</b></div><div className="geo-field-grid geo-cascade-fields"><label>İl<select value={provinceId} onChange={(event) => { const selected = provinceOptions.find((item) => item.id === event.target.value); setProvinceId(event.target.value); setProvince(selected?.label ?? ""); setAdministrativeLoading("district"); setDistrictOptions([]); setDistrictId(""); setDistrict(""); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); }} disabled={!provinceOptions.length}><option value="">{administrativeLoading === "province" ? "İller yükleniyor…" : "İl seçin"}</option>{provinceOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>İlçe<select value={districtId} onChange={(event) => { const selected = districtOptions.find((item) => item.id === event.target.value); setDistrictId(event.target.value); setDistrict(selected?.label ?? ""); setAdministrativeLoading("neighborhood"); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); }} disabled={!provinceId || !districtOptions.length}><option value="">{administrativeLoading === "district" ? "İlçeler yükleniyor…" : provinceId ? "İlçe seçin" : "Önce il seçin"}</option>{districtOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>Mahalle / Köy{administrativeSource === "fallback"
-      ? <><input value={neighborhood} onChange={(event) => { const value = event.target.value; setNeighborhood(value); setNeighborhoodId(value.trim() ? "offline-neighborhood-manual" : ""); }}
+    <div className="geo-cascade-guide"><b>İl</b><i>→</i><b>İlçe</b><i>→</i><b>Mahalle/Köy</b><i>→</i><b>Ada</b><i>→</i><b>Parsel</b></div><div className="geo-field-grid geo-cascade-fields"><label>İl<select value={provinceId} onChange={(event) => { const selected = provinceOptions.find((item) => item.id === event.target.value); setProvinceId(event.target.value); setProvince(selected?.label ?? ""); setAdministrativeLoading("district"); setDistrictOptions([]); setDistrictId(""); setDistrict(""); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İl değişti. İlçe, mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!provinceOptions.length}><option value="">{administrativeLoading === "province" ? "İller yükleniyor…" : "İl seçin"}</option>{provinceOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>İlçe<select value={districtId} onChange={(event) => { const selected = districtOptions.find((item) => item.id === event.target.value); setDistrictId(event.target.value); setDistrict(selected?.label ?? ""); setAdministrativeLoading("neighborhood"); setNeighborhoodOptions([]); setNeighborhoodId(""); setNeighborhood(""); setBlock(""); setParcelNo(""); resetParcelSelection("İlçe değişti. Mahalle/köy, ada ve parsel seçimini yeniden tamamlayın."); }} disabled={!provinceId || !districtOptions.length}><option value="">{administrativeLoading === "district" ? "İlçeler yükleniyor…" : provinceId ? "İlçe seçin" : "Önce il seçin"}</option>{districtOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label><label>Mahalle / Köy{administrativeSource === "fallback"
+      ? <><input value={neighborhood} onChange={(event) => { const value = event.target.value; setNeighborhood(value); setNeighborhoodId(value.trim() ? "offline-neighborhood-manual" : ""); setBlock(""); setParcelNo(""); resetParcelSelection("Mahalle/köy değişti. Ada ve parsel numarasını yeniden girin."); }}
           placeholder="Mahalle veya köy adını kendiniz yazın" disabled={!districtId} autoComplete="off" />
           <small className="arx-geo-field-warning">Elle girilen ad resmî mahalle kimliği değildir.</small></>
-      : <select value={neighborhoodId} onChange={(event) => { const selected = neighborhoodOptions.find((item) => item.id === event.target.value); setNeighborhoodId(event.target.value); setNeighborhood(selected?.label ?? ""); }} disabled={!districtId || !neighborhoodOptions.length}>
+      : <select value={neighborhoodId} onChange={(event) => { const selected = neighborhoodOptions.find((item) => item.id === event.target.value); setNeighborhoodId(event.target.value); setNeighborhood(selected?.label ?? ""); setBlock(""); setParcelNo(""); resetParcelSelection("Mahalle/köy değişti. Ada ve parsel numarasını girin."); }} disabled={!districtId || !neighborhoodOptions.length}>
           <option value="">{administrativeLoading === "neighborhood" ? "Mahalleler yükleniyor…" : districtId ? "Mahalle / köy seçin" : "Önce ilçe seçin"}</option>
           {neighborhoodOptions.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}
-        </select>}</label><label>Ada<input value={block} onChange={(event) => setBlock(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Ada numarası" disabled={!neighborhoodId} /></label><label>Parsel<input value={parcelNo} onChange={(event) => setParcelNo(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Parsel numarası" disabled={!neighborhoodId} /></label></div><p className={`geo-cascade-status ${administrativeSource === "fallback" ? "fallback" : "official"}`}><i className={neighborhoodId ? "ready" : ""}></i>{administrativeSource === "fallback" ? "Çevrimdışı seçim listesi açık · resmî geometri TKGM/KML ile doğrulanacak." : neighborhoodId ? `${province} / ${district} / ${neighborhood} seçildi. Ada ve parsel numarasını girin.` : "Her seçim bir sonraki resmî idari listeyi açar."}</p>{administrativeSource === "official" && !districtId.startsWith("offline-") && !neighborhoodId.startsWith("offline-")
+        </select>}</label><label>Ada<input value={block} onChange={(event) => { setBlock(event.target.value.replace(/\D/g, "")); resetParcelSelection("Ada numarası değişti. Parsel numarasını kontrol edip sorguyu çalıştırın."); }} inputMode="numeric" placeholder="Ada numarası" disabled={!neighborhoodId} /></label><label>Parsel<input value={parcelNo} onChange={(event) => { setParcelNo(event.target.value.replace(/\D/g, "")); resetParcelSelection("Parsel numarası değişti. TKGM sorgusunu çalıştırarak sınırı yükleyin."); }} inputMode="numeric" placeholder="Parsel numarası" disabled={!neighborhoodId} /></label></div><p className={`geo-cascade-status ${administrativeSource === "fallback" ? "fallback" : "official"}`}><i className={neighborhoodId ? "ready" : ""}></i>{administrativeSource === "fallback" ? "Çevrimdışı seçim listesi açık · resmî geometri TKGM/KML ile doğrulanacak." : neighborhoodId ? `${province} / ${district} / ${neighborhood} seçildi. Ada ve parsel numarasını girin.` : "Her seçim bir sonraki resmî idari listeyi açar."}</p>{administrativeSource === "official" && !districtId.startsWith("offline-") && !neighborhoodId.startsWith("offline-")
       ? <button className={"geo-parcel-query " + parcelLookup} onClick={locateOfficialParcel}
           disabled={parcelLookup === "loading" || !neighborhoodId || !block.trim() || !parcelNo.trim()}>
           <span>{parcelLookup === "loading" ? "…" : parcelLookup === "found" ? "✓" : "TKGM"}</span>
@@ -1225,7 +1417,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </button>
       : <p className="arx-geo-offline-query">Doğrudan parsel sorgusu bu oturumda kullanılamıyor. Resmî Parsel Sorgu üzerinden kaydı kontrol edin. Varsa sınır KML / GeoJSON dosyasını Dosya Yükle bölümüne aktarın.</p>}<a className="geo-official-link" href="https://parselsorgu.tkgm.gov.tr/" target="_blank" rel="noreferrer"><span>R</span><b>Resmî Parsel Sorgu’da doğrula</b><i>↗</i></a><p className="geo-caution">İl, ilçe ve mahalle/köy listeleri TKGM MEGSİS servisinden bağımlı olarak yüklenir. Ada ve parsel numarası seçili mahalle kimliğiyle sorgulanır. Alınan sınır bilgilendirme amaçlıdır; resmî proje sınırı yetkili harita mühendisi ve aplikasyon verisiyle doğrulanır.</p><div className="geo-coordinate-fields"><label>Enlem<input value={latitude} onChange={(event) => setLatitude(event.target.value)} inputMode="decimal" /></label><label>Boylam<input value={longitude} onChange={(event) => setLongitude(event.target.value)} inputMode="decimal" /></label></div><div className="geo-inline-actions"><button onClick={moveToCoordinate}>Koordinata git</button><button onClick={useDeviceLocation}>Cihaz konumu</button></div></div>,
     import: <div className="geo-control-section"><span>02 / MEKÂNSAL VERİ</span><h3>Sınırı kaynağı ve statüsüyle içe alın.</h3><label>Kaynak koordinat sistemi<select value={sourceCrs} onChange={(event) => setSourceCrs(event.target.value)}><option>EPSG:4326 / WGS84</option><option>ITRF96 / 3° TM — dönüşüm gerekli</option><option>ED50 / UTM — dönüşüm gerekli</option><option>Yerel aplikasyon — sabit nokta gerekli</option></select></label><label>Veri statüsü<select value={dataStatus} onChange={(event) => setDataStatus(event.target.value)}><option>Kavramsal / doğrulanmamış</option><option>TKGM ekranından yaklaşık</option><option>Harita mühendisi ölçümü</option><option>Onaylı aplikasyon verisi</option></select></label><label className="geo-file-drop"><input type="file" accept=".kml,.geojson,.json,.csv,.txt" onChange={(event) => handleFile(event.target.files?.[0])} /><b>KML, GeoJSON veya CSV seçin</b><small>Dosya tarayıcıda okunur; sunucuya yüklenmez.</small></label><div className="geo-format-list"><p><b>KML / KMZ</b><span>Google Earth çalışma akışı</span><i>CANLI: KML</i></p><p><b>GeoJSON</b><span>WGS84 Polygon / MultiPolygon</span><i>CANLI</i></p><p><b>CSV</b><span>enlem, boylam, opsiyonel kot</span><i>CANLI</i></p><p><b>SHP / LandXML</b><span>proje dönüşüm hattı</span><i className="planned">KISMİ</i></p></div><p className="geo-caution">Tarayıcı EPSG:4326 enlem / boylam verisini doğrudan işler. ITRF/TM, ED50 veya yerel koordinatlar doğru EPSG, dönüşüm parametreleri ve sabit aplikasyon noktası olmadan WGS84 kabul edilmez.</p></div>,
-    draw: <div className="geo-control-section"><span>03 / SINIR EDİTÖRÜ</span><h3>Noktaları harita üzerinde düzenleyin.</h3><button className={`geo-toggle-draw${drawEnabled ? " active" : ""}`} onClick={() => setDrawEnabled((value) => !value)}><i></i>{drawEnabled ? "Haritaya tıklayarak nokta ekleniyor" : "Nokta ekleme kapalı"}</button><div className="geo-inline-actions"><button onClick={removeLastBoundaryPoint} disabled={!parcel.length}>Son noktayı geri al</button><button onClick={clearBoundary} disabled={!parcel.length}>Sınırı temizle</button></div><button className="geo-wide-action" onClick={loadSample}>Koordinatta örnek poligon üret</button><div className="geo-point-table"><header><span>Nokta</span><span>Enlem</span><span>Boylam</span></header>{parcel.slice(0, 12).map((point, index) => <p key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></p>)}{parcel.length > 12 && <small>+ {parcel.length - 12} ek nokta</small>}</div></div>,
+    draw: <div className="geo-control-section"><span>03 / SINIR EDİTÖRÜ</span><h3>Noktaları harita üzerinde düzenleyin.</h3><button className={`geo-toggle-draw${drawEnabled ? " active" : ""}`} onClick={() => setDrawEnabled((value) => !value)}><i></i>{drawEnabled ? "Haritaya tıklayarak nokta ekleniyor" : "Nokta ekleme kapalı"}</button><div className="geo-inline-actions"><button onClick={removeLastBoundaryPoint} disabled={!parcel.length}>Son noktayı geri al</button><button onClick={clearBoundary} disabled={!parcel.length}>Sınırı temizle</button></div>{!simple && <button className="geo-wide-action" onClick={loadSample}>Koordinatta örnek poligon üret</button>}<div className="geo-point-table"><header><span>Nokta</span><span>Enlem</span><span>Boylam</span></header>{parcel.slice(0, 12).map((point, index) => <p key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></p>)}{parcel.length > 12 && <small>+ {parcel.length - 12} ek nokta</small>}</div></div>,
     zoning: <div className="geo-control-section geo-zoning-control">
       <span>04 / PARSEL BAZLI İMAR</span>
       <h3>Plan kararını kaynağıyla birlikte projeye bağlayın.</h3>
@@ -1351,31 +1543,31 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
               {showSources ? "Kaynak ayrıntılarını gizle" : "Kaynak ayrıntılarını göster"}</button>
             <button type="button" aria-pressed={showLayers} onClick={() => setShowLayers((current) => !current)}>
               {showLayers ? "Harita katmanlarını gizle" : "Harita katmanlarını göster"}</button>
-            <button type="button" aria-pressed={showConceptualOverlays} onClick={() => {
+            {parcel.length >= 3 && <button type="button" aria-pressed={showConceptualOverlays} onClick={() => {
               setShowConceptualOverlays((visible) => !visible);
               if (!showConceptualOverlays) setTerrainLayers((current) => ({ ...current, contours: true, "building-mass": true }));
             }}>
               {showConceptualOverlays ? "Temsili yapı ve eğrileri gizle" : "Temsili yapı ve eğrileri göster"}
-            </button>
+            </button>}
             <button type="button" aria-pressed={showResults} onClick={() => setShowResults((current) => !current)}>
               {showResults ? "Hesap sonuçlarını gizle" : "Hesap sonuçlarını göster"}</button>
           </div>
         </details>
       </nav>
-      <p className="arx-geo-source-note" role="note">{parcelSource.kind === "sample"
-        ? "Örnek parsel gösteriliyor. Bu sınır gerçek kadastro veya aplikasyon verisi değildir."
-        : "Sınır kaynağını ve imar doğrulama durumunu teknik sonuçlardan önce kontrol edin."}</p>
+      <p className="arx-geo-source-note" role="note">{parcel.length
+        ? "Sınır kaynağını ve imar doğrulama durumunu teknik sonuçlardan önce kontrol edin."
+        : `${province || "Proje konumu"}${district ? ` / ${district}` : ""} başlangıç verisinden aktarıldı. Önce mahalle/köy, ada ve parseli seçin; harita yalnız seçilen parsel bulunduğunda sınır gösterecek.`}</p>
     </>}
     <section className="v109-parcel-center" data-record-state={parcelRecord.state}>
       <header>
         <div><span>V109 / PARSEL VERİ MERKEZİ</span><h3>Parsel kimliği, sınırı ve kaynağı tek kayıtta.</h3></div>
         <aside data-eligible={parcelRecord.projectEligible}>
           <i>{parcelRecord.projectEligible ? "✓" : "i"}</i>
-          <span><b>{parcelRecord.projectEligible ? "Aktif projeye bağlı" : "Önizleme · projeye aktarılmadı"}</b><small>{project.id} · {project.revision}</small></span>
+          <span><b>{parcelRecord.projectEligible ? "Aktif projeye bağlı" : parcel.length ? "Sınır doğrulaması bekleniyor" : "Ada / parsel seçimi bekleniyor"}</b><small>{project.id} · {project.revision}</small></span>
         </aside>
       </header>
       <div className="v109-parcel-summary">
-        <article><span>PARSEL KAYDI</span><b>{parcelRecord.reference}</b><small>{parcelRecord.state === "identified" ? "TKGM açık servis kaydı" : parcelRecord.state === "user-supplied" ? "Kullanıcı mekânsal dosyası" : parcelRecord.state === "needs-review" ? "Uzman doğrulaması gerekli" : "Temsili başlangıç görünümü"}</small></article>
+        <article><span>PARSEL KAYDI</span><b>{parcelRecord.reference}</b><small>{!block || !parcelNo ? "Ada / parsel seçimi bekleniyor" : parcelRecord.state === "identified" ? "TKGM açık servis kaydı" : parcelRecord.state === "user-supplied" ? "Kullanıcı mekânsal dosyası" : "Uzman doğrulaması gerekli"}</small></article>
         <article><span>SINIR GEOMETRİSİ</span><b>{parcelRecord.geometry.valid ? `${parcelRecord.geometry.vertexCount} köşe · ${parcelRecord.geometry.computedArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "Geçerli sınır bekleniyor"}</b><small>{parcelRecord.geometry.coordinateReferenceSystem} · {parcelRecord.evidence.officialCadastre ? "resmî kadastro" : "aplikasyon değildir"}</small>{parcelRecord.geometry.reportedArea !== null && <small>TKGM bildirilen: {parcelRecord.geometry.reportedArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · Fark: {Math.abs(parcelRecord.geometry.reportedArea - parcelRecord.geometry.computedArea).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² (%{parcelRecord.geometry.areaVariancePercent?.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}). Hesap, WGS84 koordinatlarından yerel düzlem yaklaşımıdır; aplikasyon alanı değildir.</small>}</article>
         <article><span>KAYNAK VE KANIT</span><b>{parcelRecord.evidence.label}</b><small>{parcelRecord.evidence.sourceKind === "sample" ? "Örnek veri · resmî sorgu zamanı yok" : `${parcelRecord.evidence.authority} · ${parcelRecord.evidence.capturedAt.replace("T", " ").slice(0, 16)}`}</small></article>
       </div>
@@ -1392,13 +1584,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     <div className="geo-workspace">
       <aside className="geo-controls">{stageContent[activeStage]}<div className="geo-control-notice"><i></i><span><b>OTURUM DURUMU</b><small>{fileNotice}</small></span></div></aside>
       <main className="geo-stage">
-        <div className="geo-stage-toolbar"><div>{([{"id":"map","label":"2B Harita"},{"id":"terrain","label":"3B Arazi"},{"id":"data","label":"Veri / Koordinat"}] as const).map((view) => <button key={view.id} className={viewMode === view.id ? "active" : ""} onClick={() => setViewMode(view.id)}>{view.label}</button>)}</div>{simple && viewMode === "map" && <button type="button" className="arx-geo-concept-toggle" aria-pressed={showConceptualOverlays} onClick={() => setShowConceptualOverlays((current) => !current)}>{showConceptualOverlays ? "Temsili katmanları gizle" : "Temsili katmanları göster"}</button>}<button onClick={fitToParcel}>Parseli ekrana sığdır ⛶</button></div>
+        <div className="geo-stage-toolbar"><div>{([{"id":"map","label":"2B Harita"},{"id":"terrain","label":"3B Arazi"},{"id":"data","label":"Veri / Koordinat"}] as const).map((view) => <button key={view.id} className={viewMode === view.id ? "active" : ""} onClick={() => setViewMode(view.id)}>{view.label}</button>)}</div>{simple && viewMode === "map" && parcel.length >= 3 && <button type="button" className="arx-geo-concept-toggle" aria-pressed={showConceptualOverlays} onClick={() => setShowConceptualOverlays((current) => !current)}>{showConceptualOverlays ? "Temsili katmanları gizle" : "Temsili katmanları göster"}</button>}<button onClick={fitToParcel} disabled={!parcel.length}>Parseli ekrana sığdır ⛶</button></div>
         <section className="v111-layer-dock" aria-label="Ortak GIS ve 3B arazi katmanları">
           <header><div><span>V111 / ORTAK HARİTA + 3B KATMANLARI</span><b>Bir seçim, iki görünüm, tek proje kaydı.</b></div><em data-trust={terrainModel.trust}>{terrainModel.basis === "measured-z" ? `${terrainModel.samples.measured} KOT · ${terrainModel.trust === "verified" ? "YETKİLİ BEYAN" : "KAYNAK DOSYA"}` : "KAVRAMSAL YÜZEY"}</em></header>
           <div>{terrainModel.layers.map((layer) => <label key={layer.id} data-available={layer.available}><input type="checkbox" checked={terrainLayers[layer.id]} onChange={() => toggleTerrainLayer(layer.id)} disabled={layer.id === "basemap" || !layer.available} /><span><b>{layer.label}</b><small>{layer.id === "basemap" ? (basemapStatus === "ready" ? "Uydu / sokak servisi erişilebilir" : "Harita altlığı hazırlanıyor") : layer.available ? terrainLayers[layer.id] ? "Görünür" : "Gizli" : "Veri bekliyor"}</small></span></label>)}</div>
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
-        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : parcelSource.kind === "sample" ? (basemapStatus === "ready" ? "Harita altlığı · ÖRNEK konum (seçili parsel değil)" : "Harita yükleniyor · ÖRNEK konum") : (basemapStatus === "ready" ? "Harita altlığı · Parsel sınırı TKGM kaydından alınmıştır" : "Harita yükleniyor · Parsel sınırı mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend"><span><i></i>Parsel sınırı</span>{showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
+        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : !parcel.length ? (basemapStatus === "ready" ? `Harita altlığı · ${province || "konum"}${district ? ` / ${district}` : ""} · parsel seçimi bekleniyor` : "Harita yükleniyor · parsel seçimi bekleniyor") : parcelRecord.evidence.sourceKind === "tkgm-open-service" ? (basemapStatus === "ready" ? "Harita altlığı · Seçili parsel sınırı TKGM kaydından" : "Harita yükleniyor · seçili parsel sınırı mevcut") : (basemapStatus === "ready" ? "Harita altlığı · seçili sınır önizlemesi" : "Harita yükleniyor · sınır önizlemesi mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend">{parcel.length ? <span><i></i>Seçili parsel sınırı</span> : <span>Parsel seçimi bekleniyor</span>}{parcel.length >= 3 && showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
         {viewMode === "terrain" && !metrics.setbackPass && <p role="alert" className="geo-caution">Ön yerleşim uyarısı: Yapı parsel sınırını aşıyor veya girilen çekme mesafesini karşılamıyor. 3B görünüm teknik uygunluk onayı değildir.</p>}
         {viewMode === "terrain" && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} />}
         {viewMode === "data" && <div className="geo-data-view"><header><div><span>KAYNAK CRS BEYANI</span><b>{sourceCrs}</b></div><div><span>İŞLEME DÜZLEMİ</span><b>WGS84 → lokal ENU · metre</b></div><div><span>VERİ STATÜSÜ</span><b>{dataStatus}</b></div></header><section className="v111-terrain-ledger"><article><span>YÜZEY TEMELİ</span><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z / IDW" : "Parametrik eğim"}</b><small>{terrainModel.trust.toLocaleUpperCase("tr-TR")}</small></article><article><span>KOT ÖRNEĞİ</span><b>{terrainModel.samples.measured} / {terrainModel.samples.total}</b><small>Ölçülmüş / toplam nokta</small></article><article><span>KOT ARALIĞI</span><b>{terrainModel.elevation.range.toFixed(2)} m</b><small>{terrainModel.elevation.datum === "source-declared" ? "Kaynak datum beyanı" : "Yerel bağıl düzlem"}</small></article><article><span>EŞ YÜKSELTİ</span><b>{terrainContours.length}</b><small>Marching-squares önizleme parçası</small></article></section><div className="geo-data-table"><div className="head"><span>ID</span><span>LATITUDE</span><span>LONGITUDE</span><span>EAST / m</span><span>NORTH / m</span><span>Z / m</span></div>{parcel.map((point, index) => { const local = toLocalMeters(point, center); return <div key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(8)}</span><span>{point.lng.toFixed(8)}</span><span>{local.east.toFixed(3)}</span><span>{local.north.toFixed(3)}</span><span>{point.alt?.toFixed(2) ?? "—"}</span></div>; })}</div><footer><p><b>CRS kontrolü</b> Hesap motoru koordinatları coğrafi derece olarak yorumlar ve parsel merkezi çevresinde lokal ENU düzlemine alır. Kaynak veri WGS84 değilse doğru EPSG dönüşümü yapılmadan alan ve mesafe sonuçları proje verisi sayılmaz.</p><p><b>Arazi kontrolü</b> {terrainModel.limitations[0]}</p></footer></div>}

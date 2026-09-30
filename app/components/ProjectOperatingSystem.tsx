@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createProjectOperatingModel, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
@@ -122,6 +123,101 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const approveDocument = (code: string) => setDocuments((items) => items.map((item) => item.code === code ? { ...item, status: "Onaylı" } : item));
   const closeDecision = (id: string) => setDecisions((items) => items.map((item) => item.id === id ? { ...item, state: "Yanıtlandı", due: "Kapandı" } : item));
   const exportRegister = () => downloadTextFile("arkem-project-os-register.json", JSON.stringify({ ...operatingModel, workItems, week, documents, decisions, supplyItems, qualityOpen, handover, earnedValue }, null, 2), "application/json");
+
+  if (compact) {
+    const openWork = workItems.filter((item) => item.status !== "closed");
+    const openDecisions = decisions.filter((item) => item.state !== "Yanıtlandı");
+    const currentDocs = documents.slice(0, 5);
+
+    return <section className="arx-tracking-tool" data-testid="project-operating-system">
+      <ProjectKernelBar module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
+      <div className="arx-track-grid">
+        <section className="arx-track-panel" aria-labelledby="arx-track-work-title">
+          <header className="arx-track-head">
+            <div><h2 id="arx-track-work-title">Proje durumu ve açık işler</h2><p>Öncelikli işler, kararlar ve program sinyalleri. Ayrıntılar gerektiğinde açılır.</p></div>
+            <button type="button" onClick={exportRegister}>Proje kaydını indir</button>
+          </header>
+          {issueGate?.blocked ? <p className="arx-track-warning" data-testid="project-os-issue-gate">{issueGate.activeCriticalClashes ?? 0} aktif kritik BIM çakışması nedeniyle 4B/5B onay kapısı blokeli. İnceleme işareti teknik çözüm değildir.</p> : null}
+          <div className="arx-track-kpis">
+            <article><span>PROJE SAĞLIĞI</span><b>%{projectHealth}</b><small>karar ve saha verisine göre</small></article>
+            <article><span>AÇIK İŞ</span><b>{openWork.length}</b><small>{workItems.filter((item) => item.status === "blocked").length} bloke</small></article>
+            <article><span>AÇIK KARAR</span><b>{openDecisions.length}</b><small>RFI ve karar kaydı</small></article>
+            <article><span>SPI / CPI</span><b className={earnedValue.spi < .95 ? "risk" : ""}>{earnedValue.spi.toFixed(2)} / {earnedValue.cpi.toFixed(2)}</b><small>kavramsal program / maliyet</small></article>
+          </div>
+          <div className="arx-track-list">
+            {openWork.slice(0, 5).map((item) => <article className={`arx-track-item ${item.status === "blocked" ? "blocked" : ""}`} key={item.id}>
+              <div>
+                <span>{item.type.toUpperCase()} · {item.id}</span>
+                <h3>{item.title}</h3>
+                <p>{item.owner} · {item.dueDate} · {item.scheduleImpact}</p>
+              </div>
+              <button type="button" data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={() => setWorkStates((values) => ({ ...values, [item.id]: item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "blocked" : "in-review" : item.status === "in-review" ? "closed" : "in-review" }))}>
+                {item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "İşareti kaldır" : "İncelemeye al" : item.status === "in-review" ? "Kapat" : "İncele"}
+              </button>
+            </article>)}
+            {!openWork.length ? <p className="arx-track-empty">Açık iş bulunmuyor.</p> : null}
+          </div>
+          <details className="arx-track-detail">
+            <summary>Kararlar ve RFI ({openDecisions.length} açık)</summary>
+            <div className="arx-track-decisions">
+              {decisions.map((item) => <article className="arx-track-decision" key={item.id}>
+                <span>{item.id}</span>
+                <div><b>{item.title}</b><small>{item.impact} · {item.owner} · {item.due}</small></div>
+                {item.state !== "Yanıtlandı" ? <button type="button" onClick={() => closeDecision(item.id)}>Kararı kapat</button> : <small>Kapalı</small>}
+              </article>)}
+            </div>
+          </details>
+          <details className="arx-track-detail">
+            <summary>Güncel dokümanlar</summary>
+            <div className="arx-track-docs">
+              {currentDocs.map((item) => <article className="arx-track-doc" key={item.code}>
+                <span>{item.code}</span>
+                <div><b>{item.title}</b><small>{item.discipline} · {item.rev} · {item.status}</small></div>
+                {item.status !== "Onaylı" ? <button type="button" onClick={() => approveDocument(item.code)}>Onayla</button> : <small>Güncel</small>}
+              </article>)}
+            </div>
+          </details>
+          <details className="arx-track-detail">
+            <summary>4B program özeti · hafta {week}</summary>
+            <div className="arx-track-program">
+              {schedule.map((item) => <article key={item.name}>
+                <span>{item.name}</span>
+                <i aria-hidden="true"><b style={{ width: item.progress + "%" }} /></i>
+                <small>%{item.progress} · {item.owner}</small>
+              </article>)}
+            </div>
+          </details>
+        </section>
+
+        <aside className="arx-track-side">
+          <section className="arx-track-panel arx-track-summary">
+            <h2>Takip özeti</h2>
+            <dl>
+              <div><dt>Bağlı proje verisi</dt><dd>{thread.metrics.activeCount} / {thread.metrics.totalCount}</dd></div>
+              <div><dt>Kritik konu</dt><dd>{thread.metrics.critical}</dd></div>
+              <div><dt>İnceleme konusu</dt><dd>{thread.metrics.review}</dd></div>
+              <div><dt>Fiziksel ilerleme</dt><dd>%43</dd></div>
+              <div><dt>Hafta</dt><dd>{week} / 36</dd></div>
+              <div><dt>Program göstergesi</dt><dd>SPI {earnedValue.spi.toFixed(2)}</dd></div>
+              <div><dt>Maliyet göstergesi</dt><dd>CPI {earnedValue.cpi.toFixed(2)}</dd></div>
+            </dl>
+          </section>
+          <section className="arx-track-panel arx-track-handover">
+            <div className="arx-track-handover-head"><h2>Teslim hazırlığı</h2><strong>%{completion}</strong></div>
+            <div className="arx-track-handover-list">
+              {["As-built model ve çizimler","Test / kontrol tutanakları","Ürün ve malzeme listesi","Garanti ve bakım planları","Ekipman varlık kimlikleri","Söküm / yeniden kullanım notları"].map((item,index)=><button type="button" key={item} className={handover[index] ? "done" : ""} onClick={()=>setHandover((values)=>values.map((value,i)=>i===index?!value:value))}><span>{item}</span><b>{handover[index] ? "✓" : "—"}</b></button>)}
+            </div>
+          </section>
+          <section className="arx-track-panel">
+            <div className="arx-track-actions">
+              <button type="button" onClick={exportRegister}>JSON indir</button>
+              <Link href="/dijital-proje-merkezi">Dijital teslim / proje merkezi →</Link>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>;
+  }
 
   return <section className={`project-os-app${compact ? " compact" : ""}`}>
     <ProjectKernelBar module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />

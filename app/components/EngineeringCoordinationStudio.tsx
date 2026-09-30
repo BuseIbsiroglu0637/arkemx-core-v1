@@ -16,7 +16,7 @@ function clamp(value: number, min: number, max: number) { return Math.min(max, M
 function record(value: unknown): UnknownRecord { return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : {}; }
 function numeric(value: unknown, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 
-export function EngineeringCoordinationStudio() {
+export function EngineeringCoordinationStudio({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [view, setView] = useState<View>("federation");
@@ -176,6 +176,125 @@ export function EngineeringCoordinationStudio() {
     topics: combinedIssues.map((issue) => ({ ...issue, reviewed: reviewed.includes(issue.id) })),
   }), null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-koordinasyon-kaydi.csv", ["id,severity,discipline,title,evidence,status", ...combinedIssues.map((issue) => `${issue.id},${issue.severity},"${issue.discipline}","${issue.title}","${issue.evidence}",${reviewed.includes(issue.id) ? "reviewed-open" : "open"}`)].join("\n"), "text/csv;charset=utf-8");
+
+  if (simple) {
+    const priority = { critical: 0, review: 1, info: 2 } as const;
+    const priorityIssues = [...combinedIssues]
+      .sort((left, right) => priority[left.severity] - priority[right.severity])
+      .slice(0, 4);
+
+    return <section className="arx-bim-tool" data-testid="engineering-coordination-studio" data-transfer-ready={transferReady ? "true" : "false"} data-service-zone={serviceZone}>
+      <ProjectKernelBar module="INTEGRATED COORDINATION ENGINE" confidence="BIM / issue koordinasyonu" compact />
+      <div className="arx-bim-grid">
+        <section className="arx-bim-panel" aria-labelledby="arx-bim-input-title">
+          <header className="arx-bim-panel-head">
+            <div><h2 id="arx-bim-input-title">Koordinasyon girdileri</h2><p>Temel kesit ve servis zonu değerlerini yönetin; ayrıntılı varsayımları gerektiğinde açın.</p></div>
+            <button className="arx-bim-button" type="button" onClick={importThread}>Proje modelini yenile ↻</button>
+          </header>
+          <div className="arx-bim-source">
+            <div><span>Mimari model</span><b>{bimCoordination.source.architectureConnected ? "Bağlı" : "Bekleniyor"}</b></div>
+            <div><span>Taşıyıcı model</span><b>{bimCoordination.source.structureConnected ? "Bağlı" : "Bekleniyor"}</b></div>
+            <div><span>Koordinat / revizyon</span><b>{bimCoordination.coordinateSystem.reference} · {bimCoordination.federation.commonRevision}</b></div>
+            <small>{syncMessage}</small>
+          </div>
+          <div className="arx-bim-fields">
+            <label>Kat yüksekliği (m)
+              <input type="number" min="2.6" max="10" step=".05" value={floorHeight} onChange={(event) => setFloorHeight(clamp(Number(event.target.value), 2.6, 10))} />
+            </label>
+            <label>Kiriş yüksekliği (m)
+              <input type="number" min=".2" max="2" step=".05" value={beamDepth} onChange={(event) => setBeamDepth(clamp(Number(event.target.value), .2, 2))} />
+            </label>
+            <label>Döşeme (m)
+              <input type="number" min=".08" max=".6" step=".01" value={slabDepth} onChange={(event) => setSlabDepth(clamp(Number(event.target.value), .08, .6))} />
+            </label>
+            <label>MEP servis zonu (m)
+              <input type="number" min=".15" max="2" step=".05" value={serviceZone} onChange={(event) => setServiceZone(clamp(Number(event.target.value), .15, 2))} />
+            </label>
+          </div>
+          <details className="arx-bim-detail">
+            <summary>MEP, zemin ve drenaj varsayımları</summary>
+            <div className="arx-bim-fields">
+              <label>Asma tavan (m)<input type="number" min="0" max=".5" step=".01" value={ceilingBuildUp} onChange={(event) => setCeilingBuildUp(clamp(Number(event.target.value), 0, .5))} /></label>
+              <label>Yükseltilmiş döşeme (m)<input type="number" min="0" max=".5" step=".01" value={raisedFloor} onChange={(event) => setRaisedFloor(clamp(Number(event.target.value), 0, .5))} /></label>
+              <label>Şaft rezervi (m²/kat)<input type="number" min="1" max="1000" value={shaftArea} onChange={(event) => setShaftArea(clamp(Number(event.target.value), 1, 1000))} /></label>
+              <label>Teknik hacim (m²)<input type="number" min="1" max="5000" value={plantArea} onChange={(event) => setPlantArea(clamp(Number(event.target.value), 1, 5000))} /></label>
+              <label>Zemin taşıma girdisi (kN/m²)<input type="number" min="25" max="2000" step="25" value={soilBearing} onChange={(event) => setSoilBearing(clamp(Number(event.target.value), 25, 2000))} /></label>
+              <label>Yağış şiddeti (mm/h)<input type="number" min="10" max="500" step="5" value={rainfallIntensity} onChange={(event) => setRainfallIntensity(clamp(Number(event.target.value), 10, 500))} /></label>
+              <label>Çıkış kapasitesi (L/s)<input type="number" min=".5" max="30" step=".5" value={outletCapacity} onChange={(event) => setOutletCapacity(clamp(Number(event.target.value), .5, 30))} /></label>
+              <label>Cephe toleransı (mm)<input type="number" min="5" max="100" step="1" value={facadeTolerance} onChange={(event) => setFacadeTolerance(clamp(Number(event.target.value), 5, 100))} /></label>
+            </div>
+            <button className={sprinkler ? "arx-bim-toggle is-on" : "arx-bim-toggle"} type="button" onClick={() => setSprinkler((value) => !value)}>
+              <span>Sprinkler senaryosu</span><b>{sprinkler ? "Aktif" : "Kapalı"}</b>
+            </button>
+          </details>
+        </section>
+
+        <section className="arx-bim-panel" aria-labelledby="arx-bim-summary-title">
+          <header className="arx-bim-panel-head">
+            <div><h2 id="arx-bim-summary-title">Koordinasyon özeti</h2><p>Bağlı katmanlar, kritik çakışmalar ve teslim hazırlığı tek görünümde.</p></div>
+            <div className="arx-bim-exports">
+              <button type="button" onClick={exportBcf}>BCF manifestosu</button>
+              <button type="button" onClick={exportCsv}>CSV indir</button>
+            </div>
+          </header>
+          <div className="arx-bim-kpis">
+            <article><span>BAĞLI KATMAN</span><b>{bimCoordination.federation.connectedCount}/6</b><small>{bimCoordination.federation.missingCount} eksik</small></article>
+            <article><span>KRİTİK ÇAKIŞMA</span><b className={activeCriticalClashes.length ? "risk" : "good"}>{activeCriticalClashes.length}</b><small>{openIssues.length} açık issue</small></article>
+            <article><span>NET YÜKSEKLİK</span><b>{result.clearHeight.toFixed(2)} m</b><small>kavramsal kesit</small></article>
+            <article><span>4B GÖSTERGESİ</span><b>{bimCoordination.schedule4D.totalWeeks.toFixed(1)} hf</b><small>onaylı program değil</small></article>
+          </div>
+          <div className="arx-bim-issues">
+            <div className="arx-bim-issues-head"><h3>Öncelikli açık konular</h3><span>{reviewed.length} incelendi · teknik çözüm değil</span></div>
+            {priorityIssues.map((issue) => {
+              const reviewedIssue = reviewed.includes(issue.id);
+              return <article className={`arx-bim-issue ${issue.severity}${reviewedIssue ? " is-reviewed" : ""}`} key={`${issue.source}-${issue.id}`}>
+                <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
+                <div><b>{issue.title}</b><p>{issue.discipline} · {issue.evidence}</p></div>
+                <button type="button" onClick={() => setReviewed((current) => current.includes(issue.id) ? current.filter((id) => id !== issue.id) : [...current, issue.id])}>{reviewedIssue ? "İşareti kaldır" : "İncelendi"}</button>
+              </article>;
+            })}
+            {!priorityIssues.length ? <p className="arx-bim-empty">Şu anda açık koordinasyon konusu üretilmedi.</p> : null}
+          </div>
+          <details className="arx-bim-detail">
+            <summary>Federasyon katmanları</summary>
+            <div className="arx-bim-layers">
+              {bimCoordination.federation.layers.map((layer) => <div className="arx-bim-layer" key={layer.code}>
+                <span>{layer.code}</span><b>{layer.label}</b><small>{layer.state === "connected" ? "Bağlı" : layer.state === "conceptual" ? "Kavramsal" : "Eksik"}</small>
+              </div>)}
+            </div>
+          </details>
+          <details className="arx-bim-detail">
+            <summary>Tüm açık issue kaydı ({combinedIssues.length})</summary>
+            <div className="arx-bim-issues">
+              {combinedIssues.map((issue) => {
+                const reviewedIssue = reviewed.includes(issue.id);
+                return <article className={`arx-bim-issue ${issue.severity}${reviewedIssue ? " is-reviewed" : ""}`} key={`all-${issue.source}-${issue.id}`}>
+                  <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
+                  <div><b>{issue.id} · {issue.title}</b><p>{issue.discipline} · {issue.action}</p></div>
+                  <button type="button" onClick={() => setReviewed((current) => current.includes(issue.id) ? current.filter((id) => id !== issue.id) : [...current, issue.id])}>{reviewedIssue ? "İşareti kaldır" : "İncelendi"}</button>
+                </article>;
+              })}
+            </div>
+          </details>
+          <details className="arx-bim-detail">
+            <summary>4B / 5B ve miktar göstergeleri</summary>
+            <div className="arx-bim-delivery">
+              <article><span>Koordinasyon süresi</span><b>{bimCoordination.schedule4D.totalWeeks.toFixed(1)} hafta*</b></article>
+              <article><span>Göreli yapısal maliyet</span><b>{bimCoordination.cost5D.relativeStructuralCost.toFixed(0)}</b></article>
+              <article><span>Beton</span><b>{bimCoordination.quantities.structural.concreteVolumeM3.toFixed(1)} m³</b></article>
+              <article><span>Yapı çeliği</span><b>{bimCoordination.quantities.structural.structuralSteelT.toFixed(1)} t</b></article>
+              <article><span>MEP zon hacmi</span><b>{bimCoordination.quantities.coordination.serviceZoneVolumeM3.toFixed(0)} m³</b></article>
+              <article><span>Karbon göstergesi</span><b>{(bimCoordination.carbon.structuralKgCO2e / 1000).toFixed(0)} tCO₂e*</b></article>
+            </div>
+          </details>
+        </section>
+      </div>
+      <section className="arx-bim-panel arx-bim-next">
+        <p>Koordinasyon çıktıları erken proje kontrolü içindir. Native IFC/BCFZIP, statik veya MEP tasarımı ve onaylı 4B/5B hesabı yerine geçmez.</p>
+        <Link href="/proje-takibi">Proje takibine geç →</Link>
+      </section>
+    </section>;
+  }
 
   return <section className="coordination-app" data-testid="engineering-coordination-studio" data-transfer-ready={transferReady ? "true" : "false"} data-service-zone={serviceZone}>
     <ProjectKernelBar module="BIM & DISCIPLINE COORDINATION" confidence="V113 + V114 · IFC/BCF hazırlık" />

@@ -18,7 +18,8 @@ export default function ArchitecturalProgramPage() {
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-architecture-back" aria-label="Sayfa bağlantıları">
-          <Link href="/dijital-proje-merkezi"><ArrowLeft size={16} aria-hidden="true" /> Proje merkezine dön</Link>
+          <Link href="/arsa-fizibilite-studyosu#geo-studyo"><ArrowLeft size={16} aria-hidden="true" /> Önceki adıma dön</Link>
+          <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
           <Link href="/">Tüm araçlar</Link>
         </nav>
       </header>

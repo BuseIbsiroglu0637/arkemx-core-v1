@@ -40,6 +40,24 @@ async function render(path = "/", requestInit = {}, runtimeEnv = {}) {
   );
 }
 
+const hostedManifestPath = new URL("../.openai/hosting.json", import.meta.url);
+
+// Keep deployment-specific checks separate from source-level tests: GitHub
+// checkouts do not contain the private hosted deployment manifest.
+test("hosted deployment declares the expected DB and BUCKET bindings", {
+  skip: fs.existsSync(hostedManifestPath) ? false : "Private hosting manifest is unavailable in this checkout",
+}, () => {
+  const hosting = JSON.parse(fs.readFileSync(hostedManifestPath, "utf8"));
+  assert.equal(hosting.d1, "DB");
+  assert.equal(hosting.r2, "BUCKET");
+});
+
+test("local Cloudflare type generation declares DB and BUCKET binding names", () => {
+  const typesConfig = fs.readFileSync(new URL("../wrangler.types.jsonc", import.meta.url), "utf8");
+  assert.match(typesConfig, /"binding"\s*:\s*"DB"/);
+  assert.match(typesConfig, /"binding"\s*:\s*"BUCKET"/);
+});
+
 test("V4.3 declares permanent Turkish canonical redirects for legacy Wix project routes", () => {
   const listing = fs.readFileSync(new URL("../app/projects/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../app/projects/[slug]/page.tsx", import.meta.url), "utf8");
@@ -170,8 +188,8 @@ test("renders the V25 professional engineering application contracts", async () 
 
 test("renders the V26 federated architectural and engineering contracts", async () => {
   const routes = [
-    ["/dijital-proje-merkezi", ["GELİŞTİRME PROTOTİPİ", "İzlenebilir proje verisi", "DEVİR TESLİM"]],
-    ["/mimari-program-studyosu", ["ARCHITECTURAL PROGRAM ENGINE", "MAHAL LİSTESİ", "PROGRAM BRÜTÜ"]],
+    ["/dijital-proje-merkezi", ["Proje Çalışma Alanı", "Projenize devam edin", "Proje JSON yükle"]],
+    ["/mimari-program-studyosu", ["Mimari program", "Hedef alanı", "kavramsal plan şemasını"]],
     ["/muhendislik-koordinasyon", ["INTEGRATED COORDINATION ENGINE", "FEDERE MODEL KATMANLARI", "OTOMATİK KURAL SETİ"]],
     ["/tasarim-calismalari", ["MİMARİ PROGRAM", "Üst veriyi aktar", "Plan / program verisini aktar"]],
     ["/dijital-donusum", ["Yeni proje başlat", "Arsa Fizibilitesi", "Proje Kontrolü"]],
@@ -186,7 +204,7 @@ test("renders the V26 federated architectural and engineering contracts", async 
 
 test("renders the V27 premium customer journey contracts", async () => {
   const routes = [
-    ["/", ["MÜHENDİSLİKTEN", "PROJE DENEYİMİ", "NE YAPMAK İSTİYORSUNUZ"]],
+    ["/", ["Araçlar", "Yeni proje", "Proje Çalışma Alanı"]],
     ["/referanslar", ["PROJE ARŞİVİ", "Teknik kayıt standardı", "kaynaklı kayıt"]],
     ["/iletisim", ["teknik başlangıç kaydı", "PROJE ÖN DEĞERLENDİRME", "Proje Dosyalarını Yükle"]],
   ];
@@ -198,20 +216,23 @@ test("renders the V27 premium customer journey contracts", async () => {
   }
 });
 
-test("renders the V28 engineering evidence experience", async () => {
+test("renders the current ARKEMX tools landing experience", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
   const html = await response.text();
-  for (const expected of ["MÜHENDİSLİKTEN", "MÜHENDİSLİKTEN SAHAYA", "İzlenebilir proje zinciri", "PROJEDEN SAHAYA", "PROJE ÖN DEĞERLENDİRME"]) {
-    assert.match(html, new RegExp(expected, "i"), expected);
-  }
+  assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(html, /href="\/proje-baslat"/);
+  assert.match(html, /href="\/arsa-fizibilite-studyosu"/);
+  assert.match(html, /href="\/bim-koordinasyon"/);
+  assert.match(html, /href="\/proje-takibi"/);
+  assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
 test("renders the V29 guided workflow and corrected module contracts", async () => {
   const routes = [
     ["/yikim-karar-studyosu", ["TEK PROJE", "HESAP MOTORU ÖNERİSİ", "ÖNERİLEN İNCELEME", "Mesafe arttıkça komşu kütleler"]],
     ["/arsa-fizibilite-studyosu", ["TEK PROJE", "MEGSİS", "Resmî Parsel Sorgu’da doğrula"]],
-    ["/", ["PROJE DENEYİMİ", "YAPI SİSTEMLERİ", "ARKEMX"]],
+    ["/", ["Araçlar", "Yapı sistemi", "Proje Çalışma Alanı"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -222,24 +243,31 @@ test("renders the V29 guided workflow and corrected module contracts", async () 
 });
 
 test("renders the V32 continuous project handoff on every design stage", async () => {
-  const routes = [
+  const legacyStages = [
     "/arsa-fizibilite-studyosu",
     "/mimari-program-studyosu",
     "/tasarim-calismalari",
     "/yapi-sistemi-karsilastirma",
     "/muhendislik-koordinasyon",
     "/proje-os",
-    "/dijital-proje-merkezi",
   ];
-  for (const path of routes) {
-    const response = await render(path);
-    assert.equal(response.status, 200, path);
+  for (const route of legacyStages) {
+    const response = await render(route);
+    assert.equal(response.status, 200, route);
     const html = await response.text();
-    assert.match(html, /Her modül önceki adımın verisini kullanır/i, path);
-    assert.match(html, /Aktarılan proje verileri/i, path);
-    assert.match(html, /href="\/arsa-fizibilite-studyosu"/i, `${path}: parcel route`);
-    assert.match(html, /href="\/mimari-program-studyosu"/i, `${path}: architecture route`);
+    assert.match(html, /Her modül önceki adımın verisini kullanır/i, route);
+    assert.match(html, /Aktarılan proje verileri/i, route);
+    assert.match(html, /href="\/arsa-fizibilite-studyosu"/i, `${route}: parcel route`);
+    assert.match(html, /href="\/mimari-program-studyosu"/i, `${route}: architecture route`);
   }
+
+  const centerResponse = await render("/dijital-proje-merkezi");
+  assert.equal(centerResponse.status, 200);
+  const centerHtml = await centerResponse.text();
+  assert.match(centerHtml, /data-testid="digital-project-hub"/);
+  assert.match(centerHtml, /Proje kontrol özeti/);
+  assert.match(centerHtml, /Proje adımları/);
+  assert.match(centerHtml, /href="\/mimari-program-studyosu"/i);
 });
 
 test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", async () => {
@@ -247,7 +275,7 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
     ["/dokumanlar", ["57", "Dijital Teslim &amp; BIM", "Zemin &amp; Deprem", "IFC Açık Model Standardı"]],
     ["/blog", ["Teknik Yayın Merkezi", "Teknik konuda arayın", "Dijital Yapı Pasaportu", "Betonarme Prefabrik"]],
     ["/arkemx", ["13 PROJE MÜHENDİSLİĞİ MODÜLÜ", "DOĞRULAMA VE İZLENEBİLİRLİK", "GELİŞİM YOL HARİTASI"]],
-    ["/", ["DİJİTAL PROJE ARAÇLARI", "TEK BİR YOLDAN İLERLEYİN", "PROJE DENEYİMİ"]],
+    ["/", ["Araçlar", "Mimari program", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -259,9 +287,9 @@ test("renders the V37 knowledge, editorial and ARKEMX accessibility contracts", 
 
 test("renders the V38 guided project platform contract", async () => {
   const routes = [
-    ["/proje-baslat", ["Yönlendirmeli Başlangıç", "Teknik bilgi gerekmez", "Proje türü", "Doğru soruyla başlayın", "Açık teknik çıktı"]],
-    ["/dijital-proje-merkezi", ["Yönlendirmeli Projeyi Başlatın", "GELİŞTİRME PROTOTİPİ", "Prototip Veri Grafiğini Açın"]],
-    ["/", ["YENİ PROJE BAŞLAT", "DİJİTAL PROJE ARAÇLARI", "MÜŞTERİ PROJE PORTALI"]],
+    ["/proje-baslat", ["Yeni proje oluştur", "Proje bilgilerinizi adım adım girin", "bu cihazda taslak"]],
+    ["/dijital-proje-merkezi", ["Proje Çalışma Alanı", "Yerel çalışma", "Ayrıntılı proje kontrolleri"]],
+    ["/", ["Yeni proje", "Arazi ve parsel", "Dijital teslim"]],
   ];
   for (const [path, expectedValues] of routes) {
     const response = await render(path);
@@ -274,7 +302,7 @@ test("renders the V38 guided project platform contract", async () => {
 test("renders the V54 continuous parcel-to-structure contract and updated portrait", async () => {
   const routes = [
     ["/arsa-fizibilite-studyosu", ["VERİ DEVAMLILIĞI", "MİMARİ / PLAN"]],
-    ["/mimari-program-studyosu", ["VERİ DEVAMLILIĞI", "Aks modeline geç"]],
+    ["/mimari-program-studyosu", ["Mimari program", "Proje Çalışma Alanına Dön"]],
     ["/tasarim-calismalari", ["VERİ DEVAMLILIĞI", "plan-editor"]],
   ];
   for (const [path, expectedValues] of routes) {
@@ -285,7 +313,7 @@ test("renders the V54 continuous parcel-to-structure contract and updated portra
   }
 
   const kernelSource = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
-  for (const expected of ["siteContext", "programPlanElements", "modelContext", "mergeModuleValue", "synchronizeProject", "/tasarim-calismalari#plan-editor", "/tasarim-calismalari#tasiyici-on-tasarim"]) {
+  for (const expected of ["siteContext", "programPlanElements", "modelContext", "mergeModuleValue", "synchronizeProject", "/plan-ve-aks", "/tasiyici-on-tasarim"]) {
     assert.match(kernelSource, new RegExp(expected), expected);
   }
   const portrait = fs.statSync(new URL("../public/ozenc-ozturk.webp", import.meta.url));
@@ -351,12 +379,13 @@ test("renders the V58 project control center and administrative fallback choices
   assert.equal(projectCenter.status, 200);
   const projectCenterHtml = await projectCenter.text();
   for (const expected of [
-    "Proje kontrol merkezi",
-    "PROJE HAZIRLIK MATRİSİ",
-    "TEKNİK ÇIKTI KAYDI",
+    "Ayrıntılı proje kontrolleri",
+    "Proje kontrol özeti",
+    "Proje adımları",
+    "Teslim hazırlığı ve teknik çıktılar",
     "Proje paketini indir",
-    "Hazırlık matrisini indir",
   ]) assert.match(projectCenterHtml, new RegExp(expected, "i"), expected);
+  assert.doesNotMatch(projectCenterHtml, /Proje kontrol merkezi/i);
 
   const geoSource = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.match(geoSource, /FALLBACK_PROVINCE_NAMES/);
@@ -370,7 +399,7 @@ test("renders the V58 project control center and administrative fallback choices
 
 test("renders the V40 compact corporate and ARKEMX contracts", async () => {
   const routes = [
-    ["/", ["v4-systems-stage", "MÜHENDİSLİKTEN", "DİJİTAL PROJE ARAÇLARI"]],
+    ["/", ["arx-simple-home", "Araçlar", "Proje Çalışma Alanı"]],
     ["/kurumsal", ["MESLEKİ YAKLAŞIM", "Uygulama gerçekleriyle birlikte gelişen", "id=\"ozenc-ozturk\""]],
     ["/dokumanlar", ["id=\"bilgi-bankasi\"", "id=\"kaynak-3194-sayili-imar-kanunu\""]],
   ];
@@ -401,6 +430,8 @@ test("renders every public route and keeps internal navigation resolvable", asyn
     "/dokumanlar",
     "/egitimler",
     "/giris",
+    "/hesap-kurulum",
+    "/hesabim",
     "/hazir-projeler",
     "/hizmetler",
     "/iletisim",
@@ -417,6 +448,11 @@ test("renders every public route and keeps internal navigation resolvable", asyn
     "/proje-zekasi",
     "/proje-karar-asistani",
     "/proje-os",
+    "/plan-ve-aks",
+    "/tasiyici-on-tasarim",
+    "/sistem-karsilastirma",
+    "/bim-koordinasyon",
+    "/proje-takibi",
     "/projeler",
     "/referanslar",
     "/site-haritasi",
@@ -438,7 +474,7 @@ test("renders every public route and keeps internal navigation resolvable", asyn
   const discovered = new Set();
   for (const path of routeSet) {
     const response = await render(path);
-    assert.ok(response.status === 200 || (["/uyelik", "/arkem-x"].includes(path) && response.status === 307), path);
+    assert.ok(response.status === 200 || (["/uyelik", "/kayit", "/arkem-x"].includes(path) && response.status === 307), path);
     if (response.status !== 200) continue;
     const html = await response.text();
     for (const match of html.matchAll(/\bhref="(\/[^"]*)"/g)) {
@@ -1035,16 +1071,85 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   const references = fs.readFileSync(new URL("../app/data/references.ts", import.meta.url), "utf8");
   assert.match(references, /DİYANET Taşıyıcı Sistem Modeli/);
   assert.doesNotMatch(references, /title: "DİYAMET/);
-  const hosting = JSON.parse(fs.readFileSync(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
-  assert.equal(hosting.d1, "DB");
   const api = fs.readFileSync(new URL("../app/api/customer-workspace/route.ts", import.meta.url), "utf8");
   for (const expected of ["customer_projects", "customer_meetings", "getArkemAccountUser", "owner_email = ?"]) assert.match(api, new RegExp(expected));
-  const response = await render("/giris");
+  const response = await render("/giris?return_to=%2Fbim-koordinasyon");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /GÜVENLİ PROJE HESABI/);
-  assert.match(html, /Hesabıma giriş yap/);
+  assert.match(html, /ARKEMX’e giriş/);
+  assert.match(html, /Güvenli giriş yap/);
+  assert.match(html, /action="\/hesap-baglantisi"/);
+  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
+  assert.match(html, /href="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon&amp;entry=first-use"/);
   assert.doesNotMatch(html, /ChatGPT/i);
+  assert.doesNotMatch(html, /class="v4-mobile-site-header/);
+
+  const authBridge = fs.readFileSync(new URL("../app/hesap-baglantisi/route.ts", import.meta.url), "utf8");
+  assert.match(authBridge, /returnTargetFromReferer/);
+  assert.match(authBridge, /setupReturn/);
+  const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
+  assert.match(authSource, /accountReturnPath/);
+  assert.match(authSource, /fallback = "\/dijital-proje-merkezi"/);
+  const sessionRoute = fs.readFileSync(new URL("../app/api/account-session/route.ts", import.meta.url), "utf8");
+  assert.match(sessionRoute, /getArkemAccountSession/);
+  assert.match(sessionRoute, /identitySource:\s*session\.identitySource/);
+  assert.doesNotMatch(sessionRoute, /cloudflare:workers|customer_profiles|env\.DB/);
+
+  assert.match(authSource, /ARKEMX_PROTOTYPE_DEMO_AUTH/);
+  assert.match(authSource, /prototype-demo/);
+  assert.match(authSource, /arkemx_prototype_session/);
+
+  const demoExit = fs.readFileSync(new URL("../app/demo-cikis/route.ts", import.meta.url), "utf8");
+  assert.match(demoExit, /Max-Age=0/);
+  const setupGate = fs.readFileSync(new URL("../app/components/AccountSetupGate.tsx", import.meta.url), "utf8");
+  assert.match(setupGate, /body\.profile/);
+  assert.match(setupGate, /showExistingAccountChoice/);
+  assert.match(setupGate, /Hesabınız zaten kurulu/);
+  assert.match(setupGate, /Hesabımı aç/);
+  assert.match(setupGate, /Aktif projeye devam et/);
+  assert.match(setupGate, /hasActiveProject/);
+  assert.match(setupGate, /Object\.keys\(project\.modules\)\.length > 0/);
+  assert.doesNotMatch(setupGate, /Proje Çalışma Alanıne devam et/);
+  assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
+  const projectCenter = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  assert.match(projectCenter, /Aktif projeyi sil/);
+  assert.match(projectCenter, /Bu tarayıcıdaki çalışma kaydını sil/);
+  assert.match(projectCenter, /Projeyi her yerden sil/);
+  assert.match(projectCenter, /clearLocalProject\(\)/);
+  assert.match(projectCenter, /Hesabınıza kaydedilmiş proje etkilenmez/);
+  assert.match(projectCenter, /Hem bu tarayıcıdaki çalışma hem de hesabınızdaki proje kaydı silinir/);
+  assert.match(projectCenter, /resource=project/);
+  const storageSource = fs.readFileSync(new URL("../app/lib/project-storage.ts", import.meta.url), "utf8");
+  assert.match(storageSource, /clearProjectStorage/);
+  assert.match(storageSource, /PROJECT_STORAGE_KEY/);
+  assert.match(storageSource, /PROJECT_BACKUP_KEY/);
+  assert.match(storageSource, /removeItem/);
+
+  const projectCenterPageSource = fs.readFileSync(new URL("../app/dijital-proje-merkezi/page.tsx", import.meta.url), "utf8");
+  assert.match(projectCenterPageSource, /AccountHeaderLink/);
+  const accountHeaderLink = fs.readFileSync(new URL("../app/components/AccountHeaderLink.tsx", import.meta.url), "utf8");
+  assert.match(accountHeaderLink, /getArkemAccountUser/);
+  assert.match(accountHeaderLink, /user \? "\/hesabim" : "\/giris\?return_to=%2Fhesabim"/);
+
+  const accountSettings = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.match(accountSettings, /Görüşmeler ve İşlem Geçmişi/);
+  assert.match(accountSettings, /summarizeActivities/);
+  assert.match(accountSettings, /hasActiveProject = Object\.keys\(project\.modules\)\.length > 0/);
+  assert.match(accountSettings, /hasActiveProject \? project\.revision : "—"/);
+  assert.match(accountSettings, /hasActiveProject \? `%\$\{thread\.metrics\.readiness\}` : "—"/);
+  assert.match(accountSettings, /normalized\.eventType === "project" \|\| normalized\.eventType === "profile"/);
+  assert.match(accountSettings, /previous\.title === normalized\.title/);
+  assert.match(accountSettings, /kez güncellendi/);
+  assert.match(accountSettings, /Proje hesaba kaydedildi/);
+  assert.doesNotMatch(accountSettings, /Henüz buluta kaydedilmiş proje yok/);
+  const workspaceWrite = fs.readFileSync(new URL("../app/lib/customer-workspace-write.ts", import.meta.url), "utf8");
+  assert.match(workspaceWrite, /Proje hesaba kaydedildi/);
+  assert.doesNotMatch(workspaceWrite, /Proje buluta kaydedildi/);
+
+  const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
+  assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
+  assert.match(focusedAccount, /Oturum gerekli/);
+  assert.match(focusedAccount, /href="\/giris\?return_to=%2Fhesabim"/);
 });
 
 test("V93 routes every province through an explicit zoning authority chain", async () => {
@@ -1129,7 +1234,7 @@ test("V101 replaces the hardcoded zoning showcase with live project inputs and b
   assert.doesNotMatch(center, /evaluateZoningRules\(\{\s*parcelArea:\s*1000/);
   const stylesheet = fs.readFileSync(new URL("../app/v101.css", import.meta.url), "utf8");
   for (const expected of [".zoning-workbench", ".account-shell", "overflow-x:clip!important", "@media(max-width:520px)"]) assert.match(stylesheet, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  for (const path of ["/giris", "/kayit", "/imar-entegrasyon-merkezi"]) {
+  for (const path of ["/giris", "/hesap-kurulum", "/imar-entegrasyon-merkezi"]) {
     const response = await render(path);
     assert.equal(response.status, 200, path);
     const html = await response.text();
@@ -1182,7 +1287,8 @@ test("V4 isolates the layered mobile navigation in a viewport-rooted accessible 
   assert.match(chrome, /openMobileGroup === item\.label/);
   assert.doesNotMatch(chrome, /<details className="mobile-menu"/);
 
-  const response = await render("/");
+  // Corporate routes keep the corporate header; the focused sign-in entry does not.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /class="v4-mobile-nav-trigger"/);
@@ -1226,8 +1332,10 @@ test("V103 keeps the full design studio out of the V2.1 homepage", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /MÜHENDİSLİK/);
-  assert.match(html, /Cihan Tat Gıda/);
+  assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(html, /href="\/plan-ve-aks"/);
+  assert.match(html, /href="\/tasiyici-on-tasarim"/);
+  assert.doesNotMatch(html, /class="design-studio-hero"/);
 });
 
 test("V105 applies one readable responsive design contract across shared surfaces", () => {
@@ -1268,8 +1376,9 @@ test("V106 gives every module one traceable project core and source-aware field 
   const response = await render("/dijital-proje-merkezi");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /V106 \/ TEK PROJE VERİSİ/);
-  assert.match(html, /Alan bazlı kaynak ve güven durumu/);
+  assert.match(html, /data-testid="digital-project-hub"/);
+  assert.match(html, /Proje kontrol özeti/);
+  assert.match(html, /Proje adımları/);
 
   const core = fs.readFileSync(new URL("../app/lib/project-core.ts", import.meta.url), "utf8");
   for (const expected of [
@@ -1375,10 +1484,34 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     experienceMode: "guided",
   });
   assert.equal(roadmap.schema, "ARKEM-GUIDED-JOURNEY/1.0");
-  assert.equal(roadmap.nextAction.route, "/imar-entegrasyon-merkezi");
+  assert.equal(roadmap.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
   assert.equal(roadmap.gates.find((gate) => gate.id === "zoning")?.status, "official-review");
   assert.equal(roadmap.gates.find((gate) => gate.id === "budget")?.status, "client-decision");
   assert.ok(roadmap.missingDocuments.includes("İmar durumu / plan notu"));
+  assert.ok(roadmap.verificationItems.some((item) => item.includes("Ada / parsel numarası")));
+  assert.ok(roadmap.verificationItems.some((item) => item.includes("Resmî parsel geometrisi")));
+
+  const declaredReadyRoadmap = deriveGuidedProjectRoadmap({
+    ...{
+      name: "Kastamonu Konut Projesi",
+      projectType: "new",
+      usage: "residential",
+      location: "Kastamonu Merkez",
+      parcelStatus: "verified",
+      targetArea: 1200,
+      floors: 3,
+      floorHeight: 3.4,
+      system: "undecided",
+      priorities: ["safety", "cost", "flexibility"],
+      budget: "fifteen-fifty",
+      timeline: "six-months",
+      documents: ["parcel-id"],
+      experienceMode: "technical",
+    },
+  });
+  assert.equal(declaredReadyRoadmap.gates.find((gate) => gate.id === "parcel")?.status, "official-review");
+  assert.equal(declaredReadyRoadmap.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+  assert.ok(declaredReadyRoadmap.verificationItems.some((item) => item.includes("başlangıç formunda henüz girilmedi")));
 
   const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
   for (const expected of [
@@ -1386,7 +1519,10 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     "Uzman görünümü",
     "Kişisel proje yol haritanız",
     "Projeyi hesabıma kaydet",
-    "Taslak bu cihazda otomatik kaydedilir",
+    "Taslak cihazda ve oturum açıksa hesabınızda otomatik kaydedilir",
+    "BAŞLANGIÇ VERİ HAZIRLIĞI",
+    "EKSİK / DOĞRULANACAK VERİLER VE BELGELER",
+    "Kullanıcı beyanı: ada/parsel hazır",
     "start-roadmap-gates",
   ]) assert.match(start, new RegExp(expected));
   assert.ok(start.includes("key={cloudState}"));
@@ -1399,6 +1535,7 @@ test("V107 turns project intake into a personal, source-aware customer journey",
   for (const expected of [
     ".start-mode-switch",
     ".start-roadmap-gates",
+    ".start-missing-documents ul",
     ".start-document-grid",
     "@media (max-width: 720px)",
   ]) assert.match(stylesheet, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -1939,7 +2076,12 @@ test("V109.2 optimizes the highest-traffic local imagery", () => {
 test("V110.1 serves public imagery without the unavailable production optimizer", async () => {
   const layout = fs.readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(layout, /import "leaflet\/dist\/leaflet\.css";\s*import "\.\/globals\.css";/);
+  for (const importPath of ["leaflet/dist/leaflet.css", "maplibre-gl/dist/maplibre-gl.css"]) {
+    const importStatement = `import "${importPath}";`;
+    assert.ok(layout.includes(importStatement), `Missing CSS import: ${importPath}`);
+    assert.ok(layout.indexOf(importStatement) < layout.indexOf('import "./globals.css";'),
+      `${importPath} must be loaded before application styles`);
+  }
   assert.doesNotMatch(globals, /@import\s+["']leaflet\/dist\/leaflet\.css["']/);
 
   for (const relativePath of [
@@ -1970,12 +2112,12 @@ test("V110.1 serves public imagery without the unavailable production optimizer"
     }
   }
 
-  const response = await render("/");
+  // The tools and sign-in entries intentionally avoid corporate hero imagery.
+  // Check a corporate route for the official logo asset contract.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
-  for (const image of ["/projects/v32/cihan-tasiyici.webp", "/ozenc-ozturk.webp"]) {
-    assert.match(html, new RegExp(`src=["']${image.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`));
-  }
+  assert.match(html, /\/brand\/arkem-logo-master\.svg(?:#|%23)(?:on-light|on-dark)/);
   assert.doesNotMatch(html, /\/_vinext\/image\?/);
 });
 
@@ -3154,9 +3296,6 @@ test("Web V3.0-C keeps project evidence private until the verified publication g
   assert.equal(resolveCmsEditorAccess("visitor@arkem.test", "editor@arkem.test"), "forbidden");
   assert.equal(resolveCmsEditorAccess("editor@arkem.test", "editor@arkem.test"), "authorized");
 
-  const hosting = JSON.parse(fs.readFileSync(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
-  assert.equal(hosting.d1, "DB");
-  assert.equal(hosting.r2, "BUCKET");
 
   const schema = fs.readFileSync(new URL("../db/schema.ts", import.meta.url), "utf8");
   assert.match(schema, /project_evidence_items/);
@@ -3624,14 +3763,26 @@ test("Web V3.1 keeps one corporate truth, one ARKEMX registry and a calm Turkish
   const sitemap = fs.readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8");
   assert.match(sitemap, /alternates:\s*\{\s*languages:/);
 
-  const response = await render("/");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /MÜHENDİSLİKTEN SAHAYA/);
-  assert.match(html, /PROJE DENEYİMİ/);
-  assert.match(html, /DİJİTAL PROJE ARAÇLARI/);
-  assert.match(html, /application\/ld\+json/);
-  assert.doesNotMatch(html, /Öztürk İnşaat Mühendislik|bünyesinde faaliyet göstermektedir/i);
+  // The private ARKEMX workspace has replaced the old corporate homepage.
+  // Check each public contract at its current route rather than treating "/" as corporate.
+  const workspaceResponse = await render("/");
+  assert.equal(workspaceResponse.status, 200);
+  const workspaceHtml = await workspaceResponse.text();
+  assert.match(workspaceHtml, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(workspaceHtml, /href="\/proje-baslat"/);
+  assert.doesNotMatch(workspaceHtml, /Öztürk İnşaat Mühendislik|bünyesinde faaliyet göstermektedir/i);
+
+  const corporateResponse = await render("/arkem");
+  assert.equal(corporateResponse.status, 200);
+  const corporateHtml = await corporateResponse.text();
+  assert.match(corporateHtml, /MÜHENDİSLİĞİNİ ÇÖZER/);
+  assert.match(corporateHtml, /SAHAYA TAŞIR/);
+
+  const moduleResponse = await render("/arkemx");
+  assert.equal(moduleResponse.status, 200);
+  const moduleHtml = await moduleResponse.text();
+  assert.match(moduleHtml, /application\/ld\+json/);
+  assert.match(moduleHtml, /ORTAK PROJE VERİSİ/);
 });
 
 test("Web V3.2 publishes real project records, honest ARKEMX states and crawlable Turkish HTML", async () => {
@@ -3691,26 +3842,22 @@ test("Web V3.2 publishes real project records, honest ARKEMX states and crawlabl
   }
   assert.doesNotMatch(archiveExplorer, /label: ["']Mühendislik["']|label: ["']Uygulama["']/);
 
-  const homeResponse = await render("/");
-  assert.equal(homeResponse.status, 200);
-  const homeHtml = await homeResponse.text();
-  for (const expected of [
-    "ARKEM Yapı Sistemleri",
-    "MÜHENDİSLİKTEN SAHAYA",
-    "PROJE DENEYİMİ",
-    "BETONARME PREFABRİK",
-    "YAPISAL ÇELİK",
-    "HAFİF ÇELİK",
-    "MÜHENDİSLİK",
-    "ARKEMX",
-    "PROJE ÖN DEĞERLENDİRME",
-  ]) assert.match(homeHtml, new RegExp(expected, "i"), expected);
-  assert.match(homeHtml, /projects\/v32\/cihan-tasiyici\.webp/);
-  assert.match(homeHtml, /hrefLang=["']tr-TR["']/i);
-  assert.match(homeHtml, /hrefLang=["']x-default["']/i);
-  assert.doesNotMatch(homeHtml, /<iframe\b/i);
-  assert.doesNotMatch(homeHtml, /© 2025 by Öztürk İnşaat/i);
-  assert.match(homeHtml, /© 2026/i);
+  // The tools workspace is private/noindex. Public Turkish project records
+  // and brand content remain on their own crawlable corporate routes.
+  const workspaceResponse = await render("/");
+  assert.equal(workspaceResponse.status, 200);
+  const workspaceHtml = await workspaceResponse.text();
+  assert.match(workspaceHtml, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
+  assert.match(workspaceHtml, /name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(workspaceHtml, /<iframe\b/i);
+
+  const corporateResponse = await render("/arkem");
+  assert.equal(corporateResponse.status, 200);
+  const corporateHtml = await corporateResponse.text();
+  assert.match(corporateHtml, /ARKEM/);
+  assert.match(corporateHtml, /MÜHENDİSLİĞİNİ ÇÖZER/);
+  assert.doesNotMatch(corporateHtml, /© 2025 by Öztürk İnşaat/i);
+  assert.match(corporateHtml, /© 2026/i);
 
   const projectsResponse = await render("/projeler");
   assert.equal(projectsResponse.status, 200);
@@ -3946,12 +4093,13 @@ test("Web V4 restores working layered navigation and controlled corporate densit
   assert.match(styles, /\.v4-project-editorial/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,minmax\(0,1fr\)\)/);
 
-  const response = await render("/");
+  // HomeV4 is now mounted on the public English homepage; the Turkish root is the private tools workspace.
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /TEKNİK ÇIKTILAR/);
-  assert.match(html, /PROJE DENEYİMİ/);
-  assert.match(html, /aria-label="Menüyü aç"/);
+  assert.match(html, /TECHNICAL OUTPUTS/);
+  assert.match(html, /PROJECT EXPERIENCE/);
+  assert.match(html, /aria-label="Open menu"/);
 });
 
 test("Web V4 carries the content with working navigation, real locale routes and responsive ARKEMX discovery", () => {
@@ -4115,10 +4263,11 @@ test("Web V4.2 isolates the mobile header and prevents the narrow hero title reg
   assert.match(styles, /grid-template-columns:minmax\(0,1fr\) 48px 48px/);
   assert.match(styles, /@media \(max-width:380px\)[\s\S]*?\.v4-hero-copy h1\{font-size:37px/);
 
-  const response = await render("/");
+  // The corporate mobile header lives on corporate routes, not the tools or sign-in entries.
+  const response = await render("/arkem");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /class="v4-mobile-site-header is-light"/);
+  assert.match(html, /class="v4-mobile-site-header is-dark"/);
   assert.match(html, /aria-label="Menüyü aç"/);
 });
 
@@ -4143,11 +4292,11 @@ test("Web V4.3 strengthens the corporate hero and closes the page with a complet
   assert.match(styles, /\.v4-contact-actions/);
   assert.match(styles, /\.v4-footer-statement/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /İLETİŞİME GEÇİN/);
-  assert.match(html, /Mühendisliği uygulamaya/);
+  assert.match(html, /CALL ARKEM/);
+  assert.match(html, /Engineering is the chain/);
   assert.doesNotMatch(html, /mailto:|arkemyapisistemleri@gmail\.com/i);
 });
 
@@ -4174,11 +4323,11 @@ test("Web V4.4 keeps the hero copy inside a bounded editorial grid and uses the 
   assert.equal(fs.existsSync(new URL("../public/brand/arkem-logo-master.svg", import.meta.url)), true);
   assert.match(chrome, /\/brand\/arkem-logo-master\.svg#/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /ARKEM proje süreci/);
-  assert.match(html, /Endüstriyel üretim tesisi/);
+  assert.match(html, /ARKEM project process/);
+  assert.match(html, /Completed precast concrete industrial building/);
 });
 
 test("Web V4.7 locks the direct production domain and the final design-system contract", async () => {
@@ -4223,12 +4372,11 @@ test("Web V4.5 binds the editorial hero and ARKEMX relationships to their regist
   assert.match(explorer, /v4-module-network/);
   assert.match(explorer, /getRelatedCodes\(selectedModule\)/);
 
-  const response = await render("/");
+  const response = await render("/en");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /data-project-code="P-002"/);
-  assert.match(html, /P-002/);
-  assert.match(html, /Seydiler OSB · Kastamonu/);
+  assert.match(html, /REAL PROJECT RECORD · P-002/);
 });
 
 test("Web V4.9 separates project publishing roles and keeps ARKEMX status metadata consistent", async () => {
@@ -4253,7 +4401,7 @@ test("Web V4.9 separates project publishing roles and keeps ARKEMX status metada
   assert.doesNotMatch(structuralSteel.seoDescription, /geliştirme program/i);
   assert.match(explorer, /module\.version \?/);
 
-  const homeResponse = await render("/");
+  const homeResponse = await render("/en");
   assert.equal(homeResponse.status, 200);
   const homeHtml = await homeResponse.text();
   assert.match(homeHtml, /P-002/);
@@ -4266,4 +4414,74 @@ test("Web V4.9 separates project publishing roles and keeps ARKEMX status metada
   const arkemxHtml = await arkemxResponse.text();
   assert.match(arkemxHtml, /ARKEMX Yapısal Çelik modülü/);
   assert.match(arkemxHtml, /https:\/\/arkemyapisistemleri\.com\/arkemx#yapisal-celik/);
+});
+
+
+test("new project stays on parcel verification until a real parcel boundary exists", () => {
+  const modules = {
+    "decision-assistant": { status: "Brief hazır" },
+    "geo-parcel": {
+      reference: "Kastamonu Merkez",
+      province: "Kastamonu",
+      district: "Merkez",
+      dataStatus: "Kullanıcı beyanı · ada/parsel hazır · TKGM/MEGSİS doğrulaması bekleniyor",
+      metrics: {},
+      status: "Konum aktarıldı · sınır bekleniyor",
+    },
+    "architectural-program": {
+      input: { use: "residential", targetGross: 1200, floors: 3, floorHeight: 3.4 },
+      status: "Brief verisi aktarıldı",
+    },
+    "system-comparison": {
+      input: { preferredSystem: "undecided" },
+      ranking: [],
+      status: "Alternatif karşılaştırması bekleniyor",
+    },
+  };
+  const thread = deriveProjectThread(modules);
+  assert.equal(thread.nextAction.label, "Parsel kimliğini ve sınırını doğrula");
+  assert.equal(thread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+  assert.equal(thread.nodes.find((node) => node.id === "geo-parcel")?.readiness, 35);
+
+  const project = {
+    id: "ARK-26-TEST",
+    name: "ARKEMX Örnek Konut Projesi 01",
+    revision: "P01",
+    phase: "Ön fizibilite",
+    updatedAt: "2026-09-30T13:00:00.000Z",
+    modules,
+  };
+  const core = deriveProjectCore(project, thread);
+  assert.equal(core.fields.find((item) => item.id === "location")?.trust, "declared");
+  assert.equal(core.fields.find((item) => item.id === "parcel-id")?.trust, "declared");
+
+  const verifiedModules = {
+    ...modules,
+    "geo-parcel": {
+      ...modules["geo-parcel"],
+      block: "210",
+      parcelNo: "15",
+      metrics: { area: 5287.5, geometryValid: true },
+      parcelRecord: {
+        schema: "ARKEM-PARCEL-RECORD/1.0",
+        projectEligible: true,
+        identity: { province: "Kastamonu", district: "Merkez", neighborhood: "Budamış", block: "210", parcelNo: "15" },
+        geometry: { valid: true, computedArea: 5287.5 },
+        evidence: { sourceKind: "tkgm-open-service", trust: "verified" },
+      },
+    },
+  };
+  const parcelVerifiedThread = deriveProjectThread(verifiedModules);
+  assert.equal(parcelVerifiedThread.nextAction.label, "İmar koşullarını ve kaynağını doğrula");
+  assert.equal(parcelVerifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
+
+  const fullyVerifiedModules = {
+    ...verifiedModules,
+    "geo-parcel": {
+      ...verifiedModules["geo-parcel"],
+      zoningProvenance: { authoritative: true },
+    },
+  };
+  const fullyVerifiedThread = deriveProjectThread(fullyVerifiedModules);
+  assert.notEqual(fullyVerifiedThread.nextAction.route, "/arsa-fizibilite-studyosu#geo-studyo");
 });

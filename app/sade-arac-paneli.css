@@ -51,3 +51,7 @@
  .arx-simple-tool { min-height: 95px; padding: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .arx-simple-tool { transition: none; } }
+
+.arx-simple-head-actions { display:flex; align-items:center; gap:16px; }
+.arx-simple-head-actions > a { color:#536d78; font-size:12px; font-weight:700; }
+.arx-simple-head-actions > a:hover,.arx-simple-head-actions > a:focus-visible { color:#a65d36; }

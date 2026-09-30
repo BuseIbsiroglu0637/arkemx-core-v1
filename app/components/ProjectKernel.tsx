@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -68,6 +68,7 @@ type ProjectKernelContextValue = {
   importProject: (value: unknown) => boolean;
   startProject: (intake: ProjectIntake) => void;
   reset: () => void;
+  clearLocalProject: () => void;
 };
 
 const STORAGE_KEY = "arkem-project-kernel-v1";
@@ -75,9 +76,9 @@ export const PROJECT_JOURNEY = [
   { label: "İhtiyacı tanımla", short: "Brief", output: "Proje hedefi", href: "/proje-baslat", modules: ["DECISION", "BRIEF", "START"], projectKeys: ["decision-assistant"] },
   { label: "Parseli doğrula", short: "Arazi", output: "Konum + sınır", href: "/arsa-fizibilite-studyosu", modules: ["GEO", "PARCEL", "SITE"], projectKeys: ["geo-parcel", "quick-site-scenario"] },
   { label: "Mimari programı kur", short: "Mimari", output: "Alan + mahal + plan", href: "/mimari-program-studyosu", modules: ["ARCHITECT", "PROGRAM", "PLAN"], projectKeys: ["architectural-program", "plan-editor"] },
-  { label: "Sistemi ve yöntemi seç", short: "Sistem", output: "Taşıyıcı karar", href: "/yapi-sistemi-karsilastirma", modules: ["MCDA", "STRUCTURAL", "DEMOLITION", "SYSTEM"], projectKeys: ["system-comparison", "demolition-screening"] },
-  { label: "Tasarımı koordine et", short: "Koordinasyon", output: "Ortak model", href: "/muhendislik-koordinasyon", modules: ["COORDINATION", "ENGINEERING", "CAD"], projectKeys: ["structural-concept", "engineering-coordination"] },
-  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-os", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
+  { label: "Sistemi ve yöntemi seç", short: "Sistem", output: "Taşıyıcı karar", href: "/sistem-karsilastirma", modules: ["MCDA", "STRUCTURAL", "DEMOLITION", "SYSTEM"], projectKeys: ["system-comparison", "demolition-screening"] },
+  { label: "Tasarımı koordine et", short: "Koordinasyon", output: "Ortak model", href: "/bim-koordinasyon", modules: ["COORDINATION", "ENGINEERING", "CAD"], projectKeys: ["structural-concept", "engineering-coordination"] },
+  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-takibi", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
 
@@ -515,6 +516,7 @@ const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(nul
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
   const [hydrated, setHydrated] = useState(false);
+  const skipNextPersistenceRef = useRef(false);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
     state: "loading",
     integrity: "missing",
@@ -562,6 +564,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!hydrated) return;
+    if (skipNextPersistenceRef.current) {
+      skipNextPersistenceRef.current = false;
+      return;
+    }
     const timer = window.setTimeout(() => {
       try {
         const result = saveProjectToStorage(window.localStorage, project);
@@ -742,7 +748,11 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const floorArea = intake.targetArea / Math.max(1, intake.floors);
     const buildingWidth = Math.sqrt(floorArea * 1.45);
     const buildingDepth = floorArea / buildingWidth;
-    const [province = "", district = ""] = intake.location.split("/").map((value) => value.trim());
+    const locationParts = intake.location.includes("/")
+      ? intake.location.split("/").map((value) => value.trim()).filter(Boolean)
+      : intake.location.trim().split(/\s+/).filter(Boolean);
+    const province = locationParts[0] ?? "";
+    const district = locationParts.slice(1).join(" ");
     const comparisonWeights = {
       schedule: intake.priorities.includes("time") ? 5 : 3,
       certainty: intake.priorities.includes("cost") ? 5 : 3,
@@ -848,6 +858,23 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     setHydrated(true);
   }, []);
   const reset = useCallback(() => setProject(createActiveProject()), []);
+  const clearLocalProject = useCallback(() => {
+    try {
+      clearProjectStorage(window.localStorage, STORAGE_KEY);
+    } catch {
+      // Local storage may be unavailable; the in-memory project is still cleared.
+    }
+    skipNextPersistenceRef.current = true;
+    setProject(createActiveProject());
+    setPersistence({
+      state: "device-saved",
+      integrity: "missing",
+      lastSavedAt: "",
+      backupAvailable: false,
+      cloud: "not-configured",
+    });
+    setHydrated(true);
+  }, []);
   const thread = useMemo(() => deriveProjectThread(project.modules), [project.modules]);
   const core = useMemo(() => deriveProjectCore(project, thread), [project, thread]);
 
@@ -866,7 +893,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     importProject,
     startProject,
     reset,
-  }), [applyHandoff, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
+    clearLocalProject,
+  }), [applyHandoff, clearLocalProject, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
 
   return <ProjectKernelContext.Provider value={value}>{children}</ProjectKernelContext.Provider>;
 }
@@ -877,7 +905,7 @@ export function useProjectKernel() {
   return value;
 }
 
-export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: { module: string; confidence?: string }) {
+export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", compact = false }: { module: string; confidence?: string; compact?: boolean }) {
   const { project, thread, persistence, setIdentity, setExperience, synchronizeProject, reset } = useProjectKernel();
   const [editing, setEditing] = useState(false);
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
@@ -903,10 +931,22 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
   }, [activeJourneyIndex]);
   const regularNextJourneyStep = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
   const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
-    ? { short: "Plan", href: "/tasarim-calismalari#plan-editor" }
+    ? { short: "Plan", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
-      ? { short: "Taşıyıcı ön tasarım", href: "/tasarim-calismalari#tasiyici-on-tasarim" }
+      ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
       : regularNextJourneyStep;
+  const regularPreviousJourneyStep = PROJECT_JOURNEY[Math.max(0, activeJourneyIndex - 1)];
+  const previousJourneyStep = normalizedModule.includes("PLAN")
+    ? { short: "Mimari", href: "/mimari-program-studyosu" }
+    : normalizedModule.includes("STRUCTURAL CONCEPT")
+      ? { short: "Plan", href: "/plan-ve-aks" }
+      : normalizedModule.includes("SYSTEM")
+        ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
+        : activeJourneyIndex === 1
+          ? { short: "Proje başlangıç özeti", href: "/proje-baslat?view=summary" }
+          : activeJourneyIndex > 0
+            ? { short: regularPreviousJourneyStep.short, href: regularPreviousJourneyStep.href }
+            : null;
   const completedJourney = PROJECT_JOURNEY.map((step) => step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)));
   const completedCount = completedJourney.filter(Boolean).length;
   const architectureModule = record(project.modules["architectural-program"]);
@@ -940,6 +980,27 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
   };
   const currentModule = moduleMeta[module] ?? { code: "ARKEMX", label: module };
 
+  if (compact) {
+    return <div className="project-kernel-compact" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
+      <div className="project-kernel-compact-main">
+        <span className="project-kernel-compact-code">ARKEMX / {currentModule.code}</span>
+        <button className="project-kernel-compact-name" onClick={() => setEditing(true)}>{project.name}</button>
+        {editing ? <input className="project-kernel-compact-name-input" aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : null}
+      </div>
+      <div className="project-kernel-compact-meta" aria-label="Proje durumu">
+        <span>{project.phase}</span>
+        <span>{project.revision}</span>
+        <span>{persistence.state === "recovered" ? "Yedekten kurtarıldı" : persistence.state === "unavailable" ? "Tarayıcı kaydı kapalı" : "Bu cihazda kayıtlı"}</span>
+      </div>
+      <div className="project-kernel-compact-actions">
+        {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← Önceki adım</Link> : null}
+        <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
+        <button onClick={exportProject}>JSON indir</button>
+        {activeJourneyIndex < PROJECT_JOURNEY.length - 1 ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
+      </div>
+    </div>;
+  }
+
   return <><div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
     <div className="kernel-brand"><span>ARKEMX / {currentModule.code}</span><b>{currentModule.label}</b><small>{module}</small></div>
     <div className="kernel-identity"><span>PROJE</span>{editing ? <input aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : <button onClick={() => setEditing(true)}>{project.name}</button>}<small>{project.id}</small></div>
@@ -956,7 +1017,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
       <div><button className={project.experience.mode === "guided" ? "active" : ""} onClick={() => setExperience({ mode: "guided", autoHandoff: true })}>Yönlendirmeli</button><button className={project.experience.mode === "technical" ? "active" : ""} onClick={() => setExperience({ mode: "technical" })}>Teknik</button></div>
       <small>{project.experience.autoHandoff ? "Veri aktarımı açık" : "Elle aktarım"}</small>
     </div>
-    <div className="kernel-actions"><Link href="/dijital-proje-merkezi">Dijital zincir ↗</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={reset}>Yeni oturum</button></div>
+    <div className="kernel-actions">{previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← Önceki adım</Link> : null}<Link href="/dijital-proje-merkezi">Dijital zincir ↗</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={reset}>Yeni oturum</button></div>
   </div><nav className="project-guided-journey" aria-label="Rehberli proje akışı">
     <header><span>TEK PROJE · YEDİ BAĞLI ADIM</span><b>Her modül önceki adımın verisini kullanır</b><small>Şu an: {activeJourneyIndex + 1}. adım / {PROJECT_JOURNEY.length} · Sonuçlar aynı proje kaydında birleşir</small></header>
     <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; return <Link key={step.href} href={step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{step.label}</small><strong>{step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>

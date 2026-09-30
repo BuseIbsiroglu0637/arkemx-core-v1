@@ -1,27 +1,55 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getArkemAccountUser } from "../chatgpt-auth";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { accountReturnPath } from "../chatgpt-auth";
+import "../sade-arac-paneli.css";
+import "./sade-giris.css";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Müşteri Girişi | ARKEMX",
-  description: "ARKEMX müşteri proje hesabınıza güvenli biçimde giriş yapın.",
+  title: "Giriş | ARKEMX",
+  description: "ARKEMX çalışma alanınıza güvenli biçimde giriş yapın.",
   alternates: { canonical: "/giris" },
+  robots: { index: false, follow: false },
 };
 
-export default async function LoginPage() {
-  const user = await getArkemAccountUser();
-  if (user) redirect("/uyelik");
-  return <main className="inner-page account-page">
-    <section className="account-shell">
-      <SiteHeader/>
-      <div className="shell account-layout">
-        <div className="account-story"><nav className="breadcrumb" aria-label="Sayfa yolu"><Link href="/">Ana Sayfa</Link><span>/</span><span>Müşteri Girişi</span></nav><p className="eyebrow light">ARKEMX / GÜVENLİ PROJE HESABI</p><h1>Projenize<br/><em>kaldığınız yerden devam edin.</em></h1><p>Projelerinizi, teknik görüşme geçmişinizi ve revizyon kayıtlarınızı tek Arkem çalışma alanında yönetin.</p><ol><li><i>01</i><span><b>Proje sürekliliği</b><small>Aktif ARKEMX çalışmasını hesabınıza kaydedin.</small></span></li><li><i>02</i><span><b>Görüşme geçmişi</b><small>Teknik görüşme ve takip notlarını birlikte izleyin.</small></span></li><li><i>03</i><span><b>Güvenli erişim</b><small>Kayıtlar yalnızca doğrulanmış hesabınızla açılır.</small></span></li></ol></div>
-        <aside className="account-card"><span>MÜŞTERİ GİRİŞİ</span><h2>Arkem proje hesabı</h2><p>Güvenli kimlik doğrulamasını tamamladıktan sonra proje çalışma alanınıza yönlendirilirsiniz.</p><form action="/hesap-baglantisi" method="get"><input type="hidden" name="return_to" value="/uyelik"/><button className="account-primary-action" type="submit">Hesabıma giriş yap <b>→</b></button></form><div className="account-divider"><i></i><span>İlk kez mi geliyorsunuz?</span><i></i></div><Link className="account-secondary-action" href="/kayit">Yeni Arkem hesabı oluşturun</Link><small className="account-privacy">Parola, ödeme veya özel proje dosyası bu sayfada istenmez.</small></aside>
-      </div>
-    </section>
-    <SiteFooter/>
+type LoginPageProps = {
+  searchParams?: Promise<{ return_to?: string | string[] }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const rawReturnTo = Array.isArray(params?.return_to) ? params?.return_to[0] : params?.return_to;
+  const returnTo = accountReturnPath(rawReturnTo, "/hesabim");
+
+  return <main className="arx-simple-home arx-auth-page">
+    <div className="arx-auth-shell">
+      <header className="arx-auth-header">
+        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
+        <Link href="/" className="arx-auth-back">Çalışma alanına dön</Link>
+      </header>
+
+      <section className="arx-auth-card" aria-labelledby="arx-auth-title">
+        <span className="arx-auth-kicker">GÜVENLİ ERİŞİM</span>
+        <h1 id="arx-auth-title">ARKEMX’e giriş</h1>
+        <p>Projelerinize ve çalışma araçlarınıza kaldığınız yerden devam edin.</p>
+
+        <form action="/hesap-baglantisi" method="get">
+          <input type="hidden" name="return_to" value={returnTo}/>
+          <button className="arx-auth-primary" type="submit">Güvenli giriş yap <b>→</b></button>
+        </form>
+
+        <div className="arx-auth-first">
+          <b>İlk kez mi kullanıyorsunuz?</b>
+          <p>Aynı güvenli giriş adımından sonra kısa profil kurulumunu tamamlayabilirsiniz.</p>
+          <Link href={`/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}&entry=first-use`}>İlk kullanım adımını aç</Link>
+        </div>
+
+        <small className="arx-auth-privacy">Parola, ödeme bilgisi veya özel proje dosyası bu sayfada istenmez.</small>
+      </section>
+
+      <footer className="arx-auth-footer">
+        <span>ARKEMX çalışma alanı</span>
+        <small>Girişten sonra hesap durumu kontrol edilir ve çalışma alanınıza yönlendirilirsiniz.</small>
+      </footer>
+    </div>
   </main>;
 }

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { SimpleProjectCenter } from "../components/SimpleProjectCenter";
+import { AccountHeaderLink } from "../components/AccountHeaderLink";
 import "../sade-arac-paneli.css";
 import "./sade-proje-merkezi.css";
 
 export const metadata: Metadata = {
-  title: "Proje Merkezi | ARKEMX",
+  title: "Proje Çalışma Alanı | ARKEMX",
   description: "Projelerinizi açın, çalışma araçlarına geçin ve proje yedeğinizi yönetin.",
   alternates: { canonical: "/dijital-proje-merkezi" },
   robots: { index: false, follow: false },
@@ -17,11 +18,11 @@ export default function DigitalProjectCenterPage() {
     <div className="arx-simple-shell">
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <Link href="/" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link>
+        <nav className="arx-simple-head-actions" aria-label="Proje Çalışma Alanı bağlantıları"><Link href="/" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link><AccountHeaderLink /></nav>
       </header>
       <div className="arx-center-intro">
         <span>ÇALIŞMA ALANI</span>
-        <h1>Proje merkezi</h1>
+        <h1>Proje Çalışma Alanı</h1>
         <p>Projenize devam edin, başka bir proje yükleyin veya çalışma araçlarından birini açın.</p>
       </div>
       <section id="canli-proje-grafigi" aria-label="Proje çalışma alanı">

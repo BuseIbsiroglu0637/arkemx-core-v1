@@ -1,0 +1,138 @@
+/* Focused ARKEMX authentication entry */
+.arx-auth-page { min-height:100vh; padding:0 0 48px; }
+body:has(.arx-auth-page) .v4-floating-contact { display:none!important; }
+
+.arx-auth-shell {
+  width:min(1080px,calc(100% - 40px));
+  margin:0 auto;
+  min-height:100vh;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+}
+.arx-auth-header {
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  border-bottom:1px solid #e2e8ea;
+}
+.arx-auth-back {
+  color:#5c737d;
+  font-size:12px;
+  font-weight:650;
+}
+.arx-auth-back:hover,.arx-auth-back:focus-visible { color:#a55b32; }
+
+.arx-auth-card {
+  align-self:center;
+  width:min(100%,470px);
+  margin:54px auto;
+  padding:34px;
+  border:1px solid #dfe6e9;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 20px 50px rgba(24,54,67,.07);
+}
+.arx-auth-kicker {
+  display:block;
+  margin-bottom:10px;
+  color:#a65d36;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+.arx-auth-card h1 {
+  margin:0;
+  color:#1e3440;
+  font-size:clamp(30px,4vw,40px);
+  line-height:1.12;
+  letter-spacing:-.045em;
+  font-weight:700;
+}
+.arx-auth-card > p {
+  margin:12px 0 24px;
+  color:#667a84;
+  font-size:13px;
+  line-height:1.65;
+}
+.arx-auth-card form { margin:0; }
+.arx-auth-primary {
+  width:100%;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:11px 14px;
+  border:1px solid #244756;
+  border-radius:7px;
+  background:#244756;
+  color:#fff;
+  font:720 13px/1.2 var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-auth-primary:hover,.arx-auth-primary:focus-visible { background:#173642; }
+.arx-auth-primary:focus-visible,
+.arx-auth-first a:focus-visible,
+.arx-auth-back:focus-visible {
+  outline:2px solid #568b98;
+  outline-offset:3px;
+}
+.arx-auth-first {
+  margin-top:20px;
+  padding:17px 0 0;
+  border-top:1px solid #e6ecee;
+}
+.arx-auth-first b {
+  display:block;
+  color:#2f4d5a;
+  font-size:12px;
+}
+.arx-auth-first p {
+  margin:6px 0 9px;
+  color:#71838b;
+  font-size:11px;
+  line-height:1.55;
+}
+.arx-auth-first a {
+  color:#3b6270;
+  font-size:11px;
+  font-weight:720;
+}
+.arx-auth-privacy {
+  display:block;
+  margin-top:23px;
+  padding-top:14px;
+  border-top:1px solid #eef2f3;
+  color:#7a8b92;
+  font-size:9px;
+  line-height:1.55;
+}
+.arx-auth-footer {
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  border-top:1px solid #e2e8ea;
+  color:#74868e;
+}
+.arx-auth-footer span {
+  color:#486572;
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.05em;
+}
+.arx-auth-footer small {
+  font-size:9px;
+  text-align:right;
+}
+
+@media (max-width:600px) {
+  .arx-auth-shell { width:calc(100% - 28px); }
+  .arx-auth-header { min-height:64px; }
+  .arx-auth-card { margin:34px auto; padding:24px 20px; }
+  .arx-auth-footer { align-items:flex-start; flex-direction:column; justify-content:center; padding:14px 0; }
+  .arx-auth-footer small { text-align:left; }
+}

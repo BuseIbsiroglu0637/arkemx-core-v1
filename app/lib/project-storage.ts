@@ -71,3 +71,10 @@ export function saveProjectToStorage<T>(storage: Storage, payload: T, savedAt = 
     bytes: new Blob([JSON.stringify(payload)]).size,
   };
 }
+
+
+export function clearProjectStorage(storage: Storage, legacyKey: string) {
+  storage.removeItem(PROJECT_STORAGE_KEY);
+  storage.removeItem(PROJECT_BACKUP_KEY);
+  storage.removeItem(legacyKey);
+}

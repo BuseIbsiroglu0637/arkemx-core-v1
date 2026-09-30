@@ -1,0 +1,66 @@
+/* Focused ARKEMX project-tracking workspace. The full Project OS route remains available separately. */
+.arx-tracking-page .arx-workspace-editor > .arx-tracking-tool { width:100%; max-width:none; margin:0; }
+.arx-tracking-tool { color:#243b46; font-family:var(--font-inter),Arial,sans-serif; }
+.arx-track-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr); gap:16px; align-items:start; }
+.arx-track-panel { min-width:0; border:1px solid #dfe6e9; border-radius:10px; background:#fff; }
+.arx-track-head { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px 16px; padding:17px 20px 14px; border-bottom:1px solid #e6ecee; }
+.arx-track-head h2 { margin:0; font-size:17px; font-weight:720; letter-spacing:-.02em; }
+.arx-track-head p { margin:5px 0 0; color:#697c85; font-size:11px; line-height:1.5; }
+.arx-track-head button,.arx-track-actions button {
+  min-height:35px; padding:8px 10px; border:1px solid #ccd9de; border-radius:6px;
+  background:#fff; color:#365766; font:700 11px/1.2 var(--font-inter),Arial,sans-serif; cursor:pointer;
+}
+.arx-track-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid #e6ecee; }
+.arx-track-kpis article { min-width:0; padding:15px 16px; border-right:1px solid #e6ecee; }
+.arx-track-kpis article:last-child { border-right:0; }
+.arx-track-kpis span { display:block; margin-bottom:6px; color:#768991; font-size:9px; font-weight:780; letter-spacing:.07em; }
+.arx-track-kpis b { display:block; font-size:20px; font-weight:720; font-variant-numeric:tabular-nums; }
+.arx-track-kpis small { display:block; margin-top:4px; color:#74868e; font-size:9px; line-height:1.4; }
+.arx-track-kpis .risk { color:#a64f3c; }
+.arx-track-list { padding:4px 20px 10px; }
+.arx-track-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 14px; align-items:start; padding:12px 0; border-top:1px solid #e9eef0; }
+.arx-track-item:first-child { border-top:0; }
+.arx-track-item span { color:#a55b35; font-size:9px; font-weight:800; letter-spacing:.04em; }
+.arx-track-item h3 { margin:4px 0; font-size:12px; line-height:1.4; }
+.arx-track-item p { margin:0; color:#6a7d86; font-size:10px; line-height:1.5; }
+.arx-track-item > button { min-height:32px; padding:6px 8px; border:1px solid #d4dfe3; border-radius:6px; background:#fff; color:#456371; font-size:10px; font-weight:700; cursor:pointer; }
+.arx-track-item.blocked { box-shadow:inset 3px 0 0 #b65242; padding-left:10px; }
+.arx-track-detail { border-top:1px solid #e6ecee; }
+.arx-track-detail summary { padding:14px 20px; cursor:pointer; color:#3d5c69; font-size:12px; font-weight:720; }
+.arx-track-detail[open] summary { border-bottom:1px solid #e6ecee; background:#f7f9fa; }
+.arx-track-decisions,.arx-track-docs,.arx-track-program { padding:6px 20px 16px; }
+.arx-track-decision,.arx-track-doc {
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center;
+  padding:11px 0; border-bottom:1px solid #e9eef0;
+}
+.arx-track-decision:last-child,.arx-track-doc:last-child { border-bottom:0; }
+.arx-track-decision > span,.arx-track-doc > span { color:#a55b35; font-size:9px; font-weight:800; }
+.arx-track-decision b,.arx-track-doc b { display:block; font-size:11px; }
+.arx-track-decision small,.arx-track-doc small { display:block; margin-top:3px; color:#74868e; font-size:9px; }
+.arx-track-decision button,.arx-track-doc button { min-height:31px; padding:6px 8px; border:1px solid #d4dfe3; border-radius:6px; background:#fff; color:#456371; font-size:9px; font-weight:700; cursor:pointer; }
+.arx-track-program { display:grid; gap:8px; }
+.arx-track-program article { display:grid; grid-template-columns:minmax(120px,1fr) 1.5fr auto; gap:10px; align-items:center; }
+.arx-track-program article span { font-size:10px; font-weight:650; }
+.arx-track-program article i { position:relative; display:block; height:6px; border-radius:6px; background:#e7edef; overflow:hidden; }
+.arx-track-program article i b { display:block; height:100%; background:#789fa9; }
+.arx-track-program article small { color:#71848d; font-size:9px; }
+.arx-track-side { display:grid; gap:16px; }
+.arx-track-summary { padding:18px 20px; }
+.arx-track-summary h2 { margin:0 0 12px; font-size:15px; }
+.arx-track-summary dl { display:grid; gap:10px; margin:0; }
+.arx-track-summary dl div { display:flex; justify-content:space-between; gap:14px; padding-bottom:9px; border-bottom:1px solid #e8edef; }
+.arx-track-summary dt { color:#6d818a; font-size:10px; }
+.arx-track-summary dd { margin:0; text-align:right; font-size:10px; font-weight:720; }
+.arx-track-handover { padding:18px 20px; }
+.arx-track-handover-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+.arx-track-handover h2 { margin:0; font-size:15px; }
+.arx-track-handover strong { font-size:20px; }
+.arx-track-handover-list { display:grid; gap:8px; }
+.arx-track-handover-list button { display:flex; justify-content:space-between; gap:10px; width:100%; padding:9px 10px; border:1px solid #e0e7ea; border-radius:6px; background:#fff; color:#4c6672; font-size:10px; cursor:pointer; }
+.arx-track-handover-list button.done { background:#f3faf6; border-color:#cce4d6; color:#3e6c54; }
+.arx-track-actions { display:flex; flex-wrap:wrap; gap:8px; padding:16px 20px; border-top:1px solid #e6ecee; }
+.arx-track-actions a { min-height:38px; display:inline-flex; align-items:center; padding:9px 12px; border-radius:6px; background:#244756; color:#fff; font-size:11px; font-weight:720; }
+.arx-track-warning { margin:0 20px 16px; padding:10px 12px; border:1px solid #efd0c9; border-radius:6px; background:#fff5f2; color:#88493e; font-size:10px; line-height:1.5; }
+.arx-track-empty { margin:0; padding:14px 0; color:#6d818a; font-size:11px; }
+@media(max-width:1080px){.arx-track-grid{grid-template-columns:1fr}.arx-track-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.arx-track-kpis article:nth-child(2){border-right:0}.arx-track-kpis article:nth-child(-n+2){border-bottom:1px solid #e6ecee}}
+@media(max-width:640px){.arx-track-head,.arx-track-list,.arx-track-decisions,.arx-track-docs,.arx-track-program,.arx-track-summary,.arx-track-handover,.arx-track-actions{padding-inline:14px}.arx-track-kpis{grid-template-columns:1fr}.arx-track-kpis article{border-right:0!important;border-bottom:1px solid #e6ecee}.arx-track-kpis article:last-child{border-bottom:0}.arx-track-detail summary{padding-inline:14px}.arx-track-program article{grid-template-columns:1fr}.arx-track-decision,.arx-track-doc{grid-template-columns:auto 1fr}.arx-track-decision button,.arx-track-doc button{grid-column:2;justify-self:start}.arx-track-warning{margin-inline:14px}}

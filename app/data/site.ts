@@ -70,7 +70,7 @@ export const navigationTree = [
         title: "Hemen başlayın",
         items: [
           { label: "Yeni proje başlat", href: "/proje-baslat", note: "Teknik bilgi gerekmeden beş sade adım" },
-          { label: "Mevcut projeme devam et", href: "/musteri-proje-portali", note: "Sıradaki iş, kararlar ve dosyalar" },
+          { label: "Mevcut projeme devam et", href: "/giris", note: "Güvenli girişten sonra proje merkezini aç" },
           { label: "İlk yol haritamı oluştur", href: "/proje-karar-asistani", note: "Eksik veriler ve doğru başlangıç" },
         ],
       },

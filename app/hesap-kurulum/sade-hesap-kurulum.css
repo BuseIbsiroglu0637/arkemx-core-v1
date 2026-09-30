@@ -1,0 +1,281 @@
+/* Focused first-use account setup */
+.arx-setup-wrap {
+  align-self:center;
+  width:min(100%,900px);
+  margin:46px auto;
+  display:grid;
+  grid-template-columns:minmax(0,.8fr) minmax(360px,1fr);
+  gap:22px;
+  align-items:start;
+}
+.arx-setup-copy {
+  padding:24px 8px 24px 0;
+}
+.arx-setup-copy > span {
+  display:block;
+  margin-bottom:10px;
+  color:#a65d36;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+.arx-setup-copy h1 {
+  margin:0;
+  color:#1e3440;
+  font-size:clamp(28px,4vw,39px);
+  line-height:1.12;
+  letter-spacing:-.045em;
+}
+.arx-setup-copy > p {
+  margin:13px 0 23px;
+  color:#667a84;
+  font-size:12px;
+  line-height:1.65;
+}
+.arx-setup-copy ol {
+  display:grid;
+  gap:10px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.arx-setup-copy li {
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.arx-setup-copy li > i {
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:#f1f5f6;
+  color:#536f7a;
+  font-style:normal;
+  font-size:9px;
+  font-weight:800;
+}
+.arx-setup-copy li b { display:block; color:#385662; font-size:11px; }
+.arx-setup-copy li small { display:block; margin-top:3px; color:#7a8b92; font-size:9px; line-height:1.45; }
+
+.arx-setup-card {
+  min-width:0;
+  padding:28px;
+  border:1px solid #dfe6e9;
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 18px 45px rgba(24,54,67,.06);
+}
+.arx-setup-card > span {
+  display:block;
+  color:#a65d36;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-setup-card > h2 {
+  margin:10px 0 8px;
+  color:#243e4a;
+  font-size:20px;
+}
+.arx-setup-card > p {
+  margin:0 0 18px;
+  color:#70828a;
+  font-size:11px;
+  line-height:1.55;
+}
+.arx-setup-card > small {
+  display:block;
+  margin-top:14px;
+  color:#819097;
+  font-size:9px;
+  line-height:1.5;
+}
+
+/* Override the legacy account form only inside the focused setup route. */
+.arx-setup-card .account-onboarding-form { color:#243e4a; }
+.arx-setup-card .account-onboarding-form > header {
+  padding-bottom:16px;
+  border-bottom:1px solid #e5ebed;
+}
+.arx-setup-card .account-onboarding-form > header > span {
+  color:#a65d36;
+  font:800 9px var(--font-inter),Arial,sans-serif;
+  letter-spacing:.1em;
+}
+.arx-setup-card .account-onboarding-form h2 {
+  margin:10px 0 7px;
+  color:#243e4a;
+  font:700 20px/1.2 var(--font-inter),Arial,sans-serif;
+  letter-spacing:-.025em;
+}
+.arx-setup-card .account-onboarding-form header p {
+  margin:0;
+  color:#70828a;
+  font-size:10px;
+  line-height:1.55;
+}
+.arx-setup-card .account-form-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:11px;
+  margin-top:17px;
+}
+.arx-setup-card .account-form-grid label {
+  display:grid;
+  gap:6px;
+  color:#4e6975;
+  font:700 9px/1.35 var(--font-inter),Arial,sans-serif;
+  letter-spacing:0;
+  text-transform:none;
+}
+.arx-setup-card .account-form-grid label:first-child,
+.arx-setup-card .account-form-grid label:nth-child(2) { grid-column:1/-1; }
+.arx-setup-card .account-form-grid label:last-child { grid-column:auto; }
+.arx-setup-card .account-form-grid :where(input,select) {
+  min-height:42px;
+  width:100%;
+  border:1px solid #ccd9dd;
+  border-radius:6px;
+  background:#fff;
+  padding:8px 10px;
+  color:#213a46;
+  font:600 12px var(--font-inter),Arial,sans-serif;
+}
+.arx-setup-card .account-form-grid input[readonly] { background:#f5f8f9; color:#647982; }
+.arx-setup-card .account-form-grid small { color:#7b8d95; font-size:8px; text-transform:none; }
+.arx-setup-card .account-consent {
+  display:grid;
+  grid-template-columns:18px minmax(0,1fr);
+  gap:8px;
+  margin-top:16px;
+  color:#657a84;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-setup-card .account-onboarding-form > button {
+  width:100%;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:17px;
+  border:1px solid #244756;
+  border-radius:6px;
+  background:#244756;
+  padding:9px 12px;
+  color:#fff;
+  font:720 11px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-setup-card :where(input,select,button):focus-visible {
+  outline:2px solid #568b98;
+  outline-offset:2px;
+}
+@media(max-width:760px) {
+  .arx-setup-wrap { grid-template-columns:1fr; margin:30px auto; }
+  .arx-setup-copy { padding:0; }
+  .arx-setup-card { padding:22px 18px; }
+}
+@media(max-width:520px) {
+  .arx-setup-card .account-form-grid { grid-template-columns:1fr; }
+  .arx-setup-card .account-form-grid label { grid-column:auto!important; }
+}
+
+
+.arx-setup-gate {
+  display:grid;
+  gap:8px;
+  padding:4px 0;
+}
+.arx-setup-gate > span {
+  color:#a65d36;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-setup-gate h2 {
+  margin:0;
+  color:#243e4a;
+  font-size:20px;
+  letter-spacing:-.025em;
+}
+.arx-setup-gate p {
+  margin:0;
+  color:#70828a;
+  font-size:10px;
+  line-height:1.55;
+}
+.arx-setup-gate button {
+  justify-self:start;
+  min-height:38px;
+  margin-top:7px;
+  padding:8px 11px;
+  border:1px solid #244756;
+  border-radius:6px;
+  background:#244756;
+  color:#fff;
+  font:700 10px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-setup-gate.is-error {
+  padding:12px;
+  border:1px solid #ecd4ce;
+  border-radius:7px;
+  background:#fff7f5;
+}
+
+.arx-setup-existing {
+  padding:16px;
+  border:1px solid #d8e4e7;
+  border-radius:8px;
+  background:#f8fbfb;
+}
+.arx-setup-existing-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:10px;
+}
+.arx-setup-existing-actions a {
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #244756;
+  border-radius:6px;
+  padding:8px 10px;
+  color:#244756;
+  background:#fff;
+  font:700 10px var(--font-inter),Arial,sans-serif;
+  text-decoration:none;
+  text-align:center;
+}
+.arx-setup-existing-actions a:last-child {
+  background:#244756;
+  color:#fff;
+}
+.arx-setup-existing-actions a:focus-visible {
+  outline:2px solid #568b98;
+  outline-offset:2px;
+}
+@media(max-width:520px) {
+  .arx-setup-existing-actions { grid-template-columns:1fr; }
+}
+
+.arx-setup-existing-actions.single {
+  grid-template-columns:1fr;
+}
+.arx-setup-existing-actions.single a:last-child {
+  background:#fff;
+  color:#244756;
+}
+.arx-setup-active-project {
+  display:block;
+  margin-top:9px;
+  color:#70828a;
+  font-size:9px;
+  line-height:1.45;
+}

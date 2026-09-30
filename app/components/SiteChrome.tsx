@@ -85,7 +85,7 @@ function MobileNavigationDrawer({ open, onClose }: { open: boolean; onClose: () 
       <div className="v4-mobile-nav-groups">
         <div className="v117-mobile-priority" aria-label={isEnglish ? "Project shortcuts" : "Proje kısayolları"}>
           <Link href={isEnglish ? "/en/contact" : "/proje-baslat"} onClick={closeDrawer}><span>01</span><div><b>{isEnglish ? "Start a new project" : "Yeni proje başlat"}</b><small>{isEnglish ? "Tell us what you need" : "Teknik bilgi gerekmeden başlayın"}</small></div><Arrow /></Link>
-          <Link href={isEnglish ? "/en/contact" : "/musteri-proje-portali"} onClick={closeDrawer}><span>02</span><div><b>{isEnglish ? "Continue my project" : "Projeme devam et"}</b><small>{isEnglish ? "Open project records" : "Sıradaki iş, kararlar ve dosyalar"}</small></div><Arrow /></Link>
+          <Link href={isEnglish ? "/en/contact" : "/giris"} onClick={closeDrawer}><span>02</span><div><b>{isEnglish ? "Continue my project" : "Projeme devam et"}</b><small>{isEnglish ? "Open project records" : "Sıradaki iş, kararlar ve dosyalar"}</small></div><Arrow /></Link>
         </div>
         {navigationTree.map((item, index) => {
           const translated = englishNavigation[item.label];
@@ -193,7 +193,7 @@ export function SiteHeader({ dark = true }: { dark?: boolean }) {
         </div>;
       })}
     </nav>
-    <Link className="v117-project-shortcut" href={isEnglish ? "/en/contact" : "/musteri-proje-portali"}>{isEnglish ? "MY PROJECT" : "PROJEM"}</Link>
+    <Link className="v117-project-shortcut" href={isEnglish ? "/en/contact" : "/giris"}>{isEnglish ? "MY PROJECT" : "PROJEM"}</Link>
     <LanguageSwitcher compact />
     <Link className="v4-nav-cta" data-analytics="guided_project_start" href={isEnglish ? "/en/contact" : "/proje-baslat"}><b>{isEnglish ? "START A PROJECT" : "YENİ PROJE BAŞLAT"}</b><Arrow /></Link>
   </header>{activeDesktopMenu ? <button className="v118-menu-backdrop" type="button" onClick={() => setActiveDesktopMenu(null)} aria-label={isEnglish ? "Close navigation menu" : "Açılır menüyü kapat"} /> : null}<MobileSiteHeader dark={dark} /></>;
@@ -218,7 +218,7 @@ const footerGroups = [
   ] },
   { title: "Dijital Araçlar", english: "Digital Tools", links: [
     { label: "Yeni Proje Başlat", english: "Start a New Project", href: "/proje-baslat" },
-    { label: "Müşteri Proje Portalı", english: "Customer Project Portal", href: "/musteri-proje-portali" },
+    { label: "ARKEMX Giriş", english: "Customer Project Portal", href: "/giris" },
     { label: "Arsa Fizibilitesi", english: "Land Feasibility", href: "/arsa-fizibilite-studyosu" },
     { label: "Sistem Karşılaştırma", english: "System Comparison", href: "/yapi-sistemi-karsilastirma" },
     { label: "Proje Yönetim Alanı", english: "Project Management", href: "/proje-os" },

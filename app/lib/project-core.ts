@@ -231,7 +231,10 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
   const officialParcelResponse = hasParcelRecord
     ? textValue(parcelRecordEvidence.sourceKind) === "tkgm-open-service"
       && textValue(parcelRecordEvidence.trust) === "verified"
-    : hasText(dataStatus, ["TKGM", "MEGSİS"]);
+      && textValue(parcelRecordIdentity.block).length > 0
+      && textValue(parcelRecordIdentity.parcelNo).length > 0
+    : hasText(dataStatus, ["TKGM", "MEGSİS"])
+      && !hasText(dataStatus, ["bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"]);
   const licensedSurvey = hasText(dataStatus, ["harita mühendisi", "onaylı aplikasyon"]);
   const geometryReady = hasParcelRecord
     ? parcelRecord.projectEligible === true && parcelRecordGeometry.valid === true
