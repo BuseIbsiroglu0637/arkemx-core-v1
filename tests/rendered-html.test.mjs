@@ -1495,7 +1495,7 @@ test("V107 turns project intake into a personal, source-aware customer journey",
     "Uzman görünümü",
     "Kişisel proje yol haritanız",
     "Projeyi hesabıma kaydet",
-    "Taslak bu cihazda otomatik kaydedilir",
+    "Taslak cihazda ve oturum açıksa hesabınızda otomatik kaydedilir",
     "start-roadmap-gates",
   ]) assert.match(start, new RegExp(expected));
   assert.ok(start.includes("key={cloudState}"));
