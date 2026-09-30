@@ -98,6 +98,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const geoPlanning = record(geo.planning);
   const geoParcelRecord = record(geo.parcelRecord);
   const geoParcelGeometry = record(geoParcelRecord.geometry);
+  const geoZoningProvenance = record(geo.zoningProvenance);
   const parcelReadyForNextStage = (
     geoParcelRecord.projectEligible === true
     && geoParcelGeometry.valid === true
@@ -105,6 +106,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     geoMetrics.geometryValid === true
     && number(geoMetrics.area) > 0
   );
+  const zoningReadyForNextStage = geoZoningProvenance.authoritative === true;
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
@@ -271,9 +273,15 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       route: "/arsa-fizibilite-studyosu#geo-studyo",
       blockedBy: [] as ProjectModuleKey[],
     }
-    : nextNode
-      ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
-      : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
+    : !zoningReadyForNextStage
+      ? {
+        label: "İmar koşullarını ve kaynağını doğrula",
+        route: "/arsa-fizibilite-studyosu#geo-studyo",
+        blockedBy: [] as ProjectModuleKey[],
+      }
+      : nextNode
+        ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
+        : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
 
   return {
     canonical,
