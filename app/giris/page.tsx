@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { accountReturnPath, getArkemAccountUser } from "../chatgpt-auth";
 import "../sade-arac-paneli.css";
 import "./sade-giris.css";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Giriş | ARKEMX",
   description: "ARKEMX çalışma alanınıza güvenli biçimde giriş yapın.",
@@ -13,18 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type LoginPageProps = {
-  searchParams?: Promise<{ return_to?: string | string[] }>;
-};
-
-export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const params = await searchParams;
-  const rawReturnTo = Array.isArray(params?.return_to) ? params?.return_to[0] : params?.return_to;
-  const returnTo = accountReturnPath(rawReturnTo);
-  const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`;
-  const user = await getArkemAccountUser();
-  if (user) redirect(setupReturn);
-
+export default function LoginPage() {
   return <main className="arx-simple-home arx-auth-page">
     <div className="arx-auth-shell">
       <header className="arx-auth-header">
@@ -38,14 +24,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p>Projelerinize ve çalışma araçlarınıza kaldığınız yerden devam edin.</p>
 
         <form action="/hesap-baglantisi" method="get">
-          <input type="hidden" name="return_to" value={setupReturn} />
           <button className="arx-auth-primary" type="submit">Güvenli giriş yap <b>→</b></button>
         </form>
 
         <div className="arx-auth-first">
           <b>İlk kez mi kullanıyorsunuz?</b>
           <p>Aynı güvenli giriş adımından sonra kısa profil kurulumunu tamamlayabilirsiniz.</p>
-          <Link href={`/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`}>İlk kullanım adımını aç</Link>
+          <Link href="/hesap-kurulum">İlk kullanım adımını aç</Link>
         </div>
 
         <small className="arx-auth-privacy">Parola, ödeme bilgisi veya özel proje dosyası bu sayfada istenmez.</small>
@@ -53,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
       <footer className="arx-auth-footer">
         <span>ARKEMX çalışma alanı</span>
-        <small>Girişten sonra hesap durumu kontrol edilir ve {returnTo === "/dijital-proje-merkezi" ? "Proje merkezine" : "geldiğiniz çalışma alanına"} geçilir.</small>
+        <small>Girişten sonra hesap durumu kontrol edilir ve çalışma alanınıza yönlendirilirsiniz.</small>
       </footer>
     </div>
   </main>;
