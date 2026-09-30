@@ -3,16 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { AccountOnboarding } from "./AccountOnboarding";
 
-type SetupState = "checking" | "setup" | "error";
+type SetupState = "checking" | "setup" | "existing" | "error";
 
 export function AccountSetupGate({
   displayName,
   email,
   returnTo,
+  showExistingAccountChoice = false,
 }: {
   displayName: string;
   email: string;
   returnTo: string;
+  showExistingAccountChoice?: boolean;
 }) {
   const [state, setState] = useState<SetupState>("checking");
   const [message, setMessage] = useState("Hesap bilgileri kontrol ediliyor…");
@@ -37,6 +39,11 @@ export function AccountSetupGate({
         return;
       }
       if (body.profile) {
+        if (showExistingAccountChoice) {
+          setState("existing");
+          setMessage("Bu oturum için hesap kurulumu daha önce tamamlanmış.");
+          return;
+        }
         window.location.replace(returnTo);
         return;
       }
@@ -46,7 +53,7 @@ export function AccountSetupGate({
       setState("error");
       setMessage("Hesap servisine bağlanılamadı. Lütfen tekrar deneyin.");
     }
-  }, [returnTo]);
+  }, [returnTo, showExistingAccountChoice]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void checkProfile(); }, 0);
@@ -58,6 +65,18 @@ export function AccountSetupGate({
       <span>HESAP KONTROLÜ</span>
       <h2>Çalışma alanınız hazırlanıyor</h2>
       <p>{message}</p>
+    </div>;
+  }
+
+  if (state === "existing") {
+    return <div className="arx-setup-gate arx-setup-existing" role="status">
+      <span>HESAP HAZIR</span>
+      <h2>Hesabınız zaten kurulu</h2>
+      <p>{message} Kurulumu yeniden yapmanız gerekmez.</p>
+      <div className="arx-setup-existing-actions">
+        <a href="/hesabim">Hesabımı aç</a>
+        <a href={returnTo}>Proje merkezine devam et</a>
+      </div>
     </div>;
   }
 
