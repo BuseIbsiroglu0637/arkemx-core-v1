@@ -87,6 +87,19 @@ type ParcelSourceState = {
   reportedArea?: number;
 };
 
+type OfficialBoundaryEvidence = {
+  geometry: GeoPoint[];
+  source: ParcelSourceState;
+  identity: {
+    province: string;
+    district: string;
+    neighborhood: string;
+    block: string;
+    parcelNo: string;
+  };
+  capturedAt: string;
+};
+
 function normalizeAdministrativeName(value: unknown) {
   return String(value ?? "").trim().toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(mahallesi|mah\.?|köyü|koyu|köy|koy)\b/g, "").replace(/[^a-z0-9çğıöşü]+/g, "");
 }
@@ -306,6 +319,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     capturedAt: new Date(0).toISOString(),
     url: "",
   });
+  const [officialBoundaryEvidence, setOfficialBoundaryEvidence] = useState<OfficialBoundaryEvidence | null>(null);
   const [drawEnabled, setDrawEnabled] = useState(!simple);
   const [latitude, setLatitude] = useState(defaultCenter.lat.toFixed(7));
   const [longitude, setLongitude] = useState(defaultCenter.lng.toFixed(7));
@@ -351,6 +365,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     geometry: parcel,
     source: parcelSource,
   }), [block, district, neighborhood, parcel, parcelNo, parcelSource, province]);
+  const officialBoundaryLocked = parcelSource.kind === "tkgm-open-service" && parcel.length >= 3;
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -384,6 +399,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         frontEdge?: ParcelFrontEdge;
         selectedMassingId?: string;
         parcelRecord?: ParcelRecord;
+        officialBoundaryEvidence?: OfficialBoundaryEvidence;
         _kernel?: { recordedAt?: string };
       } | undefined;
       const decision = project.modules["decision-assistant"] as {
@@ -395,6 +411,31 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
       persistedGeoRef.current = Boolean(saved);
       if (!saved) return;
+
+      const restoredOfficialEvidence = saved.officialBoundaryEvidence ?? (
+        hasSavedBoundary && saved.parcelRecord?.evidence.sourceKind === "tkgm-open-service"
+          ? {
+            geometry: (saved.parcel ?? []).map((point) => ({ ...point })),
+            source: {
+              kind: "tkgm-open-service" as ParcelSourceKind,
+              authority: saved.parcelRecord.evidence.authority,
+              label: saved.parcelRecord.evidence.label,
+              capturedAt: saved.parcelRecord.evidence.capturedAt,
+              url: saved.parcelRecord.evidence.url ?? "",
+              reportedArea: saved.parcelRecord.geometry.reportedArea ?? undefined,
+            },
+            identity: {
+              province: saved.province ?? "",
+              district: saved.district ?? "",
+              neighborhood: saved.neighborhood ?? "",
+              block: saved.block ?? "",
+              parcelNo: saved.parcelNo ?? "",
+            },
+            capturedAt: saved.parcelRecord.evidence.capturedAt,
+          }
+          : null
+      );
+      setOfficialBoundaryEvidence(restoredOfficialEvidence);
 
       if (hasSavedBoundary && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
         setParcelSource({
@@ -805,12 +846,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       metrics: projectMetrics,
       previewMetrics: parcelRecord.projectEligible ? null : metrics,
       parcelRecord,
+      officialBoundaryEvidence,
       parcelSourceNetwork: sourceNetwork,
       provenance: createGeoProvenance({ reference: parcelRecord.reference, sourceCrs, dataStatus, administrativeSource, geometryValid: parcelRecord.projectEligible && metrics.geometryValid, vertexCount: parcelRecord.projectEligible ? parcel.length : 0 }),
       zoningProvenance: createZoningProvenance(zoning, parcelRecord.reference),
       status: parcelRecord.projectEligible ? "Parsel kaynağı ve sınırı aktif projeye bağlı" : parcel.length ? "Önizleme geometrisi · doğrulama bekliyor" : "Parsel seçimi bekleniyor",
     });
-  }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
+  }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
 
   useEffect(() => {
     let disposed = false;
@@ -1044,6 +1086,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
   const resetParcelSelection = (message: string) => {
     setParcel([]);
+    setOfficialBoundaryEvidence(null);
     setParcelLookup("idle");
     setDrawEnabled(false);
     setShowConceptualOverlays(false);
@@ -1061,19 +1104,47 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const markBoundaryAsManual = (label: string) => {
     setParcelSource({
       kind: "manual-drawing",
-      authority: "Kullanıcı",
+      authority: officialBoundaryEvidence ? "Kullanıcı · TKGM sınırından türetildi" : "Kullanıcı",
       label,
       capturedAt: new Date().toISOString(),
       url: "",
     });
-    setDataStatus("Kullanıcı çizimi · resmî sınır doğrulaması gerekli");
+    setDataStatus(officialBoundaryEvidence
+      ? "TKGM kaynaklı kullanıcı kopyası · uzman doğrulaması gerekli"
+      : "Kullanıcı çizimi · resmî sınır doğrulaması gerekli");
+  };
+  const createEditableBoundaryCopy = () => {
+    if (!officialBoundaryLocked) return;
+    setParcel((points) => points.map((point) => ({ ...point })));
+    markBoundaryAsManual("TKGM kaynaklı düzenlenebilir kopya");
+    setDrawEnabled(true);
+    setFileNotice("Düzenlenebilir kopya oluşturuldu. Orijinal TKGM sınırı kanıt olarak korundu; bu kopyadaki değişiklikler uzman doğrulaması gerektirir.");
+  };
+  const restoreOfficialBoundary = () => {
+    if (!officialBoundaryEvidence?.geometry.length) return;
+    const restored = officialBoundaryEvidence.geometry.map((point) => ({ ...point }));
+    setParcel(restored);
+    setParcelSource({ ...officialBoundaryEvidence.source });
+    setDataStatus("TKGM MEGSİS açık servis geometrisi · tapu/aplikasyon belgesi değildir");
+    setDrawEnabled(false);
+    setParcelLookup("found");
+    setFileNotice("Orijinal TKGM sınırı geri yüklendi; kullanıcı düzenleme kopyası aktif geometriden kaldırıldı.");
+    fitMapToPoints(restored, 120);
   };
   const removeLastBoundaryPoint = () => {
+    if (officialBoundaryLocked) {
+      setFileNotice("TKGM sınırı salt okunurdur. Değişiklik için önce Düzenlenebilir Kopya Oluştur seçeneğini kullanın.");
+      return;
+    }
     setParcel((points) => points.slice(0, -1));
     markBoundaryAsManual("Haritada düzenlenen sınır");
     setFileNotice("Son sınır noktası kaldırıldı; geometri kullanıcı düzenlemesi olarak işaretlendi");
   };
   const clearBoundary = () => {
+    if (officialBoundaryLocked) {
+      setFileNotice("TKGM sınırı salt okunurdur. Değişiklik için önce Düzenlenebilir Kopya Oluştur seçeneğini kullanın.");
+      return;
+    }
     setParcel([]);
     markBoundaryAsManual("Temizlenmiş sınır");
     setFileNotice("Parsel sınırı temizlendi; aktif proje geometrisi doğrulama bekliyor");
@@ -1153,13 +1224,27 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setDistrict(String(properties.ilceAd ?? district));
       setNeighborhood(String(properties.mahalleAd ?? neighborhood));
       const reportedArea = parseReportedArea(properties.alan);
-      setParcelSource({
+      const capturedAt = new Date().toISOString();
+      const officialSource: ParcelSourceState = {
         kind: "tkgm-open-service",
         authority: "Tapu ve Kadastro Genel Müdürlüğü",
         label: "TKGM MEGSİS açık servis yanıtı",
-        capturedAt: new Date().toISOString(),
+        capturedAt,
         url: "https://parselsorgu.tkgm.gov.tr/",
         reportedArea,
+      };
+      setParcelSource(officialSource);
+      setOfficialBoundaryEvidence({
+        geometry: nextParcel.map((point) => ({ ...point })),
+        source: { ...officialSource },
+        identity: {
+          province: String(properties.ilAd ?? province),
+          district: String(properties.ilceAd ?? district),
+          neighborhood: String(properties.mahalleAd ?? neighborhood),
+          block: block.trim(),
+          parcelNo: parcelNo.trim(),
+        },
+        capturedAt,
       });
       setDataStatus("TKGM MEGSİS açık servis geometrisi · tapu/aplikasyon belgesi değildir");
       setParcelLookup("found");
