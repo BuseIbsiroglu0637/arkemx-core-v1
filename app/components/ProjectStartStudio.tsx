@@ -214,6 +214,12 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
   }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
+    // Summary mode is the history of the currently active project.
+    // A separate unfinished "new project" draft must never overwrite it.
+    if (summaryMode) {
+      setDraftReady(true);
+      return;
+    }
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
@@ -261,10 +267,10 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [summaryMode]);
 
   useEffect(() => {
-    if (!draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
+    if (summaryMode || !draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
     const timer = window.setTimeout(() => {
       const draft: GuidedProjectDraft = {
         schema: "ARKEM-GUIDED-DRAFT/1.0",
@@ -286,7 +292,7 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [completed, creatingNewProject, draftHasMeaningfulInput, draftReady, hasActiveProject, intake, restoredDraft, step]);
+  }, [completed, creatingNewProject, draftHasMeaningfulInput, draftReady, hasActiveProject, intake, restoredDraft, step, summaryMode]);
 
   const exportDraft = () => {
     const draft: GuidedProjectDraft = {
