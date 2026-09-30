@@ -50,6 +50,7 @@ export type GuidedProjectRoadmap = {
     route: string;
   };
   missingDocuments: string[];
+  verificationItems: string[];
   policy: {
     userDeclarationsAreNotOfficialData: true;
     officialZoningRequiresEvidence: true;
@@ -108,6 +109,22 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     .filter((id) => !hasDocument(intake, id))
     .map((id) => GUIDED_DOCUMENT_OPTIONS.find((item) => item.id === id)?.label ?? id);
 
+  const verificationItems = [
+    ...(parcelKnown ? ["Ada / parsel numarası — başlangıç formunda henüz girilmedi."] : []),
+    ...(parcelKnown ? ["Resmî parsel geometrisi — doğrulama bekliyor."] : []),
+    ...(hasDocument(intake, "parcel-id")
+      ? ["Parsel kaynağı — mevcut olarak beyan edildi; içerik ve resmî kimlik doğrulanacak."]
+      : parcelKnown
+        ? ["Parsel kimliği / koordinat kaynağı — eksik."]
+        : []),
+    ...(!zoningProvided && parcelKnown
+      ? ["İmar durumu / plan notları — resmî kaynaktan doğrulama bekliyor."]
+      : []),
+    ...(intake.projectType === "new"
+      ? ["Zemin / temel etüdü — taşıyıcı sistem kararı öncesinde gerekliliği değerlendirilecek."]
+      : []),
+  ];
+
   const gates: GuidedJourneyGate[] = [
     {
       id: "brief",
@@ -120,11 +137,11 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
       id: "parcel",
       label: "Parsel ve arazi kimliği",
       detail: parcelVerified
-        ? "Ada / parsel bilgisinin hazır olduğu beyan edildi; resmî servis yanıtı projede ayrıca kaydedilir."
+        ? "Ada / parsel bilgisinin hazır olduğu kullanıcı tarafından beyan edildi; numara ve resmî geometri bu başlangıç adımında doğrulanmış sayılmaz."
         : parcelKnown
           ? "Parsel biliniyor; koordinatlı sınır ve resmî kimlik kontrol edilmelidir."
           : "Parsel kimliği veya yatırım bölgesi henüz netleştirilmelidir.",
-      status: parcelVerified ? "ready" : parcelKnown ? "official-review" : "missing",
+      status: parcelKnown ? "official-review" : "missing",
       route: parcelKnown ? "/imar-entegrasyon-merkezi" : "/arsa-fizibilite-studyosu",
     },
     {
@@ -189,17 +206,13 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         copy: "Yatırım alanını haritada bulun; ada, parsel ve koordinatlı sınırı proje kimliğine bağlayın.",
         route: "/arsa-fizibilite-studyosu",
       }
-      : !parcelVerified || !zoningProvided
-        ? {
-          title: "Parsel ve imar kanıtını doğrulayın",
-          copy: "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
-          route: "/imar-entegrasyon-merkezi",
-        }
-        : {
-          title: "Mimari ihtiyaç programını oluşturun",
-          copy: "Doğrulanmış parsel ve yapılaşma koşullarını alan, mahal, dolaşım ve kütle kararlarına aktarın.",
-          route: "/mimari-program-studyosu",
-        };
+      : {
+        title: "Parsel ve imar kanıtını doğrulayın",
+        copy: zoningProvided
+          ? "Beyan edilen parsel bilgisini, resmî sınırı ve mevcut imar belgesini kaynağıyla doğrulayın."
+          : "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
+        route: "/imar-entegrasyon-merkezi",
+      };
 
   return {
     schema: "ARKEM-GUIDED-JOURNEY/1.0",
@@ -207,6 +220,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     gates,
     nextAction,
     missingDocuments,
+    verificationItems,
     policy: {
       userDeclarationsAreNotOfficialData: true,
       officialZoningRequiresEvidence: true,
