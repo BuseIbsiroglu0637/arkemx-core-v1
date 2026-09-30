@@ -249,7 +249,6 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         <section className="arx-account-card" aria-labelledby="arx-account-projects-title">
           <header>
             <div><span>PROJELER</span><h3 id="arx-account-projects-title">Hesaba bağlı projeler</h3></div>
-            <Link href="/dijital-proje-merkezi" aria-disabled={!hasActiveProject} className={!hasActiveProject ? "is-disabled" : undefined}>Projeye Devam Et</Link>
           </header>
           <div className="arx-account-list">
             {hasActiveProject && !accountHasActiveProject ? <article className="arx-account-local-project">
@@ -258,7 +257,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             </article> : null}
             {meaningfulDraft ? <article className="arx-account-draft">
               <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Yeni proje taslağı · kayıtlı projelerden ayrıdır · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
-              <span className="arx-account-project-actions"><Link href="/proje-baslat">Devam et</Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
+              <span className="arx-account-project-actions arx-account-draft-actions"><Link href="/proje-baslat">Taslağa Devam Et <span aria-hidden="true">→</span></Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
             </article> : null}
             {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
