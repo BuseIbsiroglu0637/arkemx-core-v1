@@ -406,3 +406,18 @@ test("parcel workspace starts clean, inherits project location and updates devic
   assert.match(geocode, /nominatim\.openstreetmap\.org\/reverse/);
   assert.match(geocode, /countrycodes/);
 });
+
+
+test("active project summary cannot be overwritten by a separate unfinished draft", () => {
+  const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  const account = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+
+  assert.match(start, /if \(summaryMode\) \{\s*setDraftReady\(true\);\s*return;/);
+  assert.match(start, /if \(summaryMode \|\| !draftReady/);
+  assert.match(start, /Başlangıç kararları proje çekirdeğinden yeniden yüklendi/);
+
+  assert.match(account, /Yeni proje taslağı · kayıtlı projelerden ayrıdır/);
+  assert.match(account, /const removeDraft = async \(\) =>/);
+  assert.match(account, /fetch\("\/api\/project-draft", \{ method: "DELETE" \}\)/);
+  assert.match(account, /window\.localStorage\.removeItem\(GUIDED_DRAFT_KEY\)/);
+});
