@@ -1126,8 +1126,10 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(storageSource, /removeItem/);
 
   const projectCenterPageSource = fs.readFileSync(new URL("../app/dijital-proje-merkezi/page.tsx", import.meta.url), "utf8");
-  assert.match(projectCenterPageSource, /href="\/hesabim"/);
-  assert.doesNotMatch(projectCenterPageSource, /href="\/giris\?return_to=%2Fhesabim"/);
+  assert.match(projectCenterPageSource, /AccountHeaderLink/);
+  const accountHeaderLink = fs.readFileSync(new URL("../app/components/AccountHeaderLink.tsx", import.meta.url), "utf8");
+  assert.match(accountHeaderLink, /getArkemAccountUser/);
+  assert.match(accountHeaderLink, /user \? "\/hesabim" : "\/giris\?return_to=%2Fhesabim"/);
 
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
