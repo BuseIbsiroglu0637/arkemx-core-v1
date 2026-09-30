@@ -12,6 +12,19 @@ function returnTargetFromReferer(request: Request) {
   }
 }
 
+function setupTargetFromReferer(request: Request) {
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const url = new URL(referer);
+    return url.pathname === "/hesap-kurulum"
+      ? `${url.pathname}${url.search}`
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const requestedReturn = url.searchParams.get("return_to") ?? returnTargetFromReferer(request);
@@ -19,10 +32,11 @@ export async function GET(request: Request) {
   const setupReturn = `/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}`;
 
   if (isPrototypeDemoAuthEnabled()) {
+    const explicitSetupTarget = setupTargetFromReferer(request);
     return new Response(null, {
       status: 302,
       headers: {
-        Location: setupReturn,
+        Location: explicitSetupTarget ?? returnTo,
         "Set-Cookie": "arkemx_prototype_session=1; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800",
         "Cache-Control": "no-store, max-age=0",
       },
