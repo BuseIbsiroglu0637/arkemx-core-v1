@@ -543,3 +543,13 @@ test("2D conceptual massing visibility is independent from 3D massing toggle", (
   assert.ok(!studio.includes('showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3'));
   assert.ok(studio.includes("Temsili Ön Kütle<br>"));
 });
+
+
+test("2D map warns when conceptual massing breaches parcel or setback pre-check", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("geo-map-placement-warning"));
+  assert.ok(studio.includes("Yerleşim ön kontrolü uyarısı."));
+  assert.ok(studio.includes("Temsili Ön Kütle parsel sınırını aşıyor veya sınırla kesişiyor."));
+  assert.ok(studio.includes("ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes('color: placementWarning ? "#e27b42" : "#ffffff"'));
+});
