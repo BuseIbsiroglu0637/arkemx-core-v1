@@ -77,7 +77,7 @@ const stages: { id: Stage; no: string; label: string; sub: string }[] = [
   { id: "export", no: "07", label: "Teknik çıktıyı al", sub: "PDF · DXF · KML" },
 ];
 
-const defaultCenter: GeoPoint = { lat: 40.7607, lng: 30.3675 };
+const defaultCenter: GeoPoint = { lat: 39.0, lng: 35.0 };
 type ParcelSourceState = {
   kind: ParcelSourceKind;
   authority: string;
@@ -89,6 +89,54 @@ type ParcelSourceState = {
 
 function normalizeAdministrativeName(value: unknown) {
   return String(value ?? "").trim().toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(mahallesi|mah\.?|köyü|koyu|köy|koy)\b/g, "").replace(/[^a-z0-9çğıöşü]+/g, "");
+}
+
+function parseDeclaredLocation(value: unknown) {
+  const raw = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return { province: "", district: "" };
+
+  const slashParts = raw.split(/[\/|,]/).map((part) => part.trim()).filter(Boolean);
+  if (slashParts.length >= 2) {
+    const provinceMatch = FALLBACK_PROVINCE_NAMES.find((name) =>
+      normalizeAdministrativeName(name) === normalizeAdministrativeName(slashParts[0]),
+    );
+    if (provinceMatch) return { province: provinceMatch, district: slashParts[1] ?? "" };
+  }
+
+  const normalized = raw.toLocaleLowerCase("tr-TR");
+  const provinceMatch = FALLBACK_PROVINCE_NAMES.find((name) => {
+    const candidate = name.toLocaleLowerCase("tr-TR");
+    return normalized === candidate || normalized.startsWith(`${candidate} `);
+  });
+  if (!provinceMatch) return { province: raw, district: "" };
+
+  return {
+    province: provinceMatch,
+    district: raw.slice(provinceMatch.length).trim(),
+  };
+}
+
+type GeocodeResult = {
+  lat?: number;
+  lng?: number;
+  displayName?: string;
+  province?: string;
+  district?: string;
+  neighborhood?: string;
+  error?: string;
+};
+
+async function fetchGeocode(params: { q?: string; lat?: number; lng?: number }) {
+  const search = new URLSearchParams();
+  if (params.q) search.set("q", params.q);
+  if (Number.isFinite(params.lat) && Number.isFinite(params.lng)) {
+    search.set("lat", String(params.lat));
+    search.set("lng", String(params.lng));
+  }
+  const response = await fetch(`/api/geocode?${search.toString()}`, { cache: "no-store" });
+  const body = await response.json() as GeocodeResult;
+  if (!response.ok) throw new Error(body.error || "Konum bilgisi çözümlenemedi.");
+  return body;
 }
 
 async function fetchTkgmJson(path: string) {
@@ -234,6 +282,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const persistedGeoRef = useRef(false);
   const pendingFitRef = useRef<GeoPoint[] | null>(null);
+  const pendingCenterRef = useRef<GeoPoint | null>(null);
+  const projectLocationAppliedRef = useRef(false);
   const { patchModule, project, hydrated } = useProjectKernel();
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
@@ -248,18 +298,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // Conceal conceptual overlays visually without deleting their saved inputs.
   const [showConceptualOverlays, setShowConceptualOverlays] = useState(!simple);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
-  const [parcel, setParcel] = useState<GeoPoint[]>(() => sampleParcel(defaultCenter));
+  const [parcel, setParcel] = useState<GeoPoint[]>([]);
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
-    kind: "sample",
-    authority: "ARKEMX",
-    label: "Temsili başlangıç geometrisi",
+    kind: "coordinate",
+    authority: "Kullanıcı",
+    label: "Başlangıç konumu / kullanıcı beyanı",
     capturedAt: new Date(0).toISOString(),
     url: "",
   });
   const [drawEnabled, setDrawEnabled] = useState(!simple);
   const [latitude, setLatitude] = useState(defaultCenter.lat.toFixed(7));
   const [longitude, setLongitude] = useState(defaultCenter.lng.toFixed(7));
-  const [province, setProvince] = useState("Sakarya");
+  const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [provinceId, setProvinceId] = useState("");
@@ -272,7 +322,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [administrativeSource, setAdministrativeSource] = useState<"official" | "fallback">("fallback");
   const [block, setBlock] = useState("");
   const [parcelNo, setParcelNo] = useState("");
-  const [fileNotice, setFileNotice] = useState("Örnek parsel verisi yüklendi");
+  const [fileNotice, setFileNotice] = useState("Proje başlangıç konumu yükleniyor. Mahalle/köy, ada ve parsel seçimini tamamlayın.");
   const [buildingWidth, setBuildingWidth] = useState(24);
   const [buildingDepth, setBuildingDepth] = useState(38);
   const [floors, setFloors] = useState(2);
