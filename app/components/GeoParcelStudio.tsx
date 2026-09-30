@@ -671,14 +671,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       });
       if (saved.frontEdge && ["north", "east", "south", "west"].includes(saved.frontEdge)) setFrontEdge(saved.frontEdge);
       if (saved.selectedMassingId) setSelectedMassingId(saved.selectedMassingId);
-      setFileNotice(hasSavedBoundary
-        ? "Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı."
-        : declared.province
-          ? `${declared.province}${declared.district ? ` / ${declared.district}` : ""} proje başlangıcından aktarıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`
-          : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
+      setFileNotice(recoverySource !== "project"
+        ? "Önceki yerel çalışma yedeği kurtarıldı; parsel ve tasarım girdileri yeniden yüklendi."
+        : hasSavedBoundary
+          ? "Kayıtlı parsel, yapı yerleşimi ve planlama verileri otomatik açıldı."
+          : saved.neighborhood || saved.block || saved.parcelNo
+            ? "Kayıtlı parsel seçimleri ve tasarım girdileri otomatik açıldı; sınır doğrulaması bekleniyor."
+            : declared.province
+              ? `${declared.province}${declared.district ? ` / ${declared.district}` : ""} proje başlangıcından aktarıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`
+              : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, project.modules]);
+  }, [hydrated, patchModule, project.id, project.modules]);
 
   useEffect(() => {
     if (!provinceOptions.length || !province) return;
