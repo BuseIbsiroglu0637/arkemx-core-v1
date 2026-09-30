@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LayerGroup, Map as LeafletMap, Polygon as LeafletPolygon } from "leaflet";
 import { GeoTerrainViewer } from "./GeoTerrainViewer";
-import { buildingFootprint, fromLocalMeters, geoCentroid, localBounds, minimumBoundaryDistance, pointInPolygon, polygonEdgesCross, polygonArea, polygonPerimeter, polygonSelfIntersects, sampleParcel, toLocalMeters, type GeoPoint } from "../lib/geo";
+import { buildingFootprint, fromLocalMeters, geoCentroid, localBounds, polygonArea, polygonPerimeter, polygonSelfIntersects, sampleParcel, toLocalMeters, type GeoPoint } from "../lib/geo";
 import { createLayeredDxf } from "../lib/engineering";
 import { assessExportReview, escapeXml } from "../lib/export-review";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
