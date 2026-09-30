@@ -288,6 +288,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const basemapLabelsRef = useRef<import("leaflet").TileLayer | null>(null);
   const basemapUrlRef = useRef<string | null>(null);
   const parcelLayerRef = useRef<LeafletPolygon | null>(null);
+  const setbackEnvelopeLayerRef = useRef<LeafletPolygon | null>(null);
   const buildingLayerRef = useRef<LeafletPolygon | null>(null);
   const pointsLayerRef = useRef<LayerGroup | null>(null);
   const contourLayerRef = useRef<LayerGroup | null>(null);
@@ -1031,17 +1032,33 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const map = mapRef.current;
     if (!leaflet || !map || !mapReady) return;
     parcelLayerRef.current?.remove();
+    setbackEnvelopeLayerRef.current?.remove();
     buildingLayerRef.current?.remove();
     pointsLayerRef.current?.clearLayers();
     contourLayerRef.current?.clearLayers();
     if (terrainLayers["parcel-boundary"] && parcel.length >= 2) {
       parcelLayerRef.current = leaflet.polygon(parcel.map((point) => [point.lat, point.lng]), { color: "#b96636", weight: 3, fillColor: "#d98a5d", fillOpacity: .16, dashArray: parcel.length < 3 ? "6 6" : undefined }).addTo(map);
     }
+    if (showConceptualOverlays && zoningFormReady && massingModel.envelope.polygon.length >= 3) {
+      setbackEnvelopeLayerRef.current = leaflet.polygon(
+        massingModel.envelope.polygon.map((point) => [point.lat, point.lng]),
+        { color: "#73aeb7", weight: 2, opacity: .95, fillColor: "#73aeb7", fillOpacity: .04, dashArray: "7 6" },
+      ).bindTooltip(
+        `${massingModel.source.authoritative ? "Yapılaşabilir çekme zarfı" : "Girdiye göre kavramsal çekme zarfı"}<br>Ön/yan/arka: ${zoning.frontSetback}/${zoning.sideSetback}/${zoning.rearSetback} m`,
+      ).addTo(map);
+    }
     if (showConceptualOverlays && (terrainLayers["parcel-boundary"] || terrainLayers["elevation-points"])) parcel.forEach((point, index) => {
       const hasElevation = Number.isFinite(point.alt);
       if (!terrainLayers["parcel-boundary"] && !(terrainLayers["elevation-points"] && hasElevation)) return;
-      leaflet.circleMarker([point.lat, point.lng], { radius: hasElevation && terrainLayers["elevation-points"] ? 6 : 5, color: "#ffffff", weight: 2, fillColor: hasElevation && terrainLayers["elevation-points"] ? "#c66e3d" : "#0a2639", fillOpacity: 1 })
-        .bindTooltip(`P${index + 1}<br>${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}${hasElevation && terrainLayers["elevation-points"] ? `<br>Z ${point.alt?.toFixed(2)} m` : ""}`)
+      const readOnlyOfficialPoint = officialBoundaryLocked && !hasElevation;
+      leaflet.circleMarker([point.lat, point.lng], {
+        radius: readOnlyOfficialPoint ? 4 : hasElevation && terrainLayers["elevation-points"] ? 6 : 5,
+        color: readOnlyOfficialPoint ? "#d7e1e4" : "#ffffff",
+        weight: readOnlyOfficialPoint ? 1.5 : 2,
+        fillColor: readOnlyOfficialPoint ? "#6f8791" : hasElevation && terrainLayers["elevation-points"] ? "#c66e3d" : "#0a2639",
+        fillOpacity: readOnlyOfficialPoint ? .72 : 1,
+      })
+        .bindTooltip(`P${index + 1}<br>${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}${readOnlyOfficialPoint ? "<br>TKGM sınır noktası · salt okunur" : ""}${hasElevation && terrainLayers["elevation-points"] ? `<br>Z ${point.alt?.toFixed(2)} m` : ""}`)
         .addTo(pointsLayerRef.current!);
     });
     if (showConceptualOverlays && terrainLayers.contours) terrainContours.forEach((segment) => {
@@ -1052,7 +1069,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         .addTo(contourLayerRef.current!);
     });
     if (showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3) buildingLayerRef.current = leaflet.polygon(building.map((point) => [point.lat, point.lng]), { color: "#ffffff", weight: 2, fillColor: "#0a2639", fillOpacity: .64 }).bindTooltip(`${usage}<br>${system}<br>${buildingWidth} × ${buildingDepth} m · ${floors} kat`).addTo(map);
-  }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers, showConceptualOverlays]);
+  }, [parcel, building, center, mapReady, usage, system, buildingWidth, buildingDepth, floors, terrainContours, terrainLayers, showConceptualOverlays, zoningFormReady, zoning.frontSetback, zoning.sideSetback, zoning.rearSetback, massingModel, officialBoundaryLocked]);
 
   // When an existing, sourced parcel is opened from local storage, fit the map
   // after Leaflet is ready. The initial demo geometry is never mistaken for a lookup result.
@@ -1719,7 +1736,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
               setShowConceptualOverlays((visible) => !visible);
               if (!showConceptualOverlays) setTerrainLayers((current) => ({ ...current, contours: true, "building-mass": true }));
             }}>
-              {showConceptualOverlays ? "Temsili yapı ve eğrileri gizle" : "Temsili yapı ve eğrileri göster"}
+              {showConceptualOverlays ? "Temsili ön kütle ve katmanları gizle" : "Temsili ön kütle ve katmanları göster"}
             </button>}
             <button type="button" aria-pressed={showResults} onClick={() => setShowResults((current) => !current)}>
               {showResults ? "Hesap sonuçlarını gizle" : "Hesap sonuçlarını göster"}</button>
@@ -1762,7 +1779,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <div>{terrainModel.layers.map((layer) => <label key={layer.id} data-available={layer.available}><input type="checkbox" checked={terrainLayers[layer.id]} onChange={() => toggleTerrainLayer(layer.id)} disabled={layer.id === "basemap" || !layer.available} /><span><b>{layer.label}</b><small>{layer.id === "basemap" ? (basemapStatus === "ready" ? "Uydu / sokak servisi erişilebilir" : "Harita altlığı hazırlanıyor") : layer.available ? terrainLayers[layer.id] ? "Görünür" : "Gizli" : "Veri bekliyor"}</small></span></label>)}</div>
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
-        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : !parcel.length ? (basemapStatus === "ready" ? `Harita altlığı · ${province || "konum"}${district ? ` / ${district}` : ""} · parsel seçimi bekleniyor` : "Harita yükleniyor · parsel seçimi bekleniyor") : parcelRecord.evidence.sourceKind === "tkgm-open-service" ? (basemapStatus === "ready" ? "Harita altlığı · Seçili parsel sınırı TKGM kaydından" : "Harita yükleniyor · seçili parsel sınırı mevcut") : (basemapStatus === "ready" ? "Harita altlığı · seçili sınır önizlemesi" : "Harita yükleniyor · sınır önizlemesi mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend">{parcel.length ? <span><i></i>Seçili parsel sınırı</span> : <span>Parsel seçimi bekleniyor</span>}{parcel.length >= 3 && showConceptualOverlays && <><span><i></i>Temsili yapı</span><span><i></i>Sınır noktası</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
+        <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div><div className="geo-basemap-switch" role="group" aria-label="Harita altlığı">{([{ id: "satellite", label: "Uydu" }, { id: "street", label: "Sokak" }, { id: "hybrid", label: "Hibrit" }] as const).map((mode) => <button key={mode.id} type="button" className={basemapMode === mode.id ? "active" : ""} aria-pressed={basemapMode === mode.id} onClick={() => setBasemapMode(mode.id)}>{mode.label}</button>)}</div>{basemapWarning && <p className="geo-basemap-warning" role="status">{basemapWarning}</p>}<div className="geo-basemap-offline-label" role="note">{basemapStatus === "error" ? "Harita altlığı yüklenemedi · Koordinat görünümü açık" : !parcel.length ? (basemapStatus === "ready" ? `Harita altlığı · ${province || "konum"}${district ? ` / ${district}` : ""} · parsel seçimi bekleniyor` : "Harita yükleniyor · parsel seçimi bekleniyor") : parcelRecord.evidence.sourceKind === "tkgm-open-service" ? (basemapStatus === "ready" ? "Harita altlığı · Seçili parsel sınırı TKGM kaydından" : "Harita yükleniyor · seçili parsel sınırı mevcut") : (basemapStatus === "ready" ? "Harita altlığı · seçili sınır önizlemesi" : "Harita yükleniyor · sınır önizlemesi mevcut")}</div>{!mapReady && <div className="geo-map-loading"><i></i><b>{mapError || "Harita katmanı hazırlanıyor"}</b><small>Koordinat araçları çevrimdışı da kullanılabilir.</small></div>}<div className="geo-map-legend">{parcel.length ? <span className="parcel"><i></i>{parcelRecord.evidence.sourceKind === "tkgm-open-service" ? "TKGM parsel sınırı" : "Seçili parsel sınırı"}</span> : <span>Parsel seçimi bekleniyor</span>}{parcel.length >= 3 && showConceptualOverlays && <>{zoningFormReady && <span className="setback"><i></i>{massingModel.source.authoritative ? "Yapılaşabilir çekme zarfı" : "Girdiye göre çekme zarfı"}</span>}<span className="building"><i></i>Temsili Ön Kütle</span><span className={officialBoundaryLocked ? "point readonly" : "point"}><i></i>{officialBoundaryLocked ? "TKGM sınır noktası · salt okunur" : "Sınır noktası"}</span></>}</div>{!simple && <div className="geo-map-crosshair">+</div>}</div>
         {viewMode === "terrain" && <div className="geo-terrain-massing-control">
           <div><b>Temsili Ön Kütle</b><small>İmar ve yerleşim doğrulanmadan otomatik gösterilmez. Yalnız kavramsal ön yerleşimi incelemek için açın.</small></div>
           <button type="button" aria-pressed={showTerrainMassing} onClick={() => {
