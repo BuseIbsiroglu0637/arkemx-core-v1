@@ -633,3 +633,16 @@ test("application exposes persistent light and dark theme controls", () => {
   assert.ok(layout.includes('localStorage.getItem("arkemx-theme")'));
   assert.ok(globals.includes('html[data-theme="dark"]'));
 });
+
+
+test("dark theme uses true black surfaces and high-contrast parcel UI", () => {
+  const theme = fs.readFileSync(new URL("../app/components/ThemeSystem.tsx", import.meta.url), "utf8");
+  const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  const geo = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+  assert.ok(theme.includes('theme === "dark" ? "#000000"'));
+  assert.ok(globals.includes("/* ARKEMX true-black dark pass */"));
+  assert.ok(globals.includes("background: #000000 !important"));
+  assert.ok(geo.includes("/* ARKEMX geo true-black contrast pass */"));
+  assert.ok(geo.includes("color: #ffffff !important"));
+  assert.ok(geo.includes("Keep satellite/terrain imagery natural"));
+});
