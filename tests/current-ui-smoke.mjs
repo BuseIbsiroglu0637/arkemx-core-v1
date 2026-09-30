@@ -41,6 +41,13 @@ test("local build renders the simplified, device-scoped project centre", async (
   assert.match(html, /Bu cihazdaki çalışma/);
   assert.match(html, /Proje JSON yükle/);
   assert.match(html, /Proje yedeğini indir/);
+  assert.match(html, /Ayrıntılı proje kontrolleri/);
+  assert.match(html, /Proje kontrol özeti/);
+  assert.match(html, /Proje adımları/);
+  assert.match(html, /Teslim hazırlığı ve teknik çıktılar/);
+  assert.match(html, /data-testid="digital-project-hub"/);
+  assert.doesNotMatch(html, /Bağlı çalışma alanları\./);
+  assert.doesNotMatch(html, /Proje kontrol merkezi/);
 });
 
 test("local build opens the dedicated plan and grid workspace", async () => {
