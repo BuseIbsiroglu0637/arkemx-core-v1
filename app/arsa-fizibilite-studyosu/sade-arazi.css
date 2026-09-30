@@ -607,3 +607,169 @@ html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-togg
   background: #143d35;
   color: #b7dfd1;
 }
+
+
+/* ARKEMX geo true-black contrast pass */
+html[data-theme="dark"] .arx-geo-page,
+html[data-theme="dark"] .arx-geo-simple,
+html[data-theme="dark"] .arx-geo-simple .geo-workspace,
+html[data-theme="dark"] .arx-geo-simple .geo-controls,
+html[data-theme="dark"] .arx-geo-simple .geo-stage {
+  background: #000000 !important;
+  color: #f4f7f8 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section,
+html[data-theme="dark"] .arx-geo-simple .geo-results,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar,
+html[data-theme="dark"] .arx-geo-quick-nav,
+html[data-theme="dark"] .arx-geo-extra > div,
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+  color: #f4f7f8 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header *,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3 *,
+html[data-theme="dark"] .arx-geo-simple .geo-results h3,
+html[data-theme="dark"] .arx-geo-simple .geo-results h4 {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary > article {
+  background: #0a0a0a !important;
+  border-color: #303030 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > b {
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > small,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section label:not(.geo-file-drop),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section small,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result span,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result small {
+  color: #c4ced2 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > span,
+html[data-theme="dark"] .arx-geo-intro > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section b {
+  color: #e28a57;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:not([type="range"]),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea {
+  background: #0b0b0b !important;
+  border-color: #3a3a3a !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input::placeholder,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea::placeholder {
+  color: #8f9a9f !important;
+  opacity: 1;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea:disabled {
+  color: #8c969a !important;
+  background: #111111 !important;
+  opacity: 1;
+}
+
+html[data-theme="dark"] .arx-geo-quick-nav button,
+html[data-theme="dark"] .arx-geo-extra summary,
+html[data-theme="dark"] .arx-geo-extra > div button,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button {
+  background: #090909 !important;
+  border-color: #303030 !important;
+  color: #dce3e6 !important;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button.active,
+html[data-theme="dark"] .arx-geo-quick-nav button[aria-current="step"],
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button.active,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button[aria-pressed="true"] {
+  background: #12344a !important;
+  border-color: #31556a !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle[aria-pressed="true"] {
+  background: #14372f !important;
+  border-color: #4d7b6b !important;
+  color: #d9f0e7 !important;
+}
+
+html[data-theme="dark"] .arx-geo-source-note {
+  background: #17130d !important;
+  border-color: #4b3a24 !important;
+  color: #f0c883 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning {
+  background: #1b0f0a !important;
+  border-color: #6f3a25 !important;
+  border-left-color: #df7a42 !important;
+  color: #ffd7c3 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning b,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning b {
+  color: #ff9b64 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock {
+  background: #07110e !important;
+  border-color: #2f5b4d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > b {
+  color: #bce7d6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > p {
+  color: #b6c7c0 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-restore-official,
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > button {
+  background: #0a0a0a !important;
+  border-color: #4a4a4a !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-query {
+  background: #17130d !important;
+  border-color: #5c4528 !important;
+  color: #ead0a2 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result b {
+  color: #ffffff !important;
+}
+
+/* Keep satellite/terrain imagery natural; only UI chrome becomes true black. */
+html[data-theme="dark"] .arx-geo-simple .geo-map-frame,
+html[data-theme="dark"] .arx-geo-simple .geo-leaflet-map {
+  border-color: #2b2b2b !important;
+}
+
+/* Remove the remaining white breadcrumb/status slab visible in dark mode. */
+html[data-theme="dark"] .arx-geo-simple .geo-controls [style*="background: #fff"],
+html[data-theme="dark"] .arx-geo-simple .geo-controls [style*="background:#fff"],
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center [style*="background: #fff"],
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center [style*="background:#fff"] {
+  background: #080808 !important;
+  color: #f0f3f4 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-controls hr,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section hr {
+  border-color: #2a2a2a !important;
+}
