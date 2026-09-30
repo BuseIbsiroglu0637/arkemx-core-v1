@@ -618,7 +618,53 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
   }, [administrativeSource, neighborhood]);
 
-  const center = useMemo(() => geoCentroid(parcel.length ? parcel : [defaultCenter]), [parcel]);
+  useEffect(() => {
+    if (!hydrated || projectLocationAppliedRef.current) return;
+    const saved = project.modules["geo-parcel"] as { parcel?: GeoPoint[]; reference?: string } | undefined;
+    if (saved?.parcel?.length) {
+      projectLocationAppliedRef.current = true;
+      return;
+    }
+    const decision = project.modules["decision-assistant"] as { input?: { location?: string } } | undefined;
+    const declaredLocation = String(decision?.input?.location ?? saved?.reference ?? "").trim();
+    if (!declaredLocation) {
+      projectLocationAppliedRef.current = true;
+      return;
+    }
+    projectLocationAppliedRef.current = true;
+    void fetchGeocode({ q: declaredLocation }).then((result) => {
+      const point = validPoint(Number(result.lat), Number(result.lng));
+      if (point) {
+        pendingCenterRef.current = point;
+        setLatitude(point.lat.toFixed(7));
+        setLongitude(point.lng.toFixed(7));
+        mapRef.current?.setView([point.lat, point.lng], 12);
+      }
+      if (result.province) {
+        setProvince(result.province);
+        setProvinceId("");
+        setDistrictOptions([]);
+      }
+      if (result.district) {
+        setDistrict(result.district);
+        setDistrictId("");
+        setNeighborhoodOptions([]);
+      }
+      if (result.neighborhood) {
+        setNeighborhood(result.neighborhood);
+        setNeighborhoodId("");
+      }
+      setFileNotice(`${result.province || province || "Proje konumu"}${result.district ? ` / ${result.district}` : ""} haritada açıldı. Mahalle/köy, ada ve parsel seçimini tamamlayın.`);
+    }).catch(() => {
+      // The declared administrative labels remain useful even if map geocoding is unavailable.
+    });
+  }, [hydrated, project.modules]);
+
+  const coordinateCenter = useMemo(
+    () => validPoint(Number(latitude.replace(",", ".")), Number(longitude.replace(",", "."))) ?? defaultCenter,
+    [latitude, longitude],
+  );
+  const center = useMemo(() => geoCentroid(parcel.length ? parcel : [coordinateCenter]), [coordinateCenter, parcel]);
   const building = useMemo(() => buildingFootprint(center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth), [center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth]);
   const metrics = useMemo(() => {
     const area = polygonArea(parcel);
