@@ -99,8 +99,8 @@ export function SimpleProjectCenter() {
     </section>
 
     <details className="arx-center-advanced">
-      <summary><span><ShieldAlert size={19} strokeWidth={1.7} aria-hidden="true" /> Ayrıntılı proje kontrolleri</span><small>Veri haritası, doğrulama, aktarım ve teslim kayıtları</small></summary>
-      <div className="arx-center-advanced-content"><DigitalProjectHub /></div>
+      <summary><span><ShieldAlert size={19} strokeWidth={1.7} aria-hidden="true" /> Ayrıntılı proje kontrolleri</span><small>Eksik adımlar, açık konular ve teslim hazırlığı</small></summary>
+      <div className="arx-center-advanced-content"><DigitalProjectHub simple /></div>
     </details>
     <p className="arx-center-boundary">Bu ekran proje çalışma kaydını gösterir; teknik inceleme veya resmî onay yerine geçmez.</p>
   </div>;
