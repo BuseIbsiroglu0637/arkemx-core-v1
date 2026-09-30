@@ -283,3 +283,17 @@ test("project roadmap labels readiness and user declarations truthfully", () => 
   assert.match(guidedSource, /başlangıç formunda henüz girilmedi/);
   assert.match(guidedSource, /status: parcelKnown \? "official-review" : "missing"/);
 });
+
+
+test("active projects do not reopen as a blank new-project form", () => {
+  const startSource = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  const graphSource = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const coreSource = fs.readFileSync(new URL("../app/lib/project-core.ts", import.meta.url), "utf8");
+
+  assert.match(startSource, /project-start-active-project/);
+  assert.match(startSource, /Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi/);
+  assert.match(startSource, /Yeni Bir Proje Başlat/);
+  assert.match(graphSource, /Parsel kimliğini ve sınırını doğrula/);
+  assert.match(graphSource, /\/arsa-fizibilite-studyosu#geo-studyo/);
+  assert.match(coreSource, /bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"/);
+});
