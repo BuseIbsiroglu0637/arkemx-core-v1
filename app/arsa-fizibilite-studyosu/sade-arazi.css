@@ -773,3 +773,47 @@ html[data-theme="dark"] .arx-geo-simple .geo-controls hr,
 html[data-theme="dark"] .arx-geo-simple .geo-control-section hr {
   border-color: #2a2a2a !important;
 }
+
+
+.geo-zoning-source-status {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #c8d5da;
+  background: #f7fafb;
+}
+.geo-zoning-source-status > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.geo-zoning-source-status > b {
+  font-size: 14px;
+}
+.geo-zoning-source-status > small {
+  line-height: 1.45;
+}
+.geo-zoning-source-status[data-ready="ready"] {
+  border-color: #86b7a4;
+  background: #f1f8f5;
+}
+.geo-zoning-source-status[data-ready="missing"] {
+  border-color: #d7b28e;
+  background: #fff8f1;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status {
+  border-color: #303030;
+  background: #070707;
+  color: #f3f6f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="ready"] {
+  border-color: #31594d;
+  background: #07120f;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="missing"] {
+  border-color: #6a482f;
+  background: #160d07;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > small {
+  color: #bdc8cc;
+}
