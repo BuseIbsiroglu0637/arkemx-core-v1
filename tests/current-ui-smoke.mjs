@@ -618,3 +618,18 @@ test("parking demand result is visible beside inputs and in technical summary", 
   assert.ok(studio.includes("→ yukarı yuvarlandı"));
   assert.ok(studio.includes("<small>Park ihtiyacı</small><b>{metrics.parkingNeed} araç</b>"));
 });
+
+
+test("application exposes persistent light and dark theme controls", () => {
+  const theme = fs.readFileSync(new URL("../app/components/ThemeSystem.tsx", import.meta.url), "utf8");
+  const layout = fs.readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.ok(theme.includes('type ArkemTheme = "light" | "dark"'));
+  assert.ok(theme.includes('localStorage.setItem(STORAGE_KEY, next)'));
+  assert.ok(theme.includes('aria-label="Tema seçimi"'));
+  assert.ok(theme.includes('Açık'));
+  assert.ok(theme.includes('Koyu'));
+  assert.ok(layout.includes("<ThemeControl/>"));
+  assert.ok(layout.includes('localStorage.getItem("arkemx-theme")'));
+  assert.ok(globals.includes('html[data-theme="dark"]'));
+});
