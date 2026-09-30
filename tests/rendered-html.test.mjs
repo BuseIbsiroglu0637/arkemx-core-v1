@@ -423,6 +423,8 @@ test("renders every public route and keeps internal navigation resolvable", asyn
     "/dokumanlar",
     "/egitimler",
     "/giris",
+    "/hesap-kurulum",
+    "/hesabim",
     "/hazir-projeler",
     "/hizmetler",
     "/iletisim",
@@ -439,6 +441,11 @@ test("renders every public route and keeps internal navigation resolvable", asyn
     "/proje-zekasi",
     "/proje-karar-asistani",
     "/proje-os",
+    "/plan-ve-aks",
+    "/tasiyici-on-tasarim",
+    "/sistem-karsilastirma",
+    "/bim-koordinasyon",
+    "/proje-takibi",
     "/projeler",
     "/referanslar",
     "/site-haritasi",
@@ -460,7 +467,7 @@ test("renders every public route and keeps internal navigation resolvable", asyn
   const discovered = new Set();
   for (const path of routeSet) {
     const response = await render(path);
-    assert.ok(response.status === 200 || (["/uyelik", "/arkem-x"].includes(path) && response.status === 307), path);
+    assert.ok(response.status === 200 || (["/uyelik", "/kayit", "/hesabim", "/arkem-x"].includes(path) && response.status === 307), path);
     if (response.status !== 200) continue;
     const html = await response.text();
     for (const match of html.matchAll(/\bhref="(\/[^"]*)"/g)) {
@@ -1065,7 +1072,7 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(html, /ARKEMX’e giriş/);
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
-  assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
+  assert.match(html, /name="return_to" value="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon"/);
   assert.doesNotMatch(html, /ChatGPT/i);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
@@ -1152,7 +1159,7 @@ test("V101 replaces the hardcoded zoning showcase with live project inputs and b
   assert.doesNotMatch(center, /evaluateZoningRules\(\{\s*parcelArea:\s*1000/);
   const stylesheet = fs.readFileSync(new URL("../app/v101.css", import.meta.url), "utf8");
   for (const expected of [".zoning-workbench", ".account-shell", "overflow-x:clip!important", "@media(max-width:520px)"]) assert.match(stylesheet, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  for (const path of ["/giris", "/kayit", "/imar-entegrasyon-merkezi"]) {
+  for (const path of ["/giris", "/hesap-kurulum", "/imar-entegrasyon-merkezi"]) {
     const response = await render(path);
     assert.equal(response.status, 200, path);
     const html = await response.text();
