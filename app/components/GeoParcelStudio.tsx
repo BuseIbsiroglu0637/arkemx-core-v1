@@ -440,10 +440,16 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     zoning.rearSetback,
   ].every((value) => Number.isFinite(value) && value >= 0);
   const zoningFormReady = zoningNumericReady && Boolean(zoning.planScale && zoning.buildingOrder);
+  const zoningSourceReferenceReady = Boolean(
+    zoning.sourceDocument
+    || zoning.sourceUrl
+    || zoning.planId
+    || (zoning.sourceType === "Kullanıcı beyanı" && zoning.sourceNote.trim()),
+  );
   const zoningSourceReady = Boolean(
     zoning.sourceType
     && zoning.sourceDate
-    && (zoning.sourceDocument || zoning.sourceUrl || zoning.planId),
+    && zoningSourceReferenceReady,
   );
   const manualBuildingHeight = floors * floorHeight;
   const manualHeightExceedsZoning = zoningFormReady && manualBuildingHeight > zoning.hmax + 0.001;
@@ -1829,7 +1835,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <div className="geo-zoning-source-status" data-ready={zoningSourceReady ? "ready" : "missing"}>
         <span>İMAR KAYNAĞI</span>
         <b>{zoningSourceReady ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli" : "Kaynak bilgisi eksik"}</b>
-        <small>{zoningSourceReady ? "Kaynak türü, tarih ve en az bir belge / URL / plan işlem numarası kayıtlı." : "Kaynak türü, tarih ve belge / URL / plan işlem numarasından en az biri eklenmelidir."}</small>
+        <small>{zoningSourceReady ? "Kaynak türü, tarih ve kaynak referansı kayıtlı; resmî doğrulama yapılmış sayılmaz." : "Kaynak türü ve tarih girin; belge / URL / plan işlem numarası veya kullanıcı beyanı için açıklama ekleyin."}</small>
       </div>
       <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
       <div className="geo-field-grid">
