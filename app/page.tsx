@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const tools = [
   { name: "Yeni proje", icon: ClipboardList, href: "/proje-baslat", section: "Proje" },
-  { name: "Proje merkezi", icon: FolderOpen, href: "/dijital-proje-merkezi#canli-proje-grafigi", section: "Proje" },
+  { name: "Proje Çalışma Alanı", icon: FolderOpen, href: "/dijital-proje-merkezi#canli-proje-grafigi", section: "Proje" },
   { name: "Arazi ve parsel", icon: Map, href: "/arsa-fizibilite-studyosu", section: "Tasarım" },
   { name: "Mimari program", icon: Layers3, href: "/mimari-program-studyosu", section: "Tasarım" },
   { name: "Plan ve aks", icon: DraftingCompass, href: "/plan-ve-aks", section: "Tasarım" },
