@@ -56,6 +56,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [profile, setProfile] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
+  const hasActiveProject = Object.keys(project.modules).length > 0;
 
   const load = async () => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
@@ -138,8 +139,8 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       <section className="arx-account-metrics" aria-label="Hesap özeti">
         <article><span>KAYITLI PROJE</span><b>{data?.projects.length ?? 0}</b></article>
         <article><span>GÖRÜŞME</span><b>{data?.meetings.length ?? 0}</b></article>
-        <article><span>AKTİF REVİZYON</span><b>{project.revision}</b></article>
-        <article><span>VERİ HAZIRLIĞI</span><b>%{thread.metrics.readiness}</b></article>
+        <article><span>AKTİF REVİZYON</span><b>{hasActiveProject ? project.revision : "—"}</b></article>
+        <article><span>VERİ HAZIRLIĞI</span><b>{hasActiveProject ? `%${thread.metrics.readiness}` : "—"}</b></article>
       </section>
 
       <div className="arx-account-grid">
