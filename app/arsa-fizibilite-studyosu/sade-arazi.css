@@ -355,3 +355,17 @@
   background:#244756;
   color:#fff;
 }
+
+
+.arx-geo-simple .geo-inline-warning {
+  margin: 10px 0 14px;
+  padding: 11px 12px;
+  border-left: 3px solid #c76938;
+  background: #fbf1eb;
+  color: #7b4a32;
+  font-size: 9px;
+  line-height: 1.55;
+}
+.arx-geo-simple .geo-inline-warning b {
+  color: #9c4625;
+}
