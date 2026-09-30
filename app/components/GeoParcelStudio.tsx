@@ -30,6 +30,11 @@ import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 type Stage = "locate" | "import" | "draw" | "zoning" | "design" | "terrain" | "export";
 type ViewMode = "map" | "terrain" | "data";
 type BasemapMode = "satellite" | "street" | "hybrid";
+
+const normalizeSignedRotation = (value: number) => {
+  if (!Number.isFinite(value)) return 0;
+  return ((value + 180) % 360 + 360) % 360 - 180;
+};
 type LeafletModule = typeof import("leaflet");
 type TkgmFeature = { type?: string; geometry?: unknown; properties?: Record<string, unknown> };
 type AdministrativeOption = { id: string; label: string };
@@ -524,7 +529,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
       if (typeof saved.buildingWidth === "number") setBuildingWidth(saved.buildingWidth);
       if (typeof saved.buildingDepth === "number") setBuildingDepth(saved.buildingDepth);
-      if (typeof saved.rotation === "number") setRotation(saved.rotation);
+      if (typeof saved.rotation === "number") setRotation(normalizeSignedRotation(saved.rotation));
       if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
       if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
       if (saved.usage) setUsage(saved.usage);
@@ -1700,7 +1705,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(Number(event.target.value))} /></label>
       <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
       {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {floors} kat × {floorHeight.toFixed(2)} m = {manualBuildingHeight.toFixed(2)} m → girilen Hmax {zoning.hmax.toFixed(2)} m sınırını aşıyor.</p>}
-      <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="0" max="345" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
+      <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="-180" max="180" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
       <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
       <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
     </div> : <div className="geo-control-section geo-zoning-required">
