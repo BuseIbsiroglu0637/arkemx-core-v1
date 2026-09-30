@@ -1131,6 +1131,16 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(accountHeaderLink, /getArkemAccountUser/);
   assert.match(accountHeaderLink, /user \? "\/hesabim" : "\/giris\?return_to=%2Fhesabim"/);
 
+  const accountSettings = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.match(accountSettings, /Görüşmeler ve İşlem Geçmişi/);
+  assert.match(accountSettings, /summarizeActivities/);
+  assert.match(accountSettings, /kez güncellendi/);
+  assert.match(accountSettings, /Proje hesaba kaydedildi/);
+  assert.doesNotMatch(accountSettings, /Henüz buluta kaydedilmiş proje yok/);
+  const workspaceWrite = fs.readFileSync(new URL("../app/lib/customer-workspace-write.ts", import.meta.url), "utf8");
+  assert.match(workspaceWrite, /Proje hesaba kaydedildi/);
+  assert.doesNotMatch(workspaceWrite, /Proje buluta kaydedildi/);
+
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
   assert.match(focusedAccount, /Oturum gerekli/);
