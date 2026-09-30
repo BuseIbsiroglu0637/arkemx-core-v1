@@ -154,3 +154,13 @@ test("anonymous focused account page renders a stable sign-in handoff", async ()
   assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 });
+
+test("local account session diagnostic reports unauthenticated state without D1", async () => {
+  const response = await render("/api/account-session");
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.authenticated, false);
+  assert.equal(body.user, null);
+  assert.equal(body.identitySource, "hosting-header");
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+});
