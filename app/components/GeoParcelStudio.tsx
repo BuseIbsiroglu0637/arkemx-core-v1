@@ -1600,23 +1600,24 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
       <div className="geo-field-grid">
         <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
-        <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>
+        <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>
         <label>Plan işlem / pafta no<input value={zoning.planId} onChange={(event) => updateZoning("planId", event.target.value)} placeholder="PIN, pafta veya karar no" /></label>
-        <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
+        <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option value="" disabled>Yapı nizamını seçin</option><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
       </div>
       <div className="geo-planning-grid geo-zoning-values">
-        <label>TAKS<input type="number" min=".01" max="1" step=".01" value={zoning.taks} onChange={(event) => updateZoning("taks", Number(event.target.value))}/></label>
-        <label>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={zoning.kaks} onChange={(event) => updateZoning("kaks", Number(event.target.value))}/></label>
-        <label>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={zoning.hmax} onChange={(event) => updateZoning("hmax", Number(event.target.value))}/><b>m</b></label>
+        <label>TAKS<input type="number" min=".01" max="1" step=".01" value={displayOptionalZoningNumber(zoning.taks)} onChange={(event) => updateZoning("taks", parseOptionalZoningNumber(event.target.value))} placeholder="TAKS girin"/></label>
+        <label>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={displayOptionalZoningNumber(zoning.kaks)} onChange={(event) => updateZoning("kaks", parseOptionalZoningNumber(event.target.value))} placeholder="KAKS / emsal girin"/></label>
+        <label>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={displayOptionalZoningNumber(zoning.hmax)} onChange={(event) => updateZoning("hmax", parseOptionalZoningNumber(event.target.value))} placeholder="Hmax girin"/><b>m</b></label>
       </div>
       <div className="geo-planning-grid geo-zoning-values">
-        <label>Ön bahçe<input type="number" min="0" max="100" step=".5" value={zoning.frontSetback} onChange={(event) => updateSetback("frontSetback", Number(event.target.value))}/><b>m</b></label>
-        <label>Yan bahçe<input type="number" min="0" max="100" step=".5" value={zoning.sideSetback} onChange={(event) => updateSetback("sideSetback", Number(event.target.value))}/><b>m</b></label>
-        <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={zoning.rearSetback} onChange={(event) => updateSetback("rearSetback", Number(event.target.value))}/><b>m</b></label>
+        <label>Ön bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.frontSetback)} onChange={(event) => updateSetback("frontSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Ön çekme"/></label>
+        <label>Yan bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.sideSetback)} onChange={(event) => updateSetback("sideSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Yan çekme"/></label>
+        <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.rearSetback)} onChange={(event) => updateSetback("rearSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Arka çekme"/></label>
       </div>
       <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
       <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} placeholder="Belediye e-İmar veya e-Plan bağlantısı" /></label>
       <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
+      {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı veya imar uygunluğu hesabı üretilmez.</p>}
       <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Ulusal ölçekte tek ve açık bir TAKS/KAKS/Hmax servisi bulunmadığından TKGM parsel kimliği; e-Plan/TUCBS, belediye e-İmar adaptörü ve onaylı imar durumu belgesiyle eşleştirilir. Kaynaksız değer resmî imar hakkı olarak gösterilmez.</p>
     </div>,
     design: <div className="geo-control-section">
