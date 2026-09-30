@@ -661,3 +661,131 @@ footer{background:#071a27;padding-top:80px}
   background: #6f8791;
   opacity: .82;
 }
+
+
+/* ARKEMX light/dark theme control */
+html[data-theme="light"] {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  --paper: #071824;
+  --ink: #e7eff2;
+  --cream: #102735;
+  --muted: #9aadb5;
+  color-scheme: dark;
+}
+html[data-theme="dark"] body {
+  background: #071824;
+  color: #e7eff2;
+}
+
+.arkem-theme-control {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 2200;
+  display: grid;
+  gap: 5px;
+  min-width: 148px;
+  padding: 8px;
+  border: 1px solid #d8e1e4;
+  border-radius: 10px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 10px 28px rgba(9,31,42,.12);
+  backdrop-filter: blur(10px);
+}
+.arkem-theme-control-label {
+  padding: 0 4px;
+  color: #6e818a;
+  font: 700 8px/1.2 var(--font-manrope),Arial,sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.arkem-theme-control-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.arkem-theme-control button {
+  min-height: 31px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #45626f;
+  font: 700 9px/1.1 var(--font-inter),Arial,sans-serif;
+  cursor: pointer;
+}
+.arkem-theme-control button[aria-pressed="true"] {
+  border-color: #244756;
+  background: #244756;
+  color: #fff;
+}
+.arkem-theme-control button:focus-visible {
+  outline: 2px solid #b96636;
+  outline-offset: 2px;
+}
+html[data-theme="dark"] .arkem-theme-control {
+  border-color: #31505f;
+  background: rgba(6,26,43,.95);
+  box-shadow: 0 12px 34px rgba(0,0,0,.28);
+}
+html[data-theme="dark"] .arkem-theme-control-label {
+  color: #88a0aa;
+}
+html[data-theme="dark"] .arkem-theme-control button {
+  color: #afc0c7;
+}
+html[data-theme="dark"] .arkem-theme-control button[aria-pressed="true"] {
+  border-color: #c67647;
+  background: #b96636;
+  color: #fff;
+}
+
+/* Shared ARKEMX application chrome */
+html[data-theme="dark"] .arx-simple-home {
+  background: #071824;
+  color: #e7eff2;
+}
+html[data-theme="dark"] .arx-simple-head {
+  border-color: #213b48;
+}
+html[data-theme="dark"] .arx-simple-head-label,
+html[data-theme="dark"] .arx-simple-head-actions > a {
+  color: #9db0b8;
+}
+html[data-theme="dark"] .arx-simple-tool {
+  border-color: #294653;
+  background: #0b2433;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-simple-tool:hover,
+html[data-theme="dark"] .arx-simple-tool:focus-visible {
+  border-color: #567582;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
+}
+html[data-theme="dark"] .arx-simple-tool-icon {
+  background: #123444;
+  color: #8fb0ba;
+}
+html[data-theme="dark"] .arx-simple-tool-content small,
+html[data-theme="dark"] .arx-simple-tool-arrow,
+html[data-theme="dark"] .arx-simple-footer {
+  color: #8da1a9;
+}
+html[data-theme="dark"] .arx-simple-footer {
+  border-color: #213b48;
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color-scheme: dark;
+}
+
+@media (max-width: 620px) {
+  .arkem-theme-control {
+    left: 10px;
+    bottom: 10px;
+    min-width: 132px;
+  }
+}
