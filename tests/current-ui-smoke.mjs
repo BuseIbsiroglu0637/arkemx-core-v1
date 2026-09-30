@@ -3,11 +3,11 @@ import test from "node:test";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 
-async function render(pathname) {
+async function render(pathname, requestHeaders = {}) {
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
     new Request(`http://localhost${pathname}`, {
-      headers: { accept: "text/html" },
+      headers: { accept: "text/html", ...requestHeaders },
     }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
@@ -161,6 +161,41 @@ test("local account session diagnostic reports unauthenticated state without D1"
   const body = await response.json();
   assert.equal(body.authenticated, false);
   assert.equal(body.user, null);
-  assert.equal(body.identitySource, "hosting-header");
+  assert.equal(body.identitySource, null);
   assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+});
+
+test("prototype demo sign-in creates a local session and opens account setup", async () => {
+  const response = await render("/hesap-baglantisi?return_to=%2Fhesabim");
+  assert.equal(response.status, 302);
+  assert.match(response.headers.get("location") ?? "", /^\/hesap-kurulum\?return_to=%2Fhesabim$/);
+  assert.match(response.headers.get("set-cookie") ?? "", /arkemx_prototype_session=1/);
+});
+
+test("prototype demo session is visible to account diagnostics and account page", async () => {
+  const cookie = { cookie: "arkemx_prototype_session=1" };
+
+  const sessionResponse = await render("/api/account-session", cookie);
+  assert.equal(sessionResponse.status, 200);
+  const body = await sessionResponse.json();
+  assert.equal(body.authenticated, true);
+  assert.equal(body.identitySource, "prototype-demo");
+  assert.equal(body.user.email, "demo@arkemx.local");
+
+  const accountResponse = await render("/hesabim", cookie);
+  assert.equal(accountResponse.status, 200);
+  const html = await accountResponse.text();
+  assert.match(html, /<h1>Hesabım<\/h1>/);
+  assert.match(html, /demo@arkemx\.local/);
+  assert.match(html, /href="\/demo-cikis\?return_to=%2Fgiris"/);
+});
+
+test("prototype demo sign-out clears the local session", async () => {
+  const response = await render("/demo-cikis?return_to=%2Fgiris", {
+    cookie: "arkemx_prototype_session=1",
+  });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "/giris");
+  assert.match(response.headers.get("set-cookie") ?? "", /arkemx_prototype_session=;/);
+  assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=0/);
 });
