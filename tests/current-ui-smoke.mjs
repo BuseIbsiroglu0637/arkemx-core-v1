@@ -709,3 +709,15 @@ test("geo debug records live identity transitions before kernel persistence", ()
   assert.ok(debug.includes("identityTransitions"));
   assert.ok(debug.includes("events.slice(-30)"));
 });
+
+
+test("restored parcel identity stays visible while TKGM lists reload", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("function keepSelectedAdministrativeOption("));
+  assert.ok(studio.includes("const visibleProvinceOptions = useMemo("));
+  assert.ok(studio.includes("const visibleDistrictOptions = useMemo("));
+  assert.ok(studio.includes("const visibleNeighborhoodOptions = useMemo("));
+  assert.ok(studio.includes('setParcelLookup(hasSavedBoundary || hasSavedPreviewBoundary ? "found" : "idle")'));
+  assert.ok(studio.includes('"parcel-boundary": restoredParcel.length >= 3 ? true'));
+  assert.ok(studio.includes("visibleNeighborhoodOptions.map((item) => <option"));
+});
