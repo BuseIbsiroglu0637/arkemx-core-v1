@@ -76,11 +76,19 @@ const oppositeEdge: Record<CardinalEdge, CardinalEdge> = {
   west: "east",
 };
 
-function classifyParcelEdge(midEast: number, midNorth: number, centerEast: number, centerNorth: number): CardinalEdge {
-  const dx = midEast - centerEast;
-  const dy = midNorth - centerNorth;
-  if (Math.abs(dx) > Math.abs(dy)) return dx >= 0 ? "east" : "west";
-  return dy >= 0 ? "north" : "south";
+function classifyParcelEdge(
+  a: { east: number; north: number },
+  b: { east: number; north: number },
+  polygonOrientation: 1 | -1,
+): CardinalEdge {
+  const edgeEast = b.east - a.east;
+  const edgeNorth = b.north - a.north;
+  // CCW polygons keep their interior on the left side of each edge, so the
+  // outward normal is the right-hand normal. CW polygons use the opposite.
+  const outwardEast = polygonOrientation > 0 ? edgeNorth : -edgeNorth;
+  const outwardNorth = polygonOrientation > 0 ? -edgeEast : edgeEast;
+  if (Math.abs(outwardEast) > Math.abs(outwardNorth)) return outwardEast >= 0 ? "east" : "west";
+  return outwardNorth >= 0 ? "north" : "south";
 }
 
 function setbackRoleForEdge(edge: CardinalEdge, frontEdge: ParcelFrontEdge): SetbackRole {
@@ -154,9 +162,11 @@ export function assessParcelEdgeSetbacks(params: {
   const origin = geoCentroid(parcel);
   const parcelLocal = parcel.map((point) => toLocalMeters(point, origin));
   const buildingLocal = building.map((point) => toLocalMeters(point, origin));
-  const center = parcelLocal.reduce((sum, point) => ({ east: sum.east + point.east, north: sum.north + point.north }), { east: 0, north: 0 });
-  center.east /= parcelLocal.length;
-  center.north /= parcelLocal.length;
+  const signedAreaTwice = parcelLocal.reduce((sum, point, index) => {
+    const next = parcelLocal[(index + 1) % parcelLocal.length];
+    return sum + point.east * next.north - next.east * point.north;
+  }, 0);
+  const polygonOrientation: 1 | -1 = signedAreaTwice >= 0 ? 1 : -1;
 
   const buildingFits = building.every((corner) => pointInPolygon(corner, parcel)) && !polygonEdgesCross(parcel, building);
   const requiredByRole: Record<SetbackRole, number> = {
@@ -167,8 +177,7 @@ export function assessParcelEdgeSetbacks(params: {
 
   const edges = parcelLocal.map((a, index) => {
     const b = parcelLocal[(index + 1) % parcelLocal.length];
-    const midpoint = { east: (a.east + b.east) / 2, north: (a.north + b.north) / 2 };
-    const cardinal = classifyParcelEdge(midpoint.east, midpoint.north, center.east, center.north);
+    const cardinal = classifyParcelEdge(a, b, polygonOrientation);
     const role = setbackRoleForEdge(cardinal, frontEdge);
     const required = requiredByRole[role];
     const distance = Math.min(...buildingLocal.map((c, buildingIndex) => {
