@@ -501,7 +501,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (current && normalizeAdministrativeName(current.label) === normalizeAdministrativeName(province)) return;
     const match = provinceOptions.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName(province));
     if (!match) return;
-    const timer = window.setTimeout(() => setProvinceId(match.id), 0);
+    const timer = window.setTimeout(() => {
+      setProvinceId(match.id);
+      setAdministrativeLoading("district");
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [province, provinceId, provinceOptions]);
 
@@ -511,7 +514,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     if (current && normalizeAdministrativeName(current.label) === normalizeAdministrativeName(district)) return;
     const match = districtOptions.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName(district));
     if (!match) return;
-    const timer = window.setTimeout(() => setDistrictId(match.id), 0);
+    const timer = window.setTimeout(() => {
+      setDistrictId(match.id);
+      setAdministrativeLoading("neighborhood");
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [district, districtId, districtOptions]);
 
@@ -536,18 +542,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const options = administrativeOptions(data);
       if (!options.length) throw new Error("TKGM il listesi boş döndü");
       setProvinceOptions(options);
-      const preferred = options.find((option) => normalizeAdministrativeName(option.label) === normalizeAdministrativeName("Sakarya"));
-      if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("official");
       setAdministrativeLoading("idle");
     }).catch((error: unknown) => {
       if (cancelled) return;
       setProvinceOptions(FALLBACK_PROVINCES);
-      const preferred = FALLBACK_PROVINCES.find((option) => option.label === "Sakarya");
-      if (preferred) setProvinceId(preferred.id);
       setAdministrativeSource("fallback");
       setAdministrativeLoading("idle");
-      setFileNotice(`${error instanceof Error ? error.message : "TKGM il listesi yüklenemedi"}. Yerel il/ilçe seçimi mümkün; mahalle adı elle girilir. Resmî parsel verisi yalnızca erişilebilir TKGM yanıtı veya kullanıcı dosyasıyla gösterilir.`);
+      setFileNotice(`${error instanceof Error ? error.message : "TKGM il listesi yüklenemedi"}. Projedeki konum korunur; yerel il/ilçe seçimi yapılabilir. Resmî parsel verisi yalnızca erişilebilir TKGM yanıtı veya kullanıcı dosyasıyla gösterilir.`);
     });
     return () => { cancelled = true; };
   }, []);
