@@ -1636,7 +1636,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </div>
       <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
         <header>
-          <div><span>V112 / İMAR UYUMLU KÜTLE MOTORU</span><b>{massingModel.source.authoritative ? "Doğrulanmış koşullardan üç açıklanabilir alternatif." : "Doğrulanmamış kullanıcı imar girdilerine göre üç açıklanabilir ön alternatif."}</b></div>
+          <div><span>{massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU" : "V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"}</span><b>{massingModel.source.authoritative ? "Doğrulanmış koşullardan üç açıklanabilir alternatif." : "Doğrulanmamış kullanıcı imar girdilerine göre üç açıklanabilir ön alternatif."}</b></div>
           <em data-trust={massingModel.source.trust}>{massingModel.source.authoritative ? "İMAR KAYNAĞI DOĞRULANDI" : "ÖN DEĞERLENDİRME"}</em>
         </header>
         <label className="v112-front-edge">Ön cephe yönü
@@ -1657,7 +1657,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             <div><span>{alternative.status === "fits" ? (massingModel.source.authoritative ? "ÖN UYUMLU" : "GİRDİLERLE ÖN UYUMLU") : "İNCELEME"}</span><b>{alternative.label}</b></div>
             <strong>{alternative.grossArea.toFixed(0)} <i>m²</i></strong>
             <p>{alternative.width.toFixed(1)} × {alternative.depth.toFixed(1)} m · {alternative.floors} kat</p>
-            <dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>Hak kullanımı</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl>
+            <dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>{massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"}</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl>
             <small>{alternative.note}</small>
             <button onClick={() => applyMassingAlternative(alternative.id)} disabled={alternative.status !== "fits"}>{activeMassingId === alternative.id ? "Projede seçili" : "Bu alternatifi uygula"}</button>
           </article>)}
