@@ -11,7 +11,7 @@ import { PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKe
 type View = "control" | "journey" | "graph" | "federated" | "rules" | "history";
 const stages = ["Tanım", "Arsa", "Tasarım", "Koordinasyon", "Teslim"] as const;
 
-export function DigitalProjectHub() {
+export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {}) {
   const { project, thread, core, importProject, setExperience, applyHandoff, synchronizeProject } = useProjectKernel();
   const [view, setView] = useState<View>("control");
   const [notice, setNotice] = useState("Yerel proje oturumu bağlı");
@@ -131,6 +131,104 @@ export function DigitalProjectHub() {
     downloadTextFile(`${project.id}-${project.revision}-hazirlik-matrisi.csv`, `\ufeff${csv}`, "text/csv;charset=utf-8");
     setNotice("Hazırlık matrisi düzenli CSV olarak indirildi");
   };
+
+  if (simple) {
+    const priorityIssues = [...thread.issues]
+      .sort((left, right) => {
+        const priority = { critical: 0, review: 1, info: 2 } as const;
+        return priority[left.severity] - priority[right.severity];
+      })
+      .slice(0, 5);
+    const recentEvents = [...project.events].reverse().slice(0, 6);
+
+    return <section className="arx-advanced-hub" data-testid="digital-project-hub">
+      <header className="arx-advanced-head">
+        <div>
+          <h3>Proje kontrol özeti</h3>
+          <p>Eksik adımlar, açık konular ve teslim hazırlığını tek görünümde kontrol edin.</p>
+        </div>
+        <div className="arx-advanced-head-actions">
+          <button type="button" onClick={synchronize}>Hazır veriyi senkronize et</button>
+          <button type="button" onClick={exportExecutivePackage}>Proje paketini indir</button>
+        </div>
+      </header>
+
+      {notice ? <p className="arx-advanced-notice" role="status">{notice}</p> : null}
+
+      <div className="arx-advanced-metrics">
+        <article><span>VERİ HAZIRLIĞI</span><b>%{thread.metrics.readiness}</b><small>{thread.metrics.activeCount}/{thread.metrics.totalCount} veri alanı bağlı</small></article>
+        <article><span>KONTROL KONUSU</span><b className={thread.metrics.critical ? "risk" : ""}>{thread.issues.length}</b><small>{thread.metrics.critical} kritik · {thread.metrics.review} inceleme</small></article>
+        <article><span>TEKNİK ÇIKTI</span><b>{readyOutputs}/{projectOutputs.length}</b><small>paket için kaynak veri mevcut</small></article>
+        <article><span>TESLİM DURUMU</span><b className={deliveryGate.officialReleaseEligible ? "good" : "watch"}>{deliveryGate.officialReleaseEligible ? "Hazır" : "Kontrol"}</b><small>resmî yayın kapısı</small></article>
+      </div>
+
+      <div className="arx-advanced-layout">
+        <section className="arx-advanced-panel" aria-labelledby="arx-readiness-title">
+          <header><h4 id="arx-readiness-title">Proje adımları</h4><span>Sıradaki: {thread.nextAction.label}</span></header>
+          <div className="arx-advanced-readiness">
+            {readinessRows.map((row, index) => <article key={row.href} className={row.ready ? "ready" : ""}>
+              <i>{row.ready ? "✓" : String(index + 1).padStart(2, "0")}</i>
+              <div><b>{row.label}</b><small>{row.summary}</small></div>
+              <span>{row.ready ? "Hazır" : "Bekliyor"}</span>
+            </article>)}
+          </div>
+          <footer><Link href={thread.nextAction.route}>Sıradaki çalışmayı aç →</Link></footer>
+        </section>
+
+        <section className="arx-advanced-panel" aria-labelledby="arx-issues-title">
+          <header><h4 id="arx-issues-title">Açık konular</h4><span>{thread.issues.length} kayıt</span></header>
+          <div className="arx-advanced-issues">
+            {priorityIssues.map((issue) => <article className={issue.severity} key={issue.id}>
+              <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
+              <div><b>{issue.title}</b><small>{issue.id} · {issue.discipline}</small><p>{issue.evidence}</p></div>
+              <Link href={issue.route}>Aç</Link>
+            </article>)}
+            {!priorityIssues.length ? <p className="arx-advanced-empty">Aktif proje verisinde açık kontrol konusu görünmüyor.</p> : null}
+          </div>
+        </section>
+      </div>
+
+      <details className="arx-advanced-detail">
+        <summary>Teslim hazırlığı ve teknik çıktılar</summary>
+        <div className="arx-advanced-delivery" data-testid="delivery-release-gate" data-state={deliveryGate.state}>
+          <div className="arx-advanced-delivery-status">
+            <span>Resmî/onaylı teslim</span>
+            <b>{deliveryGate.officialReleaseEligible ? "Uygun" : "Uygun değil"}</b>
+            <small>Çalışma manifestosu: {deliveryGate.workingExportEligible ? "üretilebilir" : "bekliyor"}</small>
+          </div>
+          {deliveryGate.blockingIssues.length > 0 ? <div className="arx-advanced-blockers" data-testid="delivery-active-blockers">
+            <b>Bloke eden konular</b>
+            {deliveryGate.blockingIssues.slice(0, 5).map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}
+          </div> : null}
+          <div className="arx-advanced-outputs">
+            {projectOutputs.map((output) => <article key={output.code}>
+              <i>{output.code}</i><span><b>{output.label}</b><small>{output.format}</small></span><strong>{output.ready ? "Hazır" : "Bekliyor"}</strong>
+            </article>)}
+          </div>
+          <div className="arx-advanced-delivery-actions">
+            <button type="button" onClick={exportReadinessCsv}>Hazırlık CSV indir</button>
+            <button type="button" data-testid="working-delivery-export" onClick={exportWorkingDelivery}>Çalışma teslim manifestosu</button>
+            <button type="button" data-testid="official-delivery-release" disabled={!deliveryGate.officialReleaseEligible}>Resmî teslimi yayımla</button>
+          </div>
+          <small className="arx-advanced-boundary">Elektronik imza, yetkili belge doğrulaması ve kurumsal CDE onayı yapılandırılmadan bu kayıt resmî teslim yetkisi oluşturmaz.</small>
+        </div>
+      </details>
+
+      <details className="arx-advanced-detail">
+        <summary>Son proje işlemleri</summary>
+        <div className="arx-advanced-history">
+          {recentEvents.map((event, index) => {
+            const definition = PROJECT_MODULES.find((item) => item.id === event.module);
+            return <article key={event.id + "-" + index}>
+              <i>{event.action === "create" ? "+" : event.action === "remove" ? "×" : event.action === "import" ? "↑" : event.action === "handoff" ? "⇄" : "↻"}</i>
+              <div><b>{definition?.label ?? event.module}</b><small>{event.revision} · {new Date(event.timestamp).toLocaleString("tr-TR")}</small></div>
+            </article>;
+          })}
+          {!recentEvents.length ? <p className="arx-advanced-empty">Henüz proje işlemi kaydı yok.</p> : null}
+        </div>
+      </details>
+    </section>;
+  }
 
   return <section className="digital-hub" data-testid="digital-project-hub">
     <ProjectKernelBar module="ORTAK PROJE VERİ ZİNCİRİ" confidence="Geliştirme prototipi / çapraz disiplin" />
