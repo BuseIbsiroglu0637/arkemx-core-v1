@@ -721,3 +721,16 @@ test("restored parcel identity stays visible while TKGM lists reload", () => {
   assert.ok(studio.includes('"parcel-boundary": restoredParcel.length >= 3 ? true'));
   assert.ok(studio.includes("visibleNeighborhoodOptions.map((item) => <option"));
 });
+
+
+test("account project open preserves newer local state and avoids full reload", () => {
+  const account = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.ok(account.includes('import { useRouter } from "next/navigation"'));
+  assert.ok(account.includes("const accountCopyNeedsUpdate = hasActiveProject"));
+  assert.ok(account.includes("localProjectUpdatedAt > accountPayloadUpdatedAt"));
+  assert.ok(account.includes("expectedAccountUpdatedAt: accountActiveProject?.updatedAt ?? null"));
+  assert.ok(account.includes("const openingCurrentLocalProject = hasActiveProject"));
+  assert.ok(account.includes("localProjectUpdatedAt >= payloadUpdatedAt(item.payload)"));
+  assert.ok(account.includes('router.push("/dijital-proje-merkezi")'));
+  assert.ok(!account.includes('window.location.assign("/dijital-proje-merkezi")'));
+});
