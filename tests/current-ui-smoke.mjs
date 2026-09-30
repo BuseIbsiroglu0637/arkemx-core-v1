@@ -344,10 +344,12 @@ test("account automatically reconciles an active local project missing from acco
 });
 
 
-test("account uses a clear continue-project action for the active project", () => {
+test("account keeps draft continuation clear without a redundant project-header action", () => {
   const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
-  assert.match(accountSource, />Projeye Devam Et<\/Link>/);
-  assert.match(accountSource, /href="\/dijital-proje-merkezi"/);
+  assert.match(accountSource, /Taslağa Devam Et/);
+  assert.match(accountSource, /arx-account-draft-actions/);
+  assert.match(accountSource, /<footer><Link href="\/dijital-proje-merkezi">Projeye Devam Et →<\/Link><\/footer>/);
+  assert.doesNotMatch(accountSource, /<header>[\s\S]{0,300}Projeye Devam Et<\/Link>[\s\S]{0,50}<\/header>/);
 });
 
 
