@@ -1357,7 +1357,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
   const parseOptionalZoningNumber = (value: string) => value.trim() === "" ? -1 : Number(value);
   const displayOptionalZoningNumber = (value: number) => value >= 0 && Number.isFinite(value) ? value : "";
-  const formatZoningNumber = (value: number, digits = 2, suffix = "") => value >= 0 && Number.isFinite(value)\n    ? `${value.toFixed(digits)}${suffix}`\n    : "GİRİLMEDİ";
+  const formatZoningNumber = (value: number, digits = 2, suffix = "") => value >= 0 && Number.isFinite(value)
+    ? `${value.toFixed(digits)}${suffix}`
+    : "GİRİLMEDİ";
 
   const updateZoning = <K extends keyof ZoningForm>(key: K, value: ZoningForm[K]) => {
     setZoning((current) => key === "verification"
