@@ -26,10 +26,67 @@ import {
 } from "../lib/terrain-model";
 import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { decodeProjectEnvelope, PROJECT_BACKUP_KEY } from "../lib/project-storage";
 
 type Stage = "locate" | "import" | "draw" | "zoning" | "design" | "terrain" | "export";
 type ViewMode = "map" | "terrain" | "data";
 type BasemapMode = "satellite" | "street" | "hybrid";
+
+type GeoParcelSavedState = {
+  reference?: string;
+  parcel?: GeoPoint[];
+  previewParcel?: GeoPoint[];
+  province?: string;
+  provinceId?: string;
+  district?: string;
+  districtId?: string;
+  neighborhood?: string;
+  neighborhoodId?: string;
+  block?: string;
+  parcelNo?: string;
+  buildingWidth?: number;
+  buildingDepth?: number;
+  rotation?: number;
+  offsetEast?: number;
+  offsetNorth?: number;
+  usage?: string;
+  system?: string;
+  floors?: number;
+  floorHeight?: number;
+  sourceCrs?: string;
+  dataStatus?: string;
+  planning?: Record<string, unknown>;
+  zoning?: Partial<ZoningForm>;
+  terrain?: Record<string, unknown>;
+  frontEdge?: ParcelFrontEdge;
+  selectedMassingId?: string;
+  parcelRecord?: ParcelRecord;
+  officialBoundaryEvidence?: OfficialBoundaryEvidence;
+  _kernel?: { recordedAt?: string };
+};
+
+type GeoDraftEnvelope = {
+  projectId: string;
+  savedAt: string;
+  payload: GeoParcelSavedState;
+};
+
+const geoDraftKey = (projectId: string) => `arkemx-geo-draft:${projectId}`;
+
+function geoStateScore(value: GeoParcelSavedState | undefined) {
+  if (!value) return -1;
+  let score = 0;
+  if (value.parcel?.length && value.parcel.length >= 3) score += 100;
+  if (value.previewParcel?.length && value.previewParcel.length >= 3) score += 40;
+  if (value.neighborhood) score += 20;
+  if (value.block) score += 15;
+  if (value.parcelNo) score += 15;
+  if (value.zoning) score += 10;
+  if (typeof value.buildingWidth === "number") score += 5;
+  if (typeof value.buildingDepth === "number") score += 5;
+  return score;
+}
+
 
 const normalizeSignedRotation = (value: number) => {
   if (!Number.isFinite(value)) return 0;
