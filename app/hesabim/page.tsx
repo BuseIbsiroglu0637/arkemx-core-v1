@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { accountSignOutPath, getArkemAccountUser } from "../chatgpt-auth";
 import { ClientAccountSettings } from "../components/ClientAccountSettings";
+import { ProjectStateDebug } from "../components/ProjectStateDebug";
 import "../sade-arac-paneli.css";
 import "../sade-muhendislik-araclari.css";
 import "./sade-hesabim.css";
@@ -62,6 +63,7 @@ export default async function AccountPage() {
       </div>
 
       <ClientAccountSettings displayName={user.displayName} email={user.email} simple />
+      <ProjectStateDebug />
 
       <p className="arx-account-boundary">Hesap kaydı, proje verisinin teknik doğruluğu veya resmî onayı anlamına gelmez.</p>
     </div>
