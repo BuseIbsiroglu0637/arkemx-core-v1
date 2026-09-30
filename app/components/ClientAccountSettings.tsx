@@ -34,8 +34,9 @@ function summarizeActivities(activities: WorkspaceActivity[]) {
     const previous = summarized[summarized.length - 1];
 
     if (
-      normalized.eventType === "project" &&
-      previous?.eventType === "project" &&
+      (normalized.eventType === "project" || normalized.eventType === "profile") &&
+      previous?.eventType === normalized.eventType &&
+      previous.title === normalized.title &&
       previous.detail === normalized.detail
     ) {
       previous.count += 1;
