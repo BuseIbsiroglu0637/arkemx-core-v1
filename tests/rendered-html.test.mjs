@@ -1080,7 +1080,7 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
   assert.doesNotMatch(html, /name="return_to"/);
-  assert.match(html, /href="\/hesap-kurulum"/);
+  assert.match(html, /href="\/hesap-kurulum\?entry=first-use"/);
   assert.doesNotMatch(html, /ChatGPT/i);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 
@@ -1103,6 +1103,10 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(demoExit, /Max-Age=0/);
   const setupGate = fs.readFileSync(new URL("../app/components/AccountSetupGate.tsx", import.meta.url), "utf8");
   assert.match(setupGate, /body\.profile/);
+  assert.match(setupGate, /showExistingAccountChoice/);
+  assert.match(setupGate, /Hesabınız zaten kurulu/);
+  assert.match(setupGate, /Hesabımı aç/);
+  assert.match(setupGate, /Proje merkezine devam et/);
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
   const focusedAccount = fs.readFileSync(new URL("../app/hesabim/page.tsx", import.meta.url), "utf8");
   assert.match(focusedAccount, /ClientAccountSettings[\s\S]*simple/);
