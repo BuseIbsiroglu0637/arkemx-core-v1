@@ -1091,9 +1091,17 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(authSource, /accountReturnPath/);
   assert.match(authSource, /fallback = "\/dijital-proje-merkezi"/);
   const sessionRoute = fs.readFileSync(new URL("../app/api/account-session/route.ts", import.meta.url), "utf8");
-  assert.match(sessionRoute, /getArkemAccountUser/);
-  assert.match(sessionRoute, /identitySource:\s*"hosting-header"/);
+  assert.match(sessionRoute, /getArkemAccountSession/);
+  assert.match(sessionRoute, /identitySource:\s*session\.identitySource/);
   assert.doesNotMatch(sessionRoute, /cloudflare:workers|customer_profiles|env\.DB/);
+
+  const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
+  assert.match(authSource, /ARKEMX_PROTOTYPE_DEMO_AUTH/);
+  assert.match(authSource, /prototype-demo/);
+  assert.match(authSource, /arkemx_prototype_session/);
+
+  const demoExit = fs.readFileSync(new URL("../app/demo-cikis/route.ts", import.meta.url), "utf8");
+  assert.match(demoExit, /Max-Age=0/);
   const setupGate = fs.readFileSync(new URL("../app/components/AccountSetupGate.tsx", import.meta.url), "utf8");
   assert.match(setupGate, /body\.profile/);
   assert.match(setupGate, /window\.location\.replace\(returnTo\)/);
