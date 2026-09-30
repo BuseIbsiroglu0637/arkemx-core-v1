@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
-export function AccountOnboarding({ displayName, email }: { displayName: string; email: string }) {
+export function AccountOnboarding({ displayName, email, returnTo = "/dijital-proje-merkezi" }: { displayName: string; email: string; returnTo?: string }) {
   const [form, setForm] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("Zorunlu alanları tamamlayarak Arkem proje hesabınızı oluşturun.");
@@ -22,7 +22,7 @@ export function AccountOnboarding({ displayName, email }: { displayName: string;
       setMessage(body.error || "Hesap oluşturulamadı. Lütfen tekrar deneyin.");
       return;
     }
-    window.location.assign("/uyelik");
+    window.location.assign(returnTo);
   };
 
   return <form className="account-onboarding-form" onSubmit={submit}>
