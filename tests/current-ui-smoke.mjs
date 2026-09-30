@@ -598,3 +598,13 @@ test("manual massing area uses the same one-decimal dimensions shown in UI", () 
   assert.equal(22.5 * 16.6 * 4, 1494);
   assert.equal(30 * 16.6, 498);
 });
+
+
+test("TAKS and KAKS thresholds use displayed allowed areas at dimension-step precision", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("metrics.footprint > metrics.allowedFootprint + .01"));
+  assert.ok(studio.includes("metrics.gross > metrics.allowedGross + .01"));
+  assert.ok(studio.includes('!taksExceeded && !kaksExceeded && !hmaxExceeded, "İmar girdileriyle ön uyum"'));
+  assert.equal(22.5 * 21.3, 479.25);
+  assert.equal(22.5 * 21.4, 481.5);
+});
