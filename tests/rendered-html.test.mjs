@@ -1072,10 +1072,14 @@ test("V92 corrects the Diyanet reference and adds a durable authenticated custom
   assert.match(html, /ARKEMX’e giriş/);
   assert.match(html, /Güvenli giriş yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
-  assert.match(html, /name="return_to" value="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon"/);
+  assert.doesNotMatch(html, /name="return_to"/);
+  assert.match(html, /href="\/hesap-kurulum"/);
   assert.doesNotMatch(html, /ChatGPT/i);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
 
+  const authBridge = fs.readFileSync(new URL("../app/hesap-baglantisi/route.ts", import.meta.url), "utf8");
+  assert.match(authBridge, /returnTargetFromReferer/);
+  assert.match(authBridge, /setupReturn/);
   const authSource = fs.readFileSync(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8");
   assert.match(authSource, /accountReturnPath/);
   assert.match(authSource, /fallback = "\/dijital-proje-merkezi"/);
