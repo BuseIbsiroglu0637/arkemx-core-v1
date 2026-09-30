@@ -480,3 +480,25 @@ test("coordinate data view distinguishes parametric terrain values from measured
   assert.ok(studio.includes("Parsel merkezi (0,0) kabul edilir"));
   assert.ok(studio.includes("resmî pafta koordinatı değil"));
 });
+
+
+test("zoning form starts empty and does not invent planning rights", () => {
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+
+  assert.ok(zoning.includes('planScale: ""'));
+  assert.ok(zoning.includes('buildingOrder: ""'));
+  assert.ok(zoning.includes('taks: -1'));
+  assert.ok(zoning.includes('kaks: -1'));
+  assert.ok(zoning.includes('hmax: -1'));
+  assert.ok(zoning.includes('frontSetback: -1'));
+  assert.ok(studio.includes("İmar girdileri bekleniyor"));
+  assert.ok(studio.includes("Yapı zarfı henüz üretilmedi"));
+  assert.ok(studio.includes("Plan ölçeğini seçin"));
+  assert.ok(studio.includes("Yapı nizamını seçin"));
+  assert.ok(studio.includes("TAKS girin"));
+  assert.ok(studio.includes("KAKS / emsal girin"));
+  assert.ok(studio.includes("looksLikeLegacyPlaceholder"));
+  assert.ok(studio.includes("zoningFormReady"));
+  assert.ok(studio.includes("Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz"));
+});
