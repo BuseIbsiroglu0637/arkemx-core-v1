@@ -28,6 +28,8 @@ type GuidedDraftSummary = {
   intake: { name?: string };
 };
 
+const GUIDED_DRAFT_KEY = "arkem-guided-project-draft-v107";
+
 function summarizeActivities(activities: WorkspaceActivity[]) {
   const summarized: Array<WorkspaceActivity & { count: number }> = [];
 
@@ -192,6 +194,26 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     if (response.ok) await load();
   };
 
+  const removeDraft = async () => {
+    setMessage("Yeni proje taslağı kaldırılıyor…");
+    try {
+      const response = await fetch("/api/project-draft", { method: "DELETE" });
+      if (!response.ok) {
+        setMessage("Hesaptaki proje taslağı kaldırılamadı.");
+        return;
+      }
+      try {
+        window.localStorage.removeItem(GUIDED_DRAFT_KEY);
+      } catch {
+        // Account copy is already deleted; local storage may be unavailable.
+      }
+      setDraft(null);
+      setMessage("Yeni proje taslağı kaldırıldı. Kayıtlı projeleriniz etkilenmedi.");
+    } catch {
+      setMessage("Proje taslağı kaldırılamadı.");
+    }
+  };
+
   if (simple) {
     return <div className="arx-account-panel" data-testid="account-settings-panel">
       <section className="arx-account-status">
@@ -235,8 +257,8 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
               <button type="button" onClick={saveProject}>Şimdi kaydet</button>
             </article> : null}
             {meaningfulDraft ? <article className="arx-account-draft">
-              <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Devam eden taslak · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
-              <Link href="/proje-baslat">Devam et</Link>
+              <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Yeni proje taslağı · kayıtlı projelerden ayrıdır · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
+              <span className="arx-account-project-actions"><Link href="/proje-baslat">Devam et</Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
             </article> : null}
             {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
