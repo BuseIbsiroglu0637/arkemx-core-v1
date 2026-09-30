@@ -524,3 +524,15 @@ test("unverified massing terminology avoids implying official zoning rights", ()
   assert.ok(studio.includes('massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU"'));
   assert.ok(studio.includes('massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"'));
 });
+
+
+test("2D map distinguishes TKGM boundary, conceptual setback envelope and read-only points", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("setbackEnvelopeLayerRef"));
+  assert.ok(studio.includes("Girdiye göre kavramsal çekme zarfı"));
+  assert.ok(studio.includes("Girdiye göre çekme zarfı"));
+  assert.ok(studio.includes("Temsili Ön Kütle"));
+  assert.ok(studio.includes("TKGM parsel sınırı"));
+  assert.ok(studio.includes("TKGM sınır noktası · salt okunur"));
+  assert.ok(studio.includes('dashArray: "7 6"'));
+});
