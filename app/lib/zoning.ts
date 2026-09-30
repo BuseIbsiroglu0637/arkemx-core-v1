@@ -59,17 +59,19 @@ export const ZONING_CONNECTORS = [
 ] as const;
 
 export const DEFAULT_ZONING: ZoningForm = {
-  landUse: "Kullanıcı girişi bekleniyor",
+  landUse: "",
   planName: "",
-  planScale: "1/1000 Uygulama İmar Planı",
+  planScale: "",
   planId: "",
-  buildingOrder: "Plan notuna göre",
-  taks: 0.4,
-  kaks: 1.2,
-  hmax: 15.5,
-  frontSetback: 5,
-  sideSetback: 3,
-  rearSetback: 3,
+  buildingOrder: "",
+  // -1 is the explicit "not entered" sentinel for numeric zoning fields.
+  // It serializes safely, unlike NaN, and is never interpreted as a right.
+  taks: -1,
+  kaks: -1,
+  hmax: -1,
+  frontSetback: -1,
+  sideSetback: -1,
+  rearSetback: -1,
   planNoteReference: "",
   sourceUrl: "",
   sourceDocument: "",
