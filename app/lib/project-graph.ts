@@ -96,6 +96,15 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const geo = record(modules["geo-parcel"]);
   const geoMetrics = record(geo.metrics);
   const geoPlanning = record(geo.planning);
+  const geoParcelRecord = record(geo.parcelRecord);
+  const geoParcelGeometry = record(geoParcelRecord.geometry);
+  const parcelReadyForNextStage = (
+    geoParcelRecord.projectEligible === true
+    && geoParcelGeometry.valid === true
+  ) || (
+    geoMetrics.geometryValid === true
+    && number(geoMetrics.area) > 0
+  );
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
@@ -232,7 +241,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     const active = Object.keys(moduleData).length > 0;
     const blockedBy = definition.dependencies.filter((dependency) => !activeKeys.has(dependency));
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
-    const readiness = active ? (blockedBy.length ? 68 : 100) : (blockedBy.length ? 0 : 20);
+    const readiness = definition.id === "geo-parcel" && active && !parcelReadyForNextStage
+      ? 35
+      : active
+        ? (blockedBy.length ? 68 : 100)
+        : (blockedBy.length ? 0 : 20);
     return { ...definition, active, readiness, blockedBy, status };
   });
   const handoffDefinitions: Omit<ProjectHandoff, "state">[] = [
@@ -252,6 +265,15 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const readiness = Math.round(activeCount / nodes.length * 100);
   const quality = Math.max(0, 100 - issues.filter((issue) => issue.severity === "critical").length * 16 - issues.filter((issue) => issue.severity === "review").length * 7 - issues.filter((issue) => issue.severity === "info").length * 2);
   const nextNode = nodes.find((node) => !node.active && node.blockedBy.length === 0) ?? nodes.find((node) => !node.active);
+  const nextAction = !parcelReadyForNextStage
+    ? {
+      label: "Parsel kimliğini ve sınırını doğrula",
+      route: "/arsa-fizibilite-studyosu#geo-studyo",
+      blockedBy: [] as ProjectModuleKey[],
+    }
+    : nextNode
+      ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
+      : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
 
   return {
     canonical,
@@ -259,7 +281,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     issues,
     handoffs,
     metrics: { activeCount, totalCount: nodes.length, readiness, quality, critical: issues.filter((issue) => issue.severity === "critical").length, review: issues.filter((issue) => issue.severity === "review").length },
-    nextAction: nextNode ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy } : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] },
+    nextAction,
   };
 }
 
