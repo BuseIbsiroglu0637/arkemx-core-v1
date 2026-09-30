@@ -18,8 +18,11 @@ export type ZoningForm = {
   sideSetback: number;
   rearSetback: number;
   planNoteReference: string;
+  sourceType: string;
+  sourceDate: string;
   sourceUrl: string;
   sourceDocument: string;
+  sourceNote: string;
   verification: ZoningVerification;
 };
 
@@ -73,8 +76,11 @@ export const DEFAULT_ZONING: ZoningForm = {
   sideSetback: -1,
   rearSetback: -1,
   planNoteReference: "",
+  sourceType: "",
+  sourceDate: "",
   sourceUrl: "",
   sourceDocument: "",
+  sourceNote: "",
   verification: "user-declared",
 };
 
@@ -109,6 +115,13 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
     parcelReference,
     capturedAt: new Date().toISOString(),
     verification: zoning.verification,
+    source: {
+      type: zoning.sourceType || null,
+      date: zoning.sourceDate || null,
+      url: zoning.sourceUrl || null,
+      document: zoning.sourceDocument || null,
+      note: zoning.sourceNote || null,
+    },
     sourceUrl: zoning.sourceUrl || null,
     sourceDocument: zoning.sourceDocument || null,
     plan: {
