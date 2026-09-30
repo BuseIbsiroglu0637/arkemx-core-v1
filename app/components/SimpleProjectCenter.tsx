@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   ArrowRight, ClipboardList, Download, DraftingCompass,
-  FileUp, GitMerge, Layers3, ShieldAlert, Wrench,
+  FileUp, GitMerge, Layers3, ShieldAlert, Trash2, Wrench,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
 import { useProjectKernel } from "./ProjectKernel";
@@ -19,9 +19,11 @@ const quickTools = [
 ] as const;
 
 export function SimpleProjectCenter() {
-  const { project, thread, importProject } = useProjectKernel();
+  const { project, thread, importProject, reset } = useProjectKernel();
   const fileRef = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const hasProject = Object.keys(project.modules).length > 0;
 
   async function loadProject(file?: File) {
@@ -48,6 +50,35 @@ export function SimpleProjectCenter() {
     setNotice("Tam proje JSON yedeği indirildi.");
   }
 
+  function removeFromDevice() {
+    reset();
+    setDeleteOpen(false);
+    setNotice("Aktif proje bu cihazdaki çalışma alanından kaldırıldı. Hesaba kaydedilmiş kopya varsa korunur.");
+  }
+
+  async function removeFromDeviceAndAccount() {
+    if (!hasProject || deleteBusy) return;
+    setDeleteBusy(true);
+    setNotice("Proje hesabınızdan ve bu cihazdan kaldırılıyor…");
+    try {
+      const response = await fetch(`/api/customer-workspace?resource=project&id=${encodeURIComponent(project.id)}`, {
+        method: "DELETE",
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) {
+        setNotice(body.error || "Hesaptaki proje kaydı kaldırılamadı. Bu cihazdaki çalışma korunuyor.");
+        return;
+      }
+      reset();
+      setDeleteOpen(false);
+      setNotice("Aktif proje bu cihazdan ve hesabınızdaki proje listesinden kaldırıldı.");
+    } catch {
+      setNotice("Hesap servisine ulaşılamadı. Bu cihazdaki çalışma korunuyor.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
   return <div className="arx-center-content">
     <section className="arx-center-project" aria-label="Aktif proje">
       <div className="arx-center-project-heading">
@@ -71,10 +102,28 @@ export function SimpleProjectCenter() {
           title={!hasProject ? "Yedek indirmek için önce bir proje oluşturun veya yükleyin." : "Bütün proje modüllerini içeren JSON yedeği"}>
           <Download size={18} aria-hidden="true" /> Proje yedeğini indir
         </button>
+        {hasProject ? <button type="button" className="arx-center-delete-trigger" onClick={() => setDeleteOpen((value) => !value)}>
+          <Trash2 size={17} aria-hidden="true" /> Aktif projeyi sil
+        </button> : null}
         <input ref={fileRef} type="file" accept=".json,application/json"
           className="sr-only" aria-label="ARKEMX proje JSON dosyası seç"
           onChange={(event) => { void loadProject(event.target.files?.[0]); }} />
       </div>
+      {deleteOpen && hasProject ? <section className="arx-center-delete-panel" aria-label="Aktif projeyi silme seçenekleri">
+        <div>
+          <span>PROJEYİ SİL</span>
+          <b>{project.name}</b>
+          <small>{project.id} · {project.revision}</small>
+          <p>Bu işlem proje modüllerindeki mevcut çalışmayı kaldırır. Önce yedek indirmek isterseniz yukarıdaki “Proje yedeğini indir” düğmesini kullanın.</p>
+        </div>
+        <div className="arx-center-delete-actions">
+          <button type="button" onClick={removeFromDevice} disabled={deleteBusy}>Yalnız bu cihazdan sil</button>
+          <button type="button" className="danger" onClick={() => { void removeFromDeviceAndAccount(); }} disabled={deleteBusy}>
+            {deleteBusy ? "Siliniyor…" : "Cihazdan ve hesabımdan sil"}
+          </button>
+          <button type="button" className="cancel" onClick={() => setDeleteOpen(false)} disabled={deleteBusy}>Vazgeç</button>
+        </div>
+      </section> : null}
       {notice && <p className="arx-center-notice" role="status" aria-live="polite">{notice}</p>}
     </section>
 
