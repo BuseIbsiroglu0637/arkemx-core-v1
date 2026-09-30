@@ -622,3 +622,42 @@ footer{background:#071a27;padding-top:80px}
 .geo-basemap-switch button:focus-visible{outline:2px solid #b96636;outline-offset:2px}
 .geo-basemap-warning{position:absolute;z-index:511;top:61px;right:14px;max-width:300px;padding:9px 12px;border-radius:6px;background:#fff3e6;color:#693b12;font-size:12px;box-shadow:0 3px 12px #061d2d24}
 @media(max-width:560px){.geo-basemap-switch{top:9px;right:9px}.geo-basemap-switch button{padding:0 7px;font-size:10px}.geo-basemap-warning{top:52px;right:9px;left:9px;max-width:none}}
+
+
+/* 2B parcel legend: provenance-aware parcel, conceptual setback envelope and massing. */
+.geo-map-legend {
+  flex-wrap: wrap;
+  max-width: calc(100% - 90px);
+}
+.geo-map-legend .parcel i {
+  width: 12px;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #b96636;
+}
+.geo-map-legend .setback i {
+  width: 14px;
+  height: 0;
+  border-top: 2px dashed #73aeb7;
+  background: transparent;
+}
+.geo-map-legend .building i {
+  width: 12px;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+.geo-map-legend .point i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #0a2639;
+}
+.geo-map-legend .point.readonly i {
+  border-color: #d7e1e4;
+  background: #6f8791;
+  opacity: .82;
+}
