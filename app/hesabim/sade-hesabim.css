@@ -111,3 +111,44 @@ body:has(.arx-account-page) .v4-floating-contact { display:none!important; }
   .arx-account-status { align-items:flex-start; flex-direction:column; }
   .arx-account-status > small { text-align:left; }
 }
+
+.arx-account-login-required {
+  width:min(100%,520px);
+  margin:80px auto;
+  padding:28px;
+  border:1px solid #dfe6e9;
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 18px 45px rgba(24,54,67,.06);
+}
+.arx-account-login-required > span {
+  display:block;
+  margin-bottom:8px;
+  color:#a65d36;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-account-login-required h1 {
+  margin:0;
+  color:#1f3440;
+  font-size:30px;
+  letter-spacing:-.035em;
+}
+.arx-account-login-required p {
+  margin:10px 0 20px;
+  color:#6b7d86;
+  font-size:12px;
+  line-height:1.6;
+}
+.arx-account-login-required > a {
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  padding:9px 13px;
+  border-radius:6px;
+  background:#244756;
+  color:#fff;
+  font-size:11px;
+  font-weight:720;
+}
