@@ -32,7 +32,7 @@ export default function Home() {
       <div className="arx-simple-shell">
         <header className="arx-simple-head">
           <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-          <div className="arx-simple-head-actions"><span className="arx-simple-head-label">Çalışma alanı</span><Link href="/hesabim">Hesap</Link></div>
+          <div className="arx-simple-head-actions"><span className="arx-simple-head-label">Çalışma alanı</span><a href="/giris?return_to=%2Fhesabim">Hesap</a></div>
         </header>
         <section className="arx-simple-tools" aria-labelledby="arx-tools-title">
           <h1 id="arx-tools-title">Araçlar</h1>
