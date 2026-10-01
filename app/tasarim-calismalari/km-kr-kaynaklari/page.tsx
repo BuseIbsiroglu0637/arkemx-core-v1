@@ -24,9 +24,9 @@ export default function Page() {
       </header>
 
       <div className="arx-kmkr-intro">
-        <span>KONTROL · BIM-053</span>
-        <h1>KM–KR ön kontrol kaynaklarını tamamla</h1>
-        <p>Aktif katta kütle merkezi için mahal/yük bölgelerini, rijitlik merkezi için kolon/perde nesnelerini tanımlayın. Geometrik plaka merkezi gerçek rijitlik merkezi kabul edilmez.</p>
+        <span>KONTROL · BIM-052 / BIM-053</span>
+        <h1>KM–KR ön kontrolünü düzenle</h1>
+        <p>Aktif katta kütle ve rijitlik kaynaklarını tamamlayın; kavramsal KM–KR dışmerkezlik göstergesi yüksekse yerleşimi inceleyin. Geometrik plaka merkezi gerçek rijitlik merkezi kabul edilmez.</p>
       </div>
 
       <AdvancedPlanEditor issueFocus="kmkr" />
