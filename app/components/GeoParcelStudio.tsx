@@ -391,6 +391,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const openFocusedStage = (stage: Stage) => {
     setActiveStage(stage);
     if (!simple) return;
+    if (stage === "design") setDesignPanel("summary");
     setShowSources(false);
     setShowLayers(false);
     setShowResults(false);
@@ -2086,6 +2087,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         });
       }}>Teknik çıktı paketini hazırlayın <span>↗</span></button></aside>
     </div>
-    <footer className="geo-studio-foot"><b>Hukuki ve teknik sınır</b><p>Bu çalışma alanı erken karar, veri hazırlığı ve disiplinler arası koordinasyon içindir. Tapu/kadastro kaydı, aplikasyon, imar uygunluğu, zemin etüdü, mühendislik hesabı veya ruhsat projesi yerine geçmez. TKGM parsel kimliği; e-Plan/TUCBS katmanları, belediye e-İmar adaptörleri ve onaylı imar durumu belgesiyle kaynaklandırılır. Yetkili servis, protokol veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p></footer>
+    {simple ? <details className="geo-studio-foot geo-studio-foot-collapsible">
+      <summary><b>ⓘ Teknik ve hukuki sınırlar</b><span>Ayrıntıları göster</span></summary>
+      <p>Bu çalışma alanı erken karar, veri hazırlığı ve disiplinler arası koordinasyon içindir. Tapu/kadastro kaydı, aplikasyon, imar uygunluğu, zemin etüdü, mühendislik hesabı veya ruhsat projesi yerine geçmez. TKGM parsel kimliği; e-Plan/TUCBS katmanları, belediye e-İmar adaptörleri ve onaylı imar durumu belgesiyle kaynaklandırılır. Yetkili servis, protokol veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p>
+    </details> : <footer className="geo-studio-foot"><b>Hukuki ve teknik sınır</b><p>Bu çalışma alanı erken karar, veri hazırlığı ve disiplinler arası koordinasyon içindir. Tapu/kadastro kaydı, aplikasyon, imar uygunluğu, zemin etüdü, mühendislik hesabı veya ruhsat projesi yerine geçmez. TKGM parsel kimliği; e-Plan/TUCBS katmanları, belediye e-İmar adaptörleri ve onaylı imar durumu belgesiyle kaynaklandırılır. Yetkili servis, protokol veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p></footer>}
   </section>;
 }
