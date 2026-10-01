@@ -25,6 +25,20 @@ export function SimpleProjectCenter() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const hasProject = Object.keys(project.modules).length > 0;
+  const projectType = (() => {
+    const decision = project.modules["decision-assistant"];
+    if (!decision || typeof decision !== "object" || Array.isArray(decision)) return "";
+    const input = (decision as Record<string, unknown>).input;
+    if (!input || typeof input !== "object" || Array.isArray(input)) return "";
+    const value = (input as Record<string, unknown>).projectType;
+    return value === "new"
+      ? "Yeni yapı yatırımı"
+      : value === "existing"
+        ? "Mevcut yapı / dönüşüm"
+        : value === "demolition"
+          ? "Yıkım / yeniden geliştirme"
+          : "";
+  })();
 
   async function loadProject(file?: File) {
     if (!file) return;
@@ -88,6 +102,7 @@ export function SimpleProjectCenter() {
           <p>{hasProject
             ? `${project.id} · ${project.revision} · ${project.phase}`
             : "Yeni bir proje oluşturun veya mevcut proje yedeğinizi yükleyin."}</p>
+          {hasProject && projectType ? <small className="arx-center-project-type">Proje türü: {projectType}</small> : null}
         </div>
         <span className="arx-center-storage">Yerel çalışma</span>
       </div>
