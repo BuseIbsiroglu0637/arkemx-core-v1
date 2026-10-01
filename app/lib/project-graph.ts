@@ -99,6 +99,10 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const geoParcelRecord = record(geo.parcelRecord);
   const geoParcelGeometry = record(geoParcelRecord.geometry);
   const geoZoningProvenance = record(geo.zoningProvenance);
+  const geoZoningSource = record(geoZoningProvenance.source);
+  const geoZoningPlan = record(geoZoningProvenance.plan);
+  const geoZoningConditions = record(geoZoningProvenance.conditions);
+  const geoZoningSetbacks = record(geoZoningConditions.setbacks);
   const parcelReadyForNextStage = (
     geoParcelRecord.projectEligible === true
     && geoParcelGeometry.valid === true
@@ -106,7 +110,29 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     geoMetrics.geometryValid === true
     && number(geoMetrics.area) > 0
   );
-  const zoningReadyForNextStage = geoZoningProvenance.authoritative === true;
+  const zoningConditionsReadyForNextStage = Boolean(
+    text(geoZoningPlan.scale)
+    && text(geoZoningConditions.buildingOrder)
+    && number(geoZoningConditions.taks, -1) >= 0
+    && number(geoZoningConditions.kaks, -1) >= 0
+    && number(geoZoningConditions.hmax, -1) >= 0
+    && number(geoZoningSetbacks.front, -1) >= 0
+    && number(geoZoningSetbacks.side, -1) >= 0
+    && number(geoZoningSetbacks.rear, -1) >= 0
+  );
+  const zoningSourceReferenceReady = Boolean(
+    text(geoZoningSource.document)
+    || text(geoZoningSource.url)
+    || text(geoZoningPlan.planId)
+    || (text(geoZoningSource.type) === "Kullanıcı beyanı" && text(geoZoningSource.note))
+  );
+  const zoningSourceReadyForNextStage = Boolean(
+    text(geoZoningSource.type)
+    && text(geoZoningSource.date)
+    && zoningSourceReferenceReady
+  );
+  const zoningAuthoritative = geoZoningProvenance.authoritative === true;
+  const zoningReadyForNextStage = zoningConditionsReadyForNextStage && zoningSourceReadyForNextStage;
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
@@ -222,6 +248,15 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
   if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu" });
+  if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningAuthoritative) push({
+    id: "PLN-010",
+    severity: "review",
+    discipline: "Planlama",
+    title: "İmar kaynağı uzman doğrulaması bekliyor",
+    evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak kaynak henüz yetkili doğrulama statüsünde değil.",
+    action: "Plan paftası, plan notu ve yetkili idare imar durumunu uzman incelemesiyle doğrulayın.",
+    route: "/arsa-fizibilite-studyosu#geo-studyo",
+  });
   if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({ id: "PLN-011", severity: "critical", discipline: "Planlama + Mimari", title: "Öneri taban alanı TAKS girdisini aşıyor", evidence: `${canonical.site.proposedFootprint.toFixed(1)} m² öneri / ${canonical.site.allowedFootprint.toFixed(1)} m² izin girdisi`, action: "Kütleyi küçültün veya planlama verisini yetkili kaynaktan doğrulayın.", route: "/arsa-fizibilite-studyosu" });
   if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({ id: "PLN-012", severity: "critical", discipline: "Planlama + Mimari", title: "Brüt alan KAKS/emsal girdisini aşıyor", evidence: `${canonical.site.proposedGross.toFixed(1)} m² öneri / ${canonical.site.allowedGross.toFixed(1)} m² izin girdisi`, action: "Programı veya kat alanlarını yeniden dengeleyin.", route: "/mimari-program-studyosu" });
   const proposedHeight = floors * floorHeight;
@@ -243,8 +278,16 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     const active = Object.keys(moduleData).length > 0;
     const blockedBy = definition.dependencies.filter((dependency) => !activeKeys.has(dependency));
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
-    const readiness = definition.id === "geo-parcel" && active && !parcelReadyForNextStage
-      ? 35
+    const readiness = definition.id === "geo-parcel" && active
+      ? !parcelReadyForNextStage
+        ? 35
+        : !zoningConditionsReadyForNextStage
+          ? 70
+          : !zoningSourceReadyForNextStage
+            ? 85
+            : !zoningAuthoritative
+              ? 95
+              : 100
       : active
         ? (blockedBy.length ? 68 : 100)
         : (blockedBy.length ? 0 : 20);
@@ -273,15 +316,21 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       route: "/arsa-fizibilite-studyosu#geo-studyo",
       blockedBy: [] as ProjectModuleKey[],
     }
-    : !zoningReadyForNextStage
+    : !zoningConditionsReadyForNextStage
       ? {
-        label: "İmar koşullarını ve kaynağını doğrula",
+        label: "İmar koşullarını gir",
         route: "/arsa-fizibilite-studyosu#geo-studyo",
         blockedBy: [] as ProjectModuleKey[],
       }
-      : nextNode
-        ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
-        : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
+      : !zoningSourceReadyForNextStage
+        ? {
+          label: "İmar kaynağını ekle",
+          route: "/arsa-fizibilite-studyosu#geo-studyo",
+          blockedBy: [] as ProjectModuleKey[],
+        }
+        : nextNode
+          ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
+          : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
 
   return {
     canonical,
