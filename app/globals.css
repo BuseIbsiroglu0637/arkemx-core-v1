@@ -856,3 +856,169 @@ html[data-theme="dark"] .arkem-theme-control button[aria-pressed="true"] {
   background: #b96636;
   color: #fff;
 }
+
+
+/* Focused project issue resolution · plan footprint / TAKS */
+.plan-fix-page {
+  min-height:100vh;
+  background:#f4f7f8;
+}
+.plan-fix-shell {
+  padding-top:32px;
+  padding-bottom:48px;
+}
+.plan-fix-nav {
+  display:flex;
+  justify-content:space-between;
+  gap:32px;
+  align-items:flex-end;
+  margin-bottom:20px;
+  padding:22px 24px;
+  border:1px solid #dce5e8;
+  background:#fff;
+}
+.plan-fix-nav span {
+  color:#b96636;
+  font:750 9px var(--font-manrope);
+  letter-spacing:.1em;
+}
+.plan-fix-nav h1 {
+  margin:7px 0 5px;
+  color:#102c3b;
+  font:560 32px/1.05 var(--font-manrope);
+  letter-spacing:-.04em;
+}
+.plan-fix-nav p {
+  max-width:720px;
+  margin:0;
+  color:#6b7f88;
+  font-size:12px;
+  line-height:1.55;
+}
+.plan-fix-nav nav {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+.plan-fix-nav a {
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:0 11px;
+  border:1px solid #cbd8dc;
+  border-radius:4px;
+  background:#fff;
+  color:#315968;
+  font-size:9px;
+  font-weight:700;
+}
+.cad-issue-focus {
+  margin:0 !important;
+  color:#142b3b !important;
+}
+.cad-issue-focus .project-kernel-compact {
+  margin-bottom:12px;
+}
+.cad-issue-focus .plan-editor-head {
+  grid-template-columns:minmax(0,1fr) minmax(320px,.8fr);
+  gap:36px;
+  margin:0 0 16px;
+  padding:18px 20px;
+  border:1px solid #dce5e8;
+  background:#fff;
+}
+.cad-issue-focus .plan-editor-head h2 {
+  color:#102c3b;
+  font-size:34px;
+}
+.cad-issue-focus .plan-editor-head h2 em {
+  color:#b96636;
+}
+.cad-issue-focus .plan-editor-head > p {
+  color:#6b7f88;
+  font-size:11px;
+}
+.cad-issue-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+  align-items:stretch;
+  margin-bottom:12px;
+  border:1px solid #d7e2e5;
+  background:#fff;
+}
+.cad-issue-summary > div {
+  padding:13px 15px;
+  border-right:1px solid #e1e8ea;
+}
+.cad-issue-summary span {
+  display:block;
+  color:#788b93;
+  font-size:8px;
+  font-weight:750;
+  letter-spacing:.06em;
+}
+.cad-issue-summary b {
+  display:block;
+  margin-top:5px;
+  color:#173746;
+  font-size:15px;
+}
+.cad-issue-summary[data-state="review"] > div:nth-child(3) b { color:#a34f40; }
+.cad-issue-summary[data-state="pass"] > div:nth-child(3) b { color:#3d745b; }
+.cad-issue-summary button {
+  min-width:210px;
+  border:0;
+  background:#0d3244;
+  color:#fff;
+  padding:0 16px;
+  font-size:9px;
+  font-weight:750;
+  cursor:pointer;
+}
+.cad-issue-focus .cad-editor-grid {
+  grid-template-columns:minmax(0,1fr) 300px;
+}
+.cad-issue-focus .cad-canvas {
+  min-height:610px;
+}
+.cad-issue-focus .cad-inspector {
+  background:#f9fbfb;
+}
+.cad-footprint-control > div {
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 0;
+  border-bottom:1px solid #dfe7e9;
+}
+.cad-footprint-control > div span {
+  color:#72858d;
+  font-size:9px;
+}
+.cad-footprint-control > div b {
+  font-size:11px;
+}
+.cad-footprint-control b.risk { color:#a34f40; }
+.cad-footprint-control b.good { color:#3d745b; }
+.cad-footprint-control small {
+  display:block;
+  margin-top:12px;
+  color:#6d8189;
+  font-size:9px;
+  line-height:1.5;
+}
+.cad-issue-focus .cad-editor-foot {
+  padding:12px 18px;
+}
+@media(max-width:900px) {
+  .plan-fix-nav,
+  .cad-issue-focus .plan-editor-head {
+    grid-template-columns:1fr;
+    display:grid;
+  }
+  .plan-fix-nav nav { justify-content:flex-start; }
+  .cad-issue-summary { grid-template-columns:1fr 1fr; }
+  .cad-issue-summary button { min-height:42px; grid-column:1/-1; }
+  .cad-issue-focus .cad-editor-grid { grid-template-columns:1fr; }
+}
