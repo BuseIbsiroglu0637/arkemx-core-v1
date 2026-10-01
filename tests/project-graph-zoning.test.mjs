@@ -95,6 +95,7 @@ test("documented but unverified zoning source permits workflow continuation with
   const review = thread.issues.find(issue => issue.id === "PLN-010");
   assert.equal(review?.severity, "review");
   assert.match(review?.title ?? "", /uzman doğrulaması/i);
+  assert.equal(review?.route, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
 });
 
 test("authoritative zoning provenance clears the zoning review gate", () => {
@@ -166,4 +167,50 @@ test("resolved structural system advances beyond the system decision gate", () =
   assert.equal(thread.nodes.find(node => node.id === "quick-site-scenario")?.active, true);
   assert.notEqual(thread.nextAction.label, "Hızlı yerleşim");
   assert.notEqual(thread.nextAction.label, "Sistemi ve yöntemi seç");
+});
+
+
+test("TAKS issue opens the placement stage directly", () => {
+  const geo = geoModule({
+    authoritative: false,
+    verification: "user-declared",
+    plan,
+    conditions,
+    source: {
+      type: "Kullanıcı beyanı",
+      date: "2026-10-01",
+      note: "Kaynak bilgisi kullanıcı tarafından kaydedildi.",
+    },
+  });
+  geo.metrics.footprint = 567;
+  geo.metrics.allowedFootprint = 479.3;
+
+  const thread = deriveProjectThread({
+    "decision-assistant": { status: "Brief tamamlandı" },
+    "geo-parcel": geo,
+  });
+
+  const issue = thread.issues.find(item => item.id === "PLN-011");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/arsa-fizibilite-studyosu?stage=design#geo-studyo");
+});
+
+test("invalid parcel geometry opens the boundary editing stage directly", () => {
+  const geo = geoModule({
+    authoritative: false,
+    plan: {},
+    conditions: {},
+    source: {},
+  });
+  geo.metrics.geometryValid = false;
+  geo.parcelRecord.projectEligible = false;
+  geo.parcelRecord.geometry.valid = false;
+
+  const thread = deriveProjectThread({
+    "geo-parcel": geo,
+  });
+
+  const issue = thread.issues.find(item => item.id === "GIS-001");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/arsa-fizibilite-studyosu?stage=draw#geo-studyo");
 });
