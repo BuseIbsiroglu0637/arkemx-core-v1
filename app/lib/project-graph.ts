@@ -453,7 +453,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     : !zoningConditionsReadyForNextStage
       ? {
         label: "İmar koşullarını gir",
-        route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
+        route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
         blockedBy: [] as ProjectModuleKey[],
       }
       : !zoningSourceReadyForNextStage
