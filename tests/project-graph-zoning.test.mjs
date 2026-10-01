@@ -258,6 +258,7 @@ test("KAKS and Hmax issues expose design and zoning resolution paths", () => {
 
   const kaks = thread.issues.find(item => item.id === "PLN-012");
   assert.ok(kaks);
+  assert.equal(kaks?.route, "/mimari-program-studyosu/kaks-duzeltme");
   assert.equal(kaks?.routeLabel, "Programı düzelt");
   assert.equal(kaks?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
   assert.equal(kaks?.secondaryRouteLabel, "KAKS girdisini incele");
