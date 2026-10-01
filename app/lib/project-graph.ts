@@ -272,6 +272,38 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     && number(geoMetrics.buildingHeight) <= number(geoPlanning.maxHeight) + .01
   );
 
+  const footprintSource = number(planMetrics.floorArea) > 0
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan tabanını düzelt" }
+    : number(geoMetrics.footprint) > 0
+      ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
+      : number(structureGeometry.floorArea) > 0
+        ? { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı tabanını düzelt" }
+        : { label: "Bilinmeyen kaynak", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi incele" };
+
+  const grossSource = architectureGross > 0
+    ? { label: "Mimari program", route: "/mimari-program-studyosu#mimari-motor", actionLabel: "Programı düzelt" }
+    : planGross > 0
+      ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan alanını düzelt" }
+      : geoGross > 0
+        ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
+        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı alanını düzelt" };
+
+  const floorCountSource = number(plan.floorCount) > 0
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Kat adedini düzelt" }
+    : number(architectureInput.floors) > 0
+      ? { label: "Mimari program", route: "/mimari-program-studyosu#mimari-motor", actionLabel: "Kat adedini düzelt" }
+      : number(geo.floors) > 0
+        ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kat adedini düzelt" }
+        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Kat adedini düzelt" };
+
+  const floorHeightSource = number(structureInput.floorHeight) > 0
+    ? "Taşıyıcı ön tasarım"
+    : number(geo.floorHeight) > 0
+      ? "Yapı Yerleşimi"
+      : number(architectureInput.floorHeight) > 0
+        ? "Mimari program"
+        : "Bilinmeyen kaynak";
+
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
   if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=draw#geo-studyo" });
@@ -285,10 +317,43 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
     routeLabel: "İmar kaynağını incele",
   });
-  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({ id: "PLN-011", severity: "critical", discipline: "Planlama + Mimari", title: "Öneri taban alanı TAKS girdisini aşıyor", evidence: `${canonical.site.proposedFootprint.toFixed(1)} m² öneri / ${canonical.site.allowedFootprint.toFixed(1)} m² izin girdisi`, action: `Kütle tabanını en az ${(canonical.site.proposedFootprint - canonical.site.allowedFootprint).toFixed(1)} m² azaltın; TAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`, route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", routeLabel: "Kütleyi düzelt", secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo", secondaryRouteLabel: "TAKS girdisini incele" });
-  if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({ id: "PLN-012", severity: "critical", discipline: "Planlama + Mimari", title: "Brüt alan KAKS/emsal girdisini aşıyor", evidence: `${canonical.site.proposedGross.toFixed(1)} m² öneri / ${canonical.site.allowedGross.toFixed(1)} m² izin girdisi`, action: `Toplam brüt alanı en az ${(canonical.site.proposedGross - canonical.site.allowedGross).toFixed(1)} m² azaltın; KAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`, route: "/mimari-program-studyosu", routeLabel: "Programı düzelt", secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo", secondaryRouteLabel: "KAKS girdisini incele" });
+  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({
+    id: "PLN-011",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Öneri taban alanı TAKS girdisini aşıyor",
+    evidence: `${footprintSource.label}: ${canonical.site.proposedFootprint.toFixed(1)} m² / TAKS girdisine göre azami ${canonical.site.allowedFootprint.toFixed(1)} m²`,
+    action: `${footprintSource.label} taban alanını en az ${(canonical.site.proposedFootprint - canonical.site.allowedFootprint).toFixed(1)} m² azaltın; TAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
+    route: footprintSource.route,
+    routeLabel: footprintSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRouteLabel: "TAKS girdisini incele",
+  });
+  if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({
+    id: "PLN-012",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Brüt alan KAKS/emsal girdisini aşıyor",
+    evidence: `${grossSource.label}: ${canonical.site.proposedGross.toFixed(1)} m² / KAKS girdisine göre azami ${canonical.site.allowedGross.toFixed(1)} m²`,
+    action: `${grossSource.label} toplam brüt alanını en az ${(canonical.site.proposedGross - canonical.site.allowedGross).toFixed(1)} m² azaltın; KAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
+    route: grossSource.route,
+    routeLabel: grossSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRouteLabel: "KAKS girdisini incele",
+  });
   const proposedHeight = floors * floorHeight;
-  if (canonical.site.maxHeight > 0 && proposedHeight > canonical.site.maxHeight + .01) push({ id: "PLN-013", severity: "critical", discipline: "Planlama + Mimari", title: "Yapı yüksekliği planlama girdisini aşıyor", evidence: `${proposedHeight.toFixed(2)} m öneri / ${canonical.site.maxHeight.toFixed(2)} m sınır girdisi`, action: `Toplam yapı yüksekliğini en az ${(proposedHeight - canonical.site.maxHeight).toFixed(2)} m azaltın; kat adedi / kat yüksekliğini yeniden düzenleyin veya Hmax kaynağını inceleyin.`, route: "/mimari-program-studyosu", routeLabel: "Kat / yüksekliği düzelt", secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo", secondaryRouteLabel: "Hmax girdisini incele" });
+  if (canonical.site.maxHeight > 0 && proposedHeight > canonical.site.maxHeight + .01) push({
+    id: "PLN-013",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Yapı yüksekliği planlama girdisini aşıyor",
+    evidence: `${floors} kat (${floorCountSource.label}) × ${floorHeight.toFixed(2)} m (${floorHeightSource}) = ${proposedHeight.toFixed(2)} m / Hmax ${canonical.site.maxHeight.toFixed(2)} m`,
+    action: `Toplam yapı yüksekliğini en az ${(proposedHeight - canonical.site.maxHeight).toFixed(2)} m azaltın; kat adedi veya kat yüksekliği kaydını koordine edin.`,
+    route: floorCountSource.route,
+    routeLabel: floorCountSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRouteLabel: "Hmax girdisini incele",
+  });
   if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Net–brüt katsayısını, katları veya plan geometrisini eşleyin.", route: "/mimari-program-studyosu" });
   if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari" });
   if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Aks modelini senkronize edin.", route: "/tasarim-calismalari" });
