@@ -670,3 +670,74 @@ test("stale MCDA inputs open SYS-040 and suppress the old system recommendation 
   assert.ok(synced.completedControls.find(control => control.code === "SYS-040"));
   assert.ok(synced.completedControls.find(control => control.code === "SYS-041"));
 });
+
+
+test("SYS-041 decision record is bound to the current MCDA source key", () => {
+  const sourceSnapshot = {
+    usage: "residential",
+    floors: 2,
+    span: 5.474,
+    area: 953.7,
+  };
+  const currentKey = mcdaSourceKey(sourceSnapshot);
+  const modules = {
+    "architectural-program": {
+      input: { use: "residential", floors: 2, targetGross: 953.7 },
+      result: { grossDemand: 953.7 },
+    },
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 5.474,
+      spanY: 4.2,
+      metrics: { floorArea: 476.9 },
+    },
+    "structural-concept": {
+      input: { system: "concrete", floors: 2 },
+    },
+    "system-comparison": {
+      input: { ...sourceSnapshot, repetition: 70, transport: 180, fireRating: 90 },
+      sourceSnapshot,
+      sourceKey: currentKey,
+      ranking: [{ id: "steel", name: "Yapısal Çelik", score: 82 }],
+    },
+  };
+
+  const staleDecision = deriveProjectThread({
+    ...modules,
+    "system-comparison": {
+      ...modules["system-comparison"],
+      decision: {
+        status: "recorded",
+        selectedSystem: "concrete",
+        recommendedSystem: "steel",
+        mcdaSourceKey: "residential|2|5.474|747.0",
+        rationale: "Önceki veri sürümünde verilen sistem kararı artık güncel değildir.",
+        decidedBy: "TEST EKİP",
+        role: "Kavramsal koordinasyon",
+        date: "2026-10-01",
+      },
+    },
+  });
+  assert.equal(staleDecision.issues.some(item => item.id === "SYS-041"), true);
+
+  const currentDecision = deriveProjectThread({
+    ...modules,
+    "system-comparison": {
+      ...modules["system-comparison"],
+      decision: {
+        status: "recorded",
+        selectedSystem: "concrete",
+        recommendedSystem: "steel",
+        mcdaSourceKey: currentKey,
+        rationale: "Güncel MCDA verisi üzerinde yerel tedarik ve uygulama stratejisi nedeniyle betonarme korunuyor.",
+        decidedBy: "TEST EKİP",
+        role: "Kavramsal koordinasyon",
+        date: "2026-10-01",
+      },
+    },
+  });
+  assert.equal(currentDecision.issues.some(item => item.id === "SYS-041"), false);
+  assert.match(currentDecision.completedControls.find(control => control.code === "SYS-041")?.summary ?? "", /farklı seçim gerekçelendirildi/);
+});
