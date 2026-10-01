@@ -5,6 +5,11 @@ export type ZoningVerification =
   | "approved-plan"
   | "certified-document";
 
+export type ZoningExpertReviewStatus =
+  | "not-reviewed"
+  | "reviewed-consistent"
+  | "reviewed-revision-required";
+
 export type ZoningForm = {
   landUse: string;
   planName: string;
@@ -24,6 +29,12 @@ export type ZoningForm = {
   sourceDocument: string;
   sourceNote: string;
   verification: ZoningVerification;
+  expertReviewStatus: ZoningExpertReviewStatus;
+  expertReviewer: string;
+  expertReviewerRole: string;
+  expertReviewDate: string;
+  expertReviewBasis: string;
+  expertReviewNote: string;
 };
 
 export const ZONING_CONNECTORS = [
@@ -82,6 +93,12 @@ export const DEFAULT_ZONING: ZoningForm = {
   sourceDocument: "",
   sourceNote: "",
   verification: "user-declared",
+  expertReviewStatus: "not-reviewed",
+  expertReviewer: "",
+  expertReviewerRole: "",
+  expertReviewDate: "",
+  expertReviewBasis: "",
+  expertReviewNote: "",
 };
 
 /**
@@ -122,6 +139,13 @@ export function zoningVerificationLabel(value: ZoningVerification) {
 
 export function createZoningProvenance(zoning: ZoningForm, parcelReference: string) {
   const sourceUrl = normalizeZoningSourceUrl(zoning.sourceUrl);
+  const expertReviewComplete = Boolean(
+    zoning.expertReviewStatus === "reviewed-consistent"
+    && zoning.expertReviewer.trim()
+    && zoning.expertReviewerRole.trim()
+    && zoning.expertReviewDate
+    && zoning.expertReviewBasis.trim()
+  );
   return {
     schema: "ARKEM-ZONING-PROVENANCE/1.0",
     parcelReference,
@@ -154,6 +178,16 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
         rear: zoning.rearSetback >= 0 ? zoning.rearSetback : null,
       },
     },
+    expertReview: {
+      status: zoning.expertReviewStatus,
+      reviewer: zoning.expertReviewer.trim() || null,
+      role: zoning.expertReviewerRole.trim() || null,
+      reviewedAt: zoning.expertReviewDate || null,
+      basis: zoning.expertReviewBasis.trim() || null,
+      note: zoning.expertReviewNote.trim() || null,
+      complete: expertReviewComplete,
+    },
+    expertReviewed: expertReviewComplete,
     authoritative:
       zoning.verification === "certified-document" ||
       zoning.verification === "approved-plan",
