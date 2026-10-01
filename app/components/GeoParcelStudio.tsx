@@ -1917,10 +1917,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <small>Değeri yalnız yetkili kaynak farklıysa değiştirin; açık konu kapansın diye imar girdisini yükseltmeyin.</small>
       </div> : null}
 
-      <div className={`geo-zoning-source-status${zoningFocus ? " geo-zoning-source-focus" : ""}`} data-ready={zoningSourceReady ? "ready" : "missing"}>
+      <div className={`geo-zoning-source-status${zoningFocus ? " geo-zoning-source-focus" : ""}`} data-ready={zoningSourceReady ? "ready" : "missing"} data-reviewed={zoningExpertReviewComplete ? "true" : "false"}>
         <span>İMAR KAYNAĞI</span>
-        <b>{zoningSourceReady ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli" : "Kaynak bilgisi eksik"}</b>
-        <small>{zoningSourceReady ? "Kaynak kaydı mevcut; resmî doğrulama yapılmış sayılmaz." : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
+        <b>{zoningExpertReviewComplete
+          ? "Uzman inceleme kaydı tamamlandı · resmî onay değildir"
+          : zoningSourceReady
+            ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli"
+            : "Kaynak bilgisi eksik"}</b>
+        <small>{zoningExpertReviewComplete
+          ? `${zoning.expertReviewer} · ${zoning.expertReviewerRole} · ${zoning.expertReviewDate}`
+          : zoningSourceReady
+            ? "Kaynak kaydı mevcut; resmî doğrulama yapılmış sayılmaz."
+            : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
       </div>
 
       <details className="geo-collapsible-block" defaultOpen={zoningFocus === "source"}>
@@ -1945,6 +1953,40 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
             <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>
             <label>Plan işlem / pafta no<input value={zoning.planId} onChange={(event) => updateZoning("planId", event.target.value)} placeholder="PIN, pafta veya karar no" /></label>
+          </div>
+        </div>
+      </details>
+
+      <details className="geo-collapsible-block geo-expert-review-block" defaultOpen={zoningFocus === "source"}>
+        <summary>
+          <span>Uzman incelemesi</span>
+          <small>{zoningExpertReviewComplete ? "İnceleme kaydı tamamlandı" : "PLN-010 için gerekli"}</small>
+        </summary>
+        <div className="geo-collapsible-body">
+          <p className="geo-expert-review-warning"><b>Proje içi inceleme kaydı:</b> Bu bölüm belediye/onay makamı statüsü oluşturmaz. Yalnız uzman tarafından yapılan kaynak ve koşul karşılaştırmasını projeye kaydeder.</p>
+          <label>İnceleme sonucu
+            <select value={zoning.expertReviewStatus} onChange={(event) => updateZoning("expertReviewStatus", event.target.value as ZoningExpertReviewStatus)}>
+              <option value="not-reviewed">İnceleme bekliyor</option>
+              <option value="reviewed-consistent">Kaynak ile girilen imar koşulları uyumlu</option>
+              <option value="reviewed-revision-required">Kaynak ile fark bulundu · revizyon gerekli</option>
+            </select>
+          </label>
+          <div className="geo-field-grid">
+            <label>İnceleyen / uzman adı<input value={zoning.expertReviewer} onChange={(event) => updateZoning("expertReviewer", event.target.value)} placeholder="Ad Soyad" /></label>
+            <label>Rol / uzmanlık<input value={zoning.expertReviewerRole} onChange={(event) => updateZoning("expertReviewerRole", event.target.value)} placeholder="Şehir plancısı, mimar, yetkili uzman…" /></label>
+            <label>İnceleme tarihi<input type="date" value={zoning.expertReviewDate} onChange={(event) => updateZoning("expertReviewDate", event.target.value)} /></label>
+            <label>Dayanak / referans<input value={zoning.expertReviewBasis} onChange={(event) => updateZoning("expertReviewBasis", event.target.value)} placeholder="Plan paftası, plan notu, imar durumu belge no…" /></label>
+          </div>
+          <label>Uzman inceleme notu<textarea rows={3} value={zoning.expertReviewNote} onChange={(event) => updateZoning("expertReviewNote", event.target.value)} placeholder="Karşılaştırılan hükümler, kapsam, istisna veya revizyon notu…" /></label>
+          <div className="geo-expert-review-result" data-state={zoning.expertReviewStatus}>
+            <b>{zoningExpertReviewComplete
+              ? "PLN-010 kapanmaya hazır"
+              : zoning.expertReviewStatus === "reviewed-revision-required"
+                ? "Revizyon gerekli · PLN-010 açık kalır"
+                : "Uzman inceleme kaydı tamamlanmadı"}</b>
+            <small>{zoningExpertReviewComplete
+              ? "İnceleme kaydı tamamlandığında proje grafiği PLN-010'u açık konulardan çıkarır; imar kaynağı yine resmî/onaylı sayılmaz."
+              : "Uyumlu inceleme sonucu ile inceleyen, rol, tarih ve dayanak alanlarının tamamı gereklidir."}</small>
           </div>
         </div>
       </details>
