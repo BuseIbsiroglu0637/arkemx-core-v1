@@ -197,6 +197,8 @@ test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winn
   assert.match(page, /KONTROL · SYS-041/);
   assert.match(page, /Taşıyıcı sistem kararını gerekçesiyle bağla/);
   assert.match(page, /SystemDecisionStudio/);
+  assert.match(page, /href="\/yapi-sistemi-karsilastirma\/mcda"/);
+  assert.doesNotMatch(page, /yapi-sistemi-karsilastirma#sistem-karsilastirma/);
 
   assert.match(studio, /MCDA önerisini modele uygula/);
   assert.match(studio, /Mevcut sistemi gerekçeli olarak koru/);
@@ -211,6 +213,26 @@ test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winn
   assert.match(graph, /\/yapi-sistemi-karsilastirma\/sistem-karari/);
   assert.match(graph, /Taşıyıcı sistem karar koordinasyonu/);
   assert.match(css, /arx-system-decision-page/);
+});
+
+
+test("project MCDA link opens a focused workspace instead of the public comparison page", () => {
+  const page = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/mcda/page.tsx", import.meta.url), "utf8");
+  const tool = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/mcda/mcda.css", import.meta.url), "utf8");
+
+  assert.match(page, /Taşıyıcı sistemleri proje verisiyle karşılaştır/);
+  assert.match(page, /SystemComparisonTool simple/);
+  assert.match(page, /href="\/yapi-sistemi-karsilastirma\/sistem-karari"/);
+  assert.match(page, /href="\/tasiyici-on-tasarim"/);
+  assert.doesNotMatch(page, /SiteHeader/);
+  assert.doesNotMatch(page, /SiteFooter/);
+
+  assert.match(tool, /if \(simple\)/);
+  assert.match(tool, /Proje verilerini aktar/);
+  assert.match(tool, /Beş sistemin karşılaştırması/);
+  assert.match(tool, /href="\/tasiyici-on-tasarim"/);
+  assert.match(css, /arx-mcda-page/);
 });
 
 
