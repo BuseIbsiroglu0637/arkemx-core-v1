@@ -509,6 +509,20 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   }
 
   if (
+    eccentricityEvaluable
+    && canonical.structure.eccentricityRatio <= 10
+    && !issues.some((issue) => issue.id === "BIM-052")
+  ) {
+    completedControls.push({
+      code: "BIM-052",
+      title: "KM–KR yerleşim ön kontrolü",
+      summary: `Kavramsal dışmerkezlik: ${number(planMetrics.eccentricity).toFixed(2)} m · %${canonical.structure.eccentricityRatio.toFixed(1)}`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/km-kr-kaynaklari",
+    });
+  }
+
+  if (
     comparisonHasResult
     && currentMcdaSource
     && mcdaSourceCurrent
