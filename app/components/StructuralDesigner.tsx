@@ -94,6 +94,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const [showSlabs, setShowSlabs] = useState(true);
   const [showLoads, setShowLoads] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Bağımsız ön tasarım girdileri");
+  const [modelHydrated, setModelHydrated] = useState(false);
 
   const input = useMemo<StructuralConceptInput>(() => ({
     system, usage, width, depth, floors, floorHeight, baysX, baysY, columnSize, beamDepth, slabThickness,
@@ -118,8 +119,9 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const checkCounts = useMemo(() => result.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }), [result.checks]);
 
   useEffect(() => {
+    if (!hydrated || !modelHydrated) return;
     patchModule("structural-concept", { schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", input, designBasis, soilClass, result, alternatives, structuralStudio, architectureContext: { architecturalScheme }, status: "v114-preliminary-system-comparison" });
-  }, [alternatives, architecturalScheme, designBasis, input, patchModule, result, soilClass, structuralStudio]);
+  }, [alternatives, architecturalScheme, designBasis, hydrated, input, modelHydrated, patchModule, result, soilClass, structuralStudio]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -361,6 +363,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     } else {
       importUpstream();
     }
+    setModelHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, importUpstream, project.modules]);
