@@ -629,6 +629,19 @@ test("placement decision summary combines zoning limits, setbacks and source tru
 });
 
 
+test("simple parcel workspace keeps project kernel compact and splits long zoning and placement controls", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('compact /> : <ProjectKernelBar'));
+  assert.ok(studio.includes('className="geo-collapsible-block"'));
+  assert.ok(studio.includes(">Plan ve kaynak<"));
+  assert.ok(studio.includes(">Belge ve notlar<"));
+  assert.ok(studio.includes('className="geo-design-tabs"'));
+  assert.ok(studio.includes('designPanel === "summary"'));
+  assert.ok(studio.includes('designPanel === "massing"'));
+  assert.ok(studio.includes('designPanel === "adjust"'));
+});
+
+
 test("parking demand result is visible beside inputs and in technical summary", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes("const parkingDemand = gross / 100 * parkingPer100"));
