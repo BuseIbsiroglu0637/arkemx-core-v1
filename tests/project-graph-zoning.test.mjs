@@ -417,3 +417,49 @@ test("structural geometry conflicts route to the focused model synchronization w
     assert.equal(issue?.routeLabel, "Modelleri senkronize et");
   }
 });
+
+
+test("ARC-021 moves to completed history when program and plan gross areas are coordinated", () => {
+  const open = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.852,
+      metrics: { floorArea: 476.9 },
+    },
+    "architectural-program": {
+      input: { targetGross: 1430.8, floors: 2, floorHeight: 3.4, netRatio: 72 },
+      result: { grossDemand: 1430.8 },
+    },
+  });
+
+  const issue = open.issues.find(item => item.id === "ARC-021");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/mimari-program-studyosu/plan-koordinasyonu");
+  assert.equal(issue?.routeLabel, "Program ve planı koordine et");
+  assert.equal(open.completedControls.some(control => control.code === "ARC-021"), false);
+
+  const resolved = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.852,
+      metrics: { floorArea: 476.9 },
+    },
+    "architectural-program": {
+      input: { targetGross: 953.8, floors: 2, floorHeight: 3.4, netRatio: 72 },
+      result: { grossDemand: 953.8 },
+    },
+  });
+
+  assert.equal(resolved.issues.some(item => item.id === "ARC-021"), false);
+  const completed = resolved.completedControls.find(control => control.code === "ARC-021");
+  assert.ok(completed);
+  assert.equal(completed?.title, "Program / plan alan koordinasyonu");
+  assert.equal(completed?.route, "/mimari-program-studyosu/plan-koordinasyonu");
+  assert.match(completed?.summary ?? "", /Program: 953,8 m² · Plan: 953,8 m²/);
+});
