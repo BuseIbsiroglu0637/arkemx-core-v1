@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "../lib/mcda-source";
 import { useProjectKernel } from "./ProjectKernel";
 
 type SystemId = "light" | "steel" | "precast" | "concrete" | "hybrid";
@@ -14,6 +16,7 @@ type DecisionRecord = {
   role?: string;
   date?: string;
   note?: string;
+  mcdaSourceKey?: string;
 };
 
 const SYSTEM_LABELS: Record<SystemId, string> = {
@@ -39,12 +42,28 @@ function systemId(value: unknown): SystemId | "" {
 }
 
 export function SystemDecisionStudio() {
-  const { project, patchModule, hydrated } = useProjectKernel();
+  const { project, patchModule, hydrated, thread } = useProjectKernel();
   const comparison = record(project.modules["system-comparison"]);
+  const comparisonInput = record(comparison.input);
+  const comparisonSourceSnapshot = record(comparison.sourceSnapshot);
   const structural = record(project.modules["structural-concept"]);
   const structuralInput = record(structural.input);
   const ranking = Array.isArray(comparison.ranking) ? comparison.ranking.map(record) : [];
   const winner = ranking[0] ?? {};
+  const currentProjectSource = buildMcdaProjectSnapshot({
+    use: thread.canonical.architecture.use,
+    floors: thread.canonical.architecture.floors,
+    grossArea: thread.canonical.architecture.grossArea,
+    spanX: thread.canonical.structure.spanX,
+    spanY: thread.canonical.structure.spanY,
+  });
+  const hasStoredSource = Boolean(Object.keys(comparisonSourceSnapshot).length);
+  const mcdaSourceCurrent = currentProjectSource
+    ? hasStoredSource
+      ? mcdaSourceMatches(comparisonSourceSnapshot as McdaSourceSnapshot, currentProjectSource)
+      : mcdaInputMatchesSource(comparisonInput, currentProjectSource)
+    : false;
+  const currentSourceKey = mcdaSourceKey(currentProjectSource);
   const recommendedId = systemId(winner.id || winner.name);
   const modeledId = systemId(structuralInput.system);
   const savedDecision = record(comparison.decision) as DecisionRecord;
@@ -59,9 +78,11 @@ export function SystemDecisionStudio() {
   const recommendationScore = typeof winner.score === "number" ? winner.score : 0;
   const mismatch = Boolean(recommendedId && modeledId && recommendedId !== modeledId);
   const savedDecisionValid = Boolean(
-    savedDecision.status === "recorded"
+    mcdaSourceCurrent
+    && savedDecision.status === "recorded"
     && systemId(savedDecision.selectedSystem) === modeledId
     && systemId(savedDecision.recommendedSystem) === recommendedId
+    && savedDecision.mcdaSourceKey === currentSourceKey
     && (savedDecision.rationale ?? "").trim().length >= 10
     && (savedDecision.decidedBy ?? "").trim()
     && (savedDecision.role ?? "").trim()
@@ -76,11 +97,12 @@ export function SystemDecisionStudio() {
     && decidedBy.trim().length > 0
     && role.trim().length > 0
     && date.trim().length > 0
+    && mcdaSourceCurrent
     && Boolean(modeledId && recommendedId)
-  ), [date, decidedBy, modeledId, rationale, recommendedId, role]);
+  ), [date, decidedBy, mcdaSourceCurrent, modeledId, rationale, recommendedId, role]);
 
   const keepCurrentSystem = () => {
-    if (!hydrated || !rationaleReady || !modeledId || !recommendedId) return;
+    if (!hydrated || !mcdaSourceCurrent || !rationaleReady || !modeledId || !recommendedId) return;
     patchModule("system-comparison", {
       decision: {
         status: "recorded",
@@ -94,6 +116,7 @@ export function SystemDecisionStudio() {
         role: role.trim(),
         date,
         note: note.trim(),
+        mcdaSourceKey: currentSourceKey,
         scope: "conceptual-system-decision",
       },
     });
@@ -101,7 +124,7 @@ export function SystemDecisionStudio() {
   };
 
   const applyRecommendation = () => {
-    if (!hydrated || !recommendedId) return;
+    if (!hydrated || !mcdaSourceCurrent || !recommendedId) return;
     patchModule("structural-concept", { input: { system: recommendedId } });
     patchModule("system-comparison", {
       decision: {
@@ -116,6 +139,7 @@ export function SystemDecisionStudio() {
         role: role.trim() || "Kavramsal koordinasyon",
         date: date || new Date().toISOString().slice(0, 10),
         note: note.trim(),
+        mcdaSourceKey: currentSourceKey,
         scope: "conceptual-system-decision",
       },
     });
@@ -128,11 +152,16 @@ export function SystemDecisionStudio() {
       <div><span>{project.phase}</span><span>{project.revision}</span></div>
     </div>
 
-    <section className="arx-system-decision-summary" data-state={!mismatch || savedDecisionValid ? "pass" : "review"}>
+    <section className="arx-system-decision-summary" data-state={mcdaSourceCurrent && (!mismatch || savedDecisionValid) ? "pass" : "review"}>
       <article><span>MCDA ÖN ELEME BİRİNCİSİ</span><b>{recommendedLabel}</b><small>{recommendationScore > 0 ? `${recommendationScore.toFixed(1)} / 100` : "puan bulunamadı"}</small></article>
       <article><span>MODELLENEN SİSTEM</span><b>{currentLabel}</b><small>Taşıyıcı ön tasarım girdisi</small></article>
-      <article><span>DURUM</span><b>{!mismatch ? "Sistemler eşleşiyor" : savedDecisionValid ? "Farklı seçim gerekçelendirildi" : "Karar kaydı gerekli"}</b><small>{mismatch ? "MCDA sonucu nihai mühendislik kararı değildir." : "SYS-041 kapalı"}</small></article>
+      <article><span>DURUM</span><b>{!mcdaSourceCurrent ? "MCDA güncel değil" : !mismatch ? "Sistemler eşleşiyor" : savedDecisionValid ? "Farklı seçim gerekçelendirildi" : "Karar kaydı gerekli"}</b><small>{!mcdaSourceCurrent ? "Önce proje verisini MCDA'ya yeniden aktarın." : mismatch ? "MCDA sonucu nihai mühendislik kararı değildir." : "SYS-041 kapalı"}</small></article>
     </section>
+
+    {!mcdaSourceCurrent && currentProjectSource ? <section className="arx-system-decision-stale" role="alert">
+      <div><span>SYS-040 · MCDA KAYNAK SENKRONU</span><b>Sistem kararı geçici olarak kilitlendi.</b><p>MCDA girdileri güncel proje verisiyle eşleşmiyor. Güncel kaynak: {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat · {currentProjectSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık.</p></div>
+      <Link href="/yapi-sistemi-karsilastirma/mcda">MCDA verisini güncelle →</Link>
+    </section> : null}
 
     {!recommendedId || !modeledId ? <section className="arx-system-decision-missing">
       <b>Karar için kaynak veri eksik.</b>
@@ -151,7 +180,7 @@ export function SystemDecisionStudio() {
           <article>
             <header><span>SEÇENEK A</span><h3>MCDA önerisini modele aktar</h3></header>
             <p><b>{recommendedLabel}</b> sistem kimliğini taşıyıcı ön tasarım girdisine aktarır. Geometri korunur; kesit, yük, malzeme ve diğer mühendislik kabulleri yeni sisteme göre yeniden incelenmelidir.</p>
-            <button type="button" onClick={applyRecommendation} disabled={!mismatch}>MCDA önerisini modele uygula</button>
+            <button type="button" onClick={applyRecommendation} disabled={!mcdaSourceCurrent || !mismatch}>MCDA önerisini modele uygula</button>
           </article>
 
           <article className="is-primary">
@@ -166,7 +195,7 @@ export function SystemDecisionStudio() {
               <label>Karar tarihi<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
               <label>Ek not<textarea rows={2} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Opsiyonel karar notu" /></label>
             </div>
-            <button type="button" onClick={keepCurrentSystem} disabled={!mismatch || !rationaleReady}>Mevcut sistemi gerekçeli olarak koru</button>
+            <button type="button" onClick={keepCurrentSystem} disabled={!mcdaSourceCurrent || !mismatch || !rationaleReady}>Mevcut sistemi gerekçeli olarak koru</button>
           </article>
         </section>
       </main>
