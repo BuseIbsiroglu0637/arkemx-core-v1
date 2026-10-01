@@ -52,7 +52,7 @@ export type ProjectHandoff = {
 
 export const PROJECT_MODULES: ProjectModuleDefinition[] = [
   { id: "decision-assistant", code: "PIR", label: "Yatırım briefi", discipline: "İşveren / PM", stage: "Tanım", route: "/proje-karar-asistani#karar-motoru", output: "İhtiyaç, öncelik ve veri hazırlığı", dependencies: [] },
-  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
+  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
   { id: "quick-site-scenario", code: "MAS", label: "Hızlı yerleşim", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#hizli-senaryo", output: "Alternatif kütle senaryosu", dependencies: ["geo-parcel"] },
   { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu#mimari-motor", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
   { id: "plan-editor", code: "BIM", label: "Plan & aks modeli", discipline: "Mimari / Statik", stage: "Tasarım", route: "/tasarim-calismalari#plan-editor", output: "Kat, aks, mahal ve taşıyıcı nesneler", dependencies: ["architectural-program"] },
@@ -271,7 +271,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
-  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu" });
+  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo" });
   if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningAuthoritative) push({
     id: "PLN-010",
     severity: "review",
