@@ -99,6 +99,16 @@ function structuralSystemLabel(value: string) {
   return ({ concrete: "Betonarme", steel: "Yapısal Çelik", light: "Hafif Çelik", hybrid: "Karma Sistem", precast: "Betonarme Prefabrik" } as Record<string, string>)[value] ?? value;
 }
 
+function structuralSystemId(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("tr-TR");
+  if (normalized === "light" || normalized.includes("hafif")) return "light";
+  if (normalized === "hybrid" || normalized.includes("karma")) return "hybrid";
+  if (normalized === "precast" || normalized.includes("prefabrik")) return "precast";
+  if (normalized === "steel" || normalized.includes("çelik")) return "steel";
+  if (normalized === "concrete" || normalized.includes("beton")) return "concrete";
+  return normalized;
+}
+
 function resolvedStructuralSystem(value: string) {
   const normalized = value.trim().toLocaleLowerCase("tr-TR");
   return Boolean(normalized)
@@ -178,6 +188,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const comparison = record(modules["system-comparison"]);
   const comparisonInput = record(comparison.input);
   const comparisonWinner = firstRecord(comparison.ranking);
+  const comparisonDecision = record(comparison.decision);
   const coordination = record(modules["engineering-coordination"]);
   const coordinationResult = record(coordination.result);
   const delivery = record(modules["digital-delivery-scope"]);
@@ -197,6 +208,18 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
   const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || text(comparisonWinner.name));
+  const modeledSystemId = structuralSystemId(text(structureInput.system));
+  const recommendedSystemId = structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name));
+  const systemMismatch = Boolean(modeledSystemId && recommendedSystemId && modeledSystemId !== recommendedSystemId);
+  const systemDecisionRecorded = Boolean(
+    text(comparisonDecision.status) === "recorded"
+    && structuralSystemId(text(comparisonDecision.selectedSystem)) === modeledSystemId
+    && structuralSystemId(text(comparisonDecision.recommendedSystem)) === recommendedSystemId
+    && text(comparisonDecision.rationale).trim().length >= 10
+    && text(comparisonDecision.decidedBy).trim()
+    && text(comparisonDecision.role).trim()
+    && text(comparisonDecision.date).trim()
+  );
 
   const canonical = {
     site: {
@@ -368,7 +391,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
-  if (canonical.structure.recommendedSystem && canonical.structure.system && !canonical.structure.system.toLocaleLowerCase("tr-TR").includes(canonical.structure.recommendedSystem.toLocaleLowerCase("tr-TR").replace("yapısal ", ""))) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "Farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma" });
+  if (canonical.structure.recommendedSystem && canonical.structure.system && systemMismatch && !systemDecisionRecorded) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "MCDA önerisini modele aktarın veya farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma/sistem-karari", routeLabel: "Sistem kararını kaydet" });
   if (canonical.structure.openingRatio > 25) push({ id: "BIM-051", severity: "review", discipline: "Mimari + Statik", title: "Döşeme boşluğu oranı yüksek", evidence: `%${canonical.structure.openingRatio.toFixed(1)} kavramsal boşluk oranı`, action: "Diyafram, kenar elemanı ve düşey sürekliliği inceleyin.", route: "/tasarim-calismalari" });
   if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR yerleşimini incele" });
   if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR kaynaklarını tamamla" });
@@ -445,6 +468,23 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       summary: `Kütle: ${number(planMetrics.massPointCount)} · Rijitlik: ${number(planMetrics.rigidityPointCount)} kaynak · dışmerkezlik %${canonical.structure.eccentricityRatio.toFixed(1)}`,
       routeLabel: "Görüntüle",
       route: "/tasarim-calismalari/km-kr-kaynaklari",
+    });
+  }
+
+  if (
+    recommendedSystemId
+    && modeledSystemId
+    && (!systemMismatch || systemDecisionRecorded)
+    && !issues.some((issue) => issue.id === "SYS-041")
+  ) {
+    completedControls.push({
+      code: "SYS-041",
+      title: "Taşıyıcı sistem karar koordinasyonu",
+      summary: systemMismatch
+        ? `MCDA: ${canonical.structure.recommendedSystem} · Model: ${canonical.structure.system} · farklı seçim gerekçelendirildi`
+        : `MCDA önerisi ile model eşleşiyor: ${canonical.structure.system}`,
+      routeLabel: "Görüntüle",
+      route: "/yapi-sistemi-karsilastirma/sistem-karari",
     });
   }
 
