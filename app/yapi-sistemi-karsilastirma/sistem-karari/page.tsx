@@ -18,7 +18,7 @@ export default function Page() {
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-system-decision-links" aria-label="Sistem kararı bağlantıları">
           <Link href="/dijital-proje-merkezi"><ArrowLeft size={16} aria-hidden="true" /> Proje Çalışma Alanı</Link>
-          <Link href="/yapi-sistemi-karsilastirma#sistem-karsilastirma">MCDA karşılaştırması</Link>
+          <Link href="/yapi-sistemi-karsilastirma/mcda">MCDA karşılaştırması</Link>
           <Link href="/tasarim-calismalari#tasiyici-on-tasarim">Taşıyıcı ön tasarım</Link>
         </nav>
       </header>
