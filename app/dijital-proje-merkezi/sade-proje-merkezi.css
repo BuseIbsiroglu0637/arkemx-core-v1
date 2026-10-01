@@ -389,3 +389,79 @@ html[data-theme="dark"] .arx-center-project-type { color:#9caeb5; }
     min-width:0;
   }
 }
+
+
+/* Tamamlanan kontroller / düzeltmeler */
+.arx-advanced-issue-column {
+  display:grid;
+  gap:12px;
+  align-content:start;
+  min-width:0;
+}
+.arx-completed-controls {
+  border-color:#dce9e1;
+  background:#fcfefd;
+}
+.arx-completed-controls > header {
+  background:#f7fbf8;
+}
+.arx-completed-control-list {
+  padding:4px 16px 8px;
+}
+.arx-completed-control-list article {
+  display:grid;
+  grid-template-columns:23px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid #e6eee9;
+}
+.arx-completed-control-list article:last-child {
+  border-bottom:0;
+}
+.arx-completed-control-list article > i {
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:#edf8f1;
+  color:#3f7459;
+  font-size:11px;
+  font-style:normal;
+  font-weight:800;
+}
+.arx-completed-control-list b {
+  display:block;
+  color:#24483a;
+  font-size:10px;
+}
+.arx-completed-control-list p {
+  margin:4px 0 0;
+  color:#6d8178;
+  font-size:9px;
+  line-height:1.4;
+}
+.arx-completed-control-list a {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:5px 9px;
+  border:1px solid #bfd7c8;
+  border-radius:4px;
+  background:#fff;
+  color:#3f6b54;
+  font-size:9px;
+  font-weight:750;
+  text-decoration:none;
+}
+@media(max-width:720px) {
+  .arx-completed-control-list article {
+    grid-template-columns:23px minmax(0,1fr);
+  }
+  .arx-completed-control-list article > a {
+    grid-column:2;
+    justify-self:start;
+  }
+}
