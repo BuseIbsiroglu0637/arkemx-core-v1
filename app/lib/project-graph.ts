@@ -218,6 +218,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const mcdaSourceCurrent = currentMcdaSource
     ? hasStoredMcdaSource
       ? mcdaSourceMatches(comparisonSourceSnapshot as McdaSourceSnapshot, currentMcdaSource)
+        && mcdaInputMatchesSource(comparisonInput, currentMcdaSource)
       : mcdaInputMatchesSource(comparisonInput, currentMcdaSource)
     : true;
   const currentMcdaSourceKey = mcdaSourceKey(currentMcdaSource);
@@ -228,7 +229,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
-  const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || text(comparisonWinner.name));
+  const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || (mcdaSourceCurrent ? text(comparisonWinner.name) : ""));
   const modeledSystemId = structuralSystemId(text(structureInput.system));
   const recommendedSystemId = mcdaSourceCurrent
     ? structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name))
