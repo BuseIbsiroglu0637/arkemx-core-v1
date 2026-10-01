@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { deriveProjectThread } from "../app/lib/project-graph.ts";
+import { createZoningProvenance, DEFAULT_ZONING } from "../app/lib/zoning.ts";
 
 function geoModule(zoningProvenance = {}) {
   return {
@@ -96,6 +97,43 @@ test("documented but unverified zoning source permits workflow continuation with
   assert.equal(review?.severity, "review");
   assert.match(review?.title ?? "", /uzman doğrulaması/i);
   assert.equal(review?.route, "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo");
+});
+
+test("completed expert review clears PLN-010 without claiming authoritative zoning", () => {
+  const provenance = createZoningProvenance({
+    ...DEFAULT_ZONING,
+    landUse: "Konut",
+    buildingOrder: "Ayrık nizam",
+    taks: 0.3,
+    kaks: 0.9,
+    hmax: 9.5,
+    frontSetback: 5,
+    sideSetback: 3,
+    rearSetback: 3,
+    planName: "Uygulama imar planı",
+    planScale: "1/1000 Uygulama İmar Planı",
+    planId: "TEST-PLAN-001",
+    sourceType: "Kullanıcı beyanı",
+    sourceDate: "2026-10-01",
+    sourceNote: "Teknik geliştirme testi için kullanıcı tarafından girilmiş kaynak kaydı.",
+    expertReviewStatus: "reviewed-consistent",
+    expertReviewer: "Test Uzmanı",
+    expertReviewerRole: "Şehir plancısı",
+    expertReviewDate: "2026-10-01",
+    expertReviewBasis: "TEST-PLAN-001 ve kayıtlı plan notları",
+    expertReviewNote: "Proje içi kaynak/koşul karşılaştırması tamamlandı.",
+  }, "KASTAMONU-MERKEZ-210-15");
+
+  assert.equal(provenance.expertReviewed, true);
+  assert.equal(provenance.authoritative, false);
+
+  const thread = deriveProjectThread({
+    "decision-assistant": { status: "Brief tamamlandı" },
+    "geo-parcel": geoModule(provenance),
+  });
+
+  assert.equal(thread.nodes.find(node => node.id === "geo-parcel")?.readiness, 100);
+  assert.equal(thread.issues.some(issue => issue.id === "PLN-010"), false);
 });
 
 test("authoritative zoning provenance clears the zoning review gate", () => {
