@@ -40,6 +40,21 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
+test("KAKS program correction opens a focused architectural workspace", () => {
+  const page = fs.readFileSync(new URL("../app/mimari-program-studyosu/kaks-duzeltme/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(page, /Program brütünü düzelt/);
+  assert.match(page, /ArchitecturalProgramStudio issueFocus="kaks"/);
+  assert.match(studio, /architectural-program-kaks-focus/);
+  assert.match(studio, /KAKS'A GÖRE AZAMİ/);
+  assert.match(studio, /Program dağılımını koruyarak sınır içine indir/);
+  assert.match(studio, /setSpaces\(\(current\) => current\.map/);
+  assert.match(graph, /\/mimari-program-studyosu\/kaks-duzeltme/);
+});
+
+
 test("TAKS plan correction opens a focused workspace instead of the legacy design page", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/page.tsx", import.meta.url), "utf8");
   const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
