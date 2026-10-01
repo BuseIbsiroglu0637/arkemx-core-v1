@@ -514,3 +514,76 @@ test("BIM-053 moves to completed history when mass and rigidity source objects e
   assert.equal(completed?.route, "/tasarim-calismalari/km-kr-kaynaklari");
   assert.match(completed?.summary ?? "", /Kütle: 4 · Rijitlik: 4 kaynak/);
 });
+
+
+test("SYS-041 closes only when the current MCDA/model divergence has a matching decision record", () => {
+  const base = {
+    "system-comparison": {
+      ranking: [
+        { id: "steel", name: "Yapısal Çelik", score: 82.5 },
+        { id: "concrete", name: "Betonarme", score: 76.2 },
+      ],
+    },
+    "structural-concept": {
+      input: { system: "concrete" },
+    },
+  };
+
+  const open = deriveProjectThread(base);
+  const issue = open.issues.find(item => item.id === "SYS-041");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/yapi-sistemi-karsilastirma/sistem-karari");
+  assert.equal(issue?.routeLabel, "Sistem kararını kaydet");
+  assert.equal(open.completedControls.some(control => control.code === "SYS-041"), false);
+
+  const justified = deriveProjectThread({
+    ...base,
+    "system-comparison": {
+      ...base["system-comparison"],
+      decision: {
+        status: "recorded",
+        decisionType: "retain-modeled-system",
+        selectedSystem: "concrete",
+        recommendedSystem: "steel",
+        rationale: "Yerel uygulayıcı kapasitesi ve proje teslim stratejisi nedeniyle betonarme model korunuyor.",
+        decidedBy: "TEST EKİP",
+        role: "Kavramsal koordinasyon",
+        date: "2026-10-01",
+      },
+    },
+  });
+
+  assert.equal(justified.issues.some(item => item.id === "SYS-041"), false);
+  const completed = justified.completedControls.find(control => control.code === "SYS-041");
+  assert.ok(completed);
+  assert.equal(completed?.title, "Taşıyıcı sistem karar koordinasyonu");
+  assert.match(completed?.summary ?? "", /farklı seçim gerekçelendirildi/);
+
+  const stale = deriveProjectThread({
+    ...base,
+    "system-comparison": {
+      ...base["system-comparison"],
+      ranking: [
+        { id: "precast", name: "Betonarme Prefabrik", score: 84.1 },
+        { id: "steel", name: "Yapısal Çelik", score: 82.5 },
+      ],
+      decision: {
+        status: "recorded",
+        selectedSystem: "concrete",
+        recommendedSystem: "steel",
+        rationale: "Önceki öneriye göre verilmiş karar kaydı artık güncel değildir.",
+        decidedBy: "TEST EKİP",
+        role: "Kavramsal koordinasyon",
+        date: "2026-10-01",
+      },
+    },
+  });
+  assert.equal(stale.issues.some(item => item.id === "SYS-041"), true);
+
+  const aligned = deriveProjectThread({
+    "system-comparison": base["system-comparison"],
+    "structural-concept": { input: { system: "steel" } },
+  });
+  assert.equal(aligned.issues.some(item => item.id === "SYS-041"), false);
+  assert.match(aligned.completedControls.find(control => control.code === "SYS-041")?.summary ?? "", /model eşleşiyor/);
+});
