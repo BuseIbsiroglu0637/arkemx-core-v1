@@ -11,7 +11,7 @@
     "demo:local": "node scripts/start-local-demo.mjs",
     "build": "bash scripts/build-verified.sh",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/zoning-access.test.mjs tests/issue-lifecycle.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-eccentricity.test.mjs tests/project-graph-zoning.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/zoning-access.test.mjs tests/issue-lifecycle.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-eccentricity.test.mjs tests/project-graph-zoning.test.mjs tests/project-storage-reconciliation.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "locales:audit": "node scripts/audit-locales.mjs",
@@ -21,7 +21,7 @@
     "test:geo:e2e": "node tests/geo-browser-smoke.mjs",
     "test:project:e2e": "node tests/project-continuity-smoke.mjs",
     "build:local": "vite build --config vite.local.config.mjs",
-    "test:local:ui": "npm run build:local && node --experimental-strip-types --test tests/current-ui-smoke.mjs tests/project-graph-zoning.test.mjs"
+    "test:local:ui": "npm run build:local && node --experimental-strip-types --test tests/current-ui-smoke.mjs tests/project-graph-zoning.test.mjs tests/project-storage-reconciliation.test.mjs"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-leaflet": "0.1.4",
