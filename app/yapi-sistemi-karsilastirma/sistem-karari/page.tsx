@@ -19,7 +19,7 @@ export default function Page() {
         <nav className="arx-system-decision-links" aria-label="Sistem kararı bağlantıları">
           <Link href="/dijital-proje-merkezi"><ArrowLeft size={16} aria-hidden="true" /> Proje Çalışma Alanı</Link>
           <Link href="/yapi-sistemi-karsilastirma/mcda">MCDA karşılaştırması</Link>
-          <Link href="/tasarim-calismalari#tasiyici-on-tasarim">Taşıyıcı ön tasarım</Link>
+          <Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarım</Link>
         </nav>
       </header>
 
