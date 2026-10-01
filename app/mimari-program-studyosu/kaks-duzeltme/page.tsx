@@ -23,6 +23,11 @@ export default function Page() {
           <Link href="/mimari-program-studyosu#mimari-motor">Tam mimari program</Link>
         </nav>
       </header>
+      <div className="arx-kaks-page-intro">
+        <span>AÇIK KONU · PLN-012</span>
+        <h1>Program brütünü düzelt</h1>
+        <p>Mahal programını kayıtlı KAKS/emsal girdisine göre sınır içine alın. Bu ekran imar değerini değiştirmez; mimari program kaydını düzenler.</p>
+      </div>
       <section aria-label="KAKS program düzeltme çalışma alanı">
         <ArchitecturalProgramStudio issueFocus="kaks" />
       </section>
