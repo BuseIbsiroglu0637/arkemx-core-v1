@@ -1,3 +1,5 @@
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source";
+
 export type ProjectModuleKey =
   | "decision-assistant"
   | "geo-parcel"
@@ -187,6 +189,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const structureQuantities = record(structureResult.quantities);
   const comparison = record(modules["system-comparison"]);
   const comparisonInput = record(comparison.input);
+  const comparisonSourceSnapshot = record(comparison.sourceSnapshot);
   const comparisonWinner = firstRecord(comparison.ranking);
   const comparisonDecision = record(comparison.decision);
   const coordination = record(modules["engineering-coordination"]);
@@ -204,17 +207,39 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const floors = number(plan.floorCount) || number(architectureInput.floors) || number(geo.floors) || number(structureInput.floors);
   const floorHeight = number(structureInput.floorHeight) || number(geo.floorHeight) || number(architectureInput.floorHeight);
   const grossArea = architectureGross || planGross || geoGross || structuralGross;
+  const currentMcdaSource = buildMcdaProjectSnapshot({
+    use: text(architectureInput.use) || text(geo.usage),
+    floors,
+    grossArea,
+    spanX: number(plan.spanX) || number(structureGeometry.spanX),
+    spanY: number(plan.spanY) || number(structureGeometry.spanY),
+  });
+  const hasStoredMcdaSource = Boolean(Object.keys(comparisonSourceSnapshot).length);
+  const mcdaSourceCurrent = currentMcdaSource
+    ? hasStoredMcdaSource
+      ? mcdaSourceMatches(comparisonSourceSnapshot as McdaSourceSnapshot, currentMcdaSource)
+      : mcdaInputMatchesSource(comparisonInput, currentMcdaSource)
+    : true;
+  const currentMcdaSourceKey = mcdaSourceKey(currentMcdaSource);
+  const comparisonHasResult = Boolean(
+    Object.keys(comparisonInput).length
+    || (Array.isArray(comparison.ranking) && comparison.ranking.length)
+  );
   const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
   const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || text(comparisonWinner.name));
   const modeledSystemId = structuralSystemId(text(structureInput.system));
-  const recommendedSystemId = structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name));
+  const recommendedSystemId = mcdaSourceCurrent
+    ? structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name))
+    : "";
   const systemMismatch = Boolean(modeledSystemId && recommendedSystemId && modeledSystemId !== recommendedSystemId);
   const systemDecisionRecorded = Boolean(
-    text(comparisonDecision.status) === "recorded"
+    mcdaSourceCurrent
+    && text(comparisonDecision.status) === "recorded"
     && structuralSystemId(text(comparisonDecision.selectedSystem)) === modeledSystemId
     && structuralSystemId(text(comparisonDecision.recommendedSystem)) === recommendedSystemId
+    && text(comparisonDecision.mcdaSourceKey) === currentMcdaSourceKey
     && text(comparisonDecision.rationale).trim().length >= 10
     && text(comparisonDecision.decidedBy).trim()
     && text(comparisonDecision.role).trim()
@@ -268,8 +293,8 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       reinforcementTonnage: number(structureQuantities.reinforcementTonnage),
       openingRatio: number(planMetrics.openingRatio),
       eccentricityRatio: number(planMetrics.eccentricityRatio),
-      recommendedSystem: text(comparisonWinner.name),
-      recommendationScore: number(comparisonWinner.score),
+      recommendedSystem: mcdaSourceCurrent ? text(comparisonWinner.name) : "",
+      recommendationScore: mcdaSourceCurrent ? number(comparisonWinner.score) : 0,
     },
     coordination: {
       clearHeight: number(coordinationResult.clearHeight),
@@ -388,10 +413,21 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     secondaryRouteLabel: "Hmax girdisini incele",
   });
   if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Mahal programı ile mevcut plan kapasitesini aynı toplam alanda koordine edin.", route: "/mimari-program-studyosu/plan-koordinasyonu", routeLabel: "Program ve planı koordine et" });
+  if (comparisonHasResult && currentMcdaSource && !mcdaSourceCurrent) push({
+    id: "SYS-040",
+    severity: "review",
+    discipline: "Yapı mühendisliği",
+    title: "MCDA girdileri güncel proje verisiyle eşleşmiyor",
+    evidence: `MCDA: ${number(comparisonInput.area).toFixed(1)} m² · ${number(comparisonInput.floors)} kat / güncel proje: ${currentMcdaSource.area.toFixed(1)} m² · ${currentMcdaSource.floors} kat`,
+    action: "Güncel proje verisini MCDA girdilerine aktarın ve sistem sıralamasını yeniden hesaplayın.",
+    route: "/yapi-sistemi-karsilastirma/mcda",
+    routeLabel: "MCDA verisini güncelle",
+  });
+
   if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
-  if (canonical.structure.recommendedSystem && canonical.structure.system && systemMismatch && !systemDecisionRecorded) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "MCDA önerisini modele aktarın veya farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma/sistem-karari", routeLabel: "Sistem kararını kaydet" });
+  if (mcdaSourceCurrent && canonical.structure.recommendedSystem && canonical.structure.system && systemMismatch && !systemDecisionRecorded) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "MCDA önerisini modele aktarın veya farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma/sistem-karari", routeLabel: "Sistem kararını kaydet" });
   if (canonical.structure.openingRatio > 25) push({ id: "BIM-051", severity: "review", discipline: "Mimari + Statik", title: "Döşeme boşluğu oranı yüksek", evidence: `%${canonical.structure.openingRatio.toFixed(1)} kavramsal boşluk oranı`, action: "Diyafram, kenar elemanı ve düşey sürekliliği inceleyin.", route: "/tasarim-calismalari" });
   if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR yerleşimini incele" });
   if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR kaynaklarını tamamla" });
@@ -472,7 +508,23 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   }
 
   if (
-    recommendedSystemId
+    comparisonHasResult
+    && currentMcdaSource
+    && mcdaSourceCurrent
+    && !issues.some((issue) => issue.id === "SYS-040")
+  ) {
+    completedControls.push({
+      code: "SYS-040",
+      title: "MCDA proje verisi senkronu",
+      summary: `Güncel kaynak: ${currentMcdaSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · ${currentMcdaSource.floors} kat · ${currentMcdaSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık`,
+      routeLabel: "Görüntüle",
+      route: "/yapi-sistemi-karsilastirma/mcda",
+    });
+  }
+
+  if (
+    mcdaSourceCurrent
+    && recommendedSystemId
     && modeledSystemId
     && (!systemMismatch || systemDecisionRecorded)
     && !issues.some((issue) => issue.id === "SYS-041")
@@ -505,9 +557,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
             : !zoningAuthoritative
               ? 95
               : 100
-      : active
-        ? (blockedBy.length ? 68 : 100)
-        : (blockedBy.length ? 0 : 20);
+      : definition.id === "system-comparison" && active && comparisonHasResult && !mcdaSourceCurrent
+        ? 72
+        : active
+          ? (blockedBy.length ? 68 : 100)
+          : (blockedBy.length ? 0 : 20);
     return { ...definition, active, readiness, blockedBy, status };
   });
   const handoffDefinitions: Omit<ProjectHandoff, "state">[] = [
