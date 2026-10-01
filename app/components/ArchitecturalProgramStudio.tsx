@@ -252,6 +252,20 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   const grossTarget = allowedGross > 0 ? allowedGross * .995 : 0;
   const grossScale = grossTarget > 0 && programGross > 0 ? Math.min(1, grossTarget / programGross) : 1;
   const allowedNetAtCurrentRatio = allowedGross > 0 ? allowedGross * (netRatio / 100) : 0;
+  const programTemplateUse = (() => {
+    const prefix = spaces[0]?.id?.split("-")[0];
+    return prefix === "IND" ? "industrial" : prefix === "OFF" ? "office" : prefix === "RES" ? "residential" : prefix === "EDU" ? "education" : null;
+  })();
+  const programUseMismatch = Boolean(programTemplateUse && programTemplateUse !== use);
+
+  const applyCurrentUseTemplate = () => {
+    setSpaces(templates[use].spaces.map((space) => ({ ...space })));
+    setRelationships(templates[use].relationships.map((relationship) => ({ ...relationship })));
+    setNetRatio(templates[use].netRatio);
+    setTargetGross(Math.max(100, Math.floor(allowedGross > 0 ? allowedGross * .995 : targetGross)));
+    setGrossDraft(null);
+    setStatus(`${templates[use].label} mahal programı proje kullanımına göre yüklendi`);
+  };
 
   const applyKaksSuggestion = () => {
     if (!(allowedGross > 0) || !(programGross > 0) || grossPass) return;
@@ -268,17 +282,25 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   const matrixRelation = (from: string, to: string) => relationships.find((item) => (item.from === from && item.to === to) || (item.from === to && item.to === from));
   if (issueFocus === "kaks") {
     return <section className="architect-app arx-architect-kaks-focus" data-testid="architectural-program-kaks-focus">
-      <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="KAKS / emsal ön kontrolü" compact />
-      <header className="arx-kaks-focus-head">
-        <div><p className="eyebrow">PLN-012 · KAKS / EMSAL ÖN KONTROLÜ</p><h2>Program brütünü<br/><em>imar sınırına indirin.</em></h2></div>
-        <p>Bu görünüm mahal programından türeyen toplam brüt alan ile kayıtlı KAKS/emsal girdisi arasındaki çakışmayı çözer. KAKS değerini değiştirmez; mimari programı düzenler.</p>
-      </header>
+      <div className="arx-kaks-project-strip" aria-label="Aktif proje">
+        <div><span>ARKEMX / ARC</span><b>{project.name}</b></div>
+        <div><span>{project.phase}</span><span>{project.revision}</span></div>
+      </div>
+
+      {programUseMismatch ? <section className="arx-kaks-use-warning" role="alert">
+        <div>
+          <span>PROGRAM / KULLANIM UYUMSUZLUĞU</span>
+          <b>Kullanım “{templates[use].label}”, mevcut mahal seti ise “{programTemplateUse ? templates[programTemplateUse].label : "tanımsız"}”.</b>
+          <p>KAKS hesabı matematiksel olarak geçse bile yanlış kullanım şablonuyla program üretmek doğru değildir. Mevcut kayıt otomatik silinmez.</p>
+        </div>
+        <button type="button" onClick={applyCurrentUseTemplate}>{templates[use].label} şablonuna geçir</button>
+      </section> : null}
 
       <section className="arx-kaks-summary" data-state={grossPass ? "pass" : "review"}>
         <div><span>MEVCUT PROGRAM BRÜTÜ</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
         <div><span>KAKS'A GÖRE AZAMİ</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
         <div><span>DURUM</span><b>{allowedGross <= 0 ? "İmar girdisi eksik" : grossPass ? "Ön kontrol geçti" : `${grossOverage.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azaltılmalı`}</b></div>
-        {!grossPass && allowedGross > 0 ? <button type="button" onClick={applyKaksSuggestion}>Program dağılımını koruyarak sınır içine indir</button> : null}
+        {!grossPass && allowedGross > 0 && !programUseMismatch ? <button type="button" onClick={applyKaksSuggestion}>Program dağılımını koruyarak sınır içine indir</button> : null}
       </section>
 
       <div className="arx-kaks-workspace">
@@ -287,12 +309,16 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
             <div><span>MAHAL PROGRAMI</span><b>{spaces.length} mahal türü · net {result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
             <div><span>NET / BRÜT</span><b>%{netRatio}</b><small>KAKS sınırında mevcut oranla azami net ≈ {allowedNetAtCurrentRatio.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</small></div>
           </header>
+
+          <div className="arx-kaks-space-columns" aria-hidden="true">
+            <span>Mahal</span><span>Adet</span><span>Birim alan</span><span>Toplam net</span>
+          </div>
           <div className="arx-kaks-space-list">
             {spaces.map((space) => <article key={space.id}>
               <div className="arx-kaks-space-name"><small>{space.code}</small><b>{space.name}</b><span>{space.zone}</span></div>
-              <label>Adet<input type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/></label>
-              <label>Birim alan<input type="number" min="2" max="50000" step=".5" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><i>m²</i></label>
-              <div><small>TOPLAM NET</small><b>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+              <label><span className="arx-kaks-mobile-label">Adet</span><input aria-label={`${space.name} adedi`} type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/></label>
+              <label><span className="arx-kaks-mobile-label">Birim alan</span><div className="arx-kaks-area-input"><input aria-label={`${space.name} birim alanı`} type="number" min="2" max="50000" step=".5" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><i>m²</i></div></label>
+              <div className="arx-kaks-space-total"><small>TOPLAM NET</small><b>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
             </article>)}
           </div>
         </main>
