@@ -87,6 +87,13 @@
   color:#2f6549;
   font-size:13px;
 }
+.arx-kmkr-page .cad-kmkr-complete.is-warning {
+  background:#fff8f1;
+}
+.arx-kmkr-page .cad-kmkr-complete.is-warning span,
+.arx-kmkr-page .cad-kmkr-complete.is-warning b {
+  color:#a45b37;
+}
 
 .arx-kmkr-page .cad-editor-grid {
   grid-template-columns:220px minmax(0,1fr) 300px !important;
