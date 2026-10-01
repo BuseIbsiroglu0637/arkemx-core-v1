@@ -209,7 +209,7 @@ test("TAKS issue routes to the actual footprint data owner", () => {
   const planOwnedIssue = planOwnedThread.issues.find(item => item.id === "PLN-011");
   assert.ok(planOwnedIssue);
   assert.match(planOwnedIssue?.evidence ?? "", /Plan & aks modeli/);
-  assert.equal(planOwnedIssue?.route, "/tasarim-calismalari#plan-editor");
+  assert.equal(planOwnedIssue?.route, "/tasarim-calismalari/plan-duzeltme");
   assert.equal(planOwnedIssue?.routeLabel, "Plan tabanını düzelt");
   assert.equal(planOwnedIssue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
 });
