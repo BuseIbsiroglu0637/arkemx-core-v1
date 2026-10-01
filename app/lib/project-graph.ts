@@ -117,6 +117,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const geoParcelGeometry = record(geoParcelRecord.geometry);
   const geoZoningProvenance = record(geo.zoningProvenance);
   const geoZoningSource = record(geoZoningProvenance.source);
+  const geoZoningExpertReview = record(geoZoningProvenance.expertReview);
   const geoZoningPlan = record(geoZoningProvenance.plan);
   const geoZoningConditions = record(geoZoningProvenance.conditions);
   const geoZoningSetbacks = record(geoZoningConditions.setbacks);
@@ -375,6 +376,18 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
 
   const completedControls: CompletedControl[] = [];
+  if (zoningReadyForNextStage && zoningExpertReviewed && !issues.some((issue) => issue.id === "PLN-010")) {
+    completedControls.push({
+      code: "PLN-010",
+      title: "İmar kaynağı uzman incelemesi",
+      summary: zoningAuthoritative
+        ? "Yetkili/onaylı kaynak statüsü kayıtlı"
+        : `${text(geoZoningExpertReview.reviewer, "Uzman")} · ${text(geoZoningExpertReview.role, "rol belirtilmedi")} · proje içi inceleme tamamlandı; resmî onay değildir`,
+      routeLabel: "Görüntüle",
+      route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
+    });
+  }
+
   const planFootprint = number(planMetrics.floorArea);
   if (
     planFootprint > 0
