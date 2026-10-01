@@ -967,6 +967,25 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const hmaxExceeded = zoningFormReady && metrics.buildingHeight > maxHeight + .01;
   const zoningPrecheckPass = zoningFormReady && !taksExceeded && !kaksExceeded && !hmaxExceeded;
   const placementPrecheckWarning = zoningFormReady && (!metrics.setbackPass || !zoningPrecheckPass);
+  const setbackDecision = useMemo(() => {
+    const distanceFor = (role: "front" | "side" | "rear") => {
+      const distances = metrics.setbackAssessment.edges
+        .filter((edge) => edge.role === role)
+        .map((edge) => edge.distance);
+      return distances.length ? Math.min(...distances) : null;
+    };
+    return {
+      front: distanceFor("front"),
+      side: distanceFor("side"),
+      rear: distanceFor("rear"),
+    };
+  }, [metrics.setbackAssessment.edges]);
+  const placementDecisionPass = zoningPrecheckPass && metrics.setbackPass;
+  const placementDecisionLabel = placementDecisionPass
+    ? (zoningSourceReady
+      ? "Parametrik ön kontrolde açık ihlal bulunmadı · kaynak uzman doğrulaması bekliyor."
+      : "Parametrik ön kontrolde açık ihlal bulunmadı · imar kaynağı eksik.")
+    : "Parametrik ön kontrolde inceleme gerekli · bir veya daha fazla sınır aşılıyor.";
   const reference = `${province || "IL"}-${district || "ILCE"}-${block || "ADA"}-${parcelNo || "PARSEL"}`.replace(/\s+/g, "-").toLocaleUpperCase("tr-TR");
   const sourceNetwork = useMemo(
     () => resolveParcelSourceNetwork(province, district),
@@ -1879,6 +1898,19 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <small>Kaynak: {zoningSourceReady ? "bilgisi kayıtlı · uzman doğrulaması gerekli" : "eksik · kullanıcı girdisi"}</small>
         <button onClick={() => setActiveStage("zoning")}>İmar girdilerini düzenleyin</button>
       </div>
+      <section className="geo-placement-decision" aria-label="Yerleşim ön kontrolü karar özeti" data-state={placementDecisionPass ? "pass" : "review"}>
+        <header><div><span>YERLEŞİM ÖN KONTROLÜ</span><b>İmar girdisi ve kavramsal kütle tek karar özetinde.</b></div><em>{placementDecisionPass ? "ÖN KONTROL GEÇTİ" : "İNCELEME GEREKLİ"}</em></header>
+        <div className="geo-placement-decision-grid">
+          <p><span>TAKS</span><b className={taksExceeded ? "fail" : "pass"}>{taksExceeded ? "⚠" : "✓"} %{metrics.coverage.toFixed(1)} / %{maxCoverage.toFixed(1)}</b></p>
+          <p><span>KAKS</span><b className={kaksExceeded ? "fail" : "pass"}>{kaksExceeded ? "⚠" : "✓"} {metrics.far.toFixed(2)} / {maxFar.toFixed(2)}</b></p>
+          <p><span>Hmax</span><b className={hmaxExceeded ? "fail" : "pass"}>{hmaxExceeded ? "⚠" : "✓"} {metrics.buildingHeight.toFixed(1)} / {maxHeight.toFixed(1)} m</b></p>
+          <p><span>Ön çekme</span><b className={setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "pass" : "fail"}>{setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "✓" : "⚠"} {setbackDecision.front?.toFixed(1) ?? "—"} / {zoning.frontSetback.toFixed(1)} m</b></p>
+          <p><span>Yan çekme</span><b className={setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "pass" : "fail"}>{setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "✓" : "⚠"} {setbackDecision.side?.toFixed(1) ?? "—"} / {zoning.sideSetback.toFixed(1)} m</b></p>
+          <p><span>Arka çekme</span><b className={setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "pass" : "fail"}>{setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "✓" : "⚠"} {setbackDecision.rear?.toFixed(1) ?? "—"} / {zoning.rearSetback.toFixed(1)} m</b></p>
+        </div>
+        <div className="geo-placement-source"><span>Kaynak</span><b>{massingModel.source.authoritative ? "Yetkili kaynak doğrulandı" : zoningSourceReady ? "Kaynak bilgisi kayıtlı · uzman doğrulaması gerekli" : "Kaynak eksik · kullanıcı girdisi"}</b></div>
+        <footer><b>SONUÇ</b><span>{placementDecisionLabel}</span><small>Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir.</small></footer>
+      </section>
       <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
         <header>
           <div><span>{massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU" : "V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"}</span><b>{massingModel.source.authoritative ? "Doğrulanmış koşullardan üç açıklanabilir alternatif." : "Doğrulanmamış kullanıcı imar girdilerine göre üç açıklanabilir ön alternatif."}</b></div>
