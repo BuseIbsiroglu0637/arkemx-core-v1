@@ -480,6 +480,22 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   }
 
   if (
+    floors > 0
+    && floorHeight > 0
+    && canonical.site.maxHeight > 0
+    && proposedHeight <= canonical.site.maxHeight + .01
+    && !issues.some((issue) => issue.id === "PLN-013")
+  ) {
+    completedControls.push({
+      code: "PLN-013",
+      title: "Hmax / yapı yüksekliği ön kontrolü",
+      summary: `${floors} kat × ${floorHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m = ${proposedHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m / Hmax ${canonical.site.maxHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/yukseklik-duzeltme",
+    });
+  }
+
+  if (
     architectureGross > 0
     && planGross > 0
     && Math.abs(architectureGross - planGross) / architectureGross <= .1
