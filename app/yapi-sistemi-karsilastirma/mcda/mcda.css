@@ -56,6 +56,48 @@
   gap:12px;
   margin-bottom:42px;
 }
+.arx-mcda-page .arx-system-project-strip {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  min-height:50px;
+  padding:10px 14px;
+  border:1px solid #dbe5e8;
+  border-radius:5px;
+  background:#fff;
+}
+.arx-mcda-page .arx-system-project-strip > div:first-child {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.arx-mcda-page .arx-system-project-strip > div:first-child span {
+  color:#b96636;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.075em;
+}
+.arx-mcda-page .arx-system-project-strip > div:first-child b {
+  min-width:0;
+  overflow:hidden;
+  color:#173746;
+  font-size:12px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.arx-mcda-page .arx-system-project-strip > div:last-child {
+  display:flex;
+  align-items:center;
+  color:#71858d;
+  font-size:9px;
+}
+.arx-mcda-page .arx-system-project-strip > div:last-child span + span {
+  margin-left:9px;
+  padding-left:9px;
+  border-left:1px solid #d8e1e4;
+}
 .arx-mcda-page .arx-system-grid {
   display:grid;
   grid-template-columns:320px minmax(0,1fr);
@@ -340,6 +382,14 @@
 @media(max-width:680px) {
   .arx-mcda-shell {
     width:calc(100% - 20px);
+  }
+  .arx-mcda-page .arx-system-project-strip {
+    align-items:flex-start;
+    flex-direction:column;
+    gap:7px;
+  }
+  .arx-mcda-page .arx-system-project-strip > div:last-child {
+    flex-wrap:wrap;
   }
   .arx-mcda-page .arx-simple-head {
     align-items:flex-start;
