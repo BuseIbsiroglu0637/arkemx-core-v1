@@ -102,16 +102,28 @@ test("project centre shows completed controls and zoning review links preserve f
 });
 
 
-test("TAKS plan correction opens a focused workspace instead of the legacy design page", () => {
+test("TAKS plan correction preserves saved geometry before writes and uses the focused shell", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/page.tsx", import.meta.url), "utf8");
   const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/plan-duzeltme.css", import.meta.url), "utf8");
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
 
+  assert.match(page, /KONTROL · PLN-011/);
   assert.match(page, /Plan tabanını düzelt/);
-  assert.match(page, /AdvancedPlanEditor compactKernel issueFocus/);
-  assert.match(editor, /cad-issue-focus/);
+  assert.match(page, /stage=zoning&focus=taks#geo-studyo/);
+  assert.match(page, /AdvancedPlanEditor issueFocus/);
+  assert.doesNotMatch(page, /SiteHeader/);
+
+  assert.match(editor, /const \[modelHydrated, setModelHydrated\] = useState\(false\)/);
+  assert.match(editor, /setModelHydrated\(true\)/);
+  assert.match(editor, /if \(!hydrated \|\| !modelHydrated\) return/);
+  assert.match(editor, /cad-issue-project-strip/);
+  assert.match(editor, /PLN-011 yalnız taban geometrisini düzenler/);
+  assert.match(editor, /TAKS sınırı geçti/);
   assert.match(editor, /TAKS'A GÖRE AZAMİ/);
   assert.match(editor, /Oranı koruyarak önerilen ölçüleri uygula/);
+  assert.match(css, /arx-plan-fix-page/);
+  assert.match(css, /cad-issue-project-strip/);
   assert.match(graph, /\/tasarim-calismalari\/plan-duzeltme/);
 });
 
