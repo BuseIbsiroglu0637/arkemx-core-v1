@@ -99,6 +99,17 @@ export function normalizeUntrustedZoningVerification(value: unknown, hasDocument
   return "user-declared";
 }
 
+export function normalizeZoningSourceUrl(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 export function zoningVerificationLabel(value: ZoningVerification) {
   return {
     "user-declared": "Kullanıcı girdisi · doğrulanmadı",
@@ -110,6 +121,7 @@ export function zoningVerificationLabel(value: ZoningVerification) {
 }
 
 export function createZoningProvenance(zoning: ZoningForm, parcelReference: string) {
+  const sourceUrl = normalizeZoningSourceUrl(zoning.sourceUrl);
   return {
     schema: "ARKEM-ZONING-PROVENANCE/1.0",
     parcelReference,
@@ -118,11 +130,11 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
     source: {
       type: zoning.sourceType || null,
       date: zoning.sourceDate || null,
-      url: zoning.sourceUrl || null,
+      url: sourceUrl || null,
       document: zoning.sourceDocument || null,
       note: zoning.sourceNote || null,
     },
-    sourceUrl: zoning.sourceUrl || null,
+    sourceUrl: sourceUrl || null,
     sourceDocument: zoning.sourceDocument || null,
     plan: {
       name: zoning.planName || null,
