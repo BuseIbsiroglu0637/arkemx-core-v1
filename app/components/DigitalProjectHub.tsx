@@ -52,6 +52,9 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     thread.canonical.delivery.projectHealth > 0 ? `%${thread.canonical.delivery.projectHealth} proje sağlığı` : "Program, bütçe ve karar kayıtları bekleniyor",
     thread.canonical.delivery.informationMaturity > 0 ? `%${thread.canonical.delivery.informationMaturity} bilgi olgunluğu` : "Onaylı teslim paketi henüz oluşmadı",
   ];
+  const systemDecisionReady = Boolean(thread.canonical.structure.system)
+    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(thread.canonical.structure.system.trim());
+
   const completedJourney = PROJECT_JOURNEY.map((step) => {
     if (step.short === "Arazi") {
       return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
@@ -68,9 +71,6 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     const count = synchronizeProject();
     setNotice(count ? `${count} veri devir-teslimi aynı proje revizyonunda güncellendi` : "Aktarılabilecek kaynak modül henüz oluşmadı");
   };
-
-  const systemDecisionReady = Boolean(thread.canonical.structure.system)
-    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(thread.canonical.structure.system.trim());
 
   const projectOutputs = [
     { code: "BRF", label: "Yatırım ve karar briefi", ready: Boolean(project.modules["decision-assistant"]), format: "JSON / PDF" },
