@@ -324,3 +324,12 @@
   .arx-advanced-readiness small { white-space:normal; }
   .arx-advanced-outputs,.arx-advanced-history { grid-template-columns:1fr; }
 }
+
+.arx-center-project-type {
+  display:block;
+  margin-top:7px;
+  color:#789098;
+  font-size:10px;
+  line-height:1.4;
+}
+html[data-theme="dark"] .arx-center-project-type { color:#9caeb5; }
