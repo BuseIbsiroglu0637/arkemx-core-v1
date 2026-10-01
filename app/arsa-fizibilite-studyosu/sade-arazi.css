@@ -1312,3 +1312,57 @@ html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-actions > a[href
 html[data-theme="dark"] .arx-geo-simple .geo-collapsible-body {
   border-color: #2b2b2b;
 }
+
+
+/* Sade Arazi/Parsel UI v6 · teknik sınırlar kompakt */
+.arx-geo-simple .geo-studio-foot-collapsible {
+  margin: 0;
+  padding: 0 !important;
+  border-top: 1px solid #e4ebed;
+  background: #f8fafb;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary b {
+  color: #1a3d49;
+  font-size: 9px;
+  letter-spacing: .02em;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary span {
+  color: #7a8a90;
+  font-size: 8px;
+}
+.arx-geo-simple .geo-studio-foot-collapsible[open] > summary span {
+  font-size: 0;
+}
+.arx-geo-simple .geo-studio-foot-collapsible[open] > summary span::after {
+  content: "Ayrıntıları gizle";
+  font-size: 8px;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > p {
+  margin: 0 !important;
+  padding: 0 18px 12px;
+  font-size: 9px !important;
+  line-height: 1.5 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary b {
+  color: #f1f5f6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary span,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > p {
+  color: #9eaaae !important;
+}
