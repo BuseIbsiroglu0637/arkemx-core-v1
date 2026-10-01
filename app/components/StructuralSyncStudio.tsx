@@ -97,7 +97,11 @@ export function StructuralSyncStudio() {
       <div><span>PLAN MODELİ</span><b>{planFloors || "—"} kat · {planWidth ? planWidth.toFixed(2) : "—"} × {planDepth ? planDepth.toFixed(2) : "—"} m</b></div>
       <div><span>TAŞIYICI MODEL</span><b>{structuralFloors || "—"} kat · {structuralWidth ? structuralWidth.toFixed(2) : "—"} × {structuralDepth ? structuralDepth.toFixed(2) : "—"} m</b></div>
       <div><span>DURUM</span><b>{allMatch ? "Geometri senkron" : "Senkronizasyon gerekli"}</b></div>
-      {!allMatch && geometryReady ? <button type="button" onClick={syncPlanToStructure}>Plan verisini taşıyıcı modele aktar</button> : null}
+      {!allMatch && geometryReady
+        ? <button type="button" onClick={syncPlanToStructure}>Plan verisini taşıyıcı modele aktar</button>
+        : allMatch
+          ? <div className="arx-struct-sync-complete"><span>SENKRON TAMAMLANDI</span><b>Geometri eşleşiyor</b></div>
+          : <div className="arx-struct-sync-complete pending"><span>VERİ BEKLENİYOR</span><b>Plan geometrisi eksik</b></div>}
     </section>
 
     {lastSync ? <section className="arx-struct-sync-result" role="status" aria-live="polite">
@@ -118,9 +122,11 @@ export function StructuralSyncStudio() {
         </section>
 
         <section className="arx-struct-sync-scope">
-          <span>AKTARILACAK ALANLAR</span>
+          <span>{allMatch ? "SENKRONİZE EDİLEN ALANLAR" : "AKTARILACAK ALANLAR"}</span>
           <div><b>Kat adedi</b><b>X / Y toplam boyu</b><b>X / Y aks adedi</b></div>
-          <p>Bu işlem yalnız plan geometrisini taşıyıcı ön tasarımın <code>input</code> kaydına aktarır. Taşıyıcı sistem, kat yüksekliği, kolon/kiriş/döşeme kesitleri, yükler, malzeme, zemin ve deprem girdileri korunur.</p>
+          <p>{allMatch
+            ? <>Bu alanlar plan modeli ile taşıyıcı ön tasarım arasında eşleştirildi. Taşıyıcı sistem, kat yüksekliği, kolon/kiriş/döşeme kesitleri, yükler, malzeme, zemin ve deprem girdileri korunmuştur.</>
+            : <>Bu işlem yalnız plan geometrisini taşıyıcı ön tasarımın <code>input</code> kaydına aktarır. Taşıyıcı sistem, kat yüksekliği, kolon/kiriş/döşeme kesitleri, yükler, malzeme, zemin ve deprem girdileri korunur.</>}</p>
         </section>
       </main>
 
