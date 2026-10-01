@@ -206,11 +206,17 @@ test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winn
   assert.match(studio, /Mevcut sistemi gerekçeli olarak koru/);
   assert.match(studio, /decisionType: "retain-modeled-system"/);
   assert.match(studio, /decisionType: "aligned-with-mcda"/);
+  assert.match(studio, /mcdaSourceKey: currentSourceKey/);
+  assert.match(studio, /MCDA güncel değil/);
+  assert.match(studio, /Sistem kararı geçici olarak kilitlendi/);
+  assert.match(studio, /href="\/yapi-sistemi-karsilastirma\/mcda"/);
   assert.match(studio, /patchModule\("structural-concept", \{ input: \{ system: recommendedId \} \}\)/);
   assert.match(studio, /patchModule\("system-comparison"/);
   assert.match(studio, /MCDA sonucu nihai mühendislik kararı değildir/);
   assert.match(studio, /nihai statik sistem onayı değildir/);
 
+  assert.match(graph, /SYS-040/);
+  assert.match(graph, /MCDA girdileri güncel proje verisiyle eşleşmiyor/);
   assert.match(graph, /systemDecisionRecorded/);
   assert.match(graph, /\/yapi-sistemi-karsilastirma\/sistem-karari/);
   assert.match(graph, /Taşıyıcı sistem karar koordinasyonu/);
@@ -235,10 +241,17 @@ test("project MCDA link opens a focused workspace instead of the public comparis
   assert.match(tool, /ARKEMX \/ MCDA/);
   assert.doesNotMatch(tool.match(/if \(simple\)[\s\S]*?return <section className="system-comparison-tool/)?.[0] ?? "", /ProjectKernelBar module="STRUCTURAL SYSTEM MCDA"/);
   assert.match(tool, /Proje verilerini aktar/);
+  assert.match(tool, /PROJE VERİSİ DEĞİŞTİ/);
+  assert.match(tool, /MCDA güncellemesi gerekli/);
+  assert.match(tool, /Güncel proje verisini aktar ve yeniden hesapla/);
+  assert.match(tool, /sourceSnapshot/);
+  assert.match(tool, /sourceStatus: sourceStale/);
+  assert.match(tool, /buildMcdaProjectSnapshot/);
   assert.match(tool, /Beş sistemin karşılaştırması/);
   assert.match(tool, /href="\/tasiyici-on-tasarim"/);
   assert.match(css, /arx-mcda-page/);
   assert.match(css, /arx-system-project-strip/);
+  assert.match(css, /arx-mcda-source-status\.is-stale/);
 });
 
 
