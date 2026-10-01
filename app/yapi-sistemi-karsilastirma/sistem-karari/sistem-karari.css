@@ -139,6 +139,51 @@
   color:#397157;
 }
 
+.arx-system-decision-stale {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:18px;
+  align-items:center;
+  margin-bottom:12px;
+  padding:14px 16px;
+  border:1px solid #e3c1aa;
+  border-left:4px solid #c56a3a;
+  border-radius:5px;
+  background:#fff8f3;
+}
+.arx-system-decision-stale span {
+  display:block;
+  color:#b45d33;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.arx-system-decision-stale b {
+  display:block;
+  margin-top:4px;
+  color:#9f5433;
+  font-size:11px;
+}
+.arx-system-decision-stale p {
+  margin:5px 0 0;
+  color:#765f54;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-system-decision-stale a {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid #b9683f;
+  border-radius:4px;
+  background:#fff;
+  color:#a35631;
+  font-size:9px;
+  font-weight:800;
+  text-decoration:none;
+}
 .arx-system-decision-missing {
   margin-bottom:12px;
   padding:14px 16px;
@@ -361,6 +406,9 @@
   }
 }
 @media(max-width:620px) {
+  .arx-system-decision-stale {
+    grid-template-columns:1fr;
+  }
   .arx-system-decision-page .arx-simple-shell {
     width:calc(100% - 20px);
   }
