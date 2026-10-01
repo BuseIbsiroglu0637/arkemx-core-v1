@@ -54,7 +54,10 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
   ];
   const completedJourney = PROJECT_JOURNEY.map((step) => {
     if (step.short === "Arazi") {
-      return thread.canonical.site.geometryValid && thread.canonical.site.parcelArea > 0;
+      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
+    }
+    if (step.short === "Sistem") {
+      return systemDecisionReady;
     }
     return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
   });
@@ -66,11 +69,14 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     setNotice(count ? `${count} veri devir-teslimi aynı proje revizyonunda güncellendi` : "Aktarılabilecek kaynak modül henüz oluşmadı");
   };
 
+  const systemDecisionReady = Boolean(thread.canonical.structure.system)
+    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(thread.canonical.structure.system.trim());
+
   const projectOutputs = [
     { code: "BRF", label: "Yatırım ve karar briefi", ready: Boolean(project.modules["decision-assistant"]), format: "JSON / PDF" },
     { code: "GIS", label: "Parsel, koordinat ve yerleşim verisi", ready: thread.canonical.site.parcelArea > 0, format: "DXF / KML / GEOJSON" },
     { code: "ARC", label: "Mimari program ve mahal kaydı", ready: thread.canonical.architecture.grossArea > 0, format: "CSV / JSON" },
-    { code: "STR", label: "Taşıyıcı sistem ön değerlendirmesi", ready: Boolean(thread.canonical.structure.system), format: "PDF / DXF" },
+    { code: "STR", label: "Taşıyıcı sistem ön değerlendirmesi", ready: systemDecisionReady, format: "PDF / DXF" },
     { code: "ICE", label: "Disiplin koordinasyon ve issue kaydı", ready: thread.canonical.coordination.openIssues > 0 || Boolean(project.modules["engineering-coordination"]), format: "CSV / BCF-LIKE" },
     { code: "CDE", label: "Dijital teslim ve proje pasaportu", ready: deliveryGate.workingExportEligible, format: deliveryGate.officialReleaseEligible ? "RESMÎ TESLİM" : "ÇALIŞMA MANİFESTOSU" },
   ];
