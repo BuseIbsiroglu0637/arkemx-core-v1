@@ -116,6 +116,10 @@ test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owne
   assert.match(studio, /Plan & aks modeli/);
   assert.match(studio, /Taşıyıcı ön tasarım/);
   assert.match(studio, /Kat adedini \{maxFloorsAtCurrentHeight\} yap/);
+  assert.match(studio, /DÜZELTME UYGULANDI/);
+  assert.match(studio, /fromFloors/);
+  assert.match(studio, /toFloors/);
+  assert.match(studio, /Hmax sınırı geçti/);
   assert.match(studio, /patchModule\("plan-editor", \{ floorCount: safe \}\)/);
   assert.match(studio, /patchModule\("architectural-program", \{ input: \{ floors: safe \} \}\)/);
   assert.match(studio, /patchModule\("geo-parcel", \{ floors: safe \}\)/);
@@ -124,6 +128,9 @@ test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owne
 
   assert.match(graph, /\/tasarim-calismalari\/yukseklik-duzeltme/);
   assert.match(css, /arx-height-fix-page/);
+  assert.match(css, /Hmax correction UX v2/);
+  assert.match(css, /background:#fff !important/);
+  assert.match(css, /arx-height-change-summary/);
 });
 
 
