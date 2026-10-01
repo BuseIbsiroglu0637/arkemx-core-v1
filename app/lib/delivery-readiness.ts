@@ -63,12 +63,26 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
   const bimPresent = bim.schema === "ARKEM-BIM-COORDINATION/3.0";
   // A saved OS issueGate/technicalApproval and uploaded PDF name are not a trust anchor.
   const criticalClashes = currentClashes.filter((issue) => issue.severity === "critical");
+  const reviewClashes = currentClashes.filter((issue) => issue.severity === "review");
   const threadCritical = (input.threadIssues ?? [])
     .filter((issue) => issue.severity === "critical")
     .map((issue) => ({ id: issue.id, title: issue.title, severity: issue.severity }));
-  const reviewIssues = (input.threadIssues ?? [])
+  const threadReviewIssues = (input.threadIssues ?? [])
     .filter((issue) => issue.severity === "review")
     .map((issue) => ({ id: issue.id, title: issue.title, source: "PROJECT_THREAD" as const, status: "REVIEW_REQUIRED" as const }));
+  const bimReviewIssues = reviewClashes.map((issue) => ({
+    id: issue.id,
+    title: issue.title,
+    source: "CURRENT_BIM" as const,
+    status: reviewed.includes(issue.id) ? "REVIEWED_STILL_OPEN" as const : "REVIEW_REQUIRED" as const,
+  }));
+  const reviewIssueMap = new Map<string, (typeof threadReviewIssues)[number] | (typeof bimReviewIssues)[number]>();
+  [...threadReviewIssues, ...bimReviewIssues].forEach((issue) => {
+    const key = issue.id;
+    const current = reviewIssueMap.get(key);
+    if (!current || issue.source === "CURRENT_BIM") reviewIssueMap.set(key, issue);
+  });
+  const reviewIssues = [...reviewIssueMap.values()];
   const osSnapshotCritical = !bimPresent && originalBim.schema === "ARKEM-BIM-COORDINATION/3.0"
     && Array.isArray(originalBim.clashes)
     ? originalBim.clashes.map(safeIssue).filter((issue) => issue.severity === "critical")
@@ -136,13 +150,17 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
         ? "Güncel BIM koordinasyon modeli bekleniyor."
         : activeCriticalCount > 0
           ? activeCriticalCount + " kritik konu açık; incelendi işareti teknik çözüm değildir."
-          : "Güncel kurallarda kritik konu yok; model ve disiplin onayları ayrıca gerekli.",
+          : reviewClashes.length > 0
+            ? reviewClashes.length + " inceleme konusu açık; incelendi işareti teknik kapanış değildir."
+            : "Güncel kurallarda kritik veya inceleme konusu yok; model ve disiplin onayları ayrıca gerekli.",
       evidence: {
         modelPresent: bimPresent,
         criticalClashes: criticalClashes.length,
         threadCritical: threadCritical.length,
         staleOsCritical: osSnapshotCritical.length,
         reviewedCritical: criticalClashes.filter((issue) => reviewed.includes(issue.id)).length,
+        reviewClashes: reviewClashes.length,
+        reviewedReviewClashes: reviewClashes.filter((issue) => reviewed.includes(issue.id)).length,
         nativeIfcDelivered: false as const,
         nativeBcfDelivered: false as const,
       },
@@ -173,6 +191,7 @@ export function createDeliveryReadiness(input: DeliveryReadinessInput) {
     ...(!structurePresent ? ["STRUCTURAL_MODEL_MISSING"] : []),
     ...(!bimPresent ? ["BIM_COORDINATION_MISSING"] : []),
     ...(activeCriticalCount > 0 ? ["CRITICAL_ISSUES_OPEN"] : []),
+    ...(reviewIssues.length > 0 ? ["REVIEW_ISSUES_OPEN"] : []),
     ...(!osUpstreamCurrent ? ["PROJECT_OS_HANDOFF_NOT_CURRENT"] : []),
   ];
 
