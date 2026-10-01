@@ -77,6 +77,33 @@ test("KAKS program correction opens a focused architectural workspace", () => {
 });
 
 
+test("PLN-010 expert review is explicit, non-authoritative and invalidated by zoning changes", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+
+  assert.match(zoning, /expertReviewStatus/);
+  assert.match(zoning, /expertReviewed: expertReviewComplete/);
+  assert.match(zoning, /authoritative:/);
+  assert.match(zoning, /zoning\.verification === "certified-document"/);
+
+  assert.match(geo, /Uzman incelemesi/);
+  assert.match(geo, /PLN-010 için gerekli/);
+  assert.match(geo, /Kaynak ile girilen imar koşulları uyumlu/);
+  assert.match(geo, /İnceleyen \/ uzman adı/);
+  assert.match(geo, /Rol \/ uzmanlık/);
+  assert.match(geo, /Dayanak \/ referans/);
+  assert.match(geo, /PLN-010 kapanmaya hazır/);
+  assert.match(geo, /expertReviewStatus: "not-reviewed"/);
+  assert.match(geo, /resmî onay değildir/);
+
+  assert.match(graph, /zoningAuthoritative \|\| geoZoningProvenance\.expertReviewed === true/);
+  assert.match(css, /04 \/ İmar · uzman inceleme kaydı/);
+  assert.match(css, /geo-expert-review-result/);
+});
+
+
 test("project centre shows completed controls and zoning review links preserve field focus", () => {
   const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
