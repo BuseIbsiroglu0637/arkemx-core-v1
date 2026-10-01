@@ -386,6 +386,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // The 3D terrain view opens as terrain-only. A conceptual building mass is opt-in.
   const [showTerrainMassing, setShowTerrainMassing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const openFocusedStage = (stage: Stage) => {
+    setActiveStage(stage);
+    if (!simple) return;
+    setShowSources(false);
+    setShowLayers(false);
+    setShowResults(false);
+  };
   const [parcel, setParcel] = useState<GeoPoint[]>([]);
   const [parcelSource, setParcelSource] = useState<ParcelSourceState>({
     kind: "coordinate",
@@ -1896,7 +1903,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <b>{zoning.buildingOrder} · TAKS {zoning.taks.toFixed(2)} · KAKS {zoning.kaks.toFixed(2)}</b>
         <small>Hmax {zoning.hmax.toFixed(1)} m · Ön/yan/arka {zoning.frontSetback}/{zoning.sideSetback}/{zoning.rearSetback} m</small>
         <small>Kaynak: {zoningSourceReady ? "bilgisi kayıtlı · uzman doğrulaması gerekli" : "eksik · kullanıcı girdisi"}</small>
-        <button onClick={() => setActiveStage("zoning")}>İmar girdilerini düzenleyin</button>
+        <button onClick={() => openFocusedStage("zoning")}>İmar girdilerini düzenleyin</button>
       </div>
       <section className="geo-placement-decision" aria-label="Yerleşim ön kontrolü karar özeti" data-state={placementDecisionPass ? "pass" : "review"}>
         <header><div><span>YERLEŞİM ÖN KONTROLÜ</span><b>İmar girdisi ve kavramsal kütle tek karar özetinde.</b></div><em>{placementDecisionPass ? "ÖN KONTROL GEÇTİ" : "İNCELEME GEREKLİ"}</em></header>
@@ -1985,14 +1992,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <nav className="arx-geo-quick-nav" aria-label="Arazi parsel temel işlemleri">
         {([["locate","Parsel bul"],["import","Dosya yükle"],["zoning","İmar bilgileri"],["design","Yapı yerleşimi"]] as const).map(([id,label]) =>
           <button key={id} type="button" className={activeStage === id ? "active" : ""} aria-current={activeStage === id ? "step" : undefined}
-            onClick={() => setActiveStage(id)}>{label}</button>
+            onClick={() => openFocusedStage(id)}>{label}</button>
         )}
         <details className="arx-geo-extra">
           <summary>Diğer araçlar ▾</summary>
           <div>
             {([["draw","Sınır düzenle"],["terrain","3B arazi"],["export","Teknik çıktılar"]] as const).map(([id,label]) =>
               <button type="button" key={id} className={activeStage === id ? "active" : ""}
-                onClick={() => setActiveStage(id)}>{label}</button>
+                onClick={() => openFocusedStage(id)}>{label}</button>
             )}
             <button type="button" aria-pressed={showSources} onClick={() => setShowSources((current) => !current)}>
               {showSources ? "Kaynak ayrıntılarını gizle" : "Kaynak ayrıntılarını göster"}</button>
