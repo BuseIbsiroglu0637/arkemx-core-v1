@@ -220,12 +220,16 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
         <div className="arx-advanced-delivery" data-testid="delivery-release-gate" data-state={deliveryGate.state}>
           <div className="arx-advanced-delivery-status">
             <span>Resmî/onaylı teslim</span>
-            <b>{deliveryGate.officialReleaseEligible ? "Uygun" : "Uygun değil"}</b>
-            <small>Çalışma manifestosu: {deliveryGate.workingExportEligible ? "üretilebilir" : "bekliyor"}</small>
+            <b>{deliveryGate.officialReleaseEligible ? "Resmî teslim için uygun" : "Resmî teslim için uygun değil"}</b>
+            <small>{deliveryGate.workingExportEligible ? "Ön fizibilite / çalışma paketi hazır · manifest üretilebilir" : "Çalışma manifestosu bekliyor"}</small>
           </div>
           {deliveryGate.blockingIssues.length > 0 ? <div className="arx-advanced-blockers" data-testid="delivery-active-blockers">
             <b>Bloke eden konular</b>
             {deliveryGate.blockingIssues.slice(0, 5).map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}
+          </div> : null}
+          {deliveryGate.reviewIssues.length > 0 ? <div className="arx-advanced-blockers is-review" data-testid="delivery-review-issues">
+            <b>Teknik kapanışı bekleyen inceleme kayıtları</b>
+            {deliveryGate.reviewIssues.slice(0, 5).map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}
           </div> : null}
           <div className="arx-advanced-outputs">
             {projectOutputs.map((output) => <article key={output.code}>
