@@ -95,7 +95,7 @@ test("documented but unverified zoning source permits workflow continuation with
   const review = thread.issues.find(issue => issue.id === "PLN-010");
   assert.equal(review?.severity, "review");
   assert.match(review?.title ?? "", /uzman doğrulaması/i);
-  assert.equal(review?.route, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
+  assert.equal(review?.route, "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo");
 });
 
 test("authoritative zoning provenance clears the zoning review gate", () => {
@@ -194,7 +194,7 @@ test("TAKS issue routes to the actual footprint data owner", () => {
   assert.ok(issue);
   assert.equal(issue?.route, "/arsa-fizibilite-studyosu?stage=design#geo-studyo");
   assert.equal(issue?.routeLabel, "Kütleyi düzelt");
-  assert.equal(issue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
+  assert.equal(issue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning&focus=taks#geo-studyo");
   assert.equal(issue?.secondaryRouteLabel, "TAKS girdisini incele");
   assert.match(issue?.action ?? "", /en az 87\.7 m² azaltın/);
 
@@ -211,7 +211,7 @@ test("TAKS issue routes to the actual footprint data owner", () => {
   assert.match(planOwnedIssue?.evidence ?? "", /Plan & aks modeli/);
   assert.equal(planOwnedIssue?.route, "/tasarim-calismalari/plan-duzeltme");
   assert.equal(planOwnedIssue?.routeLabel, "Plan tabanını düzelt");
-  assert.equal(planOwnedIssue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
+  assert.equal(planOwnedIssue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning&focus=taks#geo-studyo");
 });
 
 test("invalid parcel geometry opens the boundary editing stage directly", () => {
@@ -260,14 +260,73 @@ test("KAKS and Hmax issues expose design and zoning resolution paths", () => {
   assert.ok(kaks);
   assert.equal(kaks?.route, "/mimari-program-studyosu/kaks-duzeltme");
   assert.equal(kaks?.routeLabel, "Programı düzelt");
-  assert.equal(kaks?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
+  assert.equal(kaks?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning&focus=kaks#geo-studyo");
   assert.equal(kaks?.secondaryRouteLabel, "KAKS girdisini incele");
   assert.match(kaks?.action ?? "", /en az 162\.0 m² azaltın/);
 
   const hmax = thread.issues.find(item => item.id === "PLN-013");
   assert.ok(hmax);
   assert.equal(hmax?.routeLabel, "Kat adedini düzelt");
-  assert.equal(hmax?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
+  assert.equal(hmax?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning&focus=hmax#geo-studyo");
   assert.equal(hmax?.secondaryRouteLabel, "Hmax girdisini incele");
   assert.match(hmax?.action ?? "", /en az 0\.70 m azaltın/);
+});
+
+
+test("resolved TAKS and KAKS controls move from open issues into completed controls", () => {
+  const zoning = geoModule({
+    authoritative: false,
+    verification: "user-declared",
+    plan,
+    conditions,
+    source: {
+      type: "Kullanıcı beyanı",
+      date: "2026-10-01",
+      note: "Kaynak bilgisi kullanıcı tarafından kaydedildi.",
+    },
+  });
+
+  const open = deriveProjectThread({
+    "geo-parcel": zoning,
+    "plan-editor": {
+      metrics: { floorArea: 567 },
+      floorCount: 2,
+    },
+    "architectural-program": {
+      input: { targetGross: 1600, floors: 2, floorHeight: 3.4 },
+      result: { grossDemand: 1600 },
+    },
+  });
+
+  assert.equal(open.issues.some(issue => issue.id === "PLN-011"), true);
+  assert.equal(open.completedControls.some(control => control.code === "PLN-011"), false);
+  assert.equal(open.issues.some(issue => issue.id === "PLN-012"), true);
+  assert.equal(open.completedControls.some(control => control.code === "PLN-012"), false);
+
+  const resolved = deriveProjectThread({
+    "geo-parcel": zoning,
+    "plan-editor": {
+      metrics: { floorArea: 476.9 },
+      floorCount: 2,
+    },
+    "architectural-program": {
+      input: { targetGross: 1430.8, floors: 2, floorHeight: 3.4 },
+      result: { grossDemand: 1430.8 },
+    },
+  });
+
+  assert.equal(resolved.issues.some(issue => issue.id === "PLN-011"), false);
+  assert.equal(resolved.issues.some(issue => issue.id === "PLN-012"), false);
+
+  const taks = resolved.completedControls.find(control => control.code === "PLN-011");
+  assert.ok(taks);
+  assert.equal(taks?.title, "TAKS ön kontrolü");
+  assert.match(taks?.summary ?? "", /Plan tabanı: 476,9 \/ 479,3 m²/);
+  assert.equal(taks?.route, "/tasarim-calismalari/plan-duzeltme");
+
+  const kaks = resolved.completedControls.find(control => control.code === "PLN-012");
+  assert.ok(kaks);
+  assert.equal(kaks?.title, "KAKS ön kontrolü");
+  assert.match(kaks?.summary ?? "", /Program brütü: 1\.430,8 \/ 1\.438 m²/);
+  assert.equal(kaks?.route, "/mimari-program-studyosu/kaks-duzeltme");
 });
