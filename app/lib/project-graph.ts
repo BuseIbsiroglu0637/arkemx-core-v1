@@ -149,6 +149,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     && zoningSourceReferenceReady
   );
   const zoningAuthoritative = geoZoningProvenance.authoritative === true;
+  const zoningExpertReviewed = geoZoningProvenance.expertReviewed === true;
   const zoningReadyForNextStage = zoningConditionsReadyForNextStage && zoningSourceReadyForNextStage;
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
@@ -315,13 +316,13 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
   if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=draw#geo-studyo" });
-  if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningAuthoritative) push({
+  if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningExpertReviewed) push({
     id: "PLN-010",
     severity: "review",
     discipline: "Planlama",
     title: "İmar kaynağı uzman doğrulaması bekliyor",
-    evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak kaynak henüz yetkili doğrulama statüsünde değil.",
-    action: "Plan paftası, plan notu ve yetkili idare imar durumunu uzman incelemesiyle doğrulayın.",
+    evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak proje içi uzman inceleme kaydı tamamlanmadı.",
+    action: "Plan paftası, plan notu ve yetkili idare imar durumunu inceleyip uzman inceleme kaydını tamamlayın.",
     route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
     routeLabel: "İmar kaynağını incele",
   });
