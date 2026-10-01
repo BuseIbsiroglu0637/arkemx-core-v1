@@ -198,7 +198,9 @@ test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winn
   assert.match(page, /Taşıyıcı sistem kararını gerekçesiyle bağla/);
   assert.match(page, /SystemDecisionStudio/);
   assert.match(page, /href="\/yapi-sistemi-karsilastirma\/mcda"/);
+  assert.match(page, /href="\/tasiyici-on-tasarim"/);
   assert.doesNotMatch(page, /yapi-sistemi-karsilastirma#sistem-karsilastirma/);
+  assert.doesNotMatch(page, /tasarim-calismalari#tasiyici-on-tasarim/);
 
   assert.match(studio, /MCDA önerisini modele uygula/);
   assert.match(studio, /Mevcut sistemi gerekçeli olarak koru/);
@@ -229,10 +231,14 @@ test("project MCDA link opens a focused workspace instead of the public comparis
   assert.doesNotMatch(page, /SiteFooter/);
 
   assert.match(tool, /if \(simple\)/);
+  assert.match(tool, /arx-system-project-strip/);
+  assert.match(tool, /ARKEMX \/ MCDA/);
+  assert.doesNotMatch(tool.match(/if \(simple\)[\s\S]*?return <section className="system-comparison-tool/)?.[0] ?? "", /ProjectKernelBar module="STRUCTURAL SYSTEM MCDA"/);
   assert.match(tool, /Proje verilerini aktar/);
   assert.match(tool, /Beş sistemin karşılaştırması/);
   assert.match(tool, /href="\/tasiyici-on-tasarim"/);
   assert.match(css, /arx-mcda-page/);
+  assert.match(css, /arx-system-project-strip/);
 });
 
 
