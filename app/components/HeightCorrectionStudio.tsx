@@ -93,14 +93,14 @@ export function HeightCorrectionStudio() {
     <section className="arx-height-summary" data-state={heightPass ? "pass" : "review"}>
       <div><span>MEVCUT YÜKSEKLİK</span><b>{floorHeight > 0 && owner.floors > 0 ? `${proposedHeight.toFixed(2)} m` : "—"}</b></div>
       <div><span>HMAX / YENÇOK</span><b>{maxHeight > 0 ? `${maxHeight.toFixed(2)} m` : "—"}</b></div>
-      <div><span>DURUM</span><b>{maxHeight <= 0 ? "Hmax girdisi eksik" : heightPass ? "Hmax sınırı geçti" : `${overage.toFixed(2)} m azaltılmalı`}</b></div>
+      <div><span>DURUM</span><b>{maxHeight <= 0 ? "Hmax girdisi eksik" : heightPass ? "Hmax sınırı içinde" : `${overage.toFixed(2)} m azaltılmalı`}</b></div>
       {!heightPass && maxFloorsAtCurrentHeight >= 1 ? <button type="button" onClick={applyRecommendedFloorCount}>Kat adedini {maxFloorsAtCurrentHeight} yap</button> : null}
     </section>
 
     {correctionNotice ? <section className="arx-height-change-summary" role="status" aria-live="polite">
       <div><span>DÜZELTME UYGULANDI</span><b>{correctionNotice.fromFloors} → {correctionNotice.toFloors} kat</b></div>
       <div><span>YÜKSEKLİK</span><b>{correctionNotice.fromHeight.toFixed(2)} → {correctionNotice.toHeight.toFixed(2)} m</b></div>
-      <div><span>SONUÇ</span><b>{correctionNotice.toHeight <= maxHeight + .01 ? "Hmax sınırı geçti" : "Ek düzeltme gerekli"}</b></div>
+      <div><span>SONUÇ</span><b>{correctionNotice.toHeight <= maxHeight + .01 ? "Hmax sınırı içinde" : "Ek düzeltme gerekli"}</b></div>
     </section> : null}
 
     <div className="arx-height-grid">
