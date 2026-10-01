@@ -88,6 +88,12 @@ function structuralSystemLabel(value: string) {
   return ({ concrete: "Betonarme", steel: "Yapısal Çelik", light: "Hafif Çelik", hybrid: "Karma Sistem", precast: "Betonarme Prefabrik" } as Record<string, string>)[value] ?? value;
 }
 
+function resolvedStructuralSystem(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("tr-TR");
+  return Boolean(normalized)
+    && !["karar bekleniyor", "undecided", "belirsiz", "—", "-"].includes(normalized);
+}
+
 function closeEnough(first: number, second: number, tolerance: number) {
   return first > 0 && second > 0 && Math.abs(first - second) <= tolerance;
 }
@@ -245,6 +251,24 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     },
   };
 
+  const systemDecisionReady = resolvedStructuralSystem(canonical.structure.system);
+  const quickSiteScenarioReady = Boolean(
+    parcelReadyForNextStage
+    && zoningConditionsReadyForNextStage
+    && geoMetrics.geometryValid === true
+    && geoMetrics.buildingFits === true
+    && geoMetrics.setbackPass === true
+    && number(geoMetrics.footprint) > 0
+    && number(geoMetrics.gross) > 0
+    && number(geoMetrics.allowedFootprint) > 0
+    && number(geoMetrics.allowedGross) > 0
+    && number(geoMetrics.footprint) <= number(geoMetrics.allowedFootprint) + .01
+    && number(geoMetrics.gross) <= number(geoMetrics.allowedGross) + .01
+    && number(geoMetrics.buildingHeight) > 0
+    && number(geoPlanning.maxHeight) > 0
+    && number(geoMetrics.buildingHeight) <= number(geoPlanning.maxHeight) + .01
+  );
+
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
   if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu" });
@@ -273,9 +297,10 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
 
   const activeKeys = new Set(Object.keys(modules));
+  if (quickSiteScenarioReady) activeKeys.add("quick-site-scenario");
   const nodes: ProjectGraphNode[] = PROJECT_MODULES.map((definition) => {
     const moduleData = record(modules[definition.id]);
-    const active = Object.keys(moduleData).length > 0;
+    const active = activeKeys.has(definition.id);
     const blockedBy = definition.dependencies.filter((dependency) => !activeKeys.has(dependency));
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
     const readiness = definition.id === "geo-parcel" && active
@@ -328,6 +353,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
           route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
           blockedBy: [] as ProjectModuleKey[],
         }
+        : quickSiteScenarioReady && !systemDecisionReady
+          ? {
+            label: "Sistemi ve yöntemi seç",
+            route: "/sistem-karsilastirma",
+            blockedBy: [] as ProjectModuleKey[],
+          }
         : nextNode
           ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
           : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
