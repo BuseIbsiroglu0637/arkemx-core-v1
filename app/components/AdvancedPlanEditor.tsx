@@ -293,6 +293,42 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     setView("coordination");
   };
 
+  const canRemapManualMassSources = metrics.outOfGridMassPointCount > 0
+    && metrics.manualMassPointCount > 0;
+
+  const remapManualMassSourcesToCurrentGrid = () => {
+    if (!canRemapManualMassSources) return;
+
+    const activeMassSources = elements.filter((element) =>
+      element.level === level
+      && element.provenance !== "conceptual-seed"
+      && (element.type === "space" || element.type === "load")
+    );
+    const sourceBaysX = Math.max(baysX, ...activeMassSources.map((element) => Math.floor(element.x) + 1));
+    const sourceBaysY = Math.max(baysY, ...activeMassSources.map((element) => Math.floor(element.y) + 1));
+
+    const remapped = elements.map((element) => {
+      if (
+        element.level !== level
+        || element.provenance === "conceptual-seed"
+        || (element.type !== "space" && element.type !== "load")
+      ) return element;
+
+      const ratioX = (element.x + .5) / Math.max(sourceBaysX, 1);
+      const ratioY = (element.y + .5) / Math.max(sourceBaysY, 1);
+      const x = Math.max(0, Math.min(baysX - 1, Math.floor(ratioX * baysX)));
+      const y = Math.max(0, Math.min(baysY - 1, Math.floor(ratioY * baysY)));
+      return { ...element, x, y };
+    });
+
+    commit(
+      remapped,
+      `K${level} manuel kütle kaynakları ${sourceBaysX}×${sourceBaysY} kaynak ızgarasından ${baysX}×${baysY} güncel ızgaraya oransal eşlendi`,
+    );
+    setSelectedId(null);
+    setView("coordination");
+  };
+
   useEffect(() => {
     if (!hydrated || !modelHydrated) return;
     patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, elements, metrics, status: "concept-plan" });
