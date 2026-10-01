@@ -95,20 +95,28 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   useEffect(() => {
     // Do not overwrite the intake's saved MCDA values before state restoration.
     if (!hydrated || !transferReady) return;
-    patchModule("system-comparison", { input: { usage, floors, span, area, repetition, transport, fireRating }, weights, ranking, shortlist, status: "mcda-pre-screen" });
-  }, [area, fireRating, floors, hydrated, patchModule, ranking, repetition, shortlist, span, transferReady, transport, usage, weights]);
+    patchModule("system-comparison", {
+      input: { usage, floors, span, area, repetition, transport, fireRating },
+      weights,
+      ranking,
+      shortlist,
+      sourceSnapshot,
+      sourceKey: mcdaSourceKey(sourceSnapshot),
+      sourceStatus: sourceStale ? "stale" : manualOverride ? "manual-override" : "current",
+      status: "mcda-pre-screen",
+    });
+  }, [area, fireRating, floors, hydrated, manualOverride, patchModule, ranking, repetition, shortlist, sourceSnapshot, sourceStale, span, transferReady, transport, usage, weights]);
 
   const updateWeight = (id: CriterionId, value: number) => setWeights((current) => ({ ...current, [id]: value }));
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const importProjectGeometry = useCallback(() => {
-    const source = thread.canonical;
-    if (source.architecture.floors > 0) setFloors(Math.max(1, Math.min(50, source.architecture.floors)));
-    if (source.architecture.grossArea > 0) setArea(Math.max(50, Math.min(100000, Math.round(source.architecture.grossArea))));
-    const maxSpan = Math.max(source.structure.spanX, source.structure.spanY);
-    if (maxSpan > 0) setSpan(Math.max(3, Math.min(60, Number(maxSpan.toFixed(2)))));
-    const projectUse = source.architecture.use.toLocaleLowerCase("tr-TR");
-    if (projectUse.includes("konut")) setUsage("residential"); else if (projectUse.includes("depo")) setUsage("storage"); else if (projectUse.includes("ticari") || projectUse.includes("ofis")) setUsage("commercial"); else if (projectUse) setUsage("industrial");
-  }, [thread.canonical]);
+    if (!currentProjectSource) return;
+    setFloors(currentProjectSource.floors);
+    setArea(currentProjectSource.area);
+    setSpan(currentProjectSource.span);
+    setUsage(currentProjectSource.usage);
+    setSourceSnapshot(currentProjectSource);
+  }, [currentProjectSource]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
     const timer = window.setTimeout(() => {
