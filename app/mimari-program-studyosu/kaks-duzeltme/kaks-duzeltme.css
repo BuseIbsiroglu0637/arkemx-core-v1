@@ -275,3 +275,267 @@
     grid-template-columns:1fr;
   }
 }
+
+
+/* KAKS correction UI v2 · readable focused workspace */
+.arx-kaks-page .arx-simple-shell {
+  width:min(1240px, calc(100% - 48px));
+}
+.arx-kaks-page .arx-simple-head {
+  min-height:72px;
+}
+.arx-kaks-page .arx-architecture-back {
+  gap:18px;
+}
+.arx-kaks-page .arx-architecture-back a {
+  font-size:12px;
+}
+
+.arx-architect-kaks-focus {
+  margin-top:24px;
+}
+.arx-architect-kaks-focus > .project-kernel-compact {
+  margin:0 0 14px;
+  padding:11px 14px;
+  border:1px solid #dbe5e8;
+  background:#fff;
+}
+
+.arx-kaks-focus-head {
+  grid-template-columns:minmax(0,1.05fr) minmax(360px,.8fr);
+  gap:42px;
+  margin-bottom:14px;
+  padding:24px 26px;
+}
+.arx-kaks-focus-head .eyebrow {
+  margin:0 0 9px;
+  color:#b96636;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.11em;
+}
+.arx-kaks-focus-head h2 {
+  margin:0;
+  font-size:38px;
+  line-height:1.04;
+}
+.arx-kaks-focus-head > p {
+  font-size:13px;
+  line-height:1.65;
+}
+
+.arx-kaks-summary {
+  grid-template-columns:repeat(3,minmax(0,1fr)) minmax(250px,300px);
+  margin-bottom:14px;
+  border-radius:6px;
+  overflow:hidden;
+}
+.arx-kaks-summary > div {
+  display:grid;
+  align-content:center;
+  min-height:82px;
+  padding:16px 18px;
+}
+.arx-kaks-summary span,
+.arx-kaks-program-head span {
+  font-size:10px;
+  letter-spacing:.055em;
+}
+.arx-kaks-summary b {
+  margin-top:7px;
+  font-size:18px;
+}
+.arx-kaks-summary button {
+  min-width:0;
+  min-height:82px;
+  padding:12px 18px;
+  font-size:11px;
+  line-height:1.4;
+}
+
+.arx-kaks-workspace {
+  grid-template-columns:minmax(0,1fr) 340px;
+  border-radius:6px;
+  overflow:hidden;
+}
+.arx-kaks-workspace > main {
+  padding:20px;
+}
+.arx-kaks-program-head {
+  gap:14px;
+  margin-bottom:16px;
+}
+.arx-kaks-program-head > div {
+  min-height:70px;
+  padding:14px 15px;
+  border-radius:5px;
+}
+.arx-kaks-program-head b {
+  margin-top:6px;
+  font-size:14px;
+}
+.arx-kaks-program-head small {
+  margin-top:5px;
+  font-size:10px;
+  line-height:1.45;
+}
+
+.arx-kaks-space-list {
+  gap:9px;
+}
+.arx-kaks-space-list article {
+  grid-template-columns:minmax(210px,1.5fr) 95px 145px 135px;
+  gap:12px;
+  min-height:76px;
+  padding:13px 14px;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-kaks-space-name small,
+.arx-kaks-space-list article > div:last-child small {
+  font-size:9px;
+  font-weight:750;
+}
+.arx-kaks-space-name b {
+  margin-top:4px;
+  font-size:13px;
+}
+.arx-kaks-space-name span {
+  margin-top:4px;
+  font-size:10px;
+}
+.arx-kaks-space-list label {
+  gap:6px;
+  font-size:10px;
+  font-weight:650;
+}
+.arx-kaks-space-list input {
+  min-height:40px;
+  padding:0 11px;
+  border-radius:5px;
+  font-size:13px;
+  font-weight:650;
+}
+.arx-kaks-space-list label i {
+  font-size:9px;
+}
+.arx-kaks-space-list article > div:last-child {
+  align-self:center;
+}
+.arx-kaks-space-list article > div:last-child b {
+  margin-top:6px;
+  font-size:13px;
+}
+
+.arx-kaks-workspace > aside {
+  padding:20px;
+}
+.arx-kaks-workspace > aside section + section {
+  margin-top:20px;
+}
+.arx-kaks-workspace > aside strong {
+  margin-bottom:10px;
+  font-size:10px;
+  letter-spacing:.07em;
+}
+.arx-kaks-workspace > aside section > div {
+  padding:11px 0;
+}
+.arx-kaks-workspace > aside span {
+  font-size:10px;
+}
+.arx-kaks-workspace > aside b {
+  font-size:12px;
+}
+.arx-kaks-workspace > aside small {
+  margin-top:13px;
+  font-size:10px;
+  line-height:1.55;
+}
+
+.arx-kaks-foot {
+  padding:14px 18px;
+}
+.arx-kaks-foot b {
+  min-width:165px;
+  font-size:10px;
+}
+.arx-kaks-foot p {
+  font-size:9px;
+  line-height:1.55;
+}
+
+@media(max-width:1050px) {
+  .arx-kaks-focus-head {
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+  .arx-kaks-workspace {
+    grid-template-columns:minmax(0,1fr) 300px;
+  }
+  .arx-kaks-space-list article {
+    grid-template-columns:minmax(180px,1.3fr) 80px 120px 115px;
+  }
+}
+@media(max-width:860px) {
+  .arx-kaks-page .arx-simple-shell {
+    width:min(100% - 28px, 760px);
+  }
+  .arx-kaks-summary {
+    grid-template-columns:1fr 1fr;
+  }
+  .arx-kaks-summary button {
+    grid-column:1/-1;
+    min-height:48px;
+  }
+  .arx-kaks-workspace {
+    grid-template-columns:1fr;
+  }
+  .arx-kaks-workspace > main {
+    border-right:0;
+    border-bottom:1px solid #dfe7e9;
+  }
+  .arx-kaks-space-list article {
+    grid-template-columns:minmax(170px,1.5fr) 90px 130px;
+  }
+  .arx-kaks-space-list article > div:last-child {
+    grid-column:2 / -1;
+  }
+}
+@media(max-width:620px) {
+  .arx-kaks-page .arx-simple-shell {
+    width:calc(100% - 20px);
+  }
+  .arx-kaks-page .arx-simple-head {
+    align-items:flex-start;
+    gap:12px;
+    padding:14px 0;
+  }
+  .arx-kaks-page .arx-architecture-back {
+    gap:9px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .arx-kaks-page .arx-architecture-back a {
+    font-size:10px;
+  }
+  .arx-kaks-focus-head {
+    padding:18px;
+  }
+  .arx-kaks-focus-head h2 {
+    font-size:30px;
+  }
+  .arx-kaks-summary,
+  .arx-kaks-program-head {
+    grid-template-columns:1fr;
+  }
+  .arx-kaks-space-list article {
+    grid-template-columns:1fr 1fr;
+  }
+  .arx-kaks-space-name {
+    grid-column:1/-1;
+  }
+  .arx-kaks-space-list article > div:last-child {
+    grid-column:auto;
+  }
+}
