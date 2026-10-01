@@ -333,3 +333,59 @@
   line-height:1.4;
 }
 html[data-theme="dark"] .arx-center-project-type { color:#9caeb5; }
+
+
+/* Açık konu çözüm aksiyonları */
+.arx-advanced-issues article {
+  grid-template-columns:23px minmax(0,1fr) minmax(118px,auto);
+}
+.arx-issue-recommendation {
+  display:block;
+  margin-top:6px;
+  color:#4f6873;
+  font-size:8px;
+  font-style:normal;
+  line-height:1.45;
+}
+.arx-issue-actions {
+  display:grid;
+  gap:5px;
+  align-self:center;
+  min-width:118px;
+}
+.arx-advanced-issues .arx-issue-actions a {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:5px 8px;
+  border:1px solid #bfd0d6;
+  border-radius:4px;
+  background:#f6f9fa;
+  color:#315968;
+  text-align:center;
+  white-space:normal;
+}
+.arx-advanced-issues .arx-issue-actions a.secondary {
+  background:#fff;
+  color:#6a7e86;
+}
+.hub-rule-actions {
+  display:grid;
+  gap:6px;
+  align-self:center;
+}
+.hub-rule-actions a {
+  white-space:nowrap;
+}
+
+@media (max-width:720px) {
+  .arx-advanced-issues article {
+    grid-template-columns:23px minmax(0,1fr);
+  }
+  .arx-issue-actions {
+    grid-column:2;
+    grid-template-columns:1fr;
+    min-width:0;
+  }
+}
