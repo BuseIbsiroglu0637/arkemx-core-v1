@@ -102,6 +102,31 @@ test("project centre shows completed controls and zoning review links preserve f
 });
 
 
+test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owner", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/HeightCorrectionStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/yukseklik-duzeltme.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · PLN-013/);
+  assert.match(page, /Yapı yüksekliğini düzelt/);
+  assert.match(page, /stage=zoning&focus=hmax#geo-studyo/);
+  assert.match(page, /HeightCorrectionStudio/);
+
+  assert.match(studio, /Plan & aks modeli/);
+  assert.match(studio, /Taşıyıcı ön tasarım/);
+  assert.match(studio, /Kat adedini \{maxFloorsAtCurrentHeight\} yap/);
+  assert.match(studio, /patchModule\("plan-editor", \{ floorCount: safe \}\)/);
+  assert.match(studio, /patchModule\("architectural-program", \{ input: \{ floors: safe \} \}\)/);
+  assert.match(studio, /patchModule\("geo-parcel", \{ floors: safe \}\)/);
+  assert.match(studio, /MODEL KOORDİNASYONU/);
+  assert.match(studio, /Hmax sınırı geçti/);
+
+  assert.match(graph, /\/tasarim-calismalari\/yukseklik-duzeltme/);
+  assert.match(css, /arx-height-fix-page/);
+});
+
+
 test("TAKS plan correction preserves saved geometry before writes and uses the focused shell", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/page.tsx", import.meta.url), "utf8");
   const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
