@@ -21,7 +21,7 @@ export default function Page() {
         </div>
         <nav aria-label="Plan düzeltme gezinmesi">
           <Link href="/dijital-proje-merkezi">← Proje Çalışma Alanı</Link>
-          <Link href="/arsa-fizibilite-studyosu?stage=zoning#geo-studyo">İmar girdisini incele</Link>
+          <Link href="/arsa-fizibilite-studyosu?stage=zoning&focus=taks#geo-studyo">İmar girdisini incele</Link>
           <Link href="/tasarim-calismalari#plan-editor">Tam plan editörü</Link>
         </nav>
       </header>
