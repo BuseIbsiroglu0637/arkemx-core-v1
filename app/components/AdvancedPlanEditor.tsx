@@ -57,6 +57,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const [future, setFuture] = useState<PlanElement[][]>([]);
   const [status, setStatus] = useState("Yeni proje şeması hazır");
   const [layers, setLayers] = useState({ columns: true, walls: true, spaces: true, openings: true, loads: true });
+  const [modelHydrated, setModelHydrated] = useState(false);
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -72,6 +73,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       if (typeof saved.spanY === "number") setSpanY(saved.spanY);
       if (Array.isArray(saved.elements)) setElements(saved.elements);
       setStatus("Kayıtlı plan ve nesneler otomatik açıldı");
+      setModelHydrated(true);
       return;
     }
     const source = thread.canonical;
@@ -85,6 +87,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (width > 0 && nextBaysX > 0) setSpanX(Math.max(2, Math.min(12, width / nextBaysX)));
     if (depth > 0 && nextBaysY > 0) setSpanY(Math.max(2, Math.min(12, depth / nextBaysY)));
     setStatus(source.architecture.grossArea > 0 ? "Mimari plaka, kat ve ölçüler otomatik aktarıldı" : "Yeni proje şeması hazır");
+    setModelHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules, thread.canonical]);
@@ -159,8 +162,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   };
 
   useEffect(() => {
+    if (!hydrated || !modelHydrated) return;
     patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, elements, metrics, status: "concept-plan" });
-  }, [baysX, baysY, elements, floorCount, level, metrics, patchModule, spanX, spanY]);
+  }, [baysX, baysY, elements, floorCount, hydrated, level, metrics, modelHydrated, patchModule, spanX, spanY]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -398,20 +402,25 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   };
 
   return <section className={`advanced-plan-editor cad-plan-editor${issueFocus ? " cad-issue-focus" : ""}`} data-testid="advanced-plan-editor">
-    <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" compact={compactKernel} />
-    <div className="plan-editor-head"><div><p className="eyebrow light">{issueFocus ? "PLN-011 · TAKS ÖN KONTROLÜ" : "Arkem Plan & Taşıyıcı Kurgu Editörü"}</p><h2>{issueFocus ? <>Plan tabanını<br/><em>imar sınırına indirin.</em></> : <>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></>}</h2></div><p>{issueFocus ? "Bu görünüm yalnız plan taban alanı ile TAKS girdisi arasındaki çakışmayı çözmek içindir. İmar girdisini değiştirmez; plan geometrisini düzenler." : "Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın."}</p></div>
+    {issueFocus ? <div className="cad-issue-project-strip" aria-label="Aktif proje">
+      <div><span>ARKEMX / PLAN</span><b>{project.name}</b></div>
+      <div><span>{project.phase}</span><span>{project.revision}</span></div>
+    </div> : <>
+      <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" compact={compactKernel} />
+      <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>
+    </>}
     {issueFocus ? <section className="cad-issue-summary" data-state={footprintPass ? "pass" : "review"}>
       <div><span>MEVCUT PLAN TABANI</span><b>{metrics.floorArea.toFixed(1)} m²</b></div>
       <div><span>TAKS'A GÖRE AZAMİ</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "—"}</b></div>
-      <div><span>DURUM</span><b>{allowedFootprint <= 0 ? "İmar girdisi eksik" : footprintPass ? "Ön kontrol geçti" : `${footprintOverage.toFixed(1)} m² azaltılmalı`}</b></div>
+      <div><span>DURUM</span><b>{allowedFootprint <= 0 ? "İmar girdisi eksik" : footprintPass ? "TAKS sınırı geçti" : `${footprintOverage.toFixed(1)} m² azaltılmalı`}</b></div>
       {!footprintPass && allowedFootprint > 0 ? <button type="button" onClick={applyFootprintSuggestion}>Oranı koruyarak önerilen ölçüleri uygula</button> : null}
     </section> : null}
     <div className="cad-editor-app">
-      <header className="cad-topbar"><div className="cad-project-id"><span>{issueFocus ? "PLN-011 / PLAN TABANI" : "ARKEM / CONCEPT BIM"}</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div>{!issueFocus ? <><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>Kaydet / JSON</button></div></> : <div className="cad-top-actions"><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button></div>}</header>
+      <header className="cad-topbar"><div className="cad-project-id"><span>{issueFocus ? "PLAN TABANI / TAKS" : "ARKEM / CONCEPT BIM"}</span><b>{issueFocus ? `${totalWidth.toFixed(2)} × ${totalDepth.toFixed(2)} m · ${baysX}×${baysY} aks` : `K${level} · ${totalWidth.toFixed(2)} × ${totalDepth.toFixed(2)} m`}</b></div>{!issueFocus ? <><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>Kaydet / JSON</button></div></> : <div className="cad-top-actions"><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button></div>}</header>
       <div className="cad-editor-grid">
         {!issueFocus ?         <aside className="cad-tools"><strong>NESNE ARAÇLARI</strong>{(Object.keys(toolMeta) as Tool[]).map((item) => <button key={item} className={tool === item ? "active" : ""} onClick={() => setTool(item)} title={toolMeta[item].hint}><i>{toolMeta[item].code}</i><span><b>{toolMeta[item].label}</b><small>{toolMeta[item].hint}</small></span></button>)}<strong>YERLEŞİM YÖNÜ</strong><div className="cad-orientation"><button className={orientation === "x" ? "active" : ""} onClick={() => setOrientation("x")}>X doğrultusu →</button><button className={orientation === "y" ? "active" : ""} onClick={() => setOrientation("y")}>Y doğrultusu ↑</button></div><strong>HIZLI ÜRETİM</strong><button className="cad-command" onClick={autoFrame}>Tüm akslara kolon yerleştir</button><button className="cad-command" onClick={duplicateFloor}>Aktif katı üst kata kopyala</button><button className="cad-command danger" onClick={clearFloor}>Aktif katı temizle</button></aside> : null}
         <main className={`cad-canvas view-${view}`}>
-          <div className="cad-canvas-toolbar"><span>SNAP · AKS / 1 mm gösterim hassasiyeti</span><div><b>{toolMeta[tool].label.toUpperCase()}</b><small>{status}</small></div><span>KUZEY ↑</span></div>
+          <div className="cad-canvas-toolbar">{issueFocus ? <><span>PLAN ÖNİZLEMESİ</span><div><b>KAYITLI AKS GEOMETRİSİ</b><small>{modelHydrated ? status : "Plan kaydı yükleniyor…"}</small></div><span>KUZEY ↑</span></> : <><span>SNAP · AKS / 1 mm gösterim hassasiyeti</span><div><b>{toolMeta[tool].label.toUpperCase()}</b><small>{status}</small></div><span>KUZEY ↑</span></>}</div>
           <svg ref={svgRef} viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`} onClick={placeElement} aria-label={`K${level} nesne tabanlı teknik plan editörü`} role="application">
             <defs><pattern id="plan-dot-grid" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#94a9b2" opacity=".42"/></pattern><pattern id="core-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#829aa4" strokeWidth="2"/></pattern><pattern id="opening-hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="9" stroke="#b96636" strokeWidth="1" opacity=".6"/></pattern></defs>
             <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="url(#plan-dot-grid)"/>
@@ -433,7 +442,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           <div className="cad-statusbar"><span>X: — m · Y: — m · SNAP: AKS</span><span>{visible.length} nesne · K{level}/{floorCount}</span><span>ARKEM-PLAN/1.0</span></div>
         </main>
         <aside className="cad-inspector">
-          <section><strong>{issueFocus ? "PLAN GEOMETRİSİ" : "KAT & AKS YÖNETİMİ"}</strong><div className="cad-floor-tabs">{Array.from({ length: floorCount }, (_, index) => <button key={index + 1} className={level === index + 1 ? "active" : ""} onClick={() => { setLevel(index + 1); setSelectedId(null); }}>K{index + 1}</button>)}</div><label>Kat adedi<input type="number" min="1" max="12" value={floorCount} onChange={(event) => { const count = Math.max(1, Math.min(12, Number(event.target.value))); setFloorCount(count); setLevel((current) => Math.min(current, count)); }}/></label><div className="cad-input-grid"><label>X açıklık<input type="number" min="1" max="12" value={baysX} onChange={(event) => setBaysX(Math.max(1, Math.min(12, Number(event.target.value))))}/></label><label>Y açıklık<input type="number" min="1" max="10" value={baysY} onChange={(event) => setBaysY(Math.max(1, Math.min(10, Number(event.target.value))))}/></label><label>X açıklığı<input type="number" min="2" max="15" step=".1" value={spanX} onChange={(event) => setSpanX(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label><label>Y açıklığı<input type="number" min="2" max="15" step=".1" value={spanY} onChange={(event) => setSpanY(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label></div></section>
+          <section><strong>{issueFocus ? "PLAN GEOMETRİSİ" : "KAT & AKS YÖNETİMİ"}</strong>{!issueFocus ? <><div className="cad-floor-tabs">{Array.from({ length: floorCount }, (_, index) => <button key={index + 1} className={level === index + 1 ? "active" : ""} onClick={() => { setLevel(index + 1); setSelectedId(null); }}>K{index + 1}</button>)}</div><label>Kat adedi<input type="number" min="1" max="12" value={floorCount} onChange={(event) => { const count = Math.max(1, Math.min(12, Number(event.target.value))); setFloorCount(count); setLevel((current) => Math.min(current, count)); }}/></label></> : <p className="cad-issue-scope-note">PLN-011 yalnız taban geometrisini düzenler. Kat adedi bu ekranda değiştirilmez.</p>}<div className="cad-input-grid"><label>X aks sayısı<input type="number" min="1" max="12" value={baysX} onChange={(event) => setBaysX(Math.max(1, Math.min(12, Number(event.target.value))))}/></label><label>Y aks sayısı<input type="number" min="1" max="10" value={baysY} onChange={(event) => setBaysY(Math.max(1, Math.min(10, Number(event.target.value))))}/></label><label>X açıklığı<input type="number" min="2" max="15" step=".1" value={spanX} onChange={(event) => setSpanX(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label><label>Y açıklığı<input type="number" min="2" max="15" step=".1" value={spanY} onChange={(event) => setSpanY(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label></div></section>
           {issueFocus ? <section className="cad-footprint-control"><strong>TAKS ÖN KONTROLÜ</strong><div><span>Plan tabanı</span><b>{metrics.floorArea.toFixed(1)} m²</b></div><div><span>Azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "—"}</b></div><div><span>Fark</span><b className={footprintPass ? "good" : "risk"}>{allowedFootprint > 0 ? `${(metrics.floorArea - allowedFootprint).toFixed(1)} m²` : "—"}</b></div><small>TAKS girdisi değiştirilmez. X/Y açıklık sayısı ve açıklık ölçülerini düzenleyerek plan tabanını sınır içine alın.</small></section> : <>
                     <section><strong>KATMANLAR</strong>{Object.entries(layers).map(([key, value]) => <label className="cad-layer" key={key}><input type="checkbox" checked={value} onChange={(event) => setLayers((current) => ({ ...current, [key]: event.target.checked }))}/><span>{key === "columns" ? "Kolonlar" : key === "walls" ? "Perde / duvar" : key === "spaces" ? "Mahal / çekirdek" : key === "openings" ? "Boşluklar" : "Yük bölgeleri"}</span><b>{value ? "AÇIK" : "KAPALI"}</b></label>)}</section>
           <section className="cad-properties"><strong>NESNE ÖZELLİKLERİ</strong>{selected ? <><div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.id.slice(0, 18)}</small></span></div><label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label><label>Hareketli yük<input type="number" min="0" max="25" step=".5" value={selected.load} onChange={(event) => updateSelected({ load: Number(event.target.value) })}/><i>kN/m²</i></label><label>Yangın sınıfı<select value={selected.fire} onChange={(event) => updateSelected({ fire: event.target.value })}>{["R 30","R 60","R 90","REI 120","Projede belirlenecek"].map((value) => <option key={value}>{value}</option>)}</select></label><label>Ön kesit<input value={selected.section} onChange={(event) => updateSelected({ section: event.target.value })}/></label><button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button></> : <p>Plan üzerinde bir nesne seçin veya yerleştirme aracıyla yeni nesne oluşturun.</p>}</section>
