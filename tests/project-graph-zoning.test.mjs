@@ -741,3 +741,51 @@ test("SYS-041 decision record is bound to the current MCDA source key", () => {
   assert.equal(currentDecision.issues.some(item => item.id === "SYS-041"), false);
   assert.match(currentDecision.completedControls.find(control => control.code === "SYS-041")?.summary ?? "", /farklı seçim gerekçelendirildi/);
 });
+
+
+test("BIM-052 moves to completed history when conceptual KM-KR eccentricity falls below the alert threshold", () => {
+  const open = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.2,
+      metrics: {
+        floorArea: 396.2,
+        massPointCount: 4,
+        rigidityPointCount: 4,
+        eccentricityEvaluable: true,
+        eccentricity: 3.1,
+        eccentricityRatio: 12.5,
+      },
+    },
+  });
+
+  assert.ok(open.issues.find(item => item.id === "BIM-052"));
+  assert.equal(open.completedControls.some(control => control.code === "BIM-052"), false);
+
+  const resolved = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.2,
+      metrics: {
+        floorArea: 396.2,
+        massPointCount: 4,
+        rigidityPointCount: 4,
+        eccentricityEvaluable: true,
+        eccentricity: 0.2,
+        eccentricityRatio: 0.8,
+      },
+    },
+  });
+
+  assert.equal(resolved.issues.some(item => item.id === "BIM-052"), false);
+  const completed = resolved.completedControls.find(control => control.code === "BIM-052");
+  assert.ok(completed);
+  assert.equal(completed?.title, "KM–KR yerleşim ön kontrolü");
+  assert.match(completed?.summary ?? "", /%0\.8/);
+});
