@@ -258,6 +258,26 @@ test("project MCDA link opens a focused workspace instead of the public comparis
 });
 
 
+test("BIM-052 safely recenters only fully conceptual KM-KR source sets", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · BIM-052 \/ BIM-053/);
+  assert.match(page, /KM–KR ön kontrolünü düzenle/);
+
+  assert.match(editor, /const highX = Math\.max\(0, baysX - 1 - lowX\)/);
+  assert.match(editor, /const highY = Math\.max\(0, baysY - 1 - lowY\)/);
+  assert.match(editor, /manualMassPointCount/);
+  assert.match(editor, /manualRigidityPointCount/);
+  assert.match(editor, /canRecenterConceptualKmKr/);
+  assert.match(editor, /metrics\.manualMassPointCount === 0/);
+  assert.match(editor, /metrics\.manualRigidityPointCount === 0/);
+  assert.match(editor, /Temsilî kaynakları yeniden merkezle/);
+  assert.match(editor, /manuel kaynak nesneleri otomatik taşınmaz/);
+  assert.match(editor, /Dışmerkezlik göstergesi yüksek/);
+});
+
+
 test("BIM-053 uses a focused KM-KR source workspace with explicit conceptual provenance", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
   const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
