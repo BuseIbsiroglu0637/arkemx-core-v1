@@ -167,10 +167,11 @@ test("authenticated prototype headers open the account directly", async () => {
   const cookie = { cookie: "arkemx_prototype_session=1" };
 
   const homeResponse = await render("/", cookie);
-  assert.equal(homeResponse.status, 200);
-  const homeHtml = await homeResponse.text();
-  assert.match(homeHtml, /href="\/hesabim">Hesabım<\/a>/);
-  assert.doesNotMatch(homeHtml, /href="\/giris\?return_to=%2Fhesabim">Hesabım<\/a>/);
+  assert.ok(homeResponse.status === 307 || homeResponse.status === 308);
+  assert.match(
+    homeResponse.headers.get("location") ?? "",
+    /\/hesap-kurulum\?return_to=%2Fdijital-proje-merkezi$/,
+  );
 
   const centerResponse = await render("/dijital-proje-merkezi", cookie);
   assert.equal(centerResponse.status, 200);
@@ -260,7 +261,7 @@ test("guided drafts sync to the account and remain portable between preview orig
   assert.match(startSource, /Taslak yükle/);
   assert.match(draftApi, /customer_project_drafts/);
   assert.match(draftApi, /owner_email TEXT PRIMARY KEY/);
-  assert.match(accountSource, /Devam eden taslak/);
+  assert.match(accountSource, /Devam eden proje taslağı/);
   assert.match(accountSource, /href="\/proje-baslat"/);
 });
 
@@ -344,7 +345,10 @@ test("account automatically reconciles an active local project missing from acco
   const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
   assert.match(accountSource, /accountHasActiveProject/);
   assert.match(accountSource, /Aktif proje hesabınızla eşitleniyor/);
-  assert.match(accountSource, /expectedAccountUpdatedAt: null/);
+  assert.match(
+    accountSource,
+    /expectedAccountUpdatedAt: accountActiveProject\?\.updatedAt \?\? null/,
+  );
   assert.match(accountSource, /arx-account-local-project/);
   assert.match(accountSource, /Şimdi kaydet/);
 });
@@ -597,9 +601,9 @@ test("manual massing area uses the same one-decimal dimensions shown in UI", () 
   assert.ok(studio.includes("const footprint = canonicalWidth * canonicalDepth"));
   assert.ok(studio.includes("const gross = footprint * floors"));
   assert.ok(studio.includes('calculationBasis: "displayed-rectangular-dimensions-0.1m"'));
-  assert.equal(22.5 * 16.6, 373.5);
-  assert.equal(22.5 * 16.6 * 4, 1494);
-  assert.equal(30 * 16.6, 498);
+  assert.equal(Number((22.5 * 16.6).toFixed(2)), 373.5);
+  assert.equal(Number((22.5 * 16.6 * 4).toFixed(2)), 1494);
+  assert.equal(Number((30 * 16.6).toFixed(2)), 498);
 });
 
 
@@ -608,8 +612,8 @@ test("TAKS and KAKS thresholds use displayed allowed areas at dimension-step pre
   assert.ok(studio.includes("metrics.footprint > metrics.allowedFootprint + .01"));
   assert.ok(studio.includes("metrics.gross > metrics.allowedGross + .01"));
   assert.ok(studio.includes('!taksExceeded && !kaksExceeded && !hmaxExceeded, "İmar girdileriyle ön uyum"'));
-  assert.equal(22.5 * 21.3, 479.25);
-  assert.equal(22.5 * 21.4, 481.5);
+  assert.equal(Number((22.5 * 21.3).toFixed(2)), 479.25);
+  assert.equal(Number((22.5 * 21.4).toFixed(2)), 481.5);
 });
 
 
