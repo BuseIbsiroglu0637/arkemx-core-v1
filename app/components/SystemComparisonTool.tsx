@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "../lib/mcda-source";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type SystemId = "light" | "steel" | "precast" | "concrete" | "hybrid";
@@ -43,6 +44,32 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   const [weights, setWeights] = useState(defaultWeights);
   const [shortlist, setShortlist] = useState<SystemId[]>(["steel", "precast", "hybrid"]);
   const [view, setView] = useState<"ranking" | "matrix" | "sensitivity">("ranking");
+  const [sourceSnapshot, setSourceSnapshot] = useState<McdaSourceSnapshot | null>(null);
+
+  const currentProjectSource = useMemo(() => buildMcdaProjectSnapshot({
+    use: thread.canonical.architecture.use,
+    floors: thread.canonical.architecture.floors,
+    grossArea: thread.canonical.architecture.grossArea,
+    spanX: thread.canonical.structure.spanX,
+    spanY: thread.canonical.structure.spanY,
+  }), [thread.canonical]);
+
+  const currentMcdaInput = useMemo(() => ({ usage, floors, span, area }), [area, floors, span, usage]);
+  const sourceSnapshotCurrent = sourceSnapshot && currentProjectSource
+    ? mcdaSourceMatches(sourceSnapshot, currentProjectSource)
+    : false;
+  const inputMatchesProject = mcdaInputMatchesSource(currentMcdaInput, currentProjectSource);
+  const sourceStale = Boolean(
+    transferReady
+    && currentProjectSource
+    && (sourceSnapshot ? !sourceSnapshotCurrent : !inputMatchesProject)
+  );
+  const manualOverride = Boolean(
+    transferReady
+    && currentProjectSource
+    && sourceSnapshotCurrent
+    && !inputMatchesProject
+  );
 
   const ranking = useMemo(() => {
     const totalWeight = Object.values(weights).reduce((sum, value) => sum + value, 0);
