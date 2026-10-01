@@ -46,16 +46,19 @@ test("KAKS program correction opens a focused architectural workspace", () => {
   const css = fs.readFileSync(new URL("../app/mimari-program-studyosu/kaks-duzeltme/kaks-duzeltme.css", import.meta.url), "utf8");
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
 
+  assert.match(page, /className="arx-kaks-page-intro"/);
+  assert.match(page, /Program brütünü düzelt/);
   assert.match(page, /ArchitecturalProgramStudio issueFocus="kaks"/);
-  assert.doesNotMatch(page, /className="arx-kaks-page-intro"/);
-  assert.match(studio, /PLN-012 · KAKS \/ EMSAL ÖN KONTROLÜ/);
-  assert.match(studio, /Program brütünü/);
+  assert.match(studio, /arx-kaks-project-strip/);
+  assert.match(studio, /PROGRAM \/ KULLANIM UYUMSUZLUĞU/);
+  assert.match(studio, /programUseMismatch/);
+  assert.match(studio, /şablonuna geçir/);
   assert.match(studio, /architectural-program-kaks-focus/);
   assert.match(studio, /KAKS'A GÖRE AZAMİ/);
   assert.match(studio, /Program dağılımını koruyarak sınır içine indir/);
+  assert.match(studio, /arx-kaks-space-columns/);
   assert.match(studio, /setSpaces\(\(current\) => current\.map/);
-  assert.match(css, /KAKS correction UI v2/);
-  assert.match(css, /KAKS correction UI v3/);
+  assert.match(css, /KAKS correction UI v4/);
   assert.match(graph, /\/mimari-program-studyosu\/kaks-duzeltme/);
 });
 
