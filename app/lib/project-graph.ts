@@ -364,7 +364,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=hmax#geo-studyo",
     secondaryRouteLabel: "Hmax girdisini incele",
   });
-  if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Net–brüt katsayısını, katları veya plan geometrisini eşleyin.", route: "/mimari-program-studyosu" });
+  if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Mahal programı ile mevcut plan kapasitesini aynı toplam alanda koordine edin.", route: "/mimari-program-studyosu/plan-koordinasyonu", routeLabel: "Program ve planı koordine et" });
   if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
   if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
@@ -416,6 +416,21 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       summary: `Program brütü: ${architectureGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} / ${canonical.site.allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
       routeLabel: "Görüntüle",
       route: "/mimari-program-studyosu/kaks-duzeltme",
+    });
+  }
+
+  if (
+    architectureGross > 0
+    && planGross > 0
+    && Math.abs(architectureGross - planGross) / architectureGross <= .1
+    && !issues.some((issue) => issue.id === "ARC-021")
+  ) {
+    completedControls.push({
+      code: "ARC-021",
+      title: "Program / plan alan koordinasyonu",
+      summary: `Program: ${architectureGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · Plan: ${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/mimari-program-studyosu/plan-koordinasyonu",
     });
   }
 
