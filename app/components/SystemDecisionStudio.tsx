@@ -61,6 +61,7 @@ export function SystemDecisionStudio() {
   const mcdaSourceCurrent = currentProjectSource
     ? hasStoredSource
       ? mcdaSourceMatches(comparisonSourceSnapshot as McdaSourceSnapshot, currentProjectSource)
+        && mcdaInputMatchesSource(comparisonInput, currentProjectSource)
       : mcdaInputMatchesSource(comparisonInput, currentProjectSource)
     : false;
   const currentSourceKey = mcdaSourceKey(currentProjectSource);
