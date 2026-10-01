@@ -170,7 +170,7 @@ test("resolved structural system advances beyond the system decision gate", () =
 });
 
 
-test("TAKS issue opens the placement stage directly", () => {
+test("TAKS issue routes to the actual footprint data owner", () => {
   const geo = geoModule({
     authoritative: false,
     verification: "user-declared",
@@ -197,6 +197,21 @@ test("TAKS issue opens the placement stage directly", () => {
   assert.equal(issue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
   assert.equal(issue?.secondaryRouteLabel, "TAKS girdisini incele");
   assert.match(issue?.action ?? "", /en az 87\.7 m² azaltın/);
+
+  const planOwnedThread = deriveProjectThread({
+    "decision-assistant": { status: "Brief tamamlandı" },
+    "geo-parcel": geo,
+    "plan-editor": {
+      metrics: { floorArea: 567 },
+      floorCount: 2,
+    },
+  });
+  const planOwnedIssue = planOwnedThread.issues.find(item => item.id === "PLN-011");
+  assert.ok(planOwnedIssue);
+  assert.match(planOwnedIssue?.evidence ?? "", /Plan & aks modeli/);
+  assert.equal(planOwnedIssue?.route, "/tasarim-calismalari#plan-editor");
+  assert.equal(planOwnedIssue?.routeLabel, "Plan tabanını düzelt");
+  assert.equal(planOwnedIssue?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
 });
 
 test("invalid parcel geometry opens the boundary editing stage directly", () => {
@@ -250,7 +265,7 @@ test("KAKS and Hmax issues expose design and zoning resolution paths", () => {
 
   const hmax = thread.issues.find(item => item.id === "PLN-013");
   assert.ok(hmax);
-  assert.equal(hmax?.routeLabel, "Kat / yüksekliği düzelt");
+  assert.equal(hmax?.routeLabel, "Kat adedini düzelt");
   assert.equal(hmax?.secondaryRoute, "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo");
   assert.equal(hmax?.secondaryRouteLabel, "Hmax girdisini incele");
   assert.match(hmax?.action ?? "", /en az 0\.70 m azaltın/);
