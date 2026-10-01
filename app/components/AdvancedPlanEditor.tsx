@@ -18,6 +18,7 @@ type PlanElement = {
   load: number;
   fire: string;
   section: string;
+  provenance?: "manual" | "conceptual-seed";
 };
 
 const toolMeta: Record<Tool, { code: string; label: string; hint: string }> = {
@@ -37,13 +38,13 @@ function createId(type: string, level: number, x: number, y: number) {
   return `${type}-${level}-${x}-${y}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }: { compactKernel?: boolean; issueFocus?: boolean } = {}) {
+export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }: { compactKernel?: boolean; issueFocus?: "taks" | "kmkr" | false } = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [tool, setTool] = useState<Tool>("select");
-  const [view, setView] = useState<View>("structural");
+  const [view, setView] = useState<View>(issueFocus === "kmkr" ? "coordination" : "structural");
   const [level, setLevel] = useState(1);
   const [floorCount, setFloorCount] = useState(4);
   const [baysX, setBaysX] = useState(6);
@@ -58,6 +59,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const [status, setStatus] = useState("Yeni proje şeması hazır");
   const [layers, setLayers] = useState({ columns: true, walls: true, spaces: true, openings: true, loads: true });
   const [modelHydrated, setModelHydrated] = useState(false);
+  const isTaksFocus = issueFocus === "taks";
+  const isKmKrFocus = issueFocus === "kmkr";
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -142,7 +145,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const eccentricityEvaluable = massPointCount > 0 && rigidityPointCount > 0;
     const eccentricity = Math.hypot(massCenter.x - rigidityCenter.x, massCenter.y - rigidityCenter.y);
     const eccentricityRatio = eccentricity / Math.max(totalWidth, totalDepth) * 100;
-    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
+    const conceptualMassPointCount = [...rooms, ...loads].filter((element) => element.provenance === "conceptual-seed").length;
+    const conceptualRigidityPointCount = [...columns, ...walls].filter((element) => element.provenance === "conceptual-seed").length;
+    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
   }, [spanX, spanY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
@@ -159,6 +164,65 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     setSpanX(Number(suggestedSpanX.toFixed(3)));
     setSpanY(Number(suggestedSpanY.toFixed(3)));
     setStatus(`Plan taban alanı TAKS sınırına göre küçültüldü · hedef ≤ ${allowedFootprint.toFixed(1)} m²`);
+  };
+
+  const createConceptualKmKrSources = () => {
+    const current = elements.filter((element) => element.level === level);
+    const hasRigidity = current.some((element) => element.type === "column" || element.type === "wall");
+    const hasMass = current.some((element) => element.type === "space" || element.type === "load");
+    if (hasRigidity && hasMass) {
+      setStatus("Aktif katta KM/KR ön kontrol kaynakları zaten mevcut");
+      return;
+    }
+
+    const additions: PlanElement[] = [];
+    if (!hasRigidity) {
+      const corners = [
+        { x: 0, y: 0, label: "Temsili kolon A" },
+        { x: baysX, y: 0, label: "Temsili kolon B" },
+        { x: baysX, y: baysY, label: "Temsili kolon C" },
+        { x: 0, y: baysY, label: "Temsili kolon D" },
+      ];
+      corners.forEach((item, index) => additions.push({
+        id: createId("column", level, item.x, item.y),
+        type: "column",
+        level,
+        x: item.x,
+        y: item.y,
+        orientation: "x",
+        label: item.label,
+        load: 0,
+        fire: "R 90",
+        section: "Temsili",
+        provenance: "conceptual-seed",
+      }));
+    }
+
+    if (!hasMass) {
+      const candidates = [
+        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .25))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .25))) },
+        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .75))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .25))) },
+        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .25))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .75))) },
+        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .75))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .75))) },
+      ];
+      const unique = candidates.filter((item, index, list) => list.findIndex((other) => other.x === item.x && other.y === item.y) === index);
+      unique.forEach((item, index) => additions.push({
+        id: createId("load", level, item.x, item.y),
+        type: "load",
+        level,
+        x: item.x,
+        y: item.y,
+        orientation: "x",
+        label: `Temsili kütle bölgesi ${index + 1}`,
+        load: 5,
+        fire: "Projede belirlenecek",
+        section: "—",
+        provenance: "conceptual-seed",
+      }));
+    }
+
+    commit([...elements, ...additions], `K${level} için ${additions.length} temsilî KM/KR kaynak nesnesi oluşturuldu`);
+    setView("coordination");
   };
 
   useEffect(() => {
@@ -233,6 +297,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       load: type === "load" ? 5 : 3.5,
       fire: type === "core" ? "REI 120" : "R 60",
       section: type === "column" ? "50×50 cm" : type === "wall" ? "25 cm" : "—",
+      provenance: "manual",
     };
     commit([...elements, element], `${toolMeta[type].label} K${level} planına eklendi`);
     setSelectedId(element.id);
@@ -259,7 +324,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const autoFrame = () => {
     const retained = elements.filter((element) => element.level !== level || element.type !== "column");
     const columns: PlanElement[] = [];
-    for (let x = 0; x <= baysX; x += 1) for (let y = 0; y <= baysY; y += 1) columns.push({ id: createId("column", level, x, y), type: "column", level, x, y, orientation: "x", label: `K-${String.fromCharCode(65 + x)}${y + 1}`, load: 0, fire: "R 90", section: "50×50 cm" });
+    for (let x = 0; x <= baysX; x += 1) for (let y = 0; y <= baysY; y += 1) columns.push({ id: createId("column", level, x, y), type: "column", level, x, y, orientation: "x", label: `K-${String.fromCharCode(65 + x)}${y + 1}`, load: 0, fire: "R 90", section: "50×50 cm", provenance: "manual" });
     commit([...retained, ...columns], `${columns.length} aks kolonu otomatik üretildi`);
   };
 
