@@ -160,6 +160,23 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
         <div><span>ARKEMX / MCDA</span><b>{project.name}</b></div>
         <div><span>{project.phase}</span><span>{project.revision}</span><span>Çok ölçütlü ön eleme</span></div>
       </div>
+      {sourceStale && currentProjectSource ? <section className="arx-mcda-source-status is-stale" role="alert">
+        <div>
+          <span>PROJE VERİSİ DEĞİŞTİ</span>
+          <b>MCDA güncellemesi gerekli</b>
+          <p>Kayıtlı MCDA: {area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {floors} kat · {span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık. Güncel proje: {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat · {currentProjectSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık.</p>
+        </div>
+        <button type="button" onClick={importProjectGeometry}>Güncel proje verisini aktar ve yeniden hesapla</button>
+      </section> : manualOverride && currentProjectSource ? <section className="arx-mcda-source-status is-override" role="note">
+        <div>
+          <span>MANUEL MCDA SENARYOSU</span>
+          <b>Proje snapshot'ı güncel; MCDA girdileri bilinçli olarak farklı.</b>
+          <p>Güncel proje referansı {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat. İstersen proje değerlerine geri dönebilirsin.</p>
+        </div>
+        <button type="button" onClick={importProjectGeometry}>Proje değerlerine dön</button>
+      </section> : currentProjectSource ? <section className="arx-mcda-source-status is-current" role="status">
+        <div><span>PROJE VERİSİ GÜNCEL</span><b>MCDA kaynak snapshot'ı aktif proje ile eşleşiyor.</b></div>
+      </section> : null}
       <div className="arx-system-grid">
         <section className="arx-system-panel" aria-labelledby="arx-system-input-title">
           <header className="arx-system-panel-head">
@@ -182,7 +199,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
               <input type="number" min="3" max="60" step=".5" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
             </label>
             <label>Brüt alan (m²)
-              <input type="number" min="50" max="100000" step="50" value={area} onChange={(event) => setArea(Number(event.target.value))} />
+              <input type="number" min="50" max="100000" step=".1" value={area} onChange={(event) => setArea(Number(event.target.value))} />
             </label>
           </div>
           <details className="arx-system-detail">
