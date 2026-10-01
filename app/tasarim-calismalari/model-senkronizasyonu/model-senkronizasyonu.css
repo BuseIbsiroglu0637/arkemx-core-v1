@@ -378,3 +378,35 @@
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* Structural sync UX v2 · completed state */
+.arx-struct-sync-complete {
+  display:grid;
+  align-content:center;
+  min-height:76px;
+  padding:14px 17px;
+  background:#f4faf6;
+}
+.arx-struct-sync-complete span {
+  display:block;
+  color:#688073;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.07em;
+}
+.arx-struct-sync-complete b {
+  display:block;
+  margin-top:6px;
+  color:#2f6549;
+  font-size:13px;
+}
+.arx-struct-sync-complete.pending {
+  background:#fafbfb;
+}
+.arx-struct-sync-complete.pending span {
+  color:#87979d;
+}
+.arx-struct-sync-complete.pending b {
+  color:#687b83;
+}
