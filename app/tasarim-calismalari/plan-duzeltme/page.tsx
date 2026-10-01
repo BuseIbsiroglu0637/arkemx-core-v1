@@ -30,7 +30,7 @@ export default function Page() {
       </div>
 
       <section aria-label="TAKS plan tabanı düzeltme çalışma alanı">
-        <AdvancedPlanEditor issueFocus />
+        <AdvancedPlanEditor issueFocus="taks" />
       </section>
     </div>
   </main>;
