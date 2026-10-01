@@ -60,6 +60,7 @@ test("KAKS program correction opens a focused architectural workspace", () => {
   assert.match(page, /className="arx-kaks-page-intro"/);
   assert.match(page, /KONTROL · PLN-012/);
   assert.match(page, /Program brütünü düzelt/);
+  assert.match(page, /stage=zoning&focus=kaks#geo-studyo/);
   assert.match(page, /ArchitecturalProgramStudio issueFocus="kaks"/);
   assert.match(studio, /arx-kaks-project-strip/);
   assert.match(studio, /PROGRAM \/ KULLANIM UYUMSUZLUĞU/);
@@ -73,6 +74,31 @@ test("KAKS program correction opens a focused architectural workspace", () => {
   assert.match(studio, /setSpaces\(\(current\) => current\.map/);
   assert.match(css, /KAKS correction UI v4/);
   assert.match(graph, /\/mimari-program-studyosu\/kaks-duzeltme/);
+});
+
+
+test("project centre shows completed controls and zoning review links preserve field focus", () => {
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+
+  assert.match(graph, /export type CompletedControl/);
+  assert.match(graph, /completedControls/);
+  assert.match(graph, /code: "PLN-011"/);
+  assert.match(graph, /code: "PLN-012"/);
+  assert.match(graph, /focus=kaks/);
+
+  assert.match(hub, /Tamamlanan kontroller \/ düzeltmeler/);
+  assert.match(hub, /thread\.completedControls/);
+  assert.match(hub, /arx-completed-control-list/);
+
+  assert.match(geo, /const \[zoningFocus, setZoningFocus\]/);
+  assert.match(geo, /requestedFocus === "kaks"/);
+  assert.match(geo, /PLN-012 · KAKS GİRDİSİ/);
+  assert.match(geo, /geo-zoning-focus-target/);
+  assert.match(geo, /geo-zoning-source-focus/);
+  assert.match(css, /Sade Arazi\/Parsel UI v8/);
 });
 
 
