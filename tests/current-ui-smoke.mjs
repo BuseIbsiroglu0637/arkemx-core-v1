@@ -642,6 +642,15 @@ test("simple parcel workspace keeps project kernel compact and splits long zonin
 });
 
 
+test("simple parcel workspace collapses legal limits and resets placement to summary", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('if (stage === "design") setDesignPanel("summary")'));
+  assert.ok(studio.includes('geo-studio-foot-collapsible'));
+  assert.ok(studio.includes('ⓘ Teknik ve hukuki sınırlar'));
+  assert.ok(studio.includes('Ayrıntıları göster'));
+});
+
+
 test("parking demand result is visible beside inputs and in technical summary", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes("const parkingDemand = gross / 100 * parkingPer100"));
