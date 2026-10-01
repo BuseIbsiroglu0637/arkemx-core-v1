@@ -1074,3 +1074,58 @@ html[data-theme="dark"] .arx-geo-simple .geo-placement-source b {
 html[data-theme="dark"] .arx-geo-simple .geo-controls::-webkit-scrollbar-thumb {
   background: #3b4b50;
 }
+
+
+/* Sade Arazi/Parsel UI v4 · ikincil teknik paneller ana akışı büyütmesin */
+.arx-geo-simple .geo-integration-map {
+  display: none !important;
+}
+
+.arx-geo-simple[data-arx-sources="open"] .v109-source-network {
+  display: block !important;
+  margin: 8px 0 0 !important;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #dbe4e7;
+}
+
+.arx-geo-simple[data-arx-results="open"] .geo-results {
+  display: block !important;
+  grid-column: 1 / -1 !important;
+  max-height: 46vh;
+  overflow: auto;
+  padding: 14px 18px !important;
+  border-top: 1px solid #e2eaed;
+  background: #fff;
+}
+
+.arx-geo-simple .arx-geo-extra > div {
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  z-index: 40;
+}
+
+.arx-geo-simple .v109-source-network::-webkit-scrollbar,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar {
+  width: 8px;
+}
+
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #c6d2d6;
+  border-radius: 999px;
+}
+
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results,
+html[data-theme="dark"] .arx-geo-simple[data-arx-sources="open"] .v109-source-network {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #3b4b50;
+}
