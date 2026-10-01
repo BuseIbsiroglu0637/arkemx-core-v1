@@ -789,3 +789,47 @@ test("BIM-052 moves to completed history when conceptual KM-KR eccentricity fall
   assert.equal(completed?.title, "KM–KR yerleşim ön kontrolü");
   assert.match(completed?.summary ?? "", /%0\.8/);
 });
+
+
+test("resolved PLN-013 moves into completed controls with the final Hmax equation", () => {
+  const zoning = {
+    ...geoModule({
+      authoritative: false,
+      verification: "user-declared",
+      plan,
+      conditions,
+      source: {
+        type: "Kullanıcı beyanı",
+        date: "2026-10-01",
+        note: "Kaynak bilgisi kullanıcı tarafından kaydedildi.",
+      },
+    }),
+    floorHeight: 3.4,
+  };
+
+  const open = deriveProjectThread({
+    "geo-parcel": zoning,
+    "plan-editor": {
+      floorCount: 3,
+      metrics: { floorArea: 400 },
+    },
+  });
+
+  assert.equal(open.issues.some(issue => issue.id === "PLN-013"), true);
+  assert.equal(open.completedControls.some(control => control.code === "PLN-013"), false);
+
+  const resolved = deriveProjectThread({
+    "geo-parcel": zoning,
+    "plan-editor": {
+      floorCount: 2,
+      metrics: { floorArea: 400 },
+    },
+  });
+
+  assert.equal(resolved.issues.some(issue => issue.id === "PLN-013"), false);
+  const height = resolved.completedControls.find(control => control.code === "PLN-013");
+  assert.ok(height);
+  assert.equal(height?.title, "Hmax / yapı yüksekliği ön kontrolü");
+  assert.match(height?.summary ?? "", /2 kat × 3,40 m = 6,80 m \/ Hmax 9,50 m/);
+  assert.equal(height?.route, "/tasarim-calismalari/yukseklik-duzeltme");
+});
