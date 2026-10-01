@@ -386,6 +386,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // The 3D terrain view opens as terrain-only. A conceptual building mass is opt-in.
   const [showTerrainMassing, setShowTerrainMassing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const [designPanel, setDesignPanel] = useState<"summary" | "massing" | "adjust">("summary");
   const extraToolsRef = useRef<HTMLDetailsElement | null>(null);
   const openFocusedStage = (stage: Stage) => {
     setActiveStage(stage);
@@ -1839,136 +1840,131 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <i></i>
         <div><b>{zoningVerificationLabel(zoning.verification)}</b><small>{reference}</small></div>
       </div>
-      <div className="geo-zoning-source-grid">
-        {ZONING_CONNECTORS.map((connector) => connector.href
-          ? <a href={connector.href} target="_blank" rel="noreferrer" key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>↗</i></a>
-          : <article key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>PROJE BAĞLANTISI</i></article>)}
+
+      <div className="geo-zoning-core">
+        <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
+        <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option value="" disabled>Yapı nizamını seçin</option><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
+        <div className="geo-planning-grid geo-zoning-values">
+          <label>TAKS<input type="number" min=".01" max="1" step=".01" value={displayOptionalZoningNumber(zoning.taks)} onChange={(event) => updateZoning("taks", parseOptionalZoningNumber(event.target.value))} placeholder="TAKS girin"/></label>
+          <label>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={displayOptionalZoningNumber(zoning.kaks)} onChange={(event) => updateZoning("kaks", parseOptionalZoningNumber(event.target.value))} placeholder="KAKS / emsal girin"/></label>
+          <label>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={displayOptionalZoningNumber(zoning.hmax)} onChange={(event) => updateZoning("hmax", parseOptionalZoningNumber(event.target.value))} placeholder="Hmax girin"/><b>m</b></label>
+        </div>
+        <div className="geo-planning-grid geo-zoning-values">
+          <label>Ön bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.frontSetback)} onChange={(event) => updateSetback("frontSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Ön çekme"/></label>
+          <label>Yan bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.sideSetback)} onChange={(event) => updateSetback("sideSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Yan çekme"/></label>
+          <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.rearSetback)} onChange={(event) => updateSetback("rearSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Arka çekme"/></label>
+        </div>
       </div>
-      <label>Kaynak beyanı / inceleme durumu
-        <select value={zoning.verification} onChange={(event) => updateZoning("verification", event.target.value as ZoningVerification)}>
-          <option value="user-declared">Kullanıcı girdisi · doğrulanmadı</option>
-          <option value="document-pending-review" disabled={!zoning.sourceDocument}>Belge eklendi · uzman doğrulaması bekliyor</option>
-          <option value="municipal-viewer">Kullanıcı beyanı: e-İmar ekranı görüldü · doğrulanmadı</option>
-        </select>
-        <small>Bu seçimler resmî onay sağlamaz. Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz.</small>
-      </label>
-      <div className="geo-field-grid geo-zoning-source-grid">
-        <label>Kaynak türü
-          <select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}>
-            <option value="" disabled>Kaynak türünü seçin</option>
-            <option>Belediye imar durumu</option>
-            <option>e-Plan / plan paftası</option>
-            <option>Plan notu / meclis kararı</option>
-            <option>Kullanıcı beyanı</option>
-            <option>Diğer</option>
-          </select>
-        </label>
-        <label>Belge / kaynak tarihi
-          <input type="date" value={zoning.sourceDate} onChange={(event) => updateZoning("sourceDate", event.target.value)} />
-        </label>
-      </div>
+
       <div className="geo-zoning-source-status" data-ready={zoningSourceReady ? "ready" : "missing"}>
         <span>İMAR KAYNAĞI</span>
         <b>{zoningSourceReady ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli" : "Kaynak bilgisi eksik"}</b>
-        <small>{zoningSourceReady ? "Kaynak türü, tarih ve kaynak referansı kayıtlı; resmî doğrulama yapılmış sayılmaz." : "Kaynak türü ve tarih girin; belge / URL / plan işlem numarası veya kullanıcı beyanı için açıklama ekleyin."}</small>
+        <small>{zoningSourceReady ? "Kaynak kaydı mevcut; resmî doğrulama yapılmış sayılmaz." : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
       </div>
-      <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
-      <div className="geo-field-grid">
-        <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
-        <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>
-        <label>Plan işlem / pafta no<input value={zoning.planId} onChange={(event) => updateZoning("planId", event.target.value)} placeholder="PIN, pafta veya karar no" /></label>
-        <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option value="" disabled>Yapı nizamını seçin</option><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
-      </div>
-      <div className="geo-planning-grid geo-zoning-values">
-        <label>TAKS<input type="number" min=".01" max="1" step=".01" value={displayOptionalZoningNumber(zoning.taks)} onChange={(event) => updateZoning("taks", parseOptionalZoningNumber(event.target.value))} placeholder="TAKS girin"/></label>
-        <label>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={displayOptionalZoningNumber(zoning.kaks)} onChange={(event) => updateZoning("kaks", parseOptionalZoningNumber(event.target.value))} placeholder="KAKS / emsal girin"/></label>
-        <label>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={displayOptionalZoningNumber(zoning.hmax)} onChange={(event) => updateZoning("hmax", parseOptionalZoningNumber(event.target.value))} placeholder="Hmax girin"/><b>m</b></label>
-      </div>
-      <div className="geo-planning-grid geo-zoning-values">
-        <label>Ön bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.frontSetback)} onChange={(event) => updateSetback("frontSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Ön çekme"/></label>
-        <label>Yan bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.sideSetback)} onChange={(event) => updateSetback("sideSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Yan çekme"/></label>
-        <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.rearSetback)} onChange={(event) => updateSetback("rearSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Arka çekme"/></label>
-      </div>
-      <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
-      <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} onBlur={() => updateZoning("sourceUrl", normalizeZoningSourceUrl(zoning.sourceUrl))} placeholder="https://… Belediye e-İmar veya e-Plan bağlantısı" /></label>
-      <label>Kaynak açıklaması<textarea rows={2} value={zoning.sourceNote} onChange={(event) => updateZoning("sourceNote", event.target.value)} placeholder="Belgenin kapsamı, nereden alındığı veya kontrol notu…" /></label>
-      <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
-      {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı veya imar uygunluğu hesabı üretilmez.</p>}
-      <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Ulusal ölçekte tek ve açık bir TAKS/KAKS/Hmax servisi bulunmadığından TKGM parsel kimliği; e-Plan/TUCBS, belediye e-İmar adaptörü ve onaylı imar durumu belgesiyle eşleştirilir. Kaynaksız değer resmî imar hakkı olarak gösterilmez.</p>
+
+      <details className="geo-collapsible-block">
+        <summary><span>Plan ve kaynak</span><small>{zoning.planScale || "Plan ölçeği ve kaynak bilgileri"}</small></summary>
+        <div className="geo-collapsible-body">
+          <div className="geo-zoning-source-grid">
+            {ZONING_CONNECTORS.map((connector) => connector.href
+              ? <a href={connector.href} target="_blank" rel="noreferrer" key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>↗</i></a>
+              : <article key={connector.id}><b>{connector.label}</b><small>{connector.purpose}</small><i>PROJE BAĞLANTISI</i></article>)}
+          </div>
+          <label>Kaynak beyanı / inceleme durumu
+            <select value={zoning.verification} onChange={(event) => updateZoning("verification", event.target.value as ZoningVerification)}>
+              <option value="user-declared">Kullanıcı girdisi · doğrulanmadı</option>
+              <option value="document-pending-review" disabled={!zoning.sourceDocument}>Belge eklendi · uzman doğrulaması bekliyor</option>
+              <option value="municipal-viewer">Kullanıcı beyanı: e-İmar ekranı görüldü · doğrulanmadı</option>
+            </select>
+            <small>Bu seçimler resmî onay sağlamaz.</small>
+          </label>
+          <div className="geo-field-grid">
+            <label>Kaynak türü<select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}><option value="" disabled>Kaynak türünü seçin</option><option>Belediye imar durumu</option><option>e-Plan / plan paftası</option><option>Plan notu / meclis kararı</option><option>Kullanıcı beyanı</option><option>Diğer</option></select></label>
+            <label>Belge / kaynak tarihi<input type="date" value={zoning.sourceDate} onChange={(event) => updateZoning("sourceDate", event.target.value)} /></label>
+            <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
+            <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>
+            <label>Plan işlem / pafta no<input value={zoning.planId} onChange={(event) => updateZoning("planId", event.target.value)} placeholder="PIN, pafta veya karar no" /></label>
+          </div>
+        </div>
+      </details>
+
+      <details className="geo-collapsible-block">
+        <summary><span>Belge ve notlar</span><small>{zoning.sourceDocument || zoning.planNoteReference || zoning.sourceNote ? "Kayıt mevcut" : "İsteğe bağlı teknik kanıtlar"}</small></summary>
+        <div className="geo-collapsible-body">
+          <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
+          <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} onBlur={() => updateZoning("sourceUrl", normalizeZoningSourceUrl(zoning.sourceUrl))} placeholder="https://… Belediye e-İmar veya e-Plan bağlantısı" /></label>
+          <label>Kaynak açıklaması<textarea rows={2} value={zoning.sourceNote} onChange={(event) => updateZoning("sourceNote", event.target.value)} placeholder="Belgenin kapsamı, nereden alındığı veya kontrol notu…" /></label>
+          <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
+          <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Yetkili servis veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p>
+        </div>
+      </details>
+      {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı hesabı üretilmez.</p>}
     </div>,
-    design: zoningFormReady ? <div className="geo-control-section">
+
+    design: zoningFormReady ? <div className="geo-control-section geo-design-control">
       <span>05 / YAPI YERLEŞİMİ</span>
       <h3>{massingModel.source.authoritative ? "Doğrulanan imar koşullarında kütleyi sınayın." : "Girilen imar koşullarında ön kütleyi sınayın."}</h3>
-      <div className="geo-zoning-summary">
-        <span>AKTARILAN İMAR KOŞULLARI</span>
-        <b>{zoning.buildingOrder} · TAKS {zoning.taks.toFixed(2)} · KAKS {zoning.kaks.toFixed(2)}</b>
-        <small>Hmax {zoning.hmax.toFixed(1)} m · Ön/yan/arka {zoning.frontSetback}/{zoning.sideSetback}/{zoning.rearSetback} m</small>
-        <small>Kaynak: {zoningSourceReady ? "bilgisi kayıtlı · uzman doğrulaması gerekli" : "eksik · kullanıcı girdisi"}</small>
-        <button onClick={() => openFocusedStage("zoning")}>İmar girdilerini düzenleyin</button>
-      </div>
-      <section className="geo-placement-decision" aria-label="Yerleşim ön kontrolü karar özeti" data-state={placementDecisionPass ? "pass" : "review"}>
-        <header><div><span>YERLEŞİM ÖN KONTROLÜ</span><b>İmar girdisi ve kavramsal kütle tek karar özetinde.</b></div><em>{placementDecisionPass ? "ÖN KONTROL GEÇTİ" : "İNCELEME GEREKLİ"}</em></header>
-        <div className="geo-placement-decision-grid">
-          <p><span>TAKS</span><b className={taksExceeded ? "fail" : "pass"}>{taksExceeded ? "⚠" : "✓"} %{metrics.coverage.toFixed(1)} / %{maxCoverage.toFixed(1)}</b></p>
-          <p><span>KAKS</span><b className={kaksExceeded ? "fail" : "pass"}>{kaksExceeded ? "⚠" : "✓"} {metrics.far.toFixed(2)} / {maxFar.toFixed(2)}</b></p>
-          <p><span>Hmax</span><b className={hmaxExceeded ? "fail" : "pass"}>{hmaxExceeded ? "⚠" : "✓"} {metrics.buildingHeight.toFixed(1)} / {maxHeight.toFixed(1)} m</b></p>
-          <p><span>Ön çekme</span><b className={setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "pass" : "fail"}>{setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "✓" : "⚠"} {setbackDecision.front?.toFixed(1) ?? "—"} / {zoning.frontSetback.toFixed(1)} m</b></p>
-          <p><span>Yan çekme</span><b className={setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "pass" : "fail"}>{setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "✓" : "⚠"} {setbackDecision.side?.toFixed(1) ?? "—"} / {zoning.sideSetback.toFixed(1)} m</b></p>
-          <p><span>Arka çekme</span><b className={setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "pass" : "fail"}>{setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "✓" : "⚠"} {setbackDecision.rear?.toFixed(1) ?? "—"} / {zoning.rearSetback.toFixed(1)} m</b></p>
+
+      <nav className="geo-design-tabs" aria-label="Yapı yerleşimi bölümleri">
+        <button type="button" className={designPanel === "summary" ? "active" : ""} onClick={() => setDesignPanel("summary")}>Özet</button>
+        <button type="button" className={designPanel === "massing" ? "active" : ""} onClick={() => setDesignPanel("massing")}>Kütle</button>
+        <button type="button" className={designPanel === "adjust" ? "active" : ""} onClick={() => setDesignPanel("adjust")}>İnce ayar</button>
+      </nav>
+
+      {designPanel === "summary" && <>
+        <div className="geo-zoning-summary">
+          <span>AKTARILAN İMAR KOŞULLARI</span>
+          <b>{zoning.buildingOrder} · TAKS {zoning.taks.toFixed(2)} · KAKS {zoning.kaks.toFixed(2)}</b>
+          <small>Hmax {zoning.hmax.toFixed(1)} m · Ön/yan/arka {zoning.frontSetback}/{zoning.sideSetback}/{zoning.rearSetback} m</small>
+          <small>Kaynak: {zoningSourceReady ? "bilgisi kayıtlı · uzman doğrulaması gerekli" : "eksik · kullanıcı girdisi"}</small>
+          <button onClick={() => openFocusedStage("zoning")}>İmar girdilerini düzenleyin</button>
         </div>
-        <div className="geo-placement-source"><span>Kaynak</span><b>{massingModel.source.authoritative ? "Yetkili kaynak doğrulandı" : zoningSourceReady ? "Kaynak bilgisi kayıtlı · uzman doğrulaması gerekli" : "Kaynak eksik · kullanıcı girdisi"}</b></div>
-        <footer><b>SONUÇ</b><span>{placementDecisionLabel}</span><small>Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir.</small></footer>
-      </section>
-      <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
-        <header>
-          <div><span>{massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU" : "V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"}</span><b>{massingModel.source.authoritative ? "Doğrulanmış koşullardan üç açıklanabilir alternatif." : "Doğrulanmamış kullanıcı imar girdilerine göre üç açıklanabilir ön alternatif."}</b></div>
-          <em data-trust={massingModel.source.trust}>{massingModel.source.authoritative ? "İMAR KAYNAĞI DOĞRULANDI" : "ÖN DEĞERLENDİRME"}</em>
-        </header>
-        <label className="v112-front-edge">Ön cephe yönü
-          <select value={frontEdge} onChange={(event) => setFrontEdge(event.target.value as ParcelFrontEdge)}>
-            <option value="north">Kuzey</option><option value="east">Doğu</option><option value="south">Güney</option><option value="west">Batı</option>
-          </select>
-          <small>Ön cephe seçimine göre 5/3/3 gibi ön/yan/arka çekmeler parsel kenarlarında ayrı kontrol edilir. Yol cephesi resmî aplikasyon veya halihazır haritayla doğrulanmalıdır.</small>
-        </label>
-        <div className="v112-envelope-ledger">
-          <p><span>YAPI ZARFI</span><b>{massingModel.envelope.width.toFixed(1)} × {massingModel.envelope.depth.toFixed(1)} m</b></p>
-          <p><span>{massingModel.source.authoritative ? "İZİNLİ TABAN" : "GİRDİYE GÖRE AZAMİ TABAN"}</span><b>{massingModel.limits.allowedFootprint.toFixed(0)} m²</b></p>
-          <p><span>{massingModel.source.authoritative ? "İZİNLİ EMSAL" : "GİRDİYE GÖRE AZAMİ EMSAL ALAN"}</span><b>{massingModel.limits.allowedGrossArea.toFixed(0)} m²</b></p>
-          <p><span>{massingModel.source.authoritative ? "KAT SINIRI" : "GİRDİYE GÖRE YÜKSEKLİK / KAT SINIRI"}</span><b>{massingModel.limits.maxFloors} kat / {massingModel.limits.allowedHeight.toFixed(1)} m</b></p>
-        </div>
-        {!massingModel.source.authoritative && <p className="v112-unverified-note">Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır.</p>}
-        <div className="v112-massing-options">
-          {massingModel.alternatives.map((alternative) => <article key={alternative.id} data-state={alternative.status} data-selected={activeMassingId === alternative.id}>
-            <div><span>{alternative.status === "fits" ? (massingModel.source.authoritative ? "ÖN UYUMLU" : "GİRDİLERLE ÖN UYUMLU") : "İNCELEME"}</span><b>{alternative.label}</b></div>
-            <strong>{alternative.grossArea.toFixed(0)} <i>m²</i></strong>
-            <p>{alternative.width.toFixed(1)} × {alternative.depth.toFixed(1)} m · {alternative.floors} kat</p>
-            <dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>{massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"}</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl>
-            <small>{alternative.note}</small>
-            <button onClick={() => applyMassingAlternative(alternative.id)} disabled={alternative.status !== "fits"}>{activeMassingId === alternative.id ? "Projede seçili" : "Bu alternatifi uygula"}</button>
-          </article>)}
-        </div>
-        <footer><b>Sınırlayıcı veri:</b> {massingModel.alternatives.find((item) => item.id === activeMassingId)?.governingConstraint ?? "manuel yerleşim / uzman incelemesi"}. {massingModel.limitations[0]}</footer>
-      </section>
-      <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
-      <label>Taşıyıcı sistem<select value={system} onChange={(event) => setSystem(event.target.value)}><option>Karar Bekleniyor</option><option>Betonarme</option><option>Betonarme Prefabrik</option><option>Yapısal Çelik</option><option>Hafif Çelik</option><option>Karma Sistem</option></select></label>
-      <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(normalizeMassingDimension(Number(event.target.value)))} /></label>
-      <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(normalizeMassingDimension(Number(event.target.value)))} /></label>
-      {(taksExceeded || kaksExceeded) && <p className="geo-inline-warning" role="alert"><b>İmar oranı ön kontrolü aşılıyor.</b>{taksExceeded && <> TAKS %{metrics.coverage.toFixed(1)} &gt; %{maxCoverage.toFixed(1)}; taban {metrics.footprint.toFixed(0)} m² / azami {metrics.allowedFootprint.toFixed(0)} m².</>}{kaksExceeded && <> KAKS {metrics.far.toFixed(2)} &gt; {maxFar.toFixed(2)}; toplam {metrics.gross.toFixed(0)} m² / azami {metrics.allowedGross.toFixed(0)} m².</>}</p>}
-      <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
-      <div className="geo-parking-result" aria-live="polite">
-        <span>Hesaplanan park ihtiyacı</span>
-        <b>{metrics.parkingNeed} araç</b>
-        <small>{metrics.gross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² toplam alan ÷ 100 × {parkingPer100.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} = {metrics.parkingDemand.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} → yukarı yuvarlandı</small>
-      </div>
-      {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {floors} kat × {floorHeight.toFixed(2)} m = {manualBuildingHeight.toFixed(2)} m → girilen Hmax {zoning.hmax.toFixed(2)} m sınırını aşıyor.</p>}
-      <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="-180" max="180" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
-      <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
-      <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
+        <section className="geo-placement-decision" aria-label="Yerleşim ön kontrolü karar özeti" data-state={placementDecisionPass ? "pass" : "review"}>
+          <header><div><span>YERLEŞİM ÖN KONTROLÜ</span><b>İmar girdisi ve kavramsal kütle tek karar özetinde.</b></div><em>{placementDecisionPass ? "ÖN KONTROL GEÇTİ" : "İNCELEME GEREKLİ"}</em></header>
+          <div className="geo-placement-decision-grid">
+            <p><span>TAKS</span><b className={taksExceeded ? "fail" : "pass"}>{taksExceeded ? "⚠" : "✓"} %{metrics.coverage.toFixed(1)} / %{maxCoverage.toFixed(1)}</b></p>
+            <p><span>KAKS</span><b className={kaksExceeded ? "fail" : "pass"}>{kaksExceeded ? "⚠" : "✓"} {metrics.far.toFixed(2)} / {maxFar.toFixed(2)}</b></p>
+            <p><span>Hmax</span><b className={hmaxExceeded ? "fail" : "pass"}>{hmaxExceeded ? "⚠" : "✓"} {metrics.buildingHeight.toFixed(1)} / {maxHeight.toFixed(1)} m</b></p>
+            <p><span>Ön çekme</span><b className={setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "pass" : "fail"}>{setbackDecision.front !== null && setbackDecision.front + .01 >= zoning.frontSetback ? "✓" : "⚠"} {setbackDecision.front?.toFixed(1) ?? "—"} / {zoning.frontSetback.toFixed(1)} m</b></p>
+            <p><span>Yan çekme</span><b className={setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "pass" : "fail"}>{setbackDecision.side !== null && setbackDecision.side + .01 >= zoning.sideSetback ? "✓" : "⚠"} {setbackDecision.side?.toFixed(1) ?? "—"} / {zoning.sideSetback.toFixed(1)} m</b></p>
+            <p><span>Arka çekme</span><b className={setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "pass" : "fail"}>{setbackDecision.rear !== null && setbackDecision.rear + .01 >= zoning.rearSetback ? "✓" : "⚠"} {setbackDecision.rear?.toFixed(1) ?? "—"} / {zoning.rearSetback.toFixed(1)} m</b></p>
+          </div>
+          <div className="geo-placement-source"><span>Kaynak</span><b>{massingModel.source.authoritative ? "Yetkili kaynak doğrulandı" : zoningSourceReady ? "Kaynak bilgisi kayıtlı · uzman doğrulaması gerekli" : "Kaynak eksik · kullanıcı girdisi"}</b></div>
+          <footer><b>SONUÇ</b><span>{placementDecisionLabel}</span><small>Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir.</small></footer>
+        </section>
+      </>}
+
+      {designPanel === "massing" && <>
+        <section className="v112-massing-engine" aria-label="İmar uyumlu kütle alternatifleri">
+          <header><div><span>{massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU" : "V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"}</span><b>Üç açıklanabilir yerleşim alternatifi.</b></div><em data-trust={massingModel.source.trust}>{massingModel.source.authoritative ? "İMAR KAYNAĞI DOĞRULANDI" : "ÖN DEĞERLENDİRME"}</em></header>
+          <label className="v112-front-edge">Ön cephe yönü<select value={frontEdge} onChange={(event) => setFrontEdge(event.target.value as ParcelFrontEdge)}><option value="north">Kuzey</option><option value="east">Doğu</option><option value="south">Güney</option><option value="west">Batı</option></select><small>Yol cephesi resmî aplikasyon veya halihazır haritayla doğrulanmalıdır.</small></label>
+          <div className="v112-envelope-ledger">
+            <p><span>YAPI ZARFI</span><b>{massingModel.envelope.width.toFixed(1)} × {massingModel.envelope.depth.toFixed(1)} m</b></p>
+            <p><span>AZAMİ TABAN</span><b>{massingModel.limits.allowedFootprint.toFixed(0)} m²</b></p>
+            <p><span>AZAMİ EMSAL ALAN</span><b>{massingModel.limits.allowedGrossArea.toFixed(0)} m²</b></p>
+            <p><span>YÜKSEKLİK / KAT</span><b>{massingModel.limits.maxFloors} kat / {massingModel.limits.allowedHeight.toFixed(1)} m</b></p>
+          </div>
+          <div className="v112-massing-options">{massingModel.alternatives.map((alternative) => <article key={alternative.id} data-state={alternative.status} data-selected={activeMassingId === alternative.id}><div><span>{alternative.status === "fits" ? "GİRDİLERLE ÖN UYUMLU" : "İNCELEME"}</span><b>{alternative.label}</b></div><strong>{alternative.grossArea.toFixed(0)} <i>m²</i></strong><p>{alternative.width.toFixed(1)} × {alternative.depth.toFixed(1)} m · {alternative.floors} kat</p><dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>Kullanım</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl><small>{alternative.note}</small><button onClick={() => applyMassingAlternative(alternative.id)} disabled={alternative.status !== "fits"}>{activeMassingId === alternative.id ? "Projede seçili" : "Bu alternatifi uygula"}</button></article>)}</div>
+        </section>
+        <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
+        <label>Taşıyıcı sistem<select value={system} onChange={(event) => setSystem(event.target.value)}><option>Karar Bekleniyor</option><option>Betonarme</option><option>Betonarme Prefabrik</option><option>Yapısal Çelik</option><option>Hafif Çelik</option><option>Karma Sistem</option></select></label>
+      </>}
+
+      {designPanel === "adjust" && <>
+        <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(normalizeMassingDimension(Number(event.target.value)))} /></label>
+        <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(normalizeMassingDimension(Number(event.target.value)))} /></label>
+        {(taksExceeded || kaksExceeded) && <p className="geo-inline-warning" role="alert"><b>İmar oranı ön kontrolü aşılıyor.</b>{taksExceeded && <> TAKS %{metrics.coverage.toFixed(1)} &gt; %{maxCoverage.toFixed(1)}.</>}{kaksExceeded && <> KAKS {metrics.far.toFixed(2)} &gt; {maxFar.toFixed(2)}.</>}</p>}
+        <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
+        <div className="geo-parking-result" aria-live="polite"><span>Hesaplanan park ihtiyacı</span><b>{metrics.parkingNeed} araç</b><small>{metrics.gross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² toplam alan · yukarı yuvarlandı</small></div>
+        {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {manualBuildingHeight.toFixed(2)} m → Hmax {zoning.hmax.toFixed(2)} m.</p>}
+        <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="-180" max="180" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
+        <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
+        <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
+      </>}
     </div> : <div className="geo-control-section geo-zoning-required">
-      <span>05 / YAPI YERLEŞİMİ</span>
-      <h3>Önce imar girdilerini tamamlayın.</h3>
-      <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yapılaşma hakkı veya yerleşim alternatifi hesaplamaz.</p>
-      <button className="geo-wide-action" type="button" onClick={() => setActiveStage("zoning")}>İmar bilgilerine dön</button>
+      <span>05 / YAPI YERLEŞİMİ</span><h3>Önce imar girdilerini tamamlayın.</h3>
+      <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yerleşim alternatifi hesaplamaz.</p>
+      <button className="geo-wide-action" type="button" onClick={() => openFocusedStage("zoning")}>İmar bilgilerine dön</button>
     </div>,
     terrain: <div className="geo-control-section">
       <span>06 / GIS + 3B ARAZİ</span>
@@ -1987,7 +1983,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
 
   return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"} data-arx-results={showResults ? "open" : "closed"}>
-    {simple ? <details className="arx-geo-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} /></details> : <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
+    {simple ? <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} compact /> : <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
     <header className="geo-studio-top"><div><span>ARKEM / GEO·BIM WORKSPACE · V111 GIS + 3B</span><b>Parsel, Kot & Arazi Stüdyosu</b></div><div><span className="geo-status live">ORTAK KATMAN MOTORU</span><small>2B + 3B · WGS84 / yerel ENU</small></div></header>
     {simple && <>
       <nav className="arx-geo-quick-nav" aria-label="Arazi parsel temel işlemleri">
