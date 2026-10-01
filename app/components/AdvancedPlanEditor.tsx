@@ -147,7 +147,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const eccentricityRatio = eccentricity / Math.max(totalWidth, totalDepth) * 100;
     const conceptualMassPointCount = [...rooms, ...loads].filter((element) => element.provenance === "conceptual-seed").length;
     const conceptualRigidityPointCount = [...columns, ...walls].filter((element) => element.provenance === "conceptual-seed").length;
-    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
+    const manualMassPointCount = massPointCount - conceptualMassPointCount;
+    const manualRigidityPointCount = rigidityPointCount - conceptualRigidityPointCount;
+    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
   }, [spanX, spanY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
@@ -166,6 +168,57 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     setStatus(`Plan taban alanı TAKS sınırına göre küçültüldü · hedef ≤ ${allowedFootprint.toFixed(1)} m²`);
   };
 
+  const conceptualMassCells = () => {
+    const lowX = Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .25)));
+    const lowY = Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .25)));
+    const highX = Math.max(0, baysX - 1 - lowX);
+    const highY = Math.max(0, baysY - 1 - lowY);
+    return [
+      { x: lowX, y: lowY },
+      { x: highX, y: lowY },
+      { x: lowX, y: highY },
+      { x: highX, y: highY },
+    ].filter((item, index, list) => list.findIndex((other) => other.x === item.x && other.y === item.y) === index);
+  };
+
+  const conceptualRigidityNodes = () => [
+    { x: 0, y: 0, label: "Temsili kolon A" },
+    { x: baysX, y: 0, label: "Temsili kolon B" },
+    { x: baysX, y: baysY, label: "Temsili kolon C" },
+    { x: 0, y: baysY, label: "Temsili kolon D" },
+  ];
+
+  const buildConceptualKmKrElements = () => {
+    const additions: PlanElement[] = [];
+    conceptualRigidityNodes().forEach((item) => additions.push({
+      id: createId("column", level, item.x, item.y),
+      type: "column",
+      level,
+      x: item.x,
+      y: item.y,
+      orientation: "x",
+      label: item.label,
+      load: 0,
+      fire: "R 90",
+      section: "Temsili",
+      provenance: "conceptual-seed",
+    }));
+    conceptualMassCells().forEach((item, index) => additions.push({
+      id: createId("load", level, item.x, item.y),
+      type: "load",
+      level,
+      x: item.x,
+      y: item.y,
+      orientation: "x",
+      label: `Temsili kütle bölgesi ${index + 1}`,
+      load: 5,
+      fire: "Projede belirlenecek",
+      section: "—",
+      provenance: "conceptual-seed",
+    }));
+    return additions;
+  };
+
   const createConceptualKmKrSources = () => {
     const current = elements.filter((element) => element.level === level);
     const hasRigidity = current.some((element) => element.type === "column" || element.type === "wall");
@@ -177,51 +230,36 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
     const additions: PlanElement[] = [];
     if (!hasRigidity) {
-      const corners = [
-        { x: 0, y: 0, label: "Temsili kolon A" },
-        { x: baysX, y: 0, label: "Temsili kolon B" },
-        { x: baysX, y: baysY, label: "Temsili kolon C" },
-        { x: 0, y: baysY, label: "Temsili kolon D" },
-      ];
-      corners.forEach((item, index) => additions.push({
-        id: createId("column", level, item.x, item.y),
-        type: "column",
-        level,
-        x: item.x,
-        y: item.y,
-        orientation: "x",
-        label: item.label,
-        load: 0,
-        fire: "R 90",
-        section: "Temsili",
-        provenance: "conceptual-seed",
-      }));
+      additions.push(...buildConceptualKmKrElements().filter((element) => element.type === "column"));
     }
-
     if (!hasMass) {
-      const candidates = [
-        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .25))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .25))) },
-        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .75))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .25))) },
-        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .25))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .75))) },
-        { x: Math.max(0, Math.min(baysX - 1, Math.floor((baysX - 1) * .75))), y: Math.max(0, Math.min(baysY - 1, Math.floor((baysY - 1) * .75))) },
-      ];
-      const unique = candidates.filter((item, index, list) => list.findIndex((other) => other.x === item.x && other.y === item.y) === index);
-      unique.forEach((item, index) => additions.push({
-        id: createId("load", level, item.x, item.y),
-        type: "load",
-        level,
-        x: item.x,
-        y: item.y,
-        orientation: "x",
-        label: `Temsili kütle bölgesi ${index + 1}`,
-        load: 5,
-        fire: "Projede belirlenecek",
-        section: "—",
-        provenance: "conceptual-seed",
-      }));
+      additions.push(...buildConceptualKmKrElements().filter((element) => element.type === "load"));
     }
 
-    commit([...elements, ...additions], `K${level} için ${additions.length} temsilî KM/KR kaynak nesnesi oluşturuldu`);
+    commit([...elements, ...additions], `K${level} için ${additions.length} simetrik temsilî KM/KR kaynak nesnesi oluşturuldu`);
+    setView("coordination");
+  };
+
+  const canRecenterConceptualKmKr = metrics.eccentricityEvaluable
+    && metrics.eccentricityRatio > 10
+    && metrics.conceptualMassPointCount > 0
+    && metrics.conceptualRigidityPointCount > 0
+    && metrics.manualMassPointCount === 0
+    && metrics.manualRigidityPointCount === 0;
+
+  const recenterConceptualKmKrSources = () => {
+    if (!canRecenterConceptualKmKr) {
+      setStatus("Otomatik yeniden merkezleme yalnız tamamı temsilî olan KM/KR kaynak setlerinde kullanılabilir");
+      return;
+    }
+    const retained = elements.filter((element) => !(
+      element.level === level
+      && element.provenance === "conceptual-seed"
+      && (element.type === "column" || element.type === "wall" || element.type === "space" || element.type === "load")
+    ));
+    const rebuilt = buildConceptualKmKrElements();
+    commit([...retained, ...rebuilt], `K${level} temsilî KM/KR kaynakları güncel aks geometrisine göre simetrik yeniden merkezlendi`);
+    setSelectedId(null);
     setView("coordination");
   };
 
