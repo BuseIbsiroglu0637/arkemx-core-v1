@@ -102,6 +102,35 @@ test("project centre shows completed controls and zoning review links preserve f
 });
 
 
+test("STR-031 opens a focused structural sync workspace and preserves synchronized geometry on full-studio hydration", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/model-senkronizasyonu/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/StructuralSyncStudio.tsx", import.meta.url), "utf8");
+  const structural = fs.readFileSync(new URL("../app/components/StructuralDesigner.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/model-senkronizasyonu/model-senkronizasyonu.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · STR-031 \/ STR-032 \/ STR-033/);
+  assert.match(page, /Plan ile taşıyıcı modeli senkronize et/);
+  assert.match(page, /StructuralSyncStudio/);
+
+  assert.match(studio, /H-03 · PLAN → TAŞIYICI MODEL/);
+  assert.match(studio, /Plan verisini taşıyıcı modele aktar/);
+  assert.match(studio, /patchModule\("structural-concept"/);
+  assert.match(studio, /floors: planFloors/);
+  assert.match(studio, /width: Number\(planWidth\.toFixed\(3\)\)/);
+  assert.match(studio, /depth: Number\(planDepth\.toFixed\(3\)\)/);
+  assert.match(studio, /fields: \["floors", "width", "depth", "baysX", "baysY"\]/);
+
+  assert.match(structural, /const \[modelHydrated, setModelHydrated\] = useState\(false\)/);
+  assert.match(structural, /if \(!hydrated \|\| !modelHydrated\) return/);
+  assert.match(structural, /setModelHydrated\(true\)/);
+
+  assert.match(graph, /STR-031/);
+  assert.match(graph, /\/tasarim-calismalari\/model-senkronizasyonu/);
+  assert.match(css, /arx-struct-sync-page/);
+});
+
+
 test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owner", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/page.tsx", import.meta.url), "utf8");
   const studio = fs.readFileSync(new URL("../app/components/HeightCorrectionStudio.tsx", import.meta.url), "utf8");
