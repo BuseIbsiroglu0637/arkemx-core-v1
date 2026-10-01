@@ -265,6 +265,12 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   const planSyncDelta = programGross - planGross;
   const planSyncPass = programGross > 0 && planGross > 0 && Math.abs(planSyncDelta) / programGross <= .1;
   const planSyncScale = programGross > 0 && planGross > 0 ? planGross / programGross : 1;
+  const allowedFootprint = thread.canonical.site.allowedFootprint;
+  const programTargetFootprint = planFloorCount > 0 && programGross > 0 ? programGross / planFloorCount : 0;
+  const canExpandPlanToProgram = planSyncDelta > 0
+    && programTargetFootprint > 0
+    && allowedFootprint > 0
+    && programTargetFootprint <= allowedFootprint + .01;
 
   const applyCurrentUseTemplate = () => {
     setSpaces(templates[use].spaces.map((space) => ({ ...space })));
@@ -319,7 +325,12 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
         <div><span>PLAN TOPLAMI</span><b>{planGross > 0 ? `${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
         <div><span>FARK</span><b>{planGross > 0 ? `${planSyncDelta.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
         {!planSyncPass && planGross > 0 && !programUseMismatch
-          ? <button type="button" onClick={applyPlanCoordinationSuggestion}>Programı mevcut plan kapasitesine ölçekle</button>
+          ? canExpandPlanToProgram
+            ? <div className="arx-plan-sync-actions">
+                <Link href="/tasarim-calismalari/program-plan-alani">Plan tabanını programa göre düzenle</Link>
+                <button type="button" onClick={applyPlanCoordinationSuggestion}>Programı mevcut plana küçült</button>
+              </div>
+            : <button type="button" onClick={applyPlanCoordinationSuggestion}>Programı mevcut plan kapasitesine ölçekle</button>
           : planSyncPass
             ? <div className="arx-plan-sync-complete"><span>KOORDİNASYON TAMAMLANDI</span><b>Program ve plan alanı uyumlu</b></div>
             : null}
@@ -365,9 +376,11 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
           <section>
             <strong>İMAR / YÜKSEKLİK BAĞLAMI</strong>
             <div><span>KAKS azami</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>TAKS azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Programdan hedef taban</span><b>{programTargetFootprint > 0 ? `${programTargetFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
             <div><span>Plan kat adedi</span><b>{planFloorCount || "—"}</b></div>
             <div><span>Program kat adedi</span><b>{floors}</b></div>
-            <small>KAKS üst sınırdır; mevcut Hmax ve plan kat adedi fiziksel olarak daha düşük bir kullanılabilir toplam alan üretebilir. ARC-021 bu iki modeli koordine eder.</small>
+            <small>{canExpandPlanToProgram ? "Programın mevcut kat adedindeki hedef tabanı TAKS sınırı içindedir. Programı küçültmeden önce plan geometrisini bu hedefe koordine etmek mümkündür." : "KAKS üst sınırdır; mevcut Hmax, TAKS ve plan kat adedi fiziksel kullanılabilir alanı ayrıca sınırlar. ARC-021 bu iki modeli koordine eder."}</small>
           </section>
         </aside>
       </div>
