@@ -244,6 +244,9 @@ test("project MCDA link opens a focused workspace instead of the public comparis
   assert.match(tool, /PROJE VERİSİ DEĞİŞTİ/);
   assert.match(tool, /MCDA güncellemesi gerekli/);
   assert.match(tool, /Güncel proje verisini aktar ve yeniden hesapla/);
+  assert.match(tool, /Persist the canonical project source immediately/);
+  assert.match(tool, /sourceKey: mcdaSourceKey\(currentProjectSource\)/);
+  assert.match(tool, /sourceStatus: "current"/);
   assert.match(tool, /sourceSnapshot/);
   assert.match(tool, /sourceStatus: sourceStale/);
   assert.match(tool, /buildMcdaProjectSnapshot/);
