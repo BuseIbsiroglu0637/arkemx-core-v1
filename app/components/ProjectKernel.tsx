@@ -82,6 +82,34 @@ export const PROJECT_JOURNEY = [
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
 
+export function deriveProjectJourneyState(thread: ProjectThread) {
+  const systemValue = thread.canonical.structure.system.trim();
+  const systemDecisionReady = Boolean(systemValue)
+    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(systemValue);
+
+  const completed = PROJECT_JOURNEY.map((step) => {
+    if (step.short === "Arazi") {
+      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
+    }
+    if (step.short === "Sistem") {
+      return systemDecisionReady;
+    }
+    return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
+  });
+
+  const firstIncompleteIndex = completed.findIndex((value) => !value);
+  const currentIndex = firstIncompleteIndex < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteIndex;
+  const nextStep = PROJECT_JOURNEY[currentIndex];
+
+  return {
+    completed,
+    currentIndex,
+    nextStep,
+    systemDecisionReady,
+    allComplete: firstIncompleteIndex < 0,
+  };
+}
+
 const createDefaultProject = (): ProjectKernelState => ({
   schema: "ARKEM-PROJECT/1.0",
   id: "ARK-26-0001",
