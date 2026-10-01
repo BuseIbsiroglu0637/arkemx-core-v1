@@ -297,12 +297,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
         : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı alanını düzelt" };
 
   const floorCountSource = number(plan.floorCount) > 0
-    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Kat adedini düzelt" }
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
     : number(architectureInput.floors) > 0
-      ? { label: "Mimari program", route: "/mimari-program-studyosu#mimari-motor", actionLabel: "Kat adedini düzelt" }
+      ? { label: "Mimari program", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
       : number(geo.floors) > 0
-        ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kat adedini düzelt" }
-        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Kat adedini düzelt" };
+        ? { label: "Yapı Yerleşimi", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
+        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" };
 
   const floorHeightSource = number(structureInput.floorHeight) > 0
     ? "Taşıyıcı ön tasarım"
