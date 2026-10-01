@@ -371,10 +371,16 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [basemapMode, setBasemapMode] = useState<BasemapMode>("satellite");
   const [basemapWarning, setBasemapWarning] = useState("");
   const [activeStage, setActiveStage] = useState<Stage>("locate");
+  const [zoningFocus, setZoningFocus] = useState<"taks" | "kaks" | "hmax" | "source" | null>(null);
   useEffect(() => {
-    const requestedStage = new URLSearchParams(window.location.search).get("stage");
+    const search = new URLSearchParams(window.location.search);
+    const requestedStage = search.get("stage");
+    const requestedFocus = search.get("focus");
     if (requestedStage && stages.some((stage) => stage.id === requestedStage)) {
       setActiveStage(requestedStage as Stage);
+    }
+    if (requestedFocus === "taks" || requestedFocus === "kaks" || requestedFocus === "hmax" || requestedFocus === "source") {
+      setZoningFocus(requestedFocus);
     }
   }, []);
   const [showSources, setShowSources] = useState(false);
@@ -1846,9 +1852,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
         <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option value="" disabled>Yapı nizamını seçin</option><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
         <div className="geo-planning-grid geo-zoning-values">
-          <label>TAKS<input type="number" min=".01" max="1" step=".01" value={displayOptionalZoningNumber(zoning.taks)} onChange={(event) => updateZoning("taks", parseOptionalZoningNumber(event.target.value))} placeholder="TAKS girin"/></label>
-          <label>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={displayOptionalZoningNumber(zoning.kaks)} onChange={(event) => updateZoning("kaks", parseOptionalZoningNumber(event.target.value))} placeholder="KAKS / emsal girin"/></label>
-          <label>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={displayOptionalZoningNumber(zoning.hmax)} onChange={(event) => updateZoning("hmax", parseOptionalZoningNumber(event.target.value))} placeholder="Hmax girin"/><b>m</b></label>
+          <label className={zoningFocus === "taks" ? "geo-zoning-focus-target" : ""}>TAKS<input type="number" min=".01" max="1" step=".01" value={displayOptionalZoningNumber(zoning.taks)} onChange={(event) => updateZoning("taks", parseOptionalZoningNumber(event.target.value))} placeholder="TAKS girin"/></label>
+          <label className={zoningFocus === "kaks" ? "geo-zoning-focus-target" : ""}>KAKS / Emsal<input type="number" min=".05" max="10" step=".05" value={displayOptionalZoningNumber(zoning.kaks)} onChange={(event) => updateZoning("kaks", parseOptionalZoningNumber(event.target.value))} placeholder="KAKS / emsal girin"/></label>
+          <label className={zoningFocus === "hmax" ? "geo-zoning-focus-target" : ""}>Hmax / Yençok<input type="number" min="0" max="250" step=".5" value={displayOptionalZoningNumber(zoning.hmax)} onChange={(event) => updateZoning("hmax", parseOptionalZoningNumber(event.target.value))} placeholder="Hmax girin"/><b>m</b></label>
         </div>
         <div className="geo-planning-grid geo-zoning-values">
           <label>Ön bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.frontSetback)} onChange={(event) => updateSetback("frontSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Ön çekme"/></label>
@@ -1857,13 +1863,25 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </div>
       </div>
 
-      <div className="geo-zoning-source-status" data-ready={zoningSourceReady ? "ready" : "missing"}>
+      {zoningFocus ? <div className="geo-zoning-focus-note">
+        <span>{zoningFocus === "kaks" ? "PLN-012 · KAKS GİRDİSİ" : zoningFocus === "taks" ? "PLN-011 · TAKS GİRDİSİ" : zoningFocus === "hmax" ? "PLN-013 · HMAX GİRDİSİ" : "İMAR KAYNAĞI"}</span>
+        <b>{zoningFocus === "kaks"
+          ? `Bu değer brüt alan KAKS/emsal kontrolünde kullanılır · ${metrics.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² × ${zoning.kaks >= 0 ? zoning.kaks.toLocaleString("tr-TR") : "—"} ≈ ${metrics.allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azami emsal alan`
+          : zoningFocus === "taks"
+            ? `Bu değer taban alanı kontrolünde kullanılır · ${metrics.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² × ${zoning.taks >= 0 ? zoning.taks.toLocaleString("tr-TR") : "—"} ≈ ${metrics.allowedFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azami taban`
+            : zoningFocus === "hmax"
+              ? `Bu değer yapı yüksekliği ön kontrolünde kullanılır · kayıtlı Hmax ${zoning.hmax >= 0 ? zoning.hmax.toLocaleString("tr-TR") : "—"} m`
+              : "Bu görünüm imar koşulunun kaynak ve doğrulama kaydını incelemek için açıldı."}</b>
+        <small>Değeri yalnız yetkili kaynak farklıysa değiştirin; açık konu kapansın diye imar girdisini yükseltmeyin.</small>
+      </div> : null}
+
+      <div className={`geo-zoning-source-status${zoningFocus ? " geo-zoning-source-focus" : ""}`} data-ready={zoningSourceReady ? "ready" : "missing"}>
         <span>İMAR KAYNAĞI</span>
         <b>{zoningSourceReady ? "Kaynak bilgisi eklendi · uzman doğrulaması gerekli" : "Kaynak bilgisi eksik"}</b>
         <small>{zoningSourceReady ? "Kaynak kaydı mevcut; resmî doğrulama yapılmış sayılmaz." : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
       </div>
 
-      <details className="geo-collapsible-block">
+      <details className="geo-collapsible-block" defaultOpen={zoningFocus === "source"}>
         <summary><span>Plan ve kaynak</span><small>{zoning.planScale || "Plan ölçeği ve kaynak bilgileri"}</small></summary>
         <div className="geo-collapsible-body">
           <div className="geo-zoning-source-grid">
