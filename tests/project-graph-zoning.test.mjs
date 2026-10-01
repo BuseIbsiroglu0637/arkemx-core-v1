@@ -134,6 +134,10 @@ test("completed expert review clears PLN-010 without claiming authoritative zoni
 
   assert.equal(thread.nodes.find(node => node.id === "geo-parcel")?.readiness, 100);
   assert.equal(thread.issues.some(issue => issue.id === "PLN-010"), false);
+  const completed = thread.completedControls.find(control => control.code === "PLN-010");
+  assert.ok(completed);
+  assert.equal(completed?.title, "İmar kaynağı uzman incelemesi");
+  assert.match(completed?.summary ?? "", /resmî onay değildir/);
 });
 
 test("authoritative zoning provenance clears the zoning review gate", () => {
