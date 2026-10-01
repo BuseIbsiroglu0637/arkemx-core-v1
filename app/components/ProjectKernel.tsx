@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { clearProjectStorage, loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, reconcileProjectSnapshots, saveProjectToStorage } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -579,10 +579,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
             }),
           }));
           setPersistence({
-            state: stored.source === "backup" ? "recovered" : "device-saved",
+            state: ["backup", "recovery", "reconciled"].includes(stored.source) ? "recovered" : "device-saved",
             integrity: stored.integrity,
             lastSavedAt: stored.savedAt,
-            backupAvailable: stored.source === "backup" || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
+            backupAvailable: ["backup", "recovery", "reconciled"].includes(stored.source) || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
             cloud: "not-configured",
           });
         } else {
@@ -608,8 +608,12 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const timer = window.setTimeout(() => {
       try {
         const result = saveProjectToStorage(window.localStorage, project);
+        if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
+          skipNextPersistenceRef.current = true;
+          setProject(result.payload);
+        }
         setPersistence({
-          state: "device-saved",
+          state: result.reconciled ? "recovered" : "device-saved",
           integrity: "verified",
           lastSavedAt: result.savedAt,
           backupAvailable: result.backupAvailable,
@@ -621,6 +625,24 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const mergeExternalProject = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== PROJECT_STORAGE_KEY || !event.newValue) return;
+      const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
+      if (!stored.value) return;
+      setProject((current) => {
+        const merged = reconcileProjectSnapshots(current, stored.value);
+        return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
+      });
+      if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
+        setPersistence((current) => ({ ...current, state: "recovered", lastSavedAt: stored.savedAt || current.lastSavedAt }));
+      }
+    };
+    window.addEventListener("storage", mergeExternalProject);
+    return () => window.removeEventListener("storage", mergeExternalProject);
+  }, [hydrated]);
 
   useEffect(() => {
     document.documentElement.dataset.arkemMode = project.experience.mode;
