@@ -345,13 +345,15 @@ test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owne
   assert.match(studio, /DÜZELTME UYGULANDI/);
   assert.match(studio, /fromFloors/);
   assert.match(studio, /toFloors/);
-  assert.match(studio, /Hmax sınırı geçti/);
+  assert.match(studio, /Hmax sınırı içinde/);
   assert.match(studio, /patchModule\("plan-editor", \{ floorCount: safe \}\)/);
   assert.match(studio, /patchModule\("architectural-program", \{ input: \{ floors: safe \} \}\)/);
   assert.match(studio, /patchModule\("geo-parcel", \{ floors: safe \}\)/);
   assert.match(studio, /MODEL KOORDİNASYONU/);
-  assert.match(studio, /Hmax sınırı geçti/);
+  assert.match(studio, /Hmax sınırı içinde/);
 
+  assert.match(graph, /code: "PLN-013"/);
+  assert.match(graph, /Hmax \/ yapı yüksekliği ön kontrolü/);
   assert.match(graph, /\/tasarim-calismalari\/yukseklik-duzeltme/);
   assert.match(css, /arx-height-fix-page/);
   assert.match(css, /Hmax correction UX v2/);
