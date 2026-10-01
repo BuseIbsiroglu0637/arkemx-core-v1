@@ -617,6 +617,18 @@ test("TAKS and KAKS thresholds use displayed allowed areas at dimension-step pre
 });
 
 
+test("placement decision summary combines zoning limits, setbacks and source trust", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("YERLEŞİM ÖN KONTROLÜ"));
+  assert.ok(studio.includes("Parametrik ön kontrolde açık ihlal bulunmadı"));
+  assert.ok(studio.includes("Kaynak bilgisi kayıtlı · uzman doğrulaması gerekli"));
+  assert.ok(studio.includes("setbackDecision.front"));
+  assert.ok(studio.includes("setbackDecision.side"));
+  assert.ok(studio.includes("setbackDecision.rear"));
+  assert.ok(studio.includes("Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir."));
+});
+
+
 test("parking demand result is visible beside inputs and in technical summary", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes("const parkingDemand = gross / 100 * parkingPer100"));
