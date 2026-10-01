@@ -271,7 +271,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
-  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo" });
+  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=draw#geo-studyo" });
   if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningAuthoritative) push({
     id: "PLN-010",
     severity: "review",
@@ -279,9 +279,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     title: "İmar kaynağı uzman doğrulaması bekliyor",
     evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak kaynak henüz yetkili doğrulama statüsünde değil.",
     action: "Plan paftası, plan notu ve yetkili idare imar durumunu uzman incelemesiyle doğrulayın.",
-    route: "/arsa-fizibilite-studyosu#geo-studyo",
+    route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
   });
-  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({ id: "PLN-011", severity: "critical", discipline: "Planlama + Mimari", title: "Öneri taban alanı TAKS girdisini aşıyor", evidence: `${canonical.site.proposedFootprint.toFixed(1)} m² öneri / ${canonical.site.allowedFootprint.toFixed(1)} m² izin girdisi`, action: "Kütleyi küçültün veya planlama verisini yetkili kaynaktan doğrulayın.", route: "/arsa-fizibilite-studyosu" });
+  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({ id: "PLN-011", severity: "critical", discipline: "Planlama + Mimari", title: "Öneri taban alanı TAKS girdisini aşıyor", evidence: `${canonical.site.proposedFootprint.toFixed(1)} m² öneri / ${canonical.site.allowedFootprint.toFixed(1)} m² izin girdisi`, action: "Kütleyi küçültün veya planlama verisini yetkili kaynaktan doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo" });
   if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({ id: "PLN-012", severity: "critical", discipline: "Planlama + Mimari", title: "Brüt alan KAKS/emsal girdisini aşıyor", evidence: `${canonical.site.proposedGross.toFixed(1)} m² öneri / ${canonical.site.allowedGross.toFixed(1)} m² izin girdisi`, action: "Programı veya kat alanlarını yeniden dengeleyin.", route: "/mimari-program-studyosu" });
   const proposedHeight = floors * floorHeight;
   if (canonical.site.maxHeight > 0 && proposedHeight > canonical.site.maxHeight + .01) push({ id: "PLN-013", severity: "critical", discipline: "Planlama + Mimari", title: "Yapı yüksekliği planlama girdisini aşıyor", evidence: `${proposedHeight.toFixed(2)} m öneri / ${canonical.site.maxHeight.toFixed(2)} m sınır girdisi`, action: "Kat adedi ve kat yüksekliğini koordine edin.", route: "/mimari-program-studyosu" });
