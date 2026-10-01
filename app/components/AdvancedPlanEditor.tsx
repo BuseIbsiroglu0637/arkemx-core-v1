@@ -151,7 +151,15 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const conceptualRigidityPointCount = [...columns, ...walls].filter((element) => element.provenance === "conceptual-seed").length;
     const manualMassPointCount = massPointCount - conceptualMassPointCount;
     const manualRigidityPointCount = rigidityPointCount - conceptualRigidityPointCount;
-    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
+    const outOfGridMassPointCount = [...rooms, ...loads].filter((element) =>
+      element.x < 0 || element.y < 0 || element.x > baysX - 1 || element.y > baysY - 1
+    ).length;
+    const outOfGridRigidityPointCount = [...columns, ...walls].filter((element) => {
+      const maxX = element.type === "wall" && element.orientation === "x" ? baysX - 1 : baysX;
+      const maxY = element.type === "wall" && element.orientation === "y" ? baysY - 1 : baysY;
+      return element.x < 0 || element.y < 0 || element.x > maxX || element.y > maxY;
+    }).length;
+    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, outOfGridMassPointCount, outOfGridRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
   }, [spanX, spanY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
