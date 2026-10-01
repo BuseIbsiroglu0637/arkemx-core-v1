@@ -44,6 +44,14 @@ export type ProjectThreadIssue = {
   secondaryRouteLabel?: string;
 };
 
+export type CompletedControl = {
+  code: string;
+  title: string;
+  summary: string;
+  routeLabel: string;
+  route: string;
+};
+
 export type ProjectHandoff = {
   id: string;
   source: ProjectModuleKey;
@@ -55,7 +63,7 @@ export type ProjectHandoff = {
 
 export const PROJECT_MODULES: ProjectModuleDefinition[] = [
   { id: "decision-assistant", code: "PIR", label: "Yatırım briefi", discipline: "İşveren / PM", stage: "Tanım", route: "/proje-karar-asistani#karar-motoru", output: "İhtiyaç, öncelik ve veri hazırlığı", dependencies: [] },
-  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
+  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
   { id: "quick-site-scenario", code: "MAS", label: "Hızlı yerleşim", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#hizli-senaryo", output: "Alternatif kütle senaryosu", dependencies: ["geo-parcel"] },
   { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu#mimari-motor", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
   { id: "plan-editor", code: "BIM", label: "Plan & aks modeli", discipline: "Mimari / Statik", stage: "Tasarım", route: "/tasarim-calismalari#plan-editor", output: "Kat, aks, mahal ve taşıyıcı nesneler", dependencies: ["architectural-program"] },
@@ -314,7 +322,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     title: "İmar kaynağı uzman doğrulaması bekliyor",
     evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak kaynak henüz yetkili doğrulama statüsünde değil.",
     action: "Plan paftası, plan notu ve yetkili idare imar durumunu uzman incelemesiyle doğrulayın.",
-    route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
     routeLabel: "İmar kaynağını incele",
   });
   if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({
@@ -326,7 +334,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     action: `${footprintSource.label} taban alanını en az ${(canonical.site.proposedFootprint - canonical.site.allowedFootprint).toFixed(1)} m² azaltın; TAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
     route: footprintSource.route,
     routeLabel: footprintSource.actionLabel,
-    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=taks#geo-studyo",
     secondaryRouteLabel: "TAKS girdisini incele",
   });
   if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({
@@ -338,7 +346,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     action: `${grossSource.label} toplam brüt alanını en az ${(canonical.site.proposedGross - canonical.site.allowedGross).toFixed(1)} m² azaltın; KAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
     route: grossSource.route,
     routeLabel: grossSource.actionLabel,
-    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=kaks#geo-studyo",
     secondaryRouteLabel: "KAKS girdisini incele",
   });
   const proposedHeight = floors * floorHeight;
@@ -351,7 +359,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     action: `Toplam yapı yüksekliğini en az ${(proposedHeight - canonical.site.maxHeight).toFixed(2)} m azaltın; kat adedi veya kat yüksekliği kaydını koordine edin.`,
     route: floorCountSource.route,
     routeLabel: floorCountSource.actionLabel,
-    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=hmax#geo-studyo",
     secondaryRouteLabel: "Hmax girdisini incele",
   });
   if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Net–brüt katsayısını, katları veya plan geometrisini eşleyin.", route: "/mimari-program-studyosu" });
@@ -364,6 +372,38 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari" });
   if (canonical.architecture.travelDistance > 0 && canonical.architecture.targetTravel > 0 && canonical.architecture.travelDistance > canonical.architecture.targetTravel) push({ id: "FIR-061", severity: "review", discipline: "Mimari + Yangın", title: "Kaçış mesafesi ön göstergesi hedefi aşıyor", evidence: `${canonical.architecture.travelDistance.toFixed(1)} m gösterge / ${canonical.architecture.targetTravel.toFixed(1)} m hedef`, action: "Çekirdek, koridor ve çıkış yerleşimini yetkili yangın tasarımıyla doğrulayın.", route: "/mimari-program-studyosu" });
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
+
+  const completedControls: CompletedControl[] = [];
+  const planFootprint = number(planMetrics.floorArea);
+  if (
+    planFootprint > 0
+    && canonical.site.allowedFootprint > 0
+    && planFootprint <= canonical.site.allowedFootprint * 1.001
+    && !issues.some((issue) => issue.id === "PLN-011")
+  ) {
+    completedControls.push({
+      code: "PLN-011",
+      title: "TAKS ön kontrolü",
+      summary: `Plan tabanı: ${planFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} / ${canonical.site.allowedFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/plan-duzeltme",
+    });
+  }
+
+  if (
+    architectureGross > 0
+    && canonical.site.allowedGross > 0
+    && architectureGross <= canonical.site.allowedGross * 1.001
+    && !issues.some((issue) => issue.id === "PLN-012")
+  ) {
+    completedControls.push({
+      code: "PLN-012",
+      title: "KAKS ön kontrolü",
+      summary: `Program brütü: ${architectureGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} / ${canonical.site.allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/mimari-program-studyosu/kaks-duzeltme",
+    });
+  }
 
   const activeKeys = new Set(Object.keys(modules));
   if (quickSiteScenarioReady) activeKeys.add("quick-site-scenario");
@@ -413,13 +453,13 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     : !zoningConditionsReadyForNextStage
       ? {
         label: "İmar koşullarını gir",
-        route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+        route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
         blockedBy: [] as ProjectModuleKey[],
       }
       : !zoningSourceReadyForNextStage
         ? {
           label: "İmar kaynağını ekle",
-          route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+          route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
           blockedBy: [] as ProjectModuleKey[],
         }
         : quickSiteScenarioReady && !systemDecisionReady
@@ -436,6 +476,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     canonical,
     nodes,
     issues,
+    completedControls,
     handoffs,
     metrics: { activeCount, totalCount: nodes.length, readiness, quality, critical: issues.filter((issue) => issue.severity === "critical").length, review: issues.filter((issue) => issue.severity === "review").length },
     nextAction,
