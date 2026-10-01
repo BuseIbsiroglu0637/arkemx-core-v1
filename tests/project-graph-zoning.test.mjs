@@ -331,3 +331,47 @@ test("resolved TAKS and KAKS controls move from open issues into completed contr
   assert.match(kaks?.summary ?? "", /Program brütü: 1\.430,8 \/ 1\.438 m²/);
   assert.equal(kaks?.route, "/mimari-program-studyosu/kaks-duzeltme");
 });
+
+
+test("structural geometry conflicts route to the focused model synchronization workspace", () => {
+  const zoning = geoModule({
+    authoritative: false,
+    verification: "user-declared",
+    plan,
+    conditions,
+    source: {
+      type: "Kullanıcı beyanı",
+      date: "2026-10-01",
+      note: "Kaynak bilgisi kullanıcı tarafından kaydedildi.",
+    },
+  });
+
+  const thread = deriveProjectThread({
+    "geo-parcel": zoning,
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 7.071,
+      spanY: 3.862,
+      metrics: { floorArea: 476.9 },
+    },
+    "structural-concept": {
+      input: {
+        floors: 4,
+        width: 24,
+        depth: 18,
+        baysX: 5,
+        baysY: 4,
+        floorHeight: 3.4,
+      },
+    },
+  });
+
+  for (const id of ["STR-031", "STR-032", "STR-033"]) {
+    const issue = thread.issues.find(item => item.id === id);
+    assert.ok(issue, `${id} should be present`);
+    assert.equal(issue?.route, "/tasarim-calismalari/model-senkronizasyonu");
+    assert.equal(issue?.routeLabel, "Modelleri senkronize et");
+  }
+});
