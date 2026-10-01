@@ -539,3 +539,95 @@
     grid-column:auto;
   }
 }
+
+
+/* KAKS correction UI v3 · compact project identity */
+.arx-architect-kaks-focus .project-kernel-compact {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:14px;
+  min-height:52px;
+  padding:10px 14px;
+}
+.arx-architect-kaks-focus .project-kernel-compact-main {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.arx-architect-kaks-focus .project-kernel-compact-code {
+  flex:0 0 auto;
+  color:#b96636;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.075em;
+}
+.arx-architect-kaks-focus .project-kernel-compact-name {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#173746;
+  font-size:12px;
+  font-weight:750;
+  text-align:left;
+}
+.arx-architect-kaks-focus .project-kernel-compact-name-input {
+  min-width:180px;
+  min-height:34px;
+  border:1px solid #cad7db;
+  padding:0 9px;
+  background:#fff;
+  color:#173746;
+  font-size:12px;
+}
+.arx-architect-kaks-focus .project-kernel-compact-meta {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#71858d;
+  font-size:9px;
+}
+.arx-architect-kaks-focus .project-kernel-compact-meta span + span {
+  padding-left:8px;
+  border-left:1px solid #d8e1e4;
+}
+.arx-architect-kaks-focus .project-kernel-compact-actions {
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.arx-architect-kaks-focus .project-kernel-compact-actions > * {
+  display:none !important;
+}
+.arx-architect-kaks-focus .project-kernel-compact-actions > a[href="/dijital-proje-merkezi"] {
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  min-height:32px;
+  padding:0 11px;
+  border:1px solid #cbd8dc;
+  border-radius:4px;
+  background:#fff;
+  color:#315968;
+  font-size:9px;
+  font-weight:750;
+  text-decoration:none;
+}
+
+@media(max-width:760px) {
+  .arx-architect-kaks-focus .project-kernel-compact {
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .arx-architect-kaks-focus .project-kernel-compact-meta {
+    flex-wrap:wrap;
+  }
+  .arx-architect-kaks-focus .project-kernel-compact-actions {
+    justify-content:flex-start;
+  }
+}
