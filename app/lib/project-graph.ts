@@ -149,7 +149,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     && zoningSourceReferenceReady
   );
   const zoningAuthoritative = geoZoningProvenance.authoritative === true;
-  const zoningExpertReviewed = geoZoningProvenance.expertReviewed === true;
+  const zoningExpertReviewed = zoningAuthoritative || geoZoningProvenance.expertReviewed === true;
   const zoningReadyForNextStage = zoningConditionsReadyForNextStage && zoningSourceReadyForNextStage;
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
