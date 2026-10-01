@@ -188,6 +188,32 @@ test("ARC-021 uses a focused program-plan coordination workspace", () => {
 });
 
 
+test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winner", () => {
+  const page = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/sistem-karari/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/SystemDecisionStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/sistem-karari/sistem-karari.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · SYS-041/);
+  assert.match(page, /Taşıyıcı sistem kararını gerekçesiyle bağla/);
+  assert.match(page, /SystemDecisionStudio/);
+
+  assert.match(studio, /MCDA önerisini modele uygula/);
+  assert.match(studio, /Mevcut sistemi gerekçeli olarak koru/);
+  assert.match(studio, /decisionType: "retain-modeled-system"/);
+  assert.match(studio, /decisionType: "aligned-with-mcda"/);
+  assert.match(studio, /patchModule\("structural-concept", \{ input: \{ system: recommendedId \} \}\)/);
+  assert.match(studio, /patchModule\("system-comparison"/);
+  assert.match(studio, /MCDA sonucu nihai mühendislik kararı değildir/);
+  assert.match(studio, /nihai statik sistem onayı değildir/);
+
+  assert.match(graph, /systemDecisionRecorded/);
+  assert.match(graph, /\/yapi-sistemi-karsilastirma\/sistem-karari/);
+  assert.match(graph, /Taşıyıcı sistem karar koordinasyonu/);
+  assert.match(css, /arx-system-decision-page/);
+});
+
+
 test("BIM-053 uses a focused KM-KR source workspace with explicit conceptual provenance", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
   const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
