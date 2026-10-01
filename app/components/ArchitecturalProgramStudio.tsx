@@ -84,7 +84,7 @@ const templates: Record<ProgramUse, { label: string; netRatio: number; liveLoad:
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min)); }
 function objectValue(value: unknown) { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 
-export function ArchitecturalProgramStudio({ simple = false }: { simple?: boolean } = {}) {
+export function ArchitecturalProgramStudio({ simple = false, issueFocus = false }: { simple?: boolean; issueFocus?: "kaks" | false } = {}) {
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const transferApplied = useRef(false);
   const [transferReady, setTransferReady] = useState(false);
@@ -245,8 +245,79 @@ export function ArchitecturalProgramStudio({ simple = false }: { simple?: boolea
     setWwr(strategy.wwr);
     setStatus(`${strategy.label} senaryosu programa uygulandı`);
   };
+  const allowedGross = thread.canonical.site.allowedGross;
+  const programGross = result.grossDemand;
+  const grossOverage = allowedGross > 0 ? Math.max(0, programGross - allowedGross) : 0;
+  const grossPass = allowedGross > 0 && programGross <= allowedGross + .01;
+  const grossTarget = allowedGross > 0 ? allowedGross * .995 : 0;
+  const grossScale = grossTarget > 0 && programGross > 0 ? Math.min(1, grossTarget / programGross) : 1;
+  const allowedNetAtCurrentRatio = allowedGross > 0 ? allowedGross * (netRatio / 100) : 0;
+
+  const applyKaksSuggestion = () => {
+    if (!(allowedGross > 0) || !(programGross > 0) || grossPass) return;
+    setSpaces((current) => current.map((space) => ({
+      ...space,
+      unitArea: Number(Math.max(2, space.unitArea * grossScale).toFixed(2)),
+    })));
+    setTargetGross(Math.max(100, Math.floor(grossTarget)));
+    setGrossDraft(null);
+    setStatus(`Mahal alanları mevcut dağılım korunarak KAKS sınırına göre küçültüldü · hedef ≤ ${allowedGross.toFixed(1)} m²`);
+  };
+
   const matrixSpaces = spaces.slice(0, 8);
   const matrixRelation = (from: string, to: string) => relationships.find((item) => (item.from === from && item.to === to) || (item.from === to && item.to === from));
+  if (issueFocus === "kaks") {
+    return <section className="architect-app arx-architect-kaks-focus" data-testid="architectural-program-kaks-focus">
+      <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="KAKS / emsal ön kontrolü" compact />
+      <header className="arx-kaks-focus-head">
+        <div><p className="eyebrow">PLN-012 · KAKS / EMSAL ÖN KONTROLÜ</p><h2>Program brütünü<br/><em>imar sınırına indirin.</em></h2></div>
+        <p>Bu görünüm mahal programından türeyen toplam brüt alan ile kayıtlı KAKS/emsal girdisi arasındaki çakışmayı çözer. KAKS değerini değiştirmez; mimari programı düzenler.</p>
+      </header>
+
+      <section className="arx-kaks-summary" data-state={grossPass ? "pass" : "review"}>
+        <div><span>MEVCUT PROGRAM BRÜTÜ</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+        <div><span>KAKS'A GÖRE AZAMİ</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+        <div><span>DURUM</span><b>{allowedGross <= 0 ? "İmar girdisi eksik" : grossPass ? "Ön kontrol geçti" : `${grossOverage.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azaltılmalı`}</b></div>
+        {!grossPass && allowedGross > 0 ? <button type="button" onClick={applyKaksSuggestion}>Program dağılımını koruyarak sınır içine indir</button> : null}
+      </section>
+
+      <div className="arx-kaks-workspace">
+        <main>
+          <header className="arx-kaks-program-head">
+            <div><span>MAHAL PROGRAMI</span><b>{spaces.length} mahal türü · net {result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>NET / BRÜT</span><b>%{netRatio}</b><small>KAKS sınırında mevcut oranla azami net ≈ {allowedNetAtCurrentRatio.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</small></div>
+          </header>
+          <div className="arx-kaks-space-list">
+            {spaces.map((space) => <article key={space.id}>
+              <div className="arx-kaks-space-name"><small>{space.code}</small><b>{space.name}</b><span>{space.zone}</span></div>
+              <label>Adet<input type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/></label>
+              <label>Birim alan<input type="number" min="2" max="50000" step=".5" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><i>m²</i></label>
+              <div><small>TOPLAM NET</small><b>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            </article>)}
+          </div>
+        </main>
+        <aside>
+          <section>
+            <strong>KAKS ÖN KONTROLÜ</strong>
+            <div><span>Program neti</span><b>{result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>Program brütü</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>Azami brüt</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Fark</span><b className={grossPass ? "good" : "risk"}>{allowedGross > 0 ? `${(programGross - allowedGross).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <small>KAKS/emsal girdisi değiştirilmez. Mahal adetlerini veya birim alanlarını düzenleyerek program brütünü sınır içine alın.</small>
+          </section>
+          <section className="arx-kaks-context">
+            <strong>PROGRAM BAĞLAMI</strong>
+            <div><span>Kullanım</span><b>{templates[use].label}</b></div>
+            <div><span>Kat adedi</span><b>{floors}</b></div>
+            <div><span>Kat yüksekliği</span><b>{floorHeight.toFixed(1)} m</b></div>
+            <small>Kat ve yükseklik PLN-013 kapsamında ayrıca koordine edilir; bu ekranda KAKS açığını kapatmaya odaklanın.</small>
+          </section>
+        </aside>
+      </div>
+      <footer className="arx-kaks-foot"><b>Program statüsü · Kavramsal</b><p>Bu ön kontrol ruhsat veya resmî imar uygunluğu değildir. KAKS kaynağı uzman doğrulaması bekler; mahal alanları proje gereksinimleri ve ilgili mevzuat açısından ayrıca doğrulanmalıdır.</p></footer>
+    </section>;
+  }
+
   return <section className={simple ? "architect-app arx-architect-simple" : "architect-app"} data-testid="architectural-program-studio">
     {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>
