@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { deriveProjectThread } from "../app/lib/project-graph.ts";
 import { createZoningProvenance, DEFAULT_ZONING } from "../app/lib/zoning.ts";
+import { buildMcdaProjectSnapshot, mcdaSourceKey, mcdaUsageFromProject } from "../app/lib/mcda-source.ts";
 
 function geoModule(zoningProvenance = {}) {
   return {
@@ -586,4 +587,86 @@ test("SYS-041 closes only when the current MCDA/model divergence has a matching 
   });
   assert.equal(aligned.issues.some(item => item.id === "SYS-041"), false);
   assert.match(aligned.completedControls.find(control => control.code === "SYS-041")?.summary ?? "", /model eşleşiyor/);
+});
+
+
+test("MCDA source mapping preserves architectural program usage ids", () => {
+  assert.equal(mcdaUsageFromProject("residential"), "residential");
+  assert.equal(mcdaUsageFromProject("Konut / karma yaşam"), "residential");
+  assert.equal(mcdaUsageFromProject("storage"), "storage");
+  assert.equal(mcdaUsageFromProject("Ofis / ticari"), "commercial");
+
+  const snapshot = buildMcdaProjectSnapshot({
+    use: "residential",
+    floors: 2,
+    grossArea: 953.7,
+    spanX: 5.474,
+    spanY: 4.2,
+  });
+  assert.deepEqual(snapshot, {
+    usage: "residential",
+    floors: 2,
+    span: 5.474,
+    area: 953.7,
+  });
+  assert.equal(mcdaSourceKey(snapshot), "residential|2|5.474|953.7");
+});
+
+test("stale MCDA inputs open SYS-040 and suppress the old system recommendation until resynced", () => {
+  const common = {
+    "architectural-program": {
+      input: { use: "residential", floors: 2, targetGross: 953.7 },
+      result: { grossDemand: 953.7 },
+    },
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 5.474,
+      spanY: 4.2,
+      metrics: { floorArea: 476.9 },
+    },
+    "structural-concept": {
+      input: { system: "light", floors: 2 },
+    },
+  };
+
+  const stale = deriveProjectThread({
+    ...common,
+    "system-comparison": {
+      input: { usage: "residential", floors: 2, span: 5.474, area: 747, repetition: 70, transport: 180, fireRating: 90 },
+      ranking: [{ id: "light", name: "Hafif Çelik", score: 82 }],
+    },
+  });
+
+  const issue = stale.issues.find(item => item.id === "SYS-040");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/yapi-sistemi-karsilastirma/mcda");
+  assert.equal(issue?.routeLabel, "MCDA verisini güncelle");
+  assert.match(issue?.evidence ?? "", /747\.0 m²/);
+  assert.match(issue?.evidence ?? "", /953\.7 m²/);
+  assert.equal(stale.canonical.structure.recommendedSystem, "");
+  assert.equal(stale.completedControls.some(control => control.code === "SYS-041"), false);
+
+  const sourceSnapshot = {
+    usage: "residential",
+    floors: 2,
+    span: 5.474,
+    area: 953.7,
+  };
+  const synced = deriveProjectThread({
+    ...common,
+    "system-comparison": {
+      input: { ...sourceSnapshot, repetition: 70, transport: 180, fireRating: 90 },
+      sourceSnapshot,
+      sourceKey: mcdaSourceKey(sourceSnapshot),
+      sourceStatus: "current",
+      ranking: [{ id: "light", name: "Hafif Çelik", score: 82 }],
+    },
+  });
+
+  assert.equal(synced.issues.some(item => item.id === "SYS-040"), false);
+  assert.equal(synced.canonical.structure.recommendedSystem, "Hafif Çelik");
+  assert.ok(synced.completedControls.find(control => control.code === "SYS-040"));
+  assert.ok(synced.completedControls.find(control => control.code === "SYS-041"));
 });
