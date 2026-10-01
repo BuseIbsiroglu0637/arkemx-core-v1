@@ -1178,3 +1178,12 @@ test("project next-action links can open the exact parcel workflow stage", () =>
   assert.ok(graph.includes('/arsa-fizibilite-studyosu?stage=zoning#geo-studyo'));
   assert.ok(studio.includes('[zoningSourceReady, "İmar kaynak bilgisi kayıtlı"]'));
 });
+
+
+test("simple project center distinguishes working package readiness from official release", () => {
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  assert.match(hub, /Resmî teslim için uygun değil/);
+  assert.match(hub, /Ön fizibilite \/ çalışma paketi hazır · manifest üretilebilir/);
+  assert.match(hub, /Teknik kapanışı bekleyen inceleme kayıtları/);
+  assert.match(hub, /data-testid="delivery-review-issues"/);
+});
