@@ -299,7 +299,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       <section className="arx-kaks-summary" data-state={grossPass ? "pass" : "review"}>
         <div><span>MEVCUT PROGRAM BRÜTÜ</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
         <div><span>KAKS'A GÖRE AZAMİ</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
-        <div><span>DURUM</span><b>{allowedGross <= 0 ? "İmar girdisi eksik" : grossPass ? "Ön kontrol geçti" : `${grossOverage.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azaltılmalı`}</b></div>
+        <div><span>DURUM</span><b>{allowedGross <= 0 ? "İmar girdisi eksik" : grossPass ? "KAKS sınırı geçti" : `${grossOverage.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azaltılmalı`}</b></div>
         {!grossPass && allowedGross > 0 && !programUseMismatch ? <button type="button" onClick={applyKaksSuggestion}>Program dağılımını koruyarak sınır içine indir</button> : null}
       </section>
 
