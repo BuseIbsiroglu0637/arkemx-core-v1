@@ -7,7 +7,7 @@ import {
   FileUp, GitMerge, Layers3, ShieldAlert, Trash2, Wrench, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
-import { useProjectKernel } from "./ProjectKernel";
+import { deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
 const quickTools = [
@@ -25,6 +25,11 @@ export function SimpleProjectCenter() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const hasProject = Object.keys(project.modules).length > 0;
+  const journeyState = deriveProjectJourneyState(thread);
+  const journeyNextAction = {
+    label: journeyState.nextStep.label,
+    route: journeyState.nextStep.href,
+  };
   const projectType = (() => {
     const decision = project.modules["decision-assistant"];
     if (!decision || typeof decision !== "object" || Array.isArray(decision)) return "";
@@ -107,7 +112,7 @@ export function SimpleProjectCenter() {
         <span className="arx-center-storage">Yerel çalışma</span>
       </div>
       <div className="arx-center-actions">
-        <Link className="arx-center-primary" href={hasProject ? thread.nextAction.route : "/proje-baslat"}>
+        <Link className="arx-center-primary" href={hasProject ? journeyNextAction.route : "/proje-baslat"}>
           {hasProject ? "Sonraki çalışmaya geç" : "Yeni proje oluştur"} <ArrowRight size={17} aria-hidden="true" />
         </Link>
         <button type="button" onClick={() => fileRef.current?.click()}>
@@ -151,7 +156,7 @@ export function SimpleProjectCenter() {
     {hasProject && <section className="arx-center-overview" aria-label="Proje özeti">
       <article><span>Bağlı veri alanı</span><strong>{thread.metrics.activeCount} / {thread.metrics.totalCount}</strong></article>
       <article><span>Kontrol gerektiren konu</span><strong>{thread.issues.length}</strong></article>
-      <article><span>Sıradaki çalışma</span><strong className="arx-center-next">{thread.nextAction.label}</strong></article>
+      <article><span>Sıradaki çalışma</span><strong className="arx-center-next">{journeyNextAction.label}</strong></article>
     </section>}
 
     <section className="arx-center-tool-section" aria-labelledby="arx-center-tools-title">
