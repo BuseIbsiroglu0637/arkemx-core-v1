@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 
 type UnknownRecord = Record<string, unknown>;
@@ -15,6 +16,12 @@ function numeric(value: unknown) {
 
 export function HeightCorrectionStudio() {
   const { project, thread, hydrated, patchModule } = useProjectKernel();
+  const [correctionNotice, setCorrectionNotice] = useState<null | {
+    fromFloors: number;
+    toFloors: number;
+    fromHeight: number;
+    toHeight: number;
+  }>(null);
 
   const plan = record(project.modules["plan-editor"]);
   const architecture = record(project.modules["architectural-program"]);
@@ -64,6 +71,19 @@ export function HeightCorrectionStudio() {
     else patchModule("structural-concept", { input: { floors: safe } });
   };
 
+  const applyRecommendedFloorCount = () => {
+    if (!(maxFloorsAtCurrentHeight >= 1) || !owner.floors || !(floorHeight > 0)) return;
+    const fromFloors = owner.floors;
+    const toFloors = maxFloorsAtCurrentHeight;
+    setCorrectionNotice({
+      fromFloors,
+      toFloors,
+      fromHeight: fromFloors * floorHeight,
+      toHeight: toFloors * floorHeight,
+    });
+    updateFloorCount(toFloors);
+  };
+
   return <section className="arx-height-fix" data-testid="height-correction-studio">
     <div className="arx-height-project-strip">
       <div><span>ARKEMX / HEIGHT</span><b>{project.name}</b></div>
@@ -74,8 +94,14 @@ export function HeightCorrectionStudio() {
       <div><span>MEVCUT YÜKSEKLİK</span><b>{floorHeight > 0 && owner.floors > 0 ? `${proposedHeight.toFixed(2)} m` : "—"}</b></div>
       <div><span>HMAX / YENÇOK</span><b>{maxHeight > 0 ? `${maxHeight.toFixed(2)} m` : "—"}</b></div>
       <div><span>DURUM</span><b>{maxHeight <= 0 ? "Hmax girdisi eksik" : heightPass ? "Hmax sınırı geçti" : `${overage.toFixed(2)} m azaltılmalı`}</b></div>
-      {!heightPass && maxFloorsAtCurrentHeight >= 1 ? <button type="button" onClick={() => updateFloorCount(maxFloorsAtCurrentHeight)}>Kat adedini {maxFloorsAtCurrentHeight} yap</button> : null}
+      {!heightPass && maxFloorsAtCurrentHeight >= 1 ? <button type="button" onClick={applyRecommendedFloorCount}>Kat adedini {maxFloorsAtCurrentHeight} yap</button> : null}
     </section>
+
+    {correctionNotice ? <section className="arx-height-change-summary" role="status" aria-live="polite">
+      <div><span>DÜZELTME UYGULANDI</span><b>{correctionNotice.fromFloors} → {correctionNotice.toFloors} kat</b></div>
+      <div><span>YÜKSEKLİK</span><b>{correctionNotice.fromHeight.toFixed(2)} → {correctionNotice.toHeight.toFixed(2)} m</b></div>
+      <div><span>SONUÇ</span><b>{correctionNotice.toHeight <= maxHeight + .01 ? "Hmax sınırı geçti" : "Ek düzeltme gerekli"}</b></div>
+    </section> : null}
 
     <div className="arx-height-grid">
       <main>
@@ -94,7 +120,7 @@ export function HeightCorrectionStudio() {
           <header><span>DÜZELTİLECEK KAYIT</span><b>{owner.label}</b></header>
           <label>
             <span>Kat adedi</span>
-            <input type="number" min="1" max="30" value={owner.floors || 1} onChange={(event) => updateFloorCount(Number(event.target.value))} />
+            <input type="number" min="1" max="30" value={owner.floors || 1} onChange={(event) => { setCorrectionNotice(null); updateFloorCount(Number(event.target.value)); }} />
           </label>
           <p>Bu ekran yalnız kat adedinin gerçek veri sahibini değiştirir. <strong>{floorHeightSource}</strong> kaynağındaki {floorHeight.toFixed(2)} m kat yüksekliği burada değiştirilmez.</p>
           {maxFloorsAtCurrentHeight > 0 ? <div className="arx-height-guidance"><span>MEVCUT KAT YÜKSEKLİĞİNDE AZAMİ</span><b>{maxFloorsAtCurrentHeight} kat</b><small>{maxFloorsAtCurrentHeight} × {floorHeight.toFixed(2)} = {(maxFloorsAtCurrentHeight * floorHeight).toFixed(2)} m ≤ Hmax {maxHeight.toFixed(2)} m</small></div> : null}
