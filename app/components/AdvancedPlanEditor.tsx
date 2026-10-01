@@ -296,6 +296,66 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const canRemapManualMassSources = metrics.outOfGridMassPointCount > 0
     && metrics.manualMassPointCount > 0;
 
+  const canAlignConceptualRigidityToMass = metrics.eccentricityEvaluable
+    && metrics.eccentricityRatio > 10
+    && metrics.outOfGridMassPointCount === 0
+    && metrics.manualMassPointCount > 0
+    && metrics.conceptualRigidityPointCount > 0
+    && metrics.manualRigidityPointCount === 0;
+
+  const nearestBracket = (target: number, bayCount: number) => {
+    let best = { low: 0, high: Math.min(1, bayCount), error: Number.POSITIVE_INFINITY };
+    for (let low = 0; low < bayCount; low += 1) {
+      for (let high = low + 1; high <= bayCount; high += 1) {
+        const center = (low + high) / 2;
+        const error = Math.abs(center - target);
+        if (error < best.error) best = { low, high, error };
+      }
+    }
+    return best;
+  };
+
+  const alignConceptualRigidityToMass = () => {
+    if (!canAlignConceptualRigidityToMass) return;
+
+    const targetGridX = spanX > 0 ? metrics.massCenter.x / spanX : baysX / 2;
+    const targetGridY = spanY > 0 ? metrics.massCenter.y / spanY : baysY / 2;
+    const xBracket = nearestBracket(targetGridX, baysX);
+    const yBracket = nearestBracket(targetGridY, baysY);
+    const nodes = [
+      { x: xBracket.low, y: yBracket.low, label: "Temsili kolon A" },
+      { x: xBracket.high, y: yBracket.low, label: "Temsili kolon B" },
+      { x: xBracket.high, y: yBracket.high, label: "Temsili kolon C" },
+      { x: xBracket.low, y: yBracket.high, label: "Temsili kolon D" },
+    ];
+
+    const retained = elements.filter((element) => !(
+      element.level === level
+      && element.provenance === "conceptual-seed"
+      && (element.type === "column" || element.type === "wall")
+    ));
+    const rigidity = nodes.map((item) => ({
+      id: createId("column", level, item.x, item.y),
+      type: "column" as const,
+      level,
+      x: item.x,
+      y: item.y,
+      orientation: "x" as const,
+      label: item.label,
+      load: 0,
+      fire: "R 90",
+      section: "Temsili",
+      provenance: "conceptual-seed" as const,
+    }));
+
+    commit(
+      [...retained, ...rigidity],
+      `K${level} temsilî rijitlik seti manuel kütle merkezini çevreleyen aks dikdörtgenine yerleştirildi`,
+    );
+    setSelectedId(null);
+    setView("coordination");
+  };
+
   const remapManualMassSourcesToCurrentGrid = () => {
     if (!canRemapManualMassSources) return;
 
