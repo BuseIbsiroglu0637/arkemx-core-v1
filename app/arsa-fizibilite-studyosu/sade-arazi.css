@@ -1366,3 +1366,129 @@ html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary s
 html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > p {
   color: #9eaaae !important;
 }
+
+
+/* Sade Arazi/Parsel UI v7 · mikro UX son rötuş */
+@media (min-width: 901px) {
+  .arx-geo-simple .geo-workspace {
+    grid-template-columns: 360px minmax(0, 1fr) !important;
+  }
+
+  /* Sol panel genişlerken harita çalışma yüzeyini mümkün olduğunca koru. */
+  .arx-geo-simple .geo-stage {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
+/* 05 / Yapı Yerleşimi sekmelerini daha görünür hale getir. */
+.arx-geo-simple .geo-design-tabs {
+  gap: 5px;
+  padding: 5px;
+  border-color: #cbd9dd;
+  border-radius: 6px;
+  background: #f0f5f5;
+}
+.arx-geo-simple .geo-design-tabs button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.arx-geo-simple .geo-design-tabs button:hover {
+  border-color: #c6d5d9;
+  background: #fff;
+  color: #244b58;
+}
+.arx-geo-simple .geo-design-tabs button.active {
+  border-color: #0d3244;
+  background: #0d3244;
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(13 50 68 / 18%);
+}
+
+/* 04 / İmar ikincil bölümleri kaybolmasın; ana formu uzatmadan fark edilir kalsın. */
+.arx-geo-simple .geo-collapsible-block {
+  border-left: 3px solid #c56a3a;
+  border-radius: 4px;
+  background: #f9fbfb;
+}
+.arx-geo-simple .geo-collapsible-block > summary {
+  min-height: 46px;
+  padding: 11px 12px 11px 10px;
+  background: #f4f8f8;
+}
+.arx-geo-simple .geo-collapsible-block > summary:hover {
+  background: #eef4f4;
+}
+.arx-geo-simple .geo-collapsible-block > summary span {
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.arx-geo-simple .geo-collapsible-block > summary small {
+  max-width: 54%;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.arx-geo-simple .geo-collapsible-block > summary::after {
+  font-size: 14px;
+}
+
+/* Yardımcı panellerin scrollbar'larını daha geri planda tut. */
+.arx-geo-simple .geo-controls {
+  scrollbar-width: thin;
+  scrollbar-color: #b9c8cd transparent;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-track,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-track,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-track,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-track {
+  background: transparent;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-thumb,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #b9c8cd;
+  border-radius: 999px;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary {
+  background: #080808 !important;
+  border-color: #333 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block {
+  border-left-color: #d47a49 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs button:hover {
+  border-color: #414141;
+  background: #101010;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs button.active {
+  border-color: #315f71;
+  background: #123f52;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls {
+  scrollbar-color: #46565b transparent;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #46565b;
+}
