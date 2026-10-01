@@ -111,12 +111,32 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const importProjectGeometry = useCallback(() => {
     if (!currentProjectSource) return;
+
+    // Persist the canonical project source immediately. Relying only on the
+    // render-driven effect leaves a short window where another workspace can
+    // still read the previous MCDA input/source snapshot.
+    patchModule("system-comparison", {
+      input: {
+        usage: currentProjectSource.usage,
+        floors: currentProjectSource.floors,
+        span: currentProjectSource.span,
+        area: currentProjectSource.area,
+        repetition,
+        transport,
+        fireRating,
+      },
+      sourceSnapshot: currentProjectSource,
+      sourceKey: mcdaSourceKey(currentProjectSource),
+      sourceStatus: "current",
+      status: "mcda-pre-screen",
+    });
+
     setFloors(currentProjectSource.floors);
     setArea(currentProjectSource.area);
     setSpan(currentProjectSource.span);
     setUsage(currentProjectSource.usage);
     setSourceSnapshot(currentProjectSource);
-  }, [currentProjectSource]);
+  }, [currentProjectSource, fireRating, patchModule, repetition, transport]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
     const timer = window.setTimeout(() => {
