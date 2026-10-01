@@ -19,7 +19,7 @@ export default function Page() {
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-architecture-back" aria-label="KAKS düzeltme bağlantıları">
           <Link href="/dijital-proje-merkezi"><ArrowLeft size={16} aria-hidden="true" /> Proje Çalışma Alanı</Link>
-          <Link href="/arsa-fizibilite-studyosu?stage=zoning#geo-studyo">KAKS girdisini incele</Link>
+          <Link href="/arsa-fizibilite-studyosu?stage=zoning&focus=kaks#geo-studyo">KAKS girdisini incele</Link>
           <Link href="/mimari-program-studyosu#mimari-motor">Tam mimari program</Link>
         </nav>
       </header>
