@@ -101,6 +101,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
       canonical: thread.canonical,
       projectCore: core,
       issues: thread.issues,
+      completedControls: thread.completedControls,
       outputs: projectOutputs,
       eventLog: project.events,
       boundary: "Ön değerlendirme ve veri koordinasyon paketidir; yetkili proje, resmî onay veya uygulama projesi değildir.",
@@ -180,25 +181,38 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
           <footer><Link href={journeyNextAction.route}>Sıradaki çalışmayı aç →</Link></footer>
         </section>
 
-        <section className="arx-advanced-panel" aria-labelledby="arx-issues-title">
-          <header><h4 id="arx-issues-title">Açık konular</h4><span>{thread.issues.length} kayıt</span></header>
-          <div className="arx-advanced-issues">
-            {priorityIssues.map((issue) => <article className={issue.severity} key={issue.id}>
-              <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
-              <div>
-                <b>{issue.title}</b>
-                <small>{issue.id} · {issue.discipline}</small>
-                <p>{issue.evidence}</p>
-                <em className="arx-issue-recommendation">Önerilen düzeltme: {issue.action}</em>
-              </div>
-              <div className="arx-issue-actions">
-                <Link href={issue.route}>{issue.routeLabel ?? "Aç"}</Link>
-                {issue.secondaryRoute ? <Link className="secondary" href={issue.secondaryRoute}>{issue.secondaryRouteLabel ?? "Kaynağı incele"}</Link> : null}
-              </div>
-            </article>)}
-            {!priorityIssues.length ? <p className="arx-advanced-empty">Aktif proje verisinde açık kontrol konusu görünmüyor.</p> : null}
-          </div>
-        </section>
+        <div className="arx-advanced-issue-column">
+          <section className="arx-advanced-panel" aria-labelledby="arx-issues-title">
+            <header><h4 id="arx-issues-title">Açık konular</h4><span>{thread.issues.length} kayıt</span></header>
+            <div className="arx-advanced-issues">
+              {priorityIssues.map((issue) => <article className={issue.severity} key={issue.id}>
+                <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
+                <div>
+                  <b>{issue.title}</b>
+                  <small>{issue.id} · {issue.discipline}</small>
+                  <p>{issue.evidence}</p>
+                  <em className="arx-issue-recommendation">Önerilen düzeltme: {issue.action}</em>
+                </div>
+                <div className="arx-issue-actions">
+                  <Link href={issue.route}>{issue.routeLabel ?? "Aç"}</Link>
+                  {issue.secondaryRoute ? <Link className="secondary" href={issue.secondaryRoute}>{issue.secondaryRouteLabel ?? "Kaynağı incele"}</Link> : null}
+                </div>
+              </article>)}
+              {!priorityIssues.length ? <p className="arx-advanced-empty">Aktif proje verisinde açık kontrol konusu görünmüyor.</p> : null}
+            </div>
+          </section>
+
+          {thread.completedControls.length ? <section className="arx-advanced-panel arx-completed-controls" aria-labelledby="arx-completed-controls-title">
+            <header><h4 id="arx-completed-controls-title">Tamamlanan kontroller / düzeltmeler</h4><span>{thread.completedControls.length} kayıt</span></header>
+            <div className="arx-completed-control-list">
+              {thread.completedControls.map((control) => <article key={control.code}>
+                <i>✓</i>
+                <div><b>{control.code} · {control.title}</b><p>{control.summary}</p></div>
+                <Link href={control.route}>{control.routeLabel}</Link>
+              </article>)}
+            </div>
+          </section> : null}
+        </div>
       </div>
 
       <details className="arx-advanced-detail">
