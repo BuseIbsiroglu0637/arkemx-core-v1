@@ -67,10 +67,10 @@ test("project centre separates project type and does not count undecided structu
   assert.match(kernel, /normalizeProjectName/);
   assert.match(kernel, /Proje\\s\+türü/);
   assert.match(center, /Proje türü: \{projectType\}/);
-  assert.match(hub, /systemDecisionReady/);
+  assert.match(kernel, /step\.short === "Sistem"/);
+  assert.match(kernel, /systemDecisionReady/);
+  assert.match(hub, /journeyState\.systemDecisionReady/);
   assert.match(hub, /ready: systemDecisionReady/);
-  assert.match(hub, /step\.short === "Sistem"/);
-  assert.ok(hub.indexOf("const systemDecisionReady") < hub.indexOf("const completedJourney"));
   assert.match(graph, /quickSiteScenarioReady/);
   assert.match(graph, /label: "Sistemi ve yöntemi seç"/);
 });
