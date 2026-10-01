@@ -122,7 +122,12 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     const timer = window.setTimeout(() => {
     if (transferApplied.current) return;
     transferApplied.current = true;
-    const saved = project.modules["system-comparison"] as { input?: Record<string, unknown>; weights?: Record<CriterionId, number>; shortlist?: SystemId[] } | undefined;
+    const saved = project.modules["system-comparison"] as {
+      input?: Record<string, unknown>;
+      weights?: Record<CriterionId, number>;
+      shortlist?: SystemId[];
+      sourceSnapshot?: McdaSourceSnapshot;
+    } | undefined;
     if (saved?.input) {
       const input = saved.input;
       if (typeof input.usage === "string") setUsage(input.usage);
@@ -134,13 +139,18 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       if (typeof input.fireRating === "number") setFireRating(input.fireRating);
       if (saved.weights) setWeights(saved.weights);
       if (saved.shortlist) setShortlist(saved.shortlist);
+      if (saved.sourceSnapshot) {
+        setSourceSnapshot(saved.sourceSnapshot);
+      } else if (currentProjectSource && mcdaInputMatchesSource(input, currentProjectSource)) {
+        setSourceSnapshot(currentProjectSource);
+      }
     } else {
       importProjectGeometry();
     }
     setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, importProjectGeometry, project.modules]);
+  }, [currentProjectSource, hydrated, importProjectGeometry, project.modules]);
   const exportJson = () => downloadTextFile("arkem-sistem-mcda.json", JSON.stringify({ schema: "ARKEM-MCDA/1.0", inputs: { usage, floors, span, area, repetition, transport, fireRating }, weights, results: ranking, shortlist }, null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-sistem-karsilastirma.csv", ["rank,system,score,low,high,constraints", ...ranking.map((item, index) => `${index + 1},${item.name},${item.score.toFixed(1)},${item.low.toFixed(1)},${item.high.toFixed(1)},"${item.constraints.join("; ")}"`)].join("\n"), "text/csv;charset=utf-8");
 
