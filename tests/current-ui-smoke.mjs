@@ -163,6 +163,30 @@ test("STR-031 opens a focused structural sync workspace and preserves synchroniz
 });
 
 
+test("ARC-021 can preserve the program by expanding plan footprint when TAKS permits", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/program-plan-alani/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · ARC-021/);
+  assert.match(page, /Plan tabanını programa göre koordine et/);
+  assert.match(page, /AdvancedPlanEditor issueFocus="program-area"/);
+
+  assert.match(studio, /canExpandPlanToProgram/);
+  assert.match(studio, /programTargetFootprint/);
+  assert.match(studio, /Plan tabanını programa göre düzenle/);
+  assert.match(studio, /href="\/tasarim-calismalari\/program-plan-alani"/);
+  assert.match(studio, /Programı mevcut plana küçült/);
+
+  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| "program-area" \| false/);
+  assert.match(editor, /programFootprintTarget/);
+  assert.match(editor, /programFootprintFeasible/);
+  assert.match(editor, /applyProgramFootprintSuggestion/);
+  assert.match(editor, /Plan tabanını program kapasitesine getir/);
+  assert.match(editor, /Kat adedi ve imar girdileri burada değiştirilmez/);
+});
+
+
 test("ARC-021 uses a focused program-plan coordination workspace", () => {
   const page = fs.readFileSync(new URL("../app/mimari-program-studyosu/plan-koordinasyonu/page.tsx", import.meta.url), "utf8");
   const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
