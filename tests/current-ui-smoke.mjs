@@ -40,6 +40,20 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
+test("TAKS plan correction opens a focused workspace instead of the legacy design page", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(page, /Plan tabanını düzelt/);
+  assert.match(page, /AdvancedPlanEditor compactKernel issueFocus/);
+  assert.match(editor, /cad-issue-focus/);
+  assert.match(editor, /TAKS'A GÖRE AZAMİ/);
+  assert.match(editor, /Oranı koruyarak önerilen ölçüleri uygula/);
+  assert.match(graph, /\/tasarim-calismalari\/plan-duzeltme/);
+});
+
+
 test("project centre next action follows the first incomplete guided journey step", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
