@@ -386,6 +386,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // The 3D terrain view opens as terrain-only. A conceptual building mass is opt-in.
   const [showTerrainMassing, setShowTerrainMassing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const extraToolsRef = useRef<HTMLDetailsElement | null>(null);
   const openFocusedStage = (stage: Stage) => {
     setActiveStage(stage);
     if (!simple) return;
@@ -1994,9 +1995,15 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <button key={id} type="button" className={activeStage === id ? "active" : ""} aria-current={activeStage === id ? "step" : undefined}
             onClick={() => openFocusedStage(id)}>{label}</button>
         )}
-        <details className="arx-geo-extra">
+        <details className="arx-geo-extra" ref={extraToolsRef}>
           <summary>Diğer araçlar ▾</summary>
-          <div>
+          <div onClickCapture={(event) => {
+            if ((event.target as HTMLElement).closest("button")) {
+              window.requestAnimationFrame(() => {
+                if (extraToolsRef.current) extraToolsRef.current.open = false;
+              });
+            }
+          }}>
             {([["draw","Sınır düzenle"],["terrain","3B arazi"],["export","Teknik çıktılar"]] as const).map(([id,label]) =>
               <button type="button" key={id} className={activeStage === id ? "active" : ""}
                 onClick={() => openFocusedStage(id)}>{label}</button>
