@@ -817,3 +817,137 @@ html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="mi
 html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > small {
   color: #bdc8cc;
 }
+
+
+/* 05 / Yapı Yerleşimi · tek karar özeti */
+.arx-geo-simple .geo-placement-decision {
+  margin: 14px 0 16px;
+  border: 1px solid #cfdadd;
+  background: #f8fbfb;
+}
+.arx-geo-simple .geo-placement-decision > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 14px;
+  border-bottom: 1px solid #d9e2e4;
+}
+.arx-geo-simple .geo-placement-decision > header div {
+  display: grid;
+  gap: 3px;
+}
+.arx-geo-simple .geo-placement-decision > header span,
+.arx-geo-simple .geo-placement-decision > footer > b {
+  color: #b85d32;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.arx-geo-simple .geo-placement-decision > header b {
+  color: #0c2c3c;
+  font-size: 12px;
+}
+.arx-geo-simple .geo-placement-decision > header em {
+  align-self: start;
+  padding: 5px 7px;
+  border: 1px solid #cfdadd;
+  color: #547078;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+}
+.arx-geo-simple .geo-placement-decision[data-state="pass"] > header em {
+  border-color: #9ccbb8;
+  color: #247455;
+}
+.arx-geo-simple .geo-placement-decision[data-state="review"] > header em {
+  border-color: #e1b395;
+  color: #a4522a;
+}
+.arx-geo-simple .geo-placement-decision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.arx-geo-simple .geo-placement-decision-grid p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border-right: 1px solid #e1e8ea;
+  border-bottom: 1px solid #e1e8ea;
+  font-size: 10px;
+}
+.arx-geo-simple .geo-placement-decision-grid p:nth-child(2n) {
+  border-right: 0;
+}
+.arx-geo-simple .geo-placement-decision-grid span,
+.arx-geo-simple .geo-placement-source span {
+  color: #667c84;
+}
+.arx-geo-simple .geo-placement-decision-grid b {
+  color: #0d3542;
+}
+.arx-geo-simple .geo-placement-decision-grid b.pass {
+  color: #237453;
+}
+.arx-geo-simple .geo-placement-decision-grid b.fail {
+  color: #b3562e;
+}
+.arx-geo-simple .geo-placement-source {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #d9e2e4;
+  font-size: 10px;
+}
+.arx-geo-simple .geo-placement-source b {
+  text-align: right;
+  color: #a4522a;
+}
+.arx-geo-simple .geo-placement-decision > footer {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px 13px;
+}
+.arx-geo-simple .geo-placement-decision > footer span {
+  color: #153944;
+  font-size: 10px;
+  font-weight: 700;
+}
+.arx-geo-simple .geo-placement-decision > footer small {
+  color: #6d7e83;
+  font-size: 9px;
+  line-height: 1.45;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision {
+  border-color: #32464d;
+  background: #071116;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > header,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid p,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-source {
+  border-color: #263b42;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > header b,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > footer span {
+  color: #eef7f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b.pass {
+  color: #79d2ad;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b.fail,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-source b {
+  color: #f0a272;
+}
+@media (max-width: 720px) {
+  .arx-geo-simple .geo-placement-decision-grid {
+    grid-template-columns: 1fr;
+  }
+  .arx-geo-simple .geo-placement-decision-grid p {
+    border-right: 0;
+  }
+}
