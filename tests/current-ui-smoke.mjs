@@ -40,6 +40,24 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
+test("project centre next action follows the first incomplete guided journey step", () => {
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+
+  assert.match(kernel, /export function deriveProjectJourneyState/);
+  assert.match(kernel, /firstIncompleteIndex/);
+  assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
+  assert.match(center, /deriveProjectJourneyState\(thread\)/);
+  assert.match(center, /journeyNextAction\.label/);
+  assert.match(center, /journeyNextAction\.route/);
+  assert.match(hub, /deriveProjectJourneyState\(thread\)/);
+  assert.match(hub, /journeyNextAction\.label/);
+  assert.match(hub, /journeyNextAction\.route/);
+  assert.doesNotMatch(center, /thread\.nextAction\.(label|route)/);
+});
+
+
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
