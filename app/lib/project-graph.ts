@@ -273,7 +273,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   );
 
   const footprintSource = number(planMetrics.floorArea) > 0
-    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan tabanını düzelt" }
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari/plan-duzeltme", actionLabel: "Plan tabanını düzelt" }
     : number(geoMetrics.footprint) > 0
       ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
       : number(structureGeometry.floorArea) > 0
