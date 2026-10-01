@@ -14,7 +14,7 @@ import {
   type ParcelRecord,
   type ParcelSourceKind,
 } from "../lib/parcel-record";
-import { createZoningProvenance, DEFAULT_ZONING, normalizeUntrustedZoningVerification, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningForm, type ZoningVerification } from "../lib/zoning";
+import { createZoningProvenance, DEFAULT_ZONING, normalizeUntrustedZoningVerification, normalizeZoningSourceUrl, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningForm, type ZoningVerification } from "../lib/zoning";
 import {
   DEFAULT_TERRAIN_LAYERS,
   createTerrainContours,
@@ -446,9 +446,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     zoning.rearSetback,
   ].every((value) => Number.isFinite(value) && value >= 0);
   const zoningFormReady = zoningNumericReady && Boolean(zoning.planScale && zoning.buildingOrder);
+  const normalizedZoningSourceUrl = normalizeZoningSourceUrl(zoning.sourceUrl);
   const zoningSourceReferenceReady = Boolean(
     zoning.sourceDocument
-    || zoning.sourceUrl
+    || normalizedZoningSourceUrl
     || zoning.planId
     || (zoning.sourceType === "Kullanıcı beyanı" && zoning.sourceNote.trim()),
   );
@@ -686,6 +687,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             frontSetback: typeof saved.zoning.frontSetback === "number" ? saved.zoning.frontSetback : -1,
             sideSetback: typeof saved.zoning.sideSetback === "number" ? saved.zoning.sideSetback : -1,
             rearSetback: typeof saved.zoning.rearSetback === "number" ? saved.zoning.rearSetback : -1,
+            sourceUrl: normalizeZoningSourceUrl(saved.zoning.sourceUrl),
             verification: normalizeUntrustedZoningVerification(saved.zoning?.verification, Boolean(saved.zoning?.sourceDocument)),
           };
         setZoning(restoredZoning);
@@ -1735,8 +1737,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         ["Parsel çevresi", `${metrics.perimeter.toFixed(1)} m`],
         ["Yapı tabanı", `${metrics.footprint.toFixed(1)} m²`],
         ["Ön brüt alan", `${metrics.gross.toFixed(1)} m²`],
-        ["Kat / yükseklik", `${floors} / ${metrics.buildingHeight.toFixed(1)} m`],
-        ["TAKS / KAKS", `%${metrics.coverage.toFixed(1)} / ${metrics.far.toFixed(2)}`],
+        ["Kat / yükseklik / Hmax", `${floors} / ${metrics.buildingHeight.toFixed(1)} / ${zoning.hmax.toFixed(1)} m`],
+        ["Kütle / imar TAKS-KAKS", `%${metrics.coverage.toFixed(1)} / %${maxCoverage.toFixed(1)} · ${metrics.far.toFixed(2)} / ${maxFar.toFixed(2)}`],
         ["Sınır mesafesi", `${metrics.boundaryDistance.toFixed(1)} m`],
         ["Yapı nizamı", zoning.buildingOrder],
         ["İmar kaynağı", zoningVerificationLabel(zoning.verification)],
@@ -1861,7 +1863,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.rearSetback)} onChange={(event) => updateSetback("rearSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Arka çekme"/></label>
       </div>
       <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
-      <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} placeholder="Belediye e-İmar veya e-Plan bağlantısı" /></label>
+      <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} onBlur={() => updateZoning("sourceUrl", normalizeZoningSourceUrl(zoning.sourceUrl))} placeholder="https://… Belediye e-İmar veya e-Plan bağlantısı" /></label>
       <label>Kaynak açıklaması<textarea rows={2} value={zoning.sourceNote} onChange={(event) => updateZoning("sourceNote", event.target.value)} placeholder="Belgenin kapsamı, nereden alındığı veya kontrol notu…" /></label>
       <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
       {!zoningFormReady && <p className="geo-caution"><b>İmar girdileri bekleniyor:</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlanmadan yapı zarfı veya imar uygunluğu hesabı üretilmez.</p>}
