@@ -463,3 +463,54 @@ test("ARC-021 moves to completed history when program and plan gross areas are c
   assert.equal(completed?.route, "/mimari-program-studyosu/plan-koordinasyonu");
   assert.match(completed?.summary ?? "", /Program: 953,8 m² · Plan: 953,8 m²/);
 });
+
+
+test("BIM-053 moves to completed history when mass and rigidity source objects exist", () => {
+  const open = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.852,
+      metrics: {
+        floorArea: 476.9,
+        massPointCount: 0,
+        rigidityPointCount: 0,
+        eccentricityEvaluable: false,
+        eccentricityRatio: 0,
+      },
+    },
+  });
+
+  const issue = open.issues.find(item => item.id === "BIM-053");
+  assert.ok(issue);
+  assert.equal(issue?.route, "/tasarim-calismalari/km-kr-kaynaklari");
+  assert.equal(issue?.routeLabel, "KM/KR kaynaklarını tamamla");
+  assert.equal(open.completedControls.some(control => control.code === "BIM-053"), false);
+
+  const resolved = deriveProjectThread({
+    "plan-editor": {
+      floorCount: 2,
+      baysX: 6,
+      baysY: 5,
+      spanX: 4.127,
+      spanY: 3.852,
+      metrics: {
+        floorArea: 476.9,
+        massPointCount: 4,
+        rigidityPointCount: 4,
+        eccentricityEvaluable: true,
+        eccentricity: 0.35,
+        eccentricityRatio: 1.4,
+      },
+    },
+  });
+
+  assert.equal(resolved.issues.some(item => item.id === "BIM-053"), false);
+  const completed = resolved.completedControls.find(control => control.code === "BIM-053");
+  assert.ok(completed);
+  assert.equal(completed?.title, "KM–KR kaynak yeterliliği");
+  assert.equal(completed?.route, "/tasarim-calismalari/km-kr-kaynaklari");
+  assert.match(completed?.summary ?? "", /Kütle: 4 · Rijitlik: 4 kaynak/);
+});
