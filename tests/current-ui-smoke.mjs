@@ -303,7 +303,11 @@ test("BIM-052 safely recenters only fully conceptual KM-KR source sets", () => {
   assert.match(editor, /remapManualMassSourcesToCurrentGrid/);
   assert.match(editor, /sourceBaysX/);
   assert.match(editor, /sourceBaysY/);
-  assert.match(editor, /yalnız açık kullanıcı aksiyonuyla güncel aks ızgarasına oransal eşlenir/);
+  assert.match(editor, /canAlignConceptualRigidityToMass/);
+  assert.match(editor, /alignConceptualRigidityToMass/);
+  assert.match(editor, /nearestBracket/);
+  assert.match(editor, /Temsilî rijitlik setini KM çevresine yerleştir/);
+  assert.match(editor, /manuel kütle verisi korunurken temsilî rijitlik seti KM çevresindeki akslara taşınabilir/);
   assert.match(editor, /Dışmerkezlik göstergesi yüksek/);
 });
 
