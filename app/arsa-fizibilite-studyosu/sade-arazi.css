@@ -1024,3 +1024,53 @@ html[data-theme="dark"] .arx-geo-simple .geo-placement-source b {
   font-size: 9px !important;
   line-height: 1.45 !important;
 }
+
+
+/* Sade Arazi/Parsel UI v3 · masaüstünde tek çalışma yüzeyi */
+@media (min-width: 901px) {
+  .arx-geo-simple .geo-workspace {
+    align-items: start;
+    min-height: 0 !important;
+  }
+
+  .arx-geo-simple .geo-controls {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .arx-geo-simple .geo-stage {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    min-height: 0 !important;
+  }
+
+  .arx-geo-simple .geo-map-frame {
+    height: min(72vh, 680px) !important;
+    min-height: 480px !important;
+  }
+
+  .arx-geo-simple .geo-data-view {
+    max-height: min(72vh, 680px);
+    overflow: auto;
+  }
+
+  .arx-geo-simple .geo-connectors {
+    margin-bottom: 0 !important;
+  }
+}
+
+.arx-geo-simple .geo-controls::-webkit-scrollbar {
+  width: 8px;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-thumb {
+  background: #c7d3d7;
+  border-radius: 999px;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls::-webkit-scrollbar-thumb {
+  background: #3b4b50;
+}
