@@ -115,6 +115,9 @@ test("STR-031 opens a focused structural sync workspace and preserves synchroniz
 
   assert.match(studio, /H-03 · PLAN → TAŞIYICI MODEL/);
   assert.match(studio, /Plan verisini taşıyıcı modele aktar/);
+  assert.match(studio, /SENKRON TAMAMLANDI/);
+  assert.match(studio, /Geometri eşleşiyor/);
+  assert.match(studio, /SENKRONİZE EDİLEN ALANLAR/);
   assert.match(studio, /patchModule\("structural-concept"/);
   assert.match(studio, /floors: planFloors/);
   assert.match(studio, /width: Number\(planWidth\.toFixed\(3\)\)/);
@@ -128,6 +131,8 @@ test("STR-031 opens a focused structural sync workspace and preserves synchroniz
   assert.match(graph, /STR-031/);
   assert.match(graph, /\/tasarim-calismalari\/model-senkronizasyonu/);
   assert.match(css, /arx-struct-sync-page/);
+  assert.match(css, /Structural sync UX v2/);
+  assert.match(css, /arx-struct-sync-complete/);
 });
 
 
