@@ -14,7 +14,7 @@ import {
   type ParcelRecord,
   type ParcelSourceKind,
 } from "../lib/parcel-record";
-import { createZoningProvenance, DEFAULT_ZONING, normalizeUntrustedZoningVerification, normalizeZoningSourceUrl, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningForm, type ZoningVerification } from "../lib/zoning";
+import { createZoningProvenance, DEFAULT_ZONING, normalizeUntrustedZoningVerification, normalizeZoningSourceUrl, ZONING_CONNECTORS, zoningVerificationLabel, type ZoningExpertReviewStatus, type ZoningForm, type ZoningVerification } from "../lib/zoning";
 import {
   DEFAULT_TERRAIN_LAYERS,
   createTerrainContours,
@@ -473,6 +473,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     zoning.sourceType
     && zoning.sourceDate
     && zoningSourceReferenceReady,
+  );
+  const zoningExpertReviewComplete = Boolean(
+    zoning.expertReviewStatus === "reviewed-consistent"
+    && zoning.expertReviewer.trim()
+    && zoning.expertReviewerRole.trim()
+    && zoning.expertReviewDate
+    && zoning.expertReviewBasis.trim(),
   );
   const manualBuildingHeight = floors * floorHeight;
   const manualHeightExceedsZoning = zoningFormReady && manualBuildingHeight > zoning.hmax + 0.001;
@@ -1622,16 +1629,45 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     : "GİRİLMEDİ";
 
   const updateZoning = <K extends keyof ZoningForm>(key: K, value: ZoningForm[K]) => {
-    setZoning((current) => key === "verification"
-      ? { ...current, verification: normalizeUntrustedZoningVerification(value, Boolean(current.sourceDocument)) }
-      : { ...current, [key]: value });
+    const expertKeys = new Set<keyof ZoningForm>([
+      "expertReviewStatus",
+      "expertReviewer",
+      "expertReviewerRole",
+      "expertReviewDate",
+      "expertReviewBasis",
+      "expertReviewNote",
+    ]);
+    setZoning((current) => {
+      const next = key === "verification"
+        ? { ...current, verification: normalizeUntrustedZoningVerification(value, Boolean(current.sourceDocument)) }
+        : { ...current, [key]: value };
+      if (expertKeys.has(key)) return next;
+      return {
+        ...next,
+        expertReviewStatus: "not-reviewed",
+        expertReviewer: "",
+        expertReviewerRole: "",
+        expertReviewDate: "",
+        expertReviewBasis: "",
+        expertReviewNote: "",
+      };
+    });
     if (key === "taks") setMaxCoverage(Number(value) >= 0 ? Number(value) * 100 : -1);
     if (key === "kaks") setMaxFar(Number(value) >= 0 ? Number(value) : -1);
     if (key === "hmax") setMaxHeight(Number(value) >= 0 ? Number(value) : -1);
   };
 
   const updateSetback = (key: "frontSetback" | "sideSetback" | "rearSetback", value: number) => {
-    const next = { ...zoning, [key]: value };
+    const next = {
+      ...zoning,
+      [key]: value,
+      expertReviewStatus: "not-reviewed" as const,
+      expertReviewer: "",
+      expertReviewerRole: "",
+      expertReviewDate: "",
+      expertReviewBasis: "",
+      expertReviewNote: "",
+    };
     setZoning(next);
     const entered = [next.frontSetback, next.sideSetback, next.rearSetback].filter((item) => Number.isFinite(item) && item >= 0);
     setRequiredSetback(entered.length === 3 ? Math.max(...entered) : -1);
@@ -1645,6 +1681,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       ...current,
       sourceDocument: file.name,
       verification: "document-pending-review",
+      expertReviewStatus: "not-reviewed",
+      expertReviewer: "",
+      expertReviewerRole: "",
+      expertReviewDate: "",
+      expertReviewBasis: "",
+      expertReviewNote: "",
     }));
     setFileNotice(`${file.name}: belge adı proje kaydına eklendi; içeriği veya resmî geçerliliği doğrulanmadı. Yetkili idare ve uzman incelemesi bekleniyor.`);
   };
