@@ -188,6 +188,32 @@ test("ARC-021 uses a focused program-plan coordination workspace", () => {
 });
 
 
+test("BIM-053 uses a focused KM-KR source workspace with explicit conceptual provenance", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/km-kr-kaynaklari.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · BIM-053/);
+  assert.match(page, /KM–KR ön kontrol kaynaklarını tamamla/);
+  assert.match(page, /AdvancedPlanEditor issueFocus="kmkr"/);
+
+  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| false/);
+  assert.match(editor, /Temsilî kaynak seti oluştur/);
+  assert.match(editor, /provenance: "conceptual-seed"/);
+  assert.match(editor, /conceptualMassPointCount/);
+  assert.match(editor, /conceptualRigidityPointCount/);
+  assert.match(editor, /KM\/KR ön kontrolü hesaplanabilir/);
+  assert.match(editor, /Geometrik plaka merkezi KR kabul edilmez/);
+  assert.match(editor, /deprem düzensizlik hesabı değildir/);
+
+  assert.match(graph, /BIM-053/);
+  assert.match(graph, /\/tasarim-calismalari\/km-kr-kaynaklari/);
+  assert.match(graph, /KM–KR kaynak yeterliliği/);
+  assert.match(css, /arx-kmkr-page/);
+});
+
+
 test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owner", () => {
   const page = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/page.tsx", import.meta.url), "utf8");
   const studio = fs.readFileSync(new URL("../app/components/HeightCorrectionStudio.tsx", import.meta.url), "utf8");
