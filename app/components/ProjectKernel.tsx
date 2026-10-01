@@ -122,6 +122,13 @@ function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
+function normalizeProjectName(value: string) {
+  const cleaned = value
+    .replace(/\s+Proje\s+türü\s*:\s*.+$/iu, "")
+    .trim();
+  return cleaned || "Yeni ARKEMX Projesi";
+}
+
 function projectUse(value: string) {
   const normalized = value.toLocaleLowerCase("tr-TR");
   if (normalized.includes("konut")) return "residential";
@@ -534,6 +541,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
           const parsed = stored.value;
           if (parsed?.schema === "ARKEM-PROJECT/1.0" && parsed.id && parsed.modules && typeof parsed.modules === "object") setProject((current) => ({
             ...parsed,
+            name: normalizeProjectName(parsed.name || current.name),
             experience: { ...current.experience, ...record(parsed.experience) },
             events: [...(Array.isArray(parsed.events) ? parsed.events : []), ...current.events].slice(-80),
             modules: ensureProjectModuleStamps({ ...current.modules, ...parsed.modules }, {
@@ -708,6 +716,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       ...defaults,
       ...candidate,
       schema: "ARKEM-PROJECT/1.0",
+      name: normalizeProjectName(candidate.name || defaults.name),
       experience: { ...defaults.experience, ...record(candidate.experience) },
       modules: ensureProjectModuleStamps(candidate.modules, {
         projectId: candidate.id,
@@ -838,7 +847,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     setProject({
       ...createDefaultProject(),
       id: projectCode,
-      name: intake.name.trim() || "Yeni ARKEMX Projesi",
+      name: normalizeProjectName(intake.name),
       phase: guidedJourney.readiness >= 45 ? "Ön fizibilite" : "Fikir",
       revision: "P01",
       updatedAt: timestamp,
