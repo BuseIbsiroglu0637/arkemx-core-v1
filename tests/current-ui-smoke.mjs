@@ -297,7 +297,13 @@ test("BIM-052 safely recenters only fully conceptual KM-KR source sets", () => {
   assert.match(editor, /metrics\.manualMassPointCount === 0/);
   assert.match(editor, /metrics\.manualRigidityPointCount === 0/);
   assert.match(editor, /Temsilî kaynakları yeniden merkezle/);
-  assert.match(editor, /manuel kaynak nesneleri otomatik taşınmaz/);
+  assert.match(editor, /Aks dışı kütle kaynaklarını güncel plana uyarla/);
+  assert.match(editor, /outOfGridMassPointCount/);
+  assert.match(editor, /canRemapManualMassSources/);
+  assert.match(editor, /remapManualMassSourcesToCurrentGrid/);
+  assert.match(editor, /sourceBaysX/);
+  assert.match(editor, /sourceBaysY/);
+  assert.match(editor, /yalnız açık kullanıcı aksiyonuyla güncel aks ızgarasına oransal eşlenir/);
   assert.match(editor, /Dışmerkezlik göstergesi yüksek/);
 });
 
@@ -308,11 +314,11 @@ test("BIM-053 uses a focused KM-KR source workspace with explicit conceptual pro
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/km-kr-kaynaklari.css", import.meta.url), "utf8");
 
-  assert.match(page, /KONTROL · BIM-053/);
-  assert.match(page, /KM–KR ön kontrol kaynaklarını tamamla/);
+  assert.match(page, /KONTROL · BIM-052 \/ BIM-053/);
+  assert.match(page, /KM–KR ön kontrolünü düzenle/);
   assert.match(page, /AdvancedPlanEditor issueFocus="kmkr"/);
 
-  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| false/);
+  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| "program-area" \| false/);
   assert.match(editor, /Temsilî kaynak seti oluştur/);
   assert.match(editor, /provenance: "conceptual-seed"/);
   assert.match(editor, /conceptualMassPointCount/);
