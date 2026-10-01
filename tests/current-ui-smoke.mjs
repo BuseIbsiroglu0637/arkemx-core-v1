@@ -40,6 +40,17 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
+test("ARKEMX workspace subroutes do not render the public WhatsApp contact widget", () => {
+  const chrome = fs.readFileSync(new URL("../app/components/SiteChrome.tsx", import.meta.url), "utf8");
+
+  assert.match(chrome, /arkemxWorkspaceRoots/);
+  assert.match(chrome, /"\/mimari-program-studyosu"/);
+  assert.match(chrome, /"\/tasarim-calismalari"/);
+  assert.match(chrome, /pathname\?\.startsWith/);
+  assert.match(chrome, /return null/);
+});
+
+
 test("KAKS program correction opens a focused architectural workspace", () => {
   const page = fs.readFileSync(new URL("../app/mimari-program-studyosu/kaks-duzeltme/page.tsx", import.meta.url), "utf8");
   const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
@@ -47,6 +58,7 @@ test("KAKS program correction opens a focused architectural workspace", () => {
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
 
   assert.match(page, /className="arx-kaks-page-intro"/);
+  assert.match(page, /KONTROL · PLN-012/);
   assert.match(page, /Program brütünü düzelt/);
   assert.match(page, /ArchitecturalProgramStudio issueFocus="kaks"/);
   assert.match(studio, /arx-kaks-project-strip/);
@@ -55,6 +67,7 @@ test("KAKS program correction opens a focused architectural workspace", () => {
   assert.match(studio, /şablonuna geçir/);
   assert.match(studio, /architectural-program-kaks-focus/);
   assert.match(studio, /KAKS'A GÖRE AZAMİ/);
+  assert.match(studio, /KAKS sınırı geçti/);
   assert.match(studio, /Program dağılımını koruyarak sınır içine indir/);
   assert.match(studio, /arx-kaks-space-columns/);
   assert.match(studio, /setSpaces\(\(current\) => current\.map/);
