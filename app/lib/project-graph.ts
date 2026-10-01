@@ -313,19 +313,19 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const nextAction = !parcelReadyForNextStage
     ? {
       label: "Parsel kimliğini ve sınırını doğrula",
-      route: "/arsa-fizibilite-studyosu#geo-studyo",
+      route: "/arsa-fizibilite-studyosu?stage=locate#geo-studyo",
       blockedBy: [] as ProjectModuleKey[],
     }
     : !zoningConditionsReadyForNextStage
       ? {
         label: "İmar koşullarını gir",
-        route: "/arsa-fizibilite-studyosu#geo-studyo",
+        route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
         blockedBy: [] as ProjectModuleKey[],
       }
       : !zoningSourceReadyForNextStage
         ? {
           label: "İmar kaynağını ekle",
-          route: "/arsa-fizibilite-studyosu#geo-studyo",
+          route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
           blockedBy: [] as ProjectModuleKey[],
         }
         : nextNode
