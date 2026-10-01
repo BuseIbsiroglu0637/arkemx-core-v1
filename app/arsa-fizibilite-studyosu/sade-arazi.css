@@ -1492,3 +1492,65 @@ html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results::-
 html[data-theme="dark"] .arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
   background: #46565b;
 }
+
+
+/* Sade Arazi/Parsel UI v8 · issue-origin zoning focus */
+.arx-geo-simple .geo-zoning-focus-target {
+  position:relative;
+  margin:-5px;
+  padding:5px;
+  border:1px solid #d98555;
+  border-radius:5px;
+  background:#fff8f3;
+  box-shadow:0 0 0 2px rgb(201 105 56 / 8%);
+}
+.arx-geo-simple .geo-zoning-focus-target::before {
+  content:"İNCELENEN GİRDİ";
+  display:block;
+  margin-bottom:5px;
+  color:#b45d33;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.07em;
+}
+.arx-geo-simple .geo-zoning-focus-note {
+  display:grid;
+  gap:5px;
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid #e2c6b6;
+  border-left:3px solid #c86f3e;
+  border-radius:4px;
+  background:#fff9f5;
+}
+.arx-geo-simple .geo-zoning-focus-note > span {
+  color:#b45d33;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.075em;
+}
+.arx-geo-simple .geo-zoning-focus-note > b {
+  color:#3e4d53;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-geo-simple .geo-zoning-focus-note > small {
+  color:#7b6c65;
+  font-size:8px;
+  line-height:1.45;
+}
+.arx-geo-simple .geo-zoning-source-focus {
+  border-color:#d9a786 !important;
+  box-shadow:inset 3px 0 0 #c86f3e;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-target,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note {
+  background:#120d0a !important;
+  border-color:#6e4430 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note > b {
+  color:#e5eaec !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note > small {
+  color:#b0a39d !important;
+}
