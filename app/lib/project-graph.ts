@@ -281,7 +281,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
         : { label: "Bilinmeyen kaynak", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi incele" };
 
   const grossSource = architectureGross > 0
-    ? { label: "Mimari program", route: "/mimari-program-studyosu#mimari-motor", actionLabel: "Programı düzelt" }
+    ? { label: "Mimari program", route: "/mimari-program-studyosu/kaks-duzeltme", actionLabel: "Programı düzelt" }
     : planGross > 0
       ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan alanını düzelt" }
       : geoGross > 0
