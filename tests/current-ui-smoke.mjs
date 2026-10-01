@@ -40,6 +40,23 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
 
+test("project centre separates project type and does not count undecided structure as ready", () => {
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(kernel, /normalizeProjectName/);
+  assert.match(kernel, /Proje\\s\+türü/);
+  assert.match(center, /Proje türü: \{projectType\}/);
+  assert.match(hub, /systemDecisionReady/);
+  assert.match(hub, /ready: systemDecisionReady/);
+  assert.match(hub, /step\.short === "Sistem"/);
+  assert.match(graph, /quickSiteScenarioReady/);
+  assert.match(graph, /label: "Sistemi ve yöntemi seç"/);
+});
+
+
 test("local build renders the simplified, device-scoped project centre", async () => {
   const response = await render("/dijital-proje-merkezi");
   assert.equal(response.status, 200);
