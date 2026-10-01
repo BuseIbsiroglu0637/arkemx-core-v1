@@ -111,7 +111,10 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
 
   if (simple) {
     return <section className="arx-system-tool" data-testid="system-comparison-tool">
-      <ProjectKernelBar module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" compact />
+      <div className="arx-system-project-strip" aria-label="Aktif proje ve MCDA durumu">
+        <div><span>ARKEMX / MCDA</span><b>{project.name}</b></div>
+        <div><span>{project.phase}</span><span>{project.revision}</span><span>Çok ölçütlü ön eleme</span></div>
+      </div>
       <div className="arx-system-grid">
         <section className="arx-system-panel" aria-labelledby="arx-system-input-title">
           <header className="arx-system-panel-head">
