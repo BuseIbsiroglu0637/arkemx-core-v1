@@ -596,9 +596,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       <div><span>DURUM</span><b>{!metrics.eccentricityEvaluable ? "Kaynak nesneler eksik" : metrics.eccentricityRatio > 10 ? "Dışmerkezlik göstergesi yüksek" : "KM/KR ön kontrolü hesaplanabilir"}</b></div>
       {!metrics.eccentricityEvaluable
         ? <button type="button" onClick={createConceptualKmKrSources}>Temsilî kaynak seti oluştur</button>
-        : canRecenterConceptualKmKr
-          ? <button type="button" onClick={recenterConceptualKmKrSources}>Temsilî kaynakları yeniden merkezle</button>
-          : <div className={`cad-kmkr-complete${metrics.eccentricityRatio > 10 ? " is-warning" : ""}`}><span>{metrics.eccentricityRatio > 10 ? "YERLEŞİM İNCELEMESİ GEREKLİ" : "ÖN KONTROL HAZIR"}</span><b>{metrics.eccentricity.toFixed(2)} m · %{metrics.eccentricityRatio.toFixed(1)}</b></div>}
+        : canRemapManualMassSources
+          ? <button type="button" onClick={remapManualMassSourcesToCurrentGrid}>Aks dışı kütle kaynaklarını güncel plana uyarla</button>
+          : canRecenterConceptualKmKr
+            ? <button type="button" onClick={recenterConceptualKmKrSources}>Temsilî kaynakları yeniden merkezle</button>
+            : <div className={`cad-kmkr-complete${metrics.eccentricityRatio > 10 ? " is-warning" : ""}`}><span>{metrics.eccentricityRatio > 10 ? "YERLEŞİM İNCELEMESİ GEREKLİ" : "ÖN KONTROL HAZIR"}</span><b>{metrics.eccentricity.toFixed(2)} m · %{metrics.eccentricityRatio.toFixed(1)}</b></div>}
     </section> : null}
     <div className="cad-editor-app">
       <header className="cad-topbar"><div className="cad-project-id"><span>{isKmKrFocus ? "KM–KR / KAYNAK NESNELER" : isProgramAreaFocus ? "PROGRAM / PLAN TABANI" : isTaksFocus ? "PLAN TABANI / TAKS" : "ARKEM / CONCEPT BIM"}</span><b>{issueFocus ? `K${level} · ${totalWidth.toFixed(2)} × ${totalDepth.toFixed(2)} m · ${baysX}×${baysY} aks` : `K${level} · ${totalWidth.toFixed(2)} × ${totalDepth.toFixed(2)} m`}</b></div>{!issueFocus ? <><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>Kaydet / JSON</button></div></> : <div className="cad-top-actions">{isKmKrFocus ? <button className="cad-sync" onClick={() => setView("coordination")}>KM/KR görünümü</button> : null}<button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button></div>}</header>
