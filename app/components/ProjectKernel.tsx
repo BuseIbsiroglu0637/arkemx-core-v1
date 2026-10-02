@@ -631,12 +631,13 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const mergeExternalProject = (event: StorageEvent) => {
       if (event.storageArea !== window.localStorage || event.key !== PROJECT_STORAGE_KEY || !event.newValue) return;
       const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
-      if (!stored.value) return;
+      const storedProject = stored.value;
+      if (!storedProject) return;
       setProject((current) => {
         // A storage event means the disk primary was written by another tab.
         // Treat that primary as authoritative for overlapping modules and keep
         // only modules that exist exclusively in the current in-memory tab.
-        const merged = supplementMissingProjectModules(stored.value, current);
+        const merged = supplementMissingProjectModules(storedProject, current);
         return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
       });
       if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
