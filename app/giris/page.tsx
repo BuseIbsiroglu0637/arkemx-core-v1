@@ -23,33 +23,32 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return <main className="arx-simple-home arx-auth-page">
     <div className="arx-auth-shell">
       <header className="arx-auth-header">
-        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <Link href="/araclar" className="arx-auth-back">Araçları görüntüle</Link>
+        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX ana sayfası">ARKEM<span>X</span></Link>
       </header>
 
       <section className="arx-auth-card" aria-labelledby="arx-auth-title">
-        <span className="arx-auth-kicker">GÜVENLİ ERİŞİM</span>
-        <h1 id="arx-auth-title">ARKEMX’e giriş</h1>
-        <p>Projelerinize ve çalışma araçlarınıza kaldığınız yerden devam edin.</p>
+        <h1 id="arx-auth-title">ARKEMX’e Giriş</h1>
+        <p>Projelerinize ve çalışma alanınıza erişin.</p>
 
         <form action="/hesap-baglantisi" method="get">
           <input type="hidden" name="return_to" value={returnTo}/>
-          <button className="arx-auth-primary" type="submit">Güvenli giriş yap <b>→</b></button>
+          <button className="arx-auth-primary" type="submit">
+            <span>Giriş Yap</span>
+            <b aria-hidden="true">→</b>
+          </button>
         </form>
 
         <div className="arx-auth-first">
           <b>İlk kez mi kullanıyorsunuz?</b>
-          <p>Aynı güvenli giriş adımından sonra kısa profil kurulumunu tamamlayabilirsiniz.</p>
-          <Link href={`/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}&entry=first-use`}>İlk kullanım adımını aç</Link>
+          <Link href={`/hesap-kurulum?return_to=${encodeURIComponent(returnTo)}&entry=first-use`}>
+            İlk kurulumu başlat
+          </Link>
         </div>
 
-        <small className="arx-auth-privacy">Parola, ödeme bilgisi veya özel proje dosyası bu sayfada istenmez.</small>
+        <small className="arx-auth-privacy">
+          Bu ekranda parola, ödeme bilgisi veya proje dosyası istenmez.
+        </small>
       </section>
-
-      <footer className="arx-auth-footer">
-        <span>ARKEMX çalışma alanı</span>
-        <small>Girişten sonra hesap durumu kontrol edilir ve çalışma alanınıza yönlendirilirsiniz.</small>
-      </footer>
     </div>
   </main>;
 }
