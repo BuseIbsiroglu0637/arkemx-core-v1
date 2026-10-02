@@ -574,7 +574,7 @@ body:has(.arx-account-page) .v4-floating-contact {
   line-height:1.5;
 }
 
-.arx-account-panel :where(input,button,a,summary):focus-visible,
+.arx-account-panel :where(input,select,button,a,summary):focus-visible,
 .arx-account-user-summary a:focus-visible,
 .arx-account-login-required a:focus-visible {
   outline:2px solid #568b98;
