@@ -132,6 +132,29 @@ body:has(.arx-account-page) .v4-floating-contact {
   background:#4e8a6d;
 }
 
+.arx-account-sync.is-syncing span i {
+  background:#b87843;
+  animation:arx-account-pulse 1.1s ease-in-out infinite;
+}
+
+.arx-account-sync.is-error {
+  border-color:#e7c7bd;
+  background:#fff8f5;
+}
+
+.arx-account-sync.is-error span {
+  color:#8f4c35;
+}
+
+.arx-account-sync.is-error span i {
+  background:#b85a43;
+}
+
+@keyframes arx-account-pulse {
+  0%,100% { opacity:.45; transform:scale(.9); }
+  50% { opacity:1; transform:scale(1.15); }
+}
+
 .arx-account-sync small {
   color:#71838b;
   font-size:10px;
@@ -235,7 +258,7 @@ body:has(.arx-account-page) .v4-floating-contact {
   grid-column:1/-1;
 }
 
-.arx-account-form input {
+.arx-account-form :where(input,select) {
   width:100%;
   min-height:44px;
   border:1px solid #cad7dc;
@@ -251,8 +274,33 @@ body:has(.arx-account-page) .v4-floating-contact {
   color:#697d86;
 }
 
-.arx-account-form button {
+.arx-account-language {
   grid-column:1/-1;
+}
+
+.arx-account-form-actions {
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:42px;
+}
+
+.arx-account-form-actions small {
+  color:#71838b;
+  font-size:10px;
+  font-weight:650;
+}
+
+.arx-account-form-actions small.is-saved {
+  color:#3f755d;
+}
+
+.arx-account-form-actions small.is-error {
+  color:#a34e37;
+}
+
+.arx-account-form button {
   justify-self:start;
   min-height:42px;
   padding:9px 14px;
@@ -264,8 +312,15 @@ body:has(.arx-account-page) .v4-floating-contact {
   cursor:pointer;
 }
 
-.arx-account-form button:hover {
+.arx-account-form button:hover:not(:disabled) {
   background:#173642;
+}
+
+.arx-account-form button:disabled {
+  border-color:#cbd6da;
+  background:#dfe6e8;
+  color:#7f9097;
+  cursor:not-allowed;
 }
 
 .arx-account-list {
@@ -417,6 +472,27 @@ body:has(.arx-account-page) .v4-floating-contact {
 .arx-account-card > footer {
   padding:13px 20px;
   border-top:1px solid #e7edef;
+}
+
+.arx-account-card-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.arx-account-card-footer > button {
+  min-height:32px;
+  padding:6px 9px;
+  border:0;
+  background:transparent;
+  color:#607985;
+  font:700 10px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+
+.arx-account-card-footer > button:hover {
+  color:#9b5935;
 }
 
 .arx-account-card > footer a {
@@ -660,7 +736,7 @@ html[data-theme="dark"] .arx-account-form label {
   color:#c5d0d4;
 }
 
-html[data-theme="dark"] .arx-account-form input {
+html[data-theme="dark"] .arx-account-form :where(input,select) {
   border-color:#343434;
   background:#111;
   color:#f4f7f8;
@@ -669,6 +745,33 @@ html[data-theme="dark"] .arx-account-form input {
 html[data-theme="dark"] .arx-account-form input[readonly] {
   background:#161616;
   color:#b2c0c5;
+}
+
+html[data-theme="dark"] .arx-account-sync.is-error {
+  border-color:#63372f;
+  background:#190d0a;
+}
+
+html[data-theme="dark"] .arx-account-sync.is-error span {
+  color:#e2a18e;
+}
+
+html[data-theme="dark"] .arx-account-form button:disabled {
+  border-color:#2e3436;
+  background:#1a1f21;
+  color:#68777d;
+}
+
+html[data-theme="dark"] .arx-account-form-actions small.is-saved {
+  color:#83baa0;
+}
+
+html[data-theme="dark"] .arx-account-form-actions small.is-error {
+  color:#df9079;
+}
+
+html[data-theme="dark"] .arx-account-card-footer > button {
+  color:#aebbc1;
 }
 
 html[data-theme="dark"] .arx-account-list .arx-account-draft {
@@ -784,6 +887,12 @@ html[data-theme="dark"] body:has(.arx-account-page) .arkem-theme-control button[
   .arx-account-form,
   .arx-account-detail-grid {
     grid-template-columns:1fr;
+  }
+
+  .arx-account-form-actions,
+  .arx-account-card-footer {
+    align-items:flex-start;
+    flex-direction:column;
   }
 
   .arx-account-form label {
