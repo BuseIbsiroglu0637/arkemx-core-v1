@@ -30,6 +30,7 @@ type GuidedDraftSummary = {
 };
 
 const GUIDED_DRAFT_KEY = "arkem-guided-project-draft-v107";
+const ACCOUNT_SYNC_SUPPRESSION_KEY = "arkem-account-sync-suppressed-projects-v1";
 
 function payloadUpdatedAt(payload: unknown) {
   if (!payload || typeof payload !== "object") return 0;
@@ -67,7 +68,7 @@ function summarizeActivities(activities: WorkspaceActivity[]) {
 }
 
 export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
-  const { project, thread, importProject } = useProjectKernel();
+  const { project, thread, importProject, clearLocalProject } = useProjectKernel();
   const router = useRouter();
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [draft, setDraft] = useState<GuidedDraftSummary | null>(null);
@@ -76,16 +77,23 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [profileBaseline, setProfileBaseline] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showAllProjects, setShowAllProjects] = useState(false);
+  const [activeProjectRemovalId, setActiveProjectRemovalId] = useState<string | null>(null);
+  const [projectRemovalBusy, setProjectRemovalBusy] = useState(false);
+  const [suppressedProjectIds, setSuppressedProjectIds] = useState<string[]>([]);
+  const [suppressionReady, setSuppressionReady] = useState(false);
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
   const syncingProjectRef = useRef("");
+  const suppressedProjectIdsRef = useRef<Set<string>>(new Set());
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
   const hasActiveProject = Object.keys(project.modules).length > 0;
   const accountActiveProject = data?.projects.find((item) => item.id === project.id) ?? null;
   const accountHasActiveProject = Boolean(accountActiveProject);
   const localProjectUpdatedAt = Date.parse(project.updatedAt) || 0;
   const accountPayloadUpdatedAt = payloadUpdatedAt(accountActiveProject?.payload);
+  const activeProjectSyncSuppressed = suppressedProjectIds.includes(project.id);
   const accountCopyNeedsUpdate = hasActiveProject
     && Boolean(project.id)
+    && !activeProjectSyncSuppressed
     && (!accountActiveProject || localProjectUpdatedAt > accountPayloadUpdatedAt);
   const meaningfulDraft = draft && ((draft.intake.name?.trim() ?? "").length >= 3 || draft.step > 0) ? draft : null;
   const profileDirty = profile.displayName !== profileBaseline.displayName
@@ -101,6 +109,21 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     : accountStatus === "syncing"
       ? "Eşitleniyor"
       : "Hesap güncel";
+
+  const setProjectSyncSuppressed = (projectId: string, suppressed: boolean) => {
+    if (!projectId) return;
+    const nextSet = new Set(suppressedProjectIdsRef.current);
+    if (suppressed) nextSet.add(projectId);
+    else nextSet.delete(projectId);
+    suppressedProjectIdsRef.current = nextSet;
+    const next = Array.from(nextSet);
+    setSuppressedProjectIds(next);
+    try {
+      window.localStorage.setItem(ACCOUNT_SYNC_SUPPRESSION_KEY, JSON.stringify(next));
+    } catch {
+      // Account sync suppression remains effective for the current session.
+    }
+  };
 
   const updateProfile = (patch: Partial<typeof profile>) => {
     setProfile((currentProfile) => ({ ...currentProfile, ...patch }));
@@ -138,12 +161,26 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   };
 
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(ACCOUNT_SYNC_SUPPRESSION_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const ids = Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+      suppressedProjectIdsRef.current = new Set(ids);
+      setSuppressedProjectIds(ids);
+    } catch {
+      suppressedProjectIdsRef.current = new Set();
+      setSuppressedProjectIds([]);
+    }
+    setSuppressionReady(true);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!data || !hasActiveProject || !project.id || !accountCopyNeedsUpdate) return;
+    if (!suppressionReady || !data || !hasActiveProject || !project.id || !accountCopyNeedsUpdate || suppressedProjectIdsRef.current.has(project.id)) return;
     const syncKey = `${project.id}:${project.updatedAt}`;
     if (syncingProjectRef.current === syncKey) return;
     syncingProjectRef.current = syncKey;
@@ -184,6 +221,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     accountHasActiveProject,
     data,
     hasActiveProject,
+    suppressionReady,
     project,
     project.id,
     project.name,
@@ -228,12 +266,12 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     }
   };
 
-  const saveProject = () => {
+  const saveProject = async () => {
     if (!hasActiveProject) {
       setMessage("Kaydedilecek aktif proje bulunmuyor.");
-      return;
+      return false;
     }
-    void post({
+    const ok = await post({
       action: "project",
       id: project.id,
       name: project.name,
@@ -242,9 +280,48 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       payload: project,
       expectedAccountUpdatedAt: data?.projects.find((item) => item.id === project.id)?.updatedAt ?? null,
     }, "Aktif ARKEMX projesi hesabınıza kaydedildi.");
+    if (ok) setProjectSyncSuppressed(project.id, false);
+    return ok;
   };
 
-  const openAccountProject = (item: WorkspaceData["projects"][number]) => {
+  const persistActiveProjectBeforeSwitch = async () => {
+    if (!hasActiveProject || !project.id) return true;
+    if (suppressedProjectIdsRef.current.has(project.id)) {
+      setMessage("Aktif proje yalnız bu cihazda tutuluyor. Başka projeye geçmeden önce projeyi hesabınıza yeniden ekleyin.");
+      return false;
+    }
+    const accountCopy = data?.projects.find((item) => item.id === project.id);
+    if (accountCopy && localProjectUpdatedAt <= payloadUpdatedAt(accountCopy.payload)) return true;
+
+    setMessage("Mevcut projenin son değişiklikleri hesabınıza kaydediliyor…");
+    try {
+      const response = await fetch("/api/customer-workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "project",
+          id: project.id,
+          name: project.name,
+          phase: project.phase,
+          revision: project.revision,
+          payload: project,
+          expectedAccountUpdatedAt: accountCopy?.updatedAt ?? null,
+        }),
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) {
+        setMessage(body.error || "Mevcut proje güvenli biçimde kaydedilemedi. Proje değiştirilmedi.");
+        if (response.status === 409) await load("Proje kaydı başka bir oturumda değişmiş. Son hesap kaydı yenilendi; proje değiştirilmedi.");
+        return false;
+      }
+      return true;
+    } catch {
+      setMessage("Hesap servisine ulaşılamadı. Veri kaybını önlemek için proje değiştirilmedi.");
+      return false;
+    }
+  };
+
+  const openAccountProject = async (item: WorkspaceData["projects"][number]) => {
     const openingCurrentLocalProject = hasActiveProject
       && item.id === project.id
       && localProjectUpdatedAt >= payloadUpdatedAt(item.payload);
@@ -253,6 +330,11 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       setMessage(`${item.name} için güncel yerel çalışma korunuyor.`);
       router.push("/dijital-proje-merkezi");
       return;
+    }
+
+    if (hasActiveProject && item.id !== project.id) {
+      const preserved = await persistActiveProjectBeforeSwitch();
+      if (!preserved) return;
     }
 
     if (!item.payload || !importProject(item.payload)) {
@@ -264,6 +346,49 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     // Client-side navigation keeps ProjectKernel mounted long enough for the
     // imported account snapshot to become the active persisted project.
     router.push("/dijital-proje-merkezi");
+  };
+
+  const removeActiveProjectFromAccount = async () => {
+    if (!hasActiveProject || projectRemovalBusy) return;
+    setProjectRemovalBusy(true);
+    setProjectSyncSuppressed(project.id, true);
+    setMessage("Aktif proje hesabınızdan kaldırılıyor; bu cihazdaki çalışma korunacak…");
+    try {
+      const response = await fetch(`/api/customer-workspace?resource=project&id=${encodeURIComponent(project.id)}`, { method: "DELETE" });
+      if (!response.ok) {
+        setProjectSyncSuppressed(project.id, false);
+        setMessage("Proje hesabınızdan kaldırılamadı.");
+        return;
+      }
+      setActiveProjectRemovalId(null);
+      await load("Proje hesabınızdan kaldırıldı. Bu cihazdaki aktif çalışma korunuyor ve otomatik hesap eşitlemesi durduruldu.");
+    } catch {
+      setProjectSyncSuppressed(project.id, false);
+      setMessage("Proje hesabınızdan kaldırılamadı.");
+    } finally {
+      setProjectRemovalBusy(false);
+    }
+  };
+
+  const removeActiveProjectEverywhere = async () => {
+    if (!hasActiveProject || projectRemovalBusy) return;
+    setProjectRemovalBusy(true);
+    setMessage("Aktif proje hesabınızdan ve bu cihazdaki çalışma alanından siliniyor…");
+    try {
+      const response = await fetch(`/api/customer-workspace?resource=project&id=${encodeURIComponent(project.id)}`, { method: "DELETE" });
+      if (!response.ok) {
+        setMessage("Proje hesabınızdan silinemedi. Yerel çalışma korunuyor.");
+        return;
+      }
+      setProjectSyncSuppressed(project.id, false);
+      clearLocalProject();
+      setActiveProjectRemovalId(null);
+      await load("Aktif proje hesabınızdan ve bu cihazdaki çalışma alanından silindi.");
+    } catch {
+      setMessage("Hesap servisine ulaşılamadı. Yerel çalışma korunuyor.");
+    } finally {
+      setProjectRemovalBusy(false);
+    }
   };
 
   const saveMeeting = (event: FormEvent) => {
@@ -354,8 +479,14 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
           </header>
           <div className="arx-account-list">
             {hasActiveProject && !accountHasActiveProject ? <article className="arx-account-local-project">
-              <div><b>{project.name}</b><small>{project.id} · {project.revision} · Yerel aktif proje</small><time>Hesap kaydı otomatik eşitleniyor…</time></div>
-              <button type="button" onClick={saveProject}>Şimdi kaydet</button>
+              <div>
+                <b>{project.name}</b>
+                <small>{project.id} · {project.revision} · {activeProjectSyncSuppressed ? "Yalnız bu cihazda" : "Yerel aktif proje"}</small>
+                <time>{activeProjectSyncSuppressed ? "Otomatik hesap eşitlemesi kapalı." : "Hesap kaydı otomatik eşitleniyor…"}</time>
+              </div>
+              <button type="button" onClick={() => { void saveProject(); }}>
+                {activeProjectSyncSuppressed ? "Hesaba yeniden ekle" : "Şimdi kaydet"}
+              </button>
             </article> : null}
 
             {meaningfulDraft ? <article className="arx-account-draft">
@@ -377,9 +508,25 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
                 <span className="arx-account-project-actions">
                   {isCurrentProject
                     ? <Link href="/dijital-proje-merkezi">Çalışma Alanına Git <span aria-hidden="true">→</span></Link>
-                    : <button type="button" onClick={() => openAccountProject(item)}>Aç</button>}
-                  <button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button>
+                    : <button type="button" onClick={() => { void openAccountProject(item); }}>Aç</button>}
+                  <button type="button" onClick={() => {
+                    if (isCurrentProject) setActiveProjectRemovalId(item.id);
+                    else void remove("project", item.id, item.name);
+                  }}>Kaldır</button>
                 </span>
+                {isCurrentProject && activeProjectRemovalId === item.id ? <div className="arx-account-active-removal" role="group" aria-label="Aktif proje silme seçenekleri">
+                  <div>
+                    <b>Aktif proje için kaldırma seçeneğini belirleyin</b>
+                    <small>Hesaptan kaldırmak yerel çalışmayı korur; tamamen silmek hem hesap kaydını hem bu cihazdaki aktif çalışmayı kaldırır.</small>
+                  </div>
+                  <div>
+                    <button type="button" onClick={() => { void removeActiveProjectFromAccount(); }} disabled={projectRemovalBusy}>Yalnız hesaptan kaldır</button>
+                    <button type="button" className="danger" onClick={() => { void removeActiveProjectEverywhere(); }} disabled={projectRemovalBusy}>
+                      {projectRemovalBusy ? "İşleniyor…" : "Her yerden sil"}
+                    </button>
+                    <button type="button" className="cancel" onClick={() => setActiveProjectRemovalId(null)} disabled={projectRemovalBusy}>Vazgeç</button>
+                  </div>
+                </div> : null}
               </article>;
             })}
 
@@ -439,7 +586,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       <Link href="/musteri-proje-portali">Tüm proje görünümünü açın ↗</Link>
     </section>
     <div className="customer-workspace-grid">
-      <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet ↗</button></div>
+      <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={() => { void saveProject(); }} disabled={!hasActiveProject}>Aktif projeyi kaydet ↗</button></div>
         <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button></article>) : <p>Henüz hesaba kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
         <Link className="customer-inline-link" href="/proje-baslat">Yeni proje başlatın →</Link>
       </section>
