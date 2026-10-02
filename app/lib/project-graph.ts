@@ -66,7 +66,7 @@ export type ProjectHandoff = {
 export const PROJECT_MODULES: ProjectModuleDefinition[] = [
   { id: "decision-assistant", code: "PIR", label: "Yatırım briefi", discipline: "İşveren / PM", stage: "Tanım", route: "/proje-karar-asistani#karar-motoru", output: "İhtiyaç, öncelik ve veri hazırlığı", dependencies: [] },
   { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
-  { id: "quick-site-scenario", code: "MAS", label: "Hızlı yerleşim", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#hizli-senaryo", output: "Alternatif kütle senaryosu", dependencies: ["geo-parcel"] },
+  { id: "quick-site-scenario", code: "MAS", label: "Yapı yerleşimi", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", output: "İmar koşullarına uyan kavramsal yerleşim", dependencies: ["geo-parcel"] },
   { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu#mimari-motor", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
   { id: "plan-editor", code: "BIM", label: "Plan & aks modeli", discipline: "Mimari / Statik", stage: "Tasarım", route: "/tasarim-calismalari#plan-editor", output: "Kat, aks, mahal ve taşıyıcı nesneler", dependencies: ["architectural-program"] },
   { id: "system-comparison", code: "MCDA", label: "Sistem seçimi", discipline: "Yapı mühendisliği", stage: "Tasarım", route: "/yapi-sistemi-karsilastirma#sistem-karsilastirma", output: "Gerekçeli taşıyıcı sistem kısa listesi", dependencies: ["geo-parcel", "architectural-program"] },
@@ -572,7 +572,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   }
 
   const activeKeys = new Set(Object.keys(modules));
+  // quick-site-scenario is a derived gate. Old snapshots may still contain a
+  // module key, but the Arsa journey must reflect the CURRENT parcel/zoning/
+  // placement state, not stale historical presence.
   if (quickSiteScenarioReady) activeKeys.add("quick-site-scenario");
+  else activeKeys.delete("quick-site-scenario");
   const nodes: ProjectGraphNode[] = PROJECT_MODULES.map((definition) => {
     const moduleData = record(modules[definition.id]);
     const active = activeKeys.has(definition.id);
