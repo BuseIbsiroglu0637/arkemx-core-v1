@@ -79,6 +79,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [activeProjectRemovalId, setActiveProjectRemovalId] = useState<string | null>(null);
   const [projectRemovalBusy, setProjectRemovalBusy] = useState(false);
+  const [projectSwitchBusy, setProjectSwitchBusy] = useState(false);
   const [suppressedProjectIds, setSuppressedProjectIds] = useState<string[]>([]);
   const [suppressionReady, setSuppressionReady] = useState(false);
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
@@ -322,6 +323,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   };
 
   const openAccountProject = async (item: WorkspaceData["projects"][number]) => {
+    if (projectSwitchBusy) return;
     const openingCurrentLocalProject = hasActiveProject
       && item.id === project.id
       && localProjectUpdatedAt >= payloadUpdatedAt(item.payload);
@@ -332,20 +334,25 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       return;
     }
 
-    if (hasActiveProject && item.id !== project.id) {
-      const preserved = await persistActiveProjectBeforeSwitch();
-      if (!preserved) return;
-    }
+    setProjectSwitchBusy(true);
+    try {
+      if (hasActiveProject && item.id !== project.id) {
+        const preserved = await persistActiveProjectBeforeSwitch();
+        if (!preserved) return;
+      }
 
-    if (!item.payload || !importProject(item.payload)) {
-      setMessage("Hesaptaki proje çalışma alanına yüklenemedi.");
-      return;
-    }
+      if (!item.payload || !importProject(item.payload)) {
+        setMessage("Hesaptaki proje çalışma alanına yüklenemedi.");
+        return;
+      }
 
-    setMessage(`${item.name} çalışma alanına yüklendi.`);
-    // Client-side navigation keeps ProjectKernel mounted long enough for the
-    // imported account snapshot to become the active persisted project.
-    router.push("/dijital-proje-merkezi");
+      setMessage(`${item.name} çalışma alanına yüklendi.`);
+      // Client-side navigation keeps ProjectKernel mounted long enough for the
+      // imported account snapshot to become the active persisted project.
+      router.push("/dijital-proje-merkezi");
+    } finally {
+      setProjectSwitchBusy(false);
+    }
   };
 
   const removeActiveProjectFromAccount = async () => {
@@ -508,7 +515,9 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
                 <span className="arx-account-project-actions">
                   {isCurrentProject
                     ? <Link href="/dijital-proje-merkezi">Çalışma Alanına Git <span aria-hidden="true">→</span></Link>
-                    : <button type="button" onClick={() => { void openAccountProject(item); }}>Aç</button>}
+                    : <button type="button" onClick={() => { void openAccountProject(item); }} disabled={projectSwitchBusy}>
+                      {projectSwitchBusy ? "Açılıyor…" : "Aç"}
+                    </button>}
                   <button type="button" onClick={() => {
                     if (isCurrentProject) setActiveProjectRemovalId(item.id);
                     else void remove("project", item.id, item.name);
