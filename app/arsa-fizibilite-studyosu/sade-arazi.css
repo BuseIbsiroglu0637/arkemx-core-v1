@@ -3360,3 +3360,184 @@ html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result small {
 html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-caution {
   color:#c7a995 !important;
 }
+
+
+/* V05 / compact zoning accordion + complete dark surfaces */
+.arx-geo-simple .geo-zoning-control {
+  gap:9px;
+}
+.arx-geo-simple .geo-zoning-primary-block {
+  margin-top:8px;
+}
+.arx-geo-simple .geo-zoning-control > .geo-collapsible-block {
+  margin-top:7px;
+}
+.arx-geo-simple .geo-zoning-control > .geo-collapsible-block > summary {
+  min-height:44px;
+  padding:9px 11px;
+}
+.arx-geo-simple .geo-zoning-control > .geo-collapsible-block > summary span {
+  font-size:9px;
+}
+.arx-geo-simple .geo-zoning-control > .geo-collapsible-block > summary small {
+  max-width:58%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.arx-geo-simple .geo-zoning-control > .geo-collapsible-block[open] > summary {
+  border-bottom:1px solid #e1e8ea;
+}
+.arx-geo-simple .geo-zoning-control .geo-collapsible-body {
+  gap:8px;
+  padding:10px !important;
+}
+.arx-geo-simple .geo-zoning-primary-block .geo-collapsible-body {
+  padding-top:9px !important;
+}
+.arx-geo-simple .geo-zoning-primary-block .geo-zoning-core {
+  gap:8px;
+}
+.arx-geo-simple .geo-zoning-source-status {
+  margin-top:7px;
+}
+
+/* External planning sources are secondary utilities, so keep them compact. */
+.arx-geo-simple .geo-zoning-source-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.arx-geo-simple .geo-zoning-source-grid > a,
+.arx-geo-simple .geo-zoning-source-grid > article {
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:3px 6px;
+  align-items:start;
+  padding:8px 9px;
+  border:1px solid #dce5e8;
+  border-radius:6px;
+  background:#f8fafb;
+  color:#35535e;
+  text-decoration:none;
+}
+.arx-geo-simple .geo-zoning-source-grid > a b,
+.arx-geo-simple .geo-zoning-source-grid > article b {
+  overflow:hidden;
+  color:#35535e;
+  font-size:8px;
+  line-height:1.35;
+  text-overflow:ellipsis;
+}
+.arx-geo-simple .geo-zoning-source-grid > a small,
+.arx-geo-simple .geo-zoning-source-grid > article small {
+  grid-column:1 / -1;
+  color:#7d8e95;
+  font-size:7px;
+  line-height:1.35;
+}
+.arx-geo-simple .geo-zoning-source-grid > a i,
+.arx-geo-simple .geo-zoning-source-grid > article i {
+  color:#b96636;
+  font-size:7px;
+  font-style:normal;
+  font-weight:800;
+  white-space:nowrap;
+}
+.arx-geo-simple .geo-zoning-source-grid > a:hover {
+  border-color:#b9cbd1;
+  background:#fff;
+}
+
+/* Keep the optional evidence areas concise when opened. */
+.arx-geo-simple .geo-expert-review-block textarea,
+.arx-geo-simple .geo-zoning-control .geo-collapsible-block textarea {
+  min-height:70px;
+}
+.arx-geo-simple .geo-zoning-control .geo-file-drop {
+  min-height:88px;
+  padding:12px !important;
+}
+.arx-geo-simple .geo-zoning-control .geo-caution {
+  margin-top:5px;
+}
+.arx-geo-simple .geo-zoning-control .geo-expert-review-warning,
+.arx-geo-simple .geo-zoning-control .geo-expert-review-result {
+  margin:0;
+  padding:9px 10px;
+}
+
+/* Dark mode: eliminate the last light cards inside zoning/source sections. */
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control > .geo-collapsible-block[open] > summary {
+  border-bottom-color:#2d2d2d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > a,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > article {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > a:hover {
+  border-color:#4a4a4a !important;
+  background:#141414 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > a b,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > article b {
+  color:#e4ebee !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > a small,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > article small {
+  color:#95a3a9 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > a i,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-grid > article i {
+  color:#d27a45 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-collapsible-body,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-zoning-core,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-field-grid {
+  background:#090909 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control input,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control select,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control textarea {
+  border-color:#383838 !important;
+  background:#101010 !important;
+  color:#eef3f5 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control input::placeholder,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control textarea::placeholder {
+  color:#69767b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control select:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control input:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control textarea:disabled {
+  background:#0b0b0b !important;
+  color:#68747a !important;
+  opacity:1;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-file-drop {
+  border-color:#3a3a3a !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-file-drop:hover {
+  background:#121212 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-expert-review-warning {
+  border-color:#5a3a2b !important;
+  background:#17100c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-expert-review-result {
+  border-color:#303030 !important;
+  background:#0e0e0e !important;
+}
+
+@media(max-width:700px) {
+  .arx-geo-simple .geo-zoning-source-grid {
+    grid-template-columns:1fr;
+  }
+  .arx-geo-simple .geo-zoning-control > .geo-collapsible-block > summary small {
+    max-width:48%;
+  }
+}
