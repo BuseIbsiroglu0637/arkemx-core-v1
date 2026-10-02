@@ -681,6 +681,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           setLatitude(savedCenter.lat.toFixed(7));
           setLongitude(savedCenter.lng.toFixed(7));
           pendingCenterRef.current = savedCenter;
+          mapRef.current?.setView([savedCenter.lat, savedCenter.lng], 16);
         }
       }
 
@@ -1450,7 +1451,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setParcelSource({
       kind: "coordinate",
       authority: "Kullanıcı",
-      label: "Parsel kimliği seçimi / sınır bekleniyor",
+      label: "Parsel kimliği kayıtlı / sınır sorgusu bekleniyor",
       capturedAt: new Date().toISOString(),
       url: "",
     });
