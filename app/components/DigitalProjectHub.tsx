@@ -162,11 +162,31 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
       {notice ? <p className="arx-advanced-notice" role="status">{notice}</p> : null}
 
       <div className="arx-advanced-metrics">
-        <article><span>VERİ HAZIRLIĞI</span><b>%{thread.metrics.readiness}</b><small>{thread.metrics.activeCount}/{thread.metrics.totalCount} veri alanı bağlı</small></article>
+        <article data-testid="module-coverage-metric"><span>MODÜL BAĞLANTISI</span><b>%{thread.metrics.readiness}</b><small>{thread.metrics.activeCount}/{thread.metrics.totalCount} çalışma modülü bağlı</small></article>
         <article><span>KONTROL KONUSU</span><b className={thread.metrics.critical ? "risk" : ""}>{thread.issues.length}</b><small>{thread.metrics.critical} kritik · {thread.metrics.review} inceleme</small></article>
         <article><span>TEKNİK ÇIKTI</span><b>{readyOutputs}/{projectOutputs.length}</b><small>paket için kaynak veri mevcut</small></article>
         <article><span>TESLİM DURUMU</span><b className={deliveryGate.officialReleaseEligible ? "good" : "watch"}>{deliveryGate.officialReleaseEligible ? "Hazır" : "Kontrol"}</b><small>resmî yayın kapısı</small></article>
       </div>
+
+      <details className="arx-module-coverage" data-testid="module-coverage-detail">
+        <summary>
+          <span>Çalışma modülleri</span>
+          <b>{thread.metrics.activeCount} / {thread.metrics.totalCount} bağlı</b>
+          <small>Bu sayı teknik hata sayısı değildir; proje kaydına bağlanmış çalışma modüllerini gösterir.</small>
+        </summary>
+        <div className="arx-module-coverage-grid">
+          {thread.nodes.map((node) => <article key={node.id} className={node.active ? "connected" : "missing"}>
+            <i>{node.active ? "✓" : "○"}</i>
+            <div>
+              <span>{node.code} · {node.stage}</span>
+              <b>{node.label}</b>
+              <small>{node.output}</small>
+            </div>
+            <strong>{node.active ? "Bağlı" : "Henüz bağlı değil"}</strong>
+            <a href={node.route}>{node.active ? "Görüntüle" : "Aç"}</a>
+          </article>)}
+        </div>
+      </details>
 
       <div className="arx-advanced-layout">
         <section className="arx-advanced-panel" aria-labelledby="arx-readiness-title">

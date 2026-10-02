@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { deriveProjectThread } from "../app/lib/project-graph.ts";
+import { deriveProjectThread, PROJECT_MODULES } from "../app/lib/project-graph.ts";
 import { createZoningProvenance, DEFAULT_ZONING } from "../app/lib/zoning.ts";
 import { buildMcdaProjectSnapshot, mcdaSourceKey, mcdaUsageFromProject } from "../app/lib/mcda-source.ts";
 
@@ -834,4 +834,45 @@ test("resolved PLN-013 moves into completed controls with the final Hmax equatio
   assert.equal(height?.title, "Hmax / yapı yüksekliği ön kontrolü");
   assert.match(height?.summary ?? "", /2 kat × 3,40 m = 6,80 m \/ Hmax 9,50 m/);
   assert.equal(height?.route, "/tasarim-calismalari/yukseklik-duzeltme");
+});
+
+
+test("project graph coverage is explicitly based on the 13 project modules", () => {
+  assert.equal(PROJECT_MODULES.length, 13);
+  assert.deepEqual(PROJECT_MODULES.map(module => module.id), [
+    "decision-assistant",
+    "geo-parcel",
+    "quick-site-scenario",
+    "architectural-program",
+    "plan-editor",
+    "system-comparison",
+    "structural-concept",
+    "engineering-coordination",
+    "digital-delivery-scope",
+    "arkem-x",
+    "project-os",
+    "model-library-review",
+    "demolition-screening",
+  ]);
+
+  const thread = deriveProjectThread({});
+  assert.equal(thread.metrics.totalCount, 13);
+  assert.equal(thread.metrics.activeCount, 0);
+});
+
+test("project graph counts all 13 declared project modules as active when present", () => {
+  const modules = Object.fromEntries(
+    PROJECT_MODULES.map((module) => [module.id, {}])
+  );
+
+  const thread = deriveProjectThread(modules);
+
+  assert.equal(thread.metrics.totalCount, 13);
+  assert.equal(thread.metrics.activeCount, 13);
+  assert.equal(thread.metrics.readiness, 100);
+
+  assert.deepEqual(
+    thread.nodes.filter((node) => node.active).map((node) => node.id),
+    PROJECT_MODULES.map((module) => module.id)
+  );
 });
