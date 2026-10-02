@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "../lib/mcda-source";
 import { useProjectKernel } from "./ProjectKernel";
 
@@ -93,14 +93,14 @@ export function SystemDecisionStudio() {
   const currentLabel = modeledId ? SYSTEM_LABELS[modeledId] : "Model sistemi bulunamadı";
   const recommendedLabel = recommendedId ? SYSTEM_LABELS[recommendedId] : "MCDA sonucu bulunamadı";
 
-  const rationaleReady = useMemo(() => (
+  const rationaleReady = (
     rationale.trim().length >= 10
     && decidedBy.trim().length > 0
     && role.trim().length > 0
     && date.trim().length > 0
     && mcdaSourceCurrent
     && Boolean(modeledId && recommendedId)
-  ), [date, decidedBy, mcdaSourceCurrent, modeledId, rationale, recommendedId, role]);
+  );
 
   const keepCurrentSystem = () => {
     if (!hydrated || !mcdaSourceCurrent || !rationaleReady || !modeledId || !recommendedId) return;

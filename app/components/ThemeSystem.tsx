@@ -22,8 +22,9 @@ export function ThemeControl() {
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     const initial: ArkemTheme = stored === "dark" ? "dark" : "light";
-    setTheme(initial);
     applyTheme(initial);
+    const timer = window.setTimeout(() => setTheme(initial), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const chooseTheme = (next: ArkemTheme) => {

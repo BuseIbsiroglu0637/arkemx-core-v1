@@ -41,8 +41,8 @@ function timestampValue(value: unknown) {
 }
 
 function moduleRecordedAt(value: unknown, fallback = 0) {
-  const module = record(value);
-  const kernel = record(module._kernel);
+  const moduleRecord = record(value);
+  const kernel = record(moduleRecord._kernel);
   return timestampValue(kernel.recordedAt) || fallback;
 }
 

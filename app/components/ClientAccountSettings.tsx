@@ -160,6 +160,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     accountHasActiveProject,
     data,
     hasActiveProject,
+    project,
     project.id,
     project.name,
     project.phase,

@@ -160,7 +160,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       return element.x < 0 || element.y < 0 || element.x > maxX || element.y > maxY;
     }).length;
     return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, outOfGridMassPointCount, outOfGridRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
-  }, [spanX, spanY, totalDepth, totalWidth, visible]);
+  }, [baysX, baysY, spanX, spanY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
   const footprintOverage = allowedFootprint > 0 ? Math.max(0, metrics.floorArea - allowedFootprint) : 0;
@@ -642,7 +642,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     </>}
     {isTaksFocus ? <section className="cad-issue-summary" data-state={footprintPass ? "pass" : "review"}>
       <div><span>MEVCUT PLAN TABANI</span><b>{metrics.floorArea.toFixed(1)} m²</b></div>
-      <div><span>TAKS'A GÖRE AZAMİ</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "—"}</b></div>
+      <div><span>{"TAKS'A GÖRE AZAMİ"}</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "—"}</b></div>
       <div><span>DURUM</span><b>{allowedFootprint <= 0 ? "İmar girdisi eksik" : footprintPass ? "TAKS sınırı geçti" : `${footprintOverage.toFixed(1)} m² azaltılmalı`}</b></div>
       {!footprintPass && allowedFootprint > 0 ? <button type="button" onClick={applyFootprintSuggestion}>Oranı koruyarak önerilen ölçüleri uygula</button> : null}
     </section> : isProgramAreaFocus ? <section className="cad-issue-summary" data-state={programFootprintPass ? "pass" : "review"}>

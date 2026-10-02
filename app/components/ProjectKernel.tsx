@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, reconcileProjectSnapshots, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
