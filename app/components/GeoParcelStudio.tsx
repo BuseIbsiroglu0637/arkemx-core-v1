@@ -2170,6 +2170,17 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <label>Doğu / batı ofseti <b>{offsetEast} m</b><input type="range" min="-35" max="35" value={offsetEast} onChange={(event) => setOffsetEast(Number(event.target.value))} /></label>
         <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
       </>}
+
+      {simple && <div className="geo-stage-next" data-ready={placementDecisionPass ? "true" : "false"}>
+        <div>
+          <span>SIRADAKİ ADIM</span>
+          <b>{placementDecisionPass ? "Mimari programı kur" : "Yerleşim ön kontrolünü tamamlayın"}</b>
+          <small>{placementDecisionPass ? "Arazi karar kapısı geçti. Seçili kütle ve imar bağlamıyla Mimari aşamasına devam edin." : "Mimariye geçmeden önce TAKS, KAKS, Hmax ve çekme kontrollerinin tamamı geçmeli."}</small>
+        </div>
+        {placementDecisionPass
+          ? <a href="/mimari-program-studyosu">Mimariye Geç <i>→</i></a>
+          : <button type="button" disabled>Ön kontrol bekleniyor</button>}
+      </div>}
     </div> : <div className="geo-control-section geo-zoning-required">
       <span>05 / YAPI YERLEŞİMİ</span><h3>Önce imar girdilerini tamamlayın.</h3>
       <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yerleşim alternatifi hesaplamaz.</p>
