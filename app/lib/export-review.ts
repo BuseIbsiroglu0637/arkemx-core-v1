@@ -25,18 +25,27 @@ export type ExportReview = {
 // Passing numerical checks is not permission for official release.
 // That requires a separate, documented professional approval workflow.
 export function assessExportReview(input: ExportReviewInput): ExportReview {
-  const finite = [input.coverage, input.maxCoverage, input.far, input.maxFar, input.buildingHeight, input.maxHeight]
-    .every(Number.isFinite);
+  const numericValues = [
+    input.coverage,
+    input.maxCoverage,
+    input.far,
+    input.maxFar,
+    input.buildingHeight,
+    input.maxHeight,
+  ];
+  const numericInputsValid = numericValues.every(
+    (value) => typeof value === "number" && Number.isFinite(value) && value >= 0,
+  );
   const checks = {
-    geometry: input.geometryValid,
-    parcelContainment: input.buildingFits,
-    setback: input.setbackPass,
-    taks: finite && input.coverage <= input.maxCoverage,
-    kaks: finite && input.far <= input.maxFar,
-    height: finite && input.buildingHeight <= input.maxHeight,
-    zoningSource: input.zoningAuthoritative,
-    officialBoundary: input.officialCadastre && input.licensedSurvey,
-    measuredTerrain: input.measuredTerrain,
+    geometry: input.geometryValid === true,
+    parcelContainment: input.buildingFits === true,
+    setback: input.setbackPass === true,
+    taks: numericInputsValid && input.coverage <= input.maxCoverage,
+    kaks: numericInputsValid && input.far <= input.maxFar,
+    height: numericInputsValid && input.buildingHeight <= input.maxHeight,
+    zoningSource: input.zoningAuthoritative === true,
+    officialBoundary: input.officialCadastre === true && input.licensedSurvey === true,
+    measuredTerrain: input.measuredTerrain === true,
   };
   const messages: Record<keyof typeof checks, string> = {
     geometry: "Parsel geometrisi incelenmeli.",

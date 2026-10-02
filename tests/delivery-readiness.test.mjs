@@ -152,3 +152,105 @@ test("reviewed noncritical BIM issue remains visible as delivery review work", (
   assert.equal(manifest.issues[0]?.status, "REVIEWED_STILL_OPEN");
   assert.equal(manifest.issues[0]?.technicalClosureVerified, false);
 });
+
+test("unknown BIM severity fails closed as delivery review work", () => {
+  const modules = baseModules();
+
+  modules["engineering-coordination"] = {
+    bimCoordination: {
+      schema: "ARKEM-BIM-COORDINATION/3.0",
+      clashes: [{
+        guid: "BIM-UNKNOWN-1",
+        title: "Severity değeri tanınmayan koordinasyon konusu",
+        severity: "unknown",
+        evidence: "sentetik bozuk severity",
+      }],
+    },
+    reviewed: [],
+  };
+
+  const gate = createDeliveryReadiness({
+    projectId: "TEST-FC-03",
+    projectRevision: "P01",
+    modules,
+    threadIssues: [],
+  });
+
+  assert.equal(gate.criticalIssueCount, 0);
+  assert.equal(gate.reviewIssueCount, 1);
+  assert.deepEqual(
+    gate.reviewIssues.map(issue => [issue.source, issue.id, issue.status]),
+    [["CURRENT_BIM", "BIM-UNKNOWN-1", "REVIEW_REQUIRED"]],
+  );
+  assert.ok(gate.reasons.includes("REVIEW_ISSUES_OPEN"));
+
+  const bim = gate.checks.find((check) => check.code === "DEL-04");
+  assert.equal(bim?.status, "review");
+});
+
+test("missing upstream delivery modules remain explicitly missing", () => {
+  const gate = createDeliveryReadiness({
+    projectId: "TEST-FC-04",
+    projectRevision: "P01",
+    modules: {},
+    threadIssues: [],
+  });
+
+  const statusByCode = Object.fromEntries(
+    gate.checks.map((check) => [check.code, check.status]),
+  );
+
+  assert.equal(gate.state, "review-required");
+  assert.equal(gate.officialReleaseEligible, false);
+  assert.equal(statusByCode["DEL-02"], "missing");
+  assert.equal(statusByCode["DEL-03"], "missing");
+  assert.equal(statusByCode["DEL-04"], "missing");
+  assert.equal(statusByCode["DEL-05"], "missing");
+
+  assert.ok(gate.reasons.includes("ARCHITECTURE_MISSING"));
+  assert.ok(gate.reasons.includes("STRUCTURAL_MODEL_MISSING"));
+  assert.ok(gate.reasons.includes("BIM_COORDINATION_MISSING"));
+  assert.ok(gate.reasons.includes("PROJECT_OS_HANDOFF_NOT_CURRENT"));
+});
+
+test("stale Project OS critical snapshot still blocks when current BIM is missing", () => {
+  const modules = baseModules();
+
+  delete modules["engineering-coordination"];
+
+  modules["project-os"] = {
+    operatingModel: { schema: "ARKEM-PROJECT-OS/2.0" },
+    coordination: {
+      bimCoordination: {
+        schema: "ARKEM-BIM-COORDINATION/3.0",
+        clashes: [{
+          guid: "STALE-CRITICAL-1",
+          title: "Eski snapshot kritik koordinasyon konusu",
+          severity: "critical",
+          evidence: "sentetik eski snapshot",
+        }],
+      },
+      issueGate: { technicalApproval: true },
+    },
+  };
+
+  const gate = createDeliveryReadiness({
+    projectId: "TEST-FC-05",
+    projectRevision: "P01",
+    modules,
+    threadIssues: [],
+  });
+
+  assert.equal(gate.state, "critical-blocked");
+  assert.equal(gate.criticalIssueCount, 1);
+  assert.deepEqual(
+    gate.blockingIssues.map(issue => [issue.source, issue.id]),
+    [["OS_SNAPSHOT_FALLBACK", "STALE-CRITICAL-1"]],
+  );
+
+  assert.ok(gate.reasons.includes("BIM_COORDINATION_MISSING"));
+  assert.ok(gate.reasons.includes("CRITICAL_ISSUES_OPEN"));
+
+  const os = gate.checks.find((check) => check.code === "DEL-05");
+  assert.equal(os?.status, "blocked");
+});
