@@ -1,3 +1,22 @@
+export type CoordinationSectionStrategy = "stacked" | "integrated";
+
+export function calculateConceptualClearHeight(
+  floorHeight: number,
+  beamDepth: number,
+  serviceZone: number,
+  ceilingBuildUp: number,
+  raisedFloor: number,
+  strategy: CoordinationSectionStrategy = "stacked",
+) {
+  const occupiedCeilingZone = strategy === "integrated"
+    ? Math.max(beamDepth, serviceZone)
+    : beamDepth + serviceZone;
+  return {
+    occupiedCeilingZone,
+    clearHeight: floorHeight - occupiedCeilingZone - ceilingBuildUp - raisedFloor,
+  };
+}
+
 export type BimCoordinationInput = {
   projectId: string;
   projectRevision: string;
@@ -10,6 +29,7 @@ export type BimCoordinationInput = {
   serviceZone: number;
   ceilingBuildUp: number;
   raisedFloor: number;
+  sectionStrategy?: CoordinationSectionStrategy;
   shaftArea: number;
   plantArea: number;
   factoredGravity: number;
@@ -105,9 +125,11 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const serviceZone = clamp(input.serviceZone, .15, 2);
   const ceilingBuildUp = clamp(input.ceilingBuildUp, 0, .5);
   const raisedFloor = clamp(input.raisedFloor, 0, .5);
+  const sectionStrategy: CoordinationSectionStrategy = input.sectionStrategy === "integrated" ? "integrated" : "stacked";
+  const sectionBudget = calculateConceptualClearHeight(floorHeight, beamDepth, serviceZone, ceilingBuildUp, raisedFloor, sectionStrategy);
+  const clearHeight = sectionBudget.clearHeight;
   const shaftArea = clamp(input.shaftArea, 1, 5_000);
   const plantArea = clamp(input.plantArea, 1, 20_000);
-  const clearHeight = floorHeight - beamDepth - serviceZone - ceilingBuildUp - raisedFloor;
   const shaftRatio = shaftArea / floorPlate * 100;
   const serviceRatio = serviceZone / floorHeight * 100;
   const bearingPressure = input.factoredGravity > 0 ? input.factoredGravity / floorPlate : 0;
@@ -150,12 +172,14 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   if (clearHeight < 2.4) addClash(clashes, input.projectId, {
     type: "hard", severity: "critical", title: "Kiriş ve MEP zonu net kullanım yüksekliğini ihlal ediyor",
     disciplines: ["STR", "MEP", "ARC"], location: "Tip kat · ana servis koridoru",
-    evidence: `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net`,
+    evidence: sectionStrategy === "integrated"
+      ? `${floorHeight.toFixed(2)} m kat − max(${beamDepth.toFixed(2)} m kiriş, ${serviceZone.toFixed(2)} m MEP) − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · entegre servis bandı`
+      : `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · ayrık servis bandı`,
     requiredAction: "Kiriş güzergâhını, kanal/boru kotunu veya kat yüksekliğini ortak kesitte yeniden çözün.", assignee: "BIM Koordinatörü", sourceRefs: ["ARC:LEVELS", "STR:PRELIMINARY-BEAM", "MEP:SERVICE-ZONE"],
   });
   else if (clearHeight < 2.7) addClash(clashes, input.projectId, {
     type: "soft", severity: "review", title: "Net kullanım yüksekliği inceleme bandında",
-    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik`,
+    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik · ${sectionStrategy === "integrated" ? "entegre servis bandı" : "ayrık servis bandı"}`,
     requiredAction: "Mahal kullanım hedefi ile bakım boşluklarını doğrulayın.", assignee: "Mimar", sourceRefs: ["ARC:LEVELS", "MEP:SERVICE-ZONE"],
   });
   if (shaftRatio < 1.5) addClash(clashes, input.projectId, {
@@ -248,6 +272,8 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
     },
     coordination: {
       clearHeightM: round(clearHeight),
+      sectionStrategy,
+      occupiedCeilingZoneM: round(sectionBudget.occupiedCeilingZone),
       serviceZoneM: round(serviceZone),
       serviceRatioPct: round(serviceRatio, 1),
       shaftRatioPct: round(shaftRatio, 2),

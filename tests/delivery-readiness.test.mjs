@@ -105,3 +105,50 @@ test("working manifest is explicitly non-approved", () => {
   assert.equal(manifest.nativeBcfZipAttached, false);
   assert.match(manifest.boundary, /resmî dijital teslim değildir/);
 });
+
+
+test("reviewed noncritical BIM issue remains visible as delivery review work", () => {
+  const modules = baseModules();
+  modules["engineering-coordination"] = {
+    bimCoordination: {
+      schema: "ARKEM-BIM-COORDINATION/3.0",
+      clashes: [{
+        guid: "BIM-REVIEW-1",
+        title: "Net kullanım yüksekliği inceleme bandında",
+        severity: "review",
+        evidence: "2.45 m net yükseklik",
+      }],
+    },
+    reviewed: ["BIM-REVIEW-1"],
+  };
+
+  const gate = createDeliveryReadiness({
+    projectId: "TEST-05",
+    projectRevision: "P01",
+    modules,
+    threadIssues: [],
+  });
+
+  assert.equal(gate.criticalIssueCount, 0);
+  assert.equal(gate.reviewIssueCount, 1);
+  assert.deepEqual(gate.reviewIssues.map(issue => [issue.source, issue.id, issue.status]), [
+    ["CURRENT_BIM", "BIM-REVIEW-1", "REVIEWED_STILL_OPEN"],
+  ]);
+  assert.ok(gate.reasons.includes("REVIEW_ISSUES_OPEN"));
+
+  const bim = gate.checks.find((check) => check.code === "DEL-04");
+  assert.equal(bim?.status, "review");
+  assert.equal(bim?.evidence.reviewClashes, 1);
+  assert.equal(bim?.evidence.reviewedReviewClashes, 1);
+  assert.match(bim?.detail ?? "", /1 inceleme konusu açık/);
+
+  const manifest = createWorkingDeliveryManifest({
+    projectId: "TEST-05",
+    projectRevision: "P01",
+    modules,
+    threadIssues: [],
+  });
+  assert.equal(manifest.gate.reviewIssueCount, 1);
+  assert.equal(manifest.issues[0]?.status, "REVIEWED_STILL_OPEN");
+  assert.equal(manifest.issues[0]?.technicalClosureVerified, false);
+});

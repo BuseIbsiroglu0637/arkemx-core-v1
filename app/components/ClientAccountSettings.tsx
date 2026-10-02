@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { formatProjectDateTime } from "../lib/date-format";
@@ -29,6 +30,13 @@ type GuidedDraftSummary = {
 };
 
 const GUIDED_DRAFT_KEY = "arkem-guided-project-draft-v107";
+
+function payloadUpdatedAt(payload: unknown) {
+  if (!payload || typeof payload !== "object") return 0;
+  const value = String((payload as { updatedAt?: unknown }).updatedAt ?? "");
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function summarizeActivities(activities: WorkspaceActivity[]) {
   const summarized: Array<WorkspaceActivity & { count: number }> = [];
@@ -60,6 +68,7 @@ function summarizeActivities(activities: WorkspaceActivity[]) {
 
 export function ClientAccountSettings({ displayName, email, simple = false }: { displayName: string; email: string; simple?: boolean }) {
   const { project, thread, importProject } = useProjectKernel();
+  const router = useRouter();
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [draft, setDraft] = useState<GuidedDraftSummary | null>(null);
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
@@ -68,7 +77,13 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const syncingProjectRef = useRef("");
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
   const hasActiveProject = Object.keys(project.modules).length > 0;
-  const accountHasActiveProject = Boolean(data?.projects.some((item) => item.id === project.id));
+  const accountActiveProject = data?.projects.find((item) => item.id === project.id) ?? null;
+  const accountHasActiveProject = Boolean(accountActiveProject);
+  const localProjectUpdatedAt = Date.parse(project.updatedAt) || 0;
+  const accountPayloadUpdatedAt = payloadUpdatedAt(accountActiveProject?.payload);
+  const accountCopyNeedsUpdate = hasActiveProject
+    && Boolean(project.id)
+    && (!accountActiveProject || localProjectUpdatedAt > accountPayloadUpdatedAt);
   const meaningfulDraft = draft && ((draft.intake.name?.trim() ?? "").length >= 3 || draft.step > 0) ? draft : null;
 
   const load = async () => {
@@ -103,36 +118,54 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   }, []);
 
   useEffect(() => {
-    if (!data || !hasActiveProject || !project.id || accountHasActiveProject) return;
-    if (syncingProjectRef.current === project.id) return;
-    syncingProjectRef.current = project.id;
-    setMessage("Aktif proje hesabınızla eşitleniyor…");
-    void fetch("/api/customer-workspace", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "project",
-        id: project.id,
-        name: project.name,
-        phase: project.phase,
-        revision: project.revision,
-        payload: project,
-        expectedAccountUpdatedAt: null,
-      }),
-    }).then(async (response) => {
-      const body = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) {
-        setMessage(body.error || "Aktif proje hesaba otomatik kaydedilemedi.");
-        return;
-      }
-      setMessage("Aktif proje hesabınıza otomatik kaydedildi.");
-      await load();
-    }).catch(() => {
-      setMessage("Aktif proje hesaba otomatik kaydedilemedi.");
-    }).finally(() => {
-      syncingProjectRef.current = "";
-    });
-  }, [accountHasActiveProject, data, hasActiveProject, project.id, project.name, project.phase, project.revision, project.updatedAt]);
+    if (!data || !hasActiveProject || !project.id || !accountCopyNeedsUpdate) return;
+    const syncKey = `${project.id}:${project.updatedAt}`;
+    if (syncingProjectRef.current === syncKey) return;
+    syncingProjectRef.current = syncKey;
+    const timer = window.setTimeout(() => {
+      setMessage(accountHasActiveProject
+        ? "Yerel proje değişiklikleri hesabınızla eşitleniyor…"
+        : "Aktif proje hesabınızla eşitleniyor…");
+      void fetch("/api/customer-workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "project",
+          id: project.id,
+          name: project.name,
+          phase: project.phase,
+          revision: project.revision,
+          payload: project,
+          expectedAccountUpdatedAt: accountActiveProject?.updatedAt ?? null,
+        }),
+      }).then(async (response) => {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        if (!response.ok) {
+          setMessage(body.error || "Aktif proje hesaba otomatik kaydedilemedi.");
+          if (response.status === 409) await load();
+          return;
+        }
+        setMessage("Yerel proje hesabınızla eşitlendi.");
+        await load();
+      }).catch(() => {
+        setMessage("Aktif proje hesaba otomatik kaydedilemedi.");
+      }).finally(() => {
+        if (syncingProjectRef.current === syncKey) syncingProjectRef.current = "";
+      });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [
+    accountActiveProject?.updatedAt,
+    accountCopyNeedsUpdate,
+    accountHasActiveProject,
+    data,
+    hasActiveProject,
+    project.id,
+    project.name,
+    project.phase,
+    project.revision,
+    project.updatedAt,
+  ]);
 
   const post = async (payload: Record<string, unknown>, success: string) => {
     setMessage("Kaydediliyor…");
@@ -174,12 +207,25 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   };
 
   const openAccountProject = (item: WorkspaceData["projects"][number]) => {
+    const openingCurrentLocalProject = hasActiveProject
+      && item.id === project.id
+      && localProjectUpdatedAt >= payloadUpdatedAt(item.payload);
+
+    if (openingCurrentLocalProject) {
+      setMessage(`${item.name} için güncel yerel çalışma korunuyor.`);
+      router.push("/dijital-proje-merkezi");
+      return;
+    }
+
     if (!item.payload || !importProject(item.payload)) {
       setMessage("Hesaptaki proje çalışma alanına yüklenemedi.");
       return;
     }
+
     setMessage(`${item.name} çalışma alanına yüklendi.`);
-    window.location.assign("/dijital-proje-merkezi");
+    // Client-side navigation keeps ProjectKernel mounted long enough for the
+    // imported account snapshot to become the active persisted project.
+    router.push("/dijital-proje-merkezi");
   };
 
   const saveMeeting = (event: FormEvent) => {

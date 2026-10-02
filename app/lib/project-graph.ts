@@ -1,3 +1,5 @@
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source.ts";
+
 export type ProjectModuleKey =
   | "decision-assistant"
   | "geo-parcel"
@@ -39,6 +41,17 @@ export type ProjectThreadIssue = {
   evidence: string;
   action: string;
   route: string;
+  routeLabel?: string;
+  secondaryRoute?: string;
+  secondaryRouteLabel?: string;
+};
+
+export type CompletedControl = {
+  code: string;
+  title: string;
+  summary: string;
+  routeLabel: string;
+  route: string;
 };
 
 export type ProjectHandoff = {
@@ -52,7 +65,7 @@ export type ProjectHandoff = {
 
 export const PROJECT_MODULES: ProjectModuleDefinition[] = [
   { id: "decision-assistant", code: "PIR", label: "Yatırım briefi", discipline: "İşveren / PM", stage: "Tanım", route: "/proje-karar-asistani#karar-motoru", output: "İhtiyaç, öncelik ve veri hazırlığı", dependencies: [] },
-  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
+  { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
   { id: "quick-site-scenario", code: "MAS", label: "Hızlı yerleşim", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu#hizli-senaryo", output: "Alternatif kütle senaryosu", dependencies: ["geo-parcel"] },
   { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu#mimari-motor", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
   { id: "plan-editor", code: "BIM", label: "Plan & aks modeli", discipline: "Mimari / Statik", stage: "Tasarım", route: "/tasarim-calismalari#plan-editor", output: "Kat, aks, mahal ve taşıyıcı nesneler", dependencies: ["architectural-program"] },
@@ -88,6 +101,22 @@ function structuralSystemLabel(value: string) {
   return ({ concrete: "Betonarme", steel: "Yapısal Çelik", light: "Hafif Çelik", hybrid: "Karma Sistem", precast: "Betonarme Prefabrik" } as Record<string, string>)[value] ?? value;
 }
 
+function structuralSystemId(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("tr-TR");
+  if (normalized === "light" || normalized.includes("hafif")) return "light";
+  if (normalized === "hybrid" || normalized.includes("karma")) return "hybrid";
+  if (normalized === "precast" || normalized.includes("prefabrik")) return "precast";
+  if (normalized === "steel" || normalized.includes("çelik")) return "steel";
+  if (normalized === "concrete" || normalized.includes("beton")) return "concrete";
+  return normalized;
+}
+
+function resolvedStructuralSystem(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("tr-TR");
+  return Boolean(normalized)
+    && !["karar bekleniyor", "undecided", "belirsiz", "—", "-"].includes(normalized);
+}
+
 function closeEnough(first: number, second: number, tolerance: number) {
   return first > 0 && second > 0 && Math.abs(first - second) <= tolerance;
 }
@@ -99,6 +128,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const geoParcelRecord = record(geo.parcelRecord);
   const geoParcelGeometry = record(geoParcelRecord.geometry);
   const geoZoningProvenance = record(geo.zoningProvenance);
+  const geoZoningSource = record(geoZoningProvenance.source);
+  const geoZoningExpertReview = record(geoZoningProvenance.expertReview);
+  const geoZoningPlan = record(geoZoningProvenance.plan);
+  const geoZoningConditions = record(geoZoningProvenance.conditions);
+  const geoZoningSetbacks = record(geoZoningConditions.setbacks);
   const parcelReadyForNextStage = (
     geoParcelRecord.projectEligible === true
     && geoParcelGeometry.valid === true
@@ -106,7 +140,30 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     geoMetrics.geometryValid === true
     && number(geoMetrics.area) > 0
   );
-  const zoningReadyForNextStage = geoZoningProvenance.authoritative === true;
+  const zoningConditionsReadyForNextStage = Boolean(
+    text(geoZoningPlan.scale)
+    && text(geoZoningConditions.buildingOrder)
+    && number(geoZoningConditions.taks, -1) >= 0
+    && number(geoZoningConditions.kaks, -1) >= 0
+    && number(geoZoningConditions.hmax, -1) >= 0
+    && number(geoZoningSetbacks.front, -1) >= 0
+    && number(geoZoningSetbacks.side, -1) >= 0
+    && number(geoZoningSetbacks.rear, -1) >= 0
+  );
+  const zoningSourceReferenceReady = Boolean(
+    text(geoZoningSource.document)
+    || text(geoZoningSource.url)
+    || text(geoZoningPlan.planId)
+    || (text(geoZoningSource.type) === "Kullanıcı beyanı" && text(geoZoningSource.note))
+  );
+  const zoningSourceReadyForNextStage = Boolean(
+    text(geoZoningSource.type)
+    && text(geoZoningSource.date)
+    && zoningSourceReferenceReady
+  );
+  const zoningAuthoritative = geoZoningProvenance.authoritative === true;
+  const zoningExpertReviewed = zoningAuthoritative || geoZoningProvenance.expertReviewed === true;
+  const zoningReadyForNextStage = zoningConditionsReadyForNextStage && zoningSourceReadyForNextStage;
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
@@ -132,7 +189,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const structureQuantities = record(structureResult.quantities);
   const comparison = record(modules["system-comparison"]);
   const comparisonInput = record(comparison.input);
+  const comparisonSourceSnapshot = record(comparison.sourceSnapshot);
   const comparisonWinner = firstRecord(comparison.ranking);
+  const comparisonDecision = record(comparison.decision);
   const coordination = record(modules["engineering-coordination"]);
   const coordinationResult = record(coordination.result);
   const delivery = record(modules["digital-delivery-scope"]);
@@ -148,10 +207,45 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const floors = number(plan.floorCount) || number(architectureInput.floors) || number(geo.floors) || number(structureInput.floors);
   const floorHeight = number(structureInput.floorHeight) || number(geo.floorHeight) || number(architectureInput.floorHeight);
   const grossArea = architectureGross || planGross || geoGross || structuralGross;
+  const currentMcdaSource = buildMcdaProjectSnapshot({
+    use: text(architectureInput.use) || text(geo.usage),
+    floors,
+    grossArea,
+    spanX: number(plan.spanX) || number(structureGeometry.spanX),
+    spanY: number(plan.spanY) || number(structureGeometry.spanY),
+  });
+  const hasStoredMcdaSource = Boolean(Object.keys(comparisonSourceSnapshot).length);
+  const mcdaSourceCurrent = currentMcdaSource
+    ? hasStoredMcdaSource
+      ? mcdaSourceMatches(comparisonSourceSnapshot as McdaSourceSnapshot, currentMcdaSource)
+        && mcdaInputMatchesSource(comparisonInput, currentMcdaSource)
+      : mcdaInputMatchesSource(comparisonInput, currentMcdaSource)
+    : true;
+  const currentMcdaSourceKey = mcdaSourceKey(currentMcdaSource);
+  const comparisonHasResult = Boolean(
+    Object.keys(comparisonInput).length
+    || (Array.isArray(comparison.ranking) && comparison.ranking.length)
+  );
   const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
-  const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || text(comparisonWinner.name));
+  const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || (mcdaSourceCurrent ? text(comparisonWinner.name) : ""));
+  const modeledSystemId = structuralSystemId(text(structureInput.system));
+  const recommendedSystemId = mcdaSourceCurrent
+    ? structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name))
+    : "";
+  const systemMismatch = Boolean(modeledSystemId && recommendedSystemId && modeledSystemId !== recommendedSystemId);
+  const systemDecisionRecorded = Boolean(
+    mcdaSourceCurrent
+    && text(comparisonDecision.status) === "recorded"
+    && structuralSystemId(text(comparisonDecision.selectedSystem)) === modeledSystemId
+    && structuralSystemId(text(comparisonDecision.recommendedSystem)) === recommendedSystemId
+    && text(comparisonDecision.mcdaSourceKey) === currentMcdaSourceKey
+    && text(comparisonDecision.rationale).trim().length >= 10
+    && text(comparisonDecision.decidedBy).trim()
+    && text(comparisonDecision.role).trim()
+    && text(comparisonDecision.date).trim()
+  );
 
   const canonical = {
     site: {
@@ -200,8 +294,8 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       reinforcementTonnage: number(structureQuantities.reinforcementTonnage),
       openingRatio: number(planMetrics.openingRatio),
       eccentricityRatio: number(planMetrics.eccentricityRatio),
-      recommendedSystem: text(comparisonWinner.name),
-      recommendationScore: number(comparisonWinner.score),
+      recommendedSystem: mcdaSourceCurrent ? text(comparisonWinner.name) : "",
+      recommendationScore: mcdaSourceCurrent ? number(comparisonWinner.score) : 0,
     },
     coordination: {
       clearHeight: number(coordinationResult.clearHeight),
@@ -219,35 +313,286 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     },
   };
 
+  const systemDecisionReady = resolvedStructuralSystem(canonical.structure.system);
+  const quickSiteScenarioReady = Boolean(
+    parcelReadyForNextStage
+    && zoningConditionsReadyForNextStage
+    && geoMetrics.geometryValid === true
+    && geoMetrics.buildingFits === true
+    && geoMetrics.setbackPass === true
+    && number(geoMetrics.footprint) > 0
+    && number(geoMetrics.gross) > 0
+    && number(geoMetrics.allowedFootprint) > 0
+    && number(geoMetrics.allowedGross) > 0
+    && number(geoMetrics.footprint) <= number(geoMetrics.allowedFootprint) + .01
+    && number(geoMetrics.gross) <= number(geoMetrics.allowedGross) + .01
+    && number(geoMetrics.buildingHeight) > 0
+    && number(geoPlanning.maxHeight) > 0
+    && number(geoMetrics.buildingHeight) <= number(geoPlanning.maxHeight) + .01
+  );
+
+  const footprintSource = number(planMetrics.floorArea) > 0
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari/plan-duzeltme", actionLabel: "Plan tabanını düzelt" }
+    : number(geoMetrics.footprint) > 0
+      ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
+      : number(structureGeometry.floorArea) > 0
+        ? { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı tabanını düzelt" }
+        : { label: "Bilinmeyen kaynak", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi incele" };
+
+  const grossSource = architectureGross > 0
+    ? { label: "Mimari program", route: "/mimari-program-studyosu/kaks-duzeltme", actionLabel: "Programı düzelt" }
+    : planGross > 0
+      ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan alanını düzelt" }
+      : geoGross > 0
+        ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
+        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı alanını düzelt" };
+
+  const floorCountSource = number(plan.floorCount) > 0
+    ? { label: "Plan & aks modeli", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
+    : number(architectureInput.floors) > 0
+      ? { label: "Mimari program", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
+      : number(geo.floors) > 0
+        ? { label: "Yapı Yerleşimi", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
+        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" };
+
+  const floorHeightSource = number(structureInput.floorHeight) > 0
+    ? "Taşıyıcı ön tasarım"
+    : number(geo.floorHeight) > 0
+      ? "Yapı Yerleşimi"
+      : number(architectureInput.floorHeight) > 0
+        ? "Mimari program"
+        : "Bilinmeyen kaynak";
+
   const issues: ProjectThreadIssue[] = [];
   const push = (issue: ProjectThreadIssue) => issues.push(issue);
-  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu" });
-  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({ id: "PLN-011", severity: "critical", discipline: "Planlama + Mimari", title: "Öneri taban alanı TAKS girdisini aşıyor", evidence: `${canonical.site.proposedFootprint.toFixed(1)} m² öneri / ${canonical.site.allowedFootprint.toFixed(1)} m² izin girdisi`, action: "Kütleyi küçültün veya planlama verisini yetkili kaynaktan doğrulayın.", route: "/arsa-fizibilite-studyosu" });
-  if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({ id: "PLN-012", severity: "critical", discipline: "Planlama + Mimari", title: "Brüt alan KAKS/emsal girdisini aşıyor", evidence: `${canonical.site.proposedGross.toFixed(1)} m² öneri / ${canonical.site.allowedGross.toFixed(1)} m² izin girdisi`, action: "Programı veya kat alanlarını yeniden dengeleyin.", route: "/mimari-program-studyosu" });
+  if (geoMetrics.geometryValid === false) push({ id: "GIS-001", severity: "critical", discipline: "GIS", title: "Parsel geometrisi geçerli değil", evidence: "Sınır; kapalı, çakışmasız ve en az üç noktalı bir poligon üretmiyor.", action: "Koordinat veya KML/GeoJSON sınırını doğrulayın.", route: "/arsa-fizibilite-studyosu?stage=draw#geo-studyo" });
+  if (parcelReadyForNextStage && zoningReadyForNextStage && !zoningExpertReviewed) push({
+    id: "PLN-010",
+    severity: "review",
+    discipline: "Planlama",
+    title: "İmar kaynağı uzman doğrulaması bekliyor",
+    evidence: "İmar koşulları ve kaynak referansı kayıtlı ancak proje içi uzman inceleme kaydı tamamlanmadı.",
+    action: "Plan paftası, plan notu ve yetkili idare imar durumunu inceleyip uzman inceleme kaydını tamamlayın.",
+    route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
+    routeLabel: "İmar kaynağını incele",
+  });
+  if (canonical.site.allowedFootprint > 0 && canonical.site.proposedFootprint > canonical.site.allowedFootprint * 1.001) push({
+    id: "PLN-011",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Öneri taban alanı TAKS girdisini aşıyor",
+    evidence: `${footprintSource.label}: ${canonical.site.proposedFootprint.toFixed(1)} m² / TAKS girdisine göre azami ${canonical.site.allowedFootprint.toFixed(1)} m²`,
+    action: `${footprintSource.label} taban alanını en az ${(canonical.site.proposedFootprint - canonical.site.allowedFootprint).toFixed(1)} m² azaltın; TAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
+    route: footprintSource.route,
+    routeLabel: footprintSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=taks#geo-studyo",
+    secondaryRouteLabel: "TAKS girdisini incele",
+  });
+  if (canonical.site.allowedGross > 0 && canonical.site.proposedGross > canonical.site.allowedGross * 1.001) push({
+    id: "PLN-012",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Brüt alan KAKS/emsal girdisini aşıyor",
+    evidence: `${grossSource.label}: ${canonical.site.proposedGross.toFixed(1)} m² / KAKS girdisine göre azami ${canonical.site.allowedGross.toFixed(1)} m²`,
+    action: `${grossSource.label} toplam brüt alanını en az ${(canonical.site.proposedGross - canonical.site.allowedGross).toFixed(1)} m² azaltın; KAKS girdisi kaynağa göre yanlışsa imar girdisini yeniden inceleyin.`,
+    route: grossSource.route,
+    routeLabel: grossSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=kaks#geo-studyo",
+    secondaryRouteLabel: "KAKS girdisini incele",
+  });
   const proposedHeight = floors * floorHeight;
-  if (canonical.site.maxHeight > 0 && proposedHeight > canonical.site.maxHeight + .01) push({ id: "PLN-013", severity: "critical", discipline: "Planlama + Mimari", title: "Yapı yüksekliği planlama girdisini aşıyor", evidence: `${proposedHeight.toFixed(2)} m öneri / ${canonical.site.maxHeight.toFixed(2)} m sınır girdisi`, action: "Kat adedi ve kat yüksekliğini koordine edin.", route: "/mimari-program-studyosu" });
-  if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Net–brüt katsayısını, katları veya plan geometrisini eşleyin.", route: "/mimari-program-studyosu" });
-  if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari" });
-  if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Aks modelini senkronize edin.", route: "/tasarim-calismalari" });
-  if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Aks modelini senkronize edin.", route: "/tasarim-calismalari" });
-  if (canonical.structure.recommendedSystem && canonical.structure.system && !canonical.structure.system.toLocaleLowerCase("tr-TR").includes(canonical.structure.recommendedSystem.toLocaleLowerCase("tr-TR").replace("yapısal ", ""))) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "Farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma" });
+  if (canonical.site.maxHeight > 0 && proposedHeight > canonical.site.maxHeight + .01) push({
+    id: "PLN-013",
+    severity: "critical",
+    discipline: "Planlama + Mimari",
+    title: "Yapı yüksekliği planlama girdisini aşıyor",
+    evidence: `${floors} kat (${floorCountSource.label}) × ${floorHeight.toFixed(2)} m (${floorHeightSource}) = ${proposedHeight.toFixed(2)} m / Hmax ${canonical.site.maxHeight.toFixed(2)} m`,
+    action: `Toplam yapı yüksekliğini en az ${(proposedHeight - canonical.site.maxHeight).toFixed(2)} m azaltın; kat adedi veya kat yüksekliği kaydını koordine edin.`,
+    route: floorCountSource.route,
+    routeLabel: floorCountSource.actionLabel,
+    secondaryRoute: "/arsa-fizibilite-studyosu?stage=zoning&focus=hmax#geo-studyo",
+    secondaryRouteLabel: "Hmax girdisini incele",
+  });
+  if (architectureGross > 0 && planGross > 0 && Math.abs(architectureGross - planGross) / architectureGross > .1) push({ id: "ARC-021", severity: "review", discipline: "Mimari", title: "Mahal programı ile plan alanı eşleşmiyor", evidence: `${architectureGross.toFixed(1)} m² program / ${planGross.toFixed(1)} m² plan`, action: "Mahal programı ile mevcut plan kapasitesini aynı toplam alanda koordine edin.", route: "/mimari-program-studyosu/plan-koordinasyonu", routeLabel: "Program ve planı koordine et" });
+  if (comparisonHasResult && currentMcdaSource && !mcdaSourceCurrent) push({
+    id: "SYS-040",
+    severity: "review",
+    discipline: "Yapı mühendisliği",
+    title: "MCDA girdileri güncel proje verisiyle eşleşmiyor",
+    evidence: `MCDA: ${number(comparisonInput.area).toFixed(1)} m² · ${number(comparisonInput.floors)} kat / güncel proje: ${currentMcdaSource.area.toFixed(1)} m² · ${currentMcdaSource.floors} kat`,
+    action: "Güncel proje verisini MCDA girdilerine aktarın ve sistem sıralamasını yeniden hesaplayın.",
+    route: "/yapi-sistemi-karsilastirma/mcda",
+    routeLabel: "MCDA verisini güncelle",
+  });
+
+  if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
+  if (planWidth > 0 && number(structureInput.width) > 0 && !closeEnough(planWidth, number(structureInput.width), .25)) push({ id: "STR-032", severity: "review", discipline: "Mimari + Statik", title: "X doğrultusu model boyu farklı", evidence: `${planWidth.toFixed(2)} m plan / ${number(structureInput.width).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
+  if (planDepth > 0 && number(structureInput.depth) > 0 && !closeEnough(planDepth, number(structureInput.depth), .25)) push({ id: "STR-033", severity: "review", discipline: "Mimari + Statik", title: "Y doğrultusu model boyu farklı", evidence: `${planDepth.toFixed(2)} m plan / ${number(structureInput.depth).toFixed(2)} m statik`, action: "Plan geometrisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
+  if (mcdaSourceCurrent && canonical.structure.recommendedSystem && canonical.structure.system && systemMismatch && !systemDecisionRecorded) push({ id: "SYS-041", severity: "info", discipline: "Yapı mühendisliği", title: "MCDA birincisi ile modellenen sistem farklı", evidence: `${canonical.structure.recommendedSystem} öneri / ${canonical.structure.system} model`, action: "MCDA önerisini modele aktarın veya farklı seçimin gerekçesini karar kaydına bağlayın.", route: "/yapi-sistemi-karsilastirma/sistem-karari", routeLabel: "Sistem kararını kaydet" });
   if (canonical.structure.openingRatio > 25) push({ id: "BIM-051", severity: "review", discipline: "Mimari + Statik", title: "Döşeme boşluğu oranı yüksek", evidence: `%${canonical.structure.openingRatio.toFixed(1)} kavramsal boşluk oranı`, action: "Diyafram, kenar elemanı ve düşey sürekliliği inceleyin.", route: "/tasarim-calismalari" });
-  if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari" });
-  if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari" });
+  if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR yerleşimini incele" });
+  if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR kaynaklarını tamamla" });
   if (canonical.architecture.travelDistance > 0 && canonical.architecture.targetTravel > 0 && canonical.architecture.travelDistance > canonical.architecture.targetTravel) push({ id: "FIR-061", severity: "review", discipline: "Mimari + Yangın", title: "Kaçış mesafesi ön göstergesi hedefi aşıyor", evidence: `${canonical.architecture.travelDistance.toFixed(1)} m gösterge / ${canonical.architecture.targetTravel.toFixed(1)} m hedef`, action: "Çekirdek, koridor ve çıkış yerleşimini yetkili yangın tasarımıyla doğrulayın.", route: "/mimari-program-studyosu" });
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
 
+  const completedControls: CompletedControl[] = [];
+  if (zoningReadyForNextStage && zoningExpertReviewed && !issues.some((issue) => issue.id === "PLN-010")) {
+    completedControls.push({
+      code: "PLN-010",
+      title: "İmar kaynağı uzman incelemesi",
+      summary: zoningAuthoritative
+        ? "Yetkili/onaylı kaynak statüsü kayıtlı"
+        : `${text(geoZoningExpertReview.reviewer, "Uzman")} · ${text(geoZoningExpertReview.role, "rol belirtilmedi")} · proje içi inceleme tamamlandı; resmî onay değildir`,
+      routeLabel: "Görüntüle",
+      route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
+    });
+  }
+
+  const planFootprint = number(planMetrics.floorArea);
+  if (
+    planFootprint > 0
+    && canonical.site.allowedFootprint > 0
+    && planFootprint <= canonical.site.allowedFootprint * 1.001
+    && !issues.some((issue) => issue.id === "PLN-011")
+  ) {
+    completedControls.push({
+      code: "PLN-011",
+      title: "TAKS ön kontrolü",
+      summary: `Plan tabanı: ${planFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} / ${canonical.site.allowedFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/plan-duzeltme",
+    });
+  }
+
+  if (
+    architectureGross > 0
+    && canonical.site.allowedGross > 0
+    && architectureGross <= canonical.site.allowedGross * 1.001
+    && !issues.some((issue) => issue.id === "PLN-012")
+  ) {
+    completedControls.push({
+      code: "PLN-012",
+      title: "KAKS ön kontrolü",
+      summary: `Program brütü: ${architectureGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} / ${canonical.site.allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/mimari-program-studyosu/kaks-duzeltme",
+    });
+  }
+
+  if (
+    floors > 0
+    && floorHeight > 0
+    && canonical.site.maxHeight > 0
+    && proposedHeight <= canonical.site.maxHeight + .01
+    && !issues.some((issue) => issue.id === "PLN-013")
+  ) {
+    completedControls.push({
+      code: "PLN-013",
+      title: "Hmax / yapı yüksekliği ön kontrolü",
+      summary: `${floors} kat × ${floorHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m = ${proposedHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m / Hmax ${canonical.site.maxHeight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/yukseklik-duzeltme",
+    });
+  }
+
+  if (
+    architectureGross > 0
+    && planGross > 0
+    && Math.abs(architectureGross - planGross) / architectureGross <= .1
+    && !issues.some((issue) => issue.id === "ARC-021")
+  ) {
+    completedControls.push({
+      code: "ARC-021",
+      title: "Program / plan alan koordinasyonu",
+      summary: `Program: ${architectureGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · Plan: ${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²`,
+      routeLabel: "Görüntüle",
+      route: "/mimari-program-studyosu/plan-koordinasyonu",
+    });
+  }
+
+  if (
+    number(planMetrics.floorArea) > 0
+    && eccentricityEvaluable
+    && !issues.some((issue) => issue.id === "BIM-053")
+  ) {
+    completedControls.push({
+      code: "BIM-053",
+      title: "KM–KR kaynak yeterliliği",
+      summary: `Kütle: ${number(planMetrics.massPointCount)} · Rijitlik: ${number(planMetrics.rigidityPointCount)} kaynak · dışmerkezlik %${canonical.structure.eccentricityRatio.toFixed(1)}`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/km-kr-kaynaklari",
+    });
+  }
+
+  if (
+    eccentricityEvaluable
+    && canonical.structure.eccentricityRatio <= 10
+    && !issues.some((issue) => issue.id === "BIM-052")
+  ) {
+    completedControls.push({
+      code: "BIM-052",
+      title: "KM–KR yerleşim ön kontrolü",
+      summary: `Kavramsal dışmerkezlik: ${number(planMetrics.eccentricity).toFixed(2)} m · %${canonical.structure.eccentricityRatio.toFixed(1)}`,
+      routeLabel: "Görüntüle",
+      route: "/tasarim-calismalari/km-kr-kaynaklari",
+    });
+  }
+
+  if (
+    comparisonHasResult
+    && currentMcdaSource
+    && mcdaSourceCurrent
+    && !issues.some((issue) => issue.id === "SYS-040")
+  ) {
+    completedControls.push({
+      code: "SYS-040",
+      title: "MCDA proje verisi senkronu",
+      summary: `Güncel kaynak: ${currentMcdaSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · ${currentMcdaSource.floors} kat · ${currentMcdaSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık`,
+      routeLabel: "Görüntüle",
+      route: "/yapi-sistemi-karsilastirma/mcda",
+    });
+  }
+
+  if (
+    mcdaSourceCurrent
+    && recommendedSystemId
+    && modeledSystemId
+    && (!systemMismatch || systemDecisionRecorded)
+    && !issues.some((issue) => issue.id === "SYS-041")
+  ) {
+    completedControls.push({
+      code: "SYS-041",
+      title: "Taşıyıcı sistem karar koordinasyonu",
+      summary: systemMismatch
+        ? `MCDA: ${canonical.structure.recommendedSystem} · Model: ${canonical.structure.system} · farklı seçim gerekçelendirildi`
+        : `MCDA önerisi ile model eşleşiyor: ${canonical.structure.system}`,
+      routeLabel: "Görüntüle",
+      route: "/yapi-sistemi-karsilastirma/sistem-karari",
+    });
+  }
+
   const activeKeys = new Set(Object.keys(modules));
+  if (quickSiteScenarioReady) activeKeys.add("quick-site-scenario");
   const nodes: ProjectGraphNode[] = PROJECT_MODULES.map((definition) => {
     const moduleData = record(modules[definition.id]);
-    const active = Object.keys(moduleData).length > 0;
+    const active = activeKeys.has(definition.id);
     const blockedBy = definition.dependencies.filter((dependency) => !activeKeys.has(dependency));
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
-    const readiness = definition.id === "geo-parcel" && active && !parcelReadyForNextStage
-      ? 35
-      : active
-        ? (blockedBy.length ? 68 : 100)
-        : (blockedBy.length ? 0 : 20);
+    const readiness = definition.id === "geo-parcel" && active
+      ? !parcelReadyForNextStage
+        ? 35
+        : !zoningConditionsReadyForNextStage
+          ? 70
+          : !zoningSourceReadyForNextStage
+            ? 85
+            : !zoningAuthoritative
+              ? 95
+              : 100
+      : definition.id === "system-comparison" && active && comparisonHasResult && !mcdaSourceCurrent
+        ? 72
+        : active
+          ? (blockedBy.length ? 68 : 100)
+          : (blockedBy.length ? 0 : 20);
     return { ...definition, active, readiness, blockedBy, status };
   });
   const handoffDefinitions: Omit<ProjectHandoff, "state">[] = [
@@ -270,23 +615,36 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const nextAction = !parcelReadyForNextStage
     ? {
       label: "Parsel kimliğini ve sınırını doğrula",
-      route: "/arsa-fizibilite-studyosu#geo-studyo",
+      route: "/arsa-fizibilite-studyosu?stage=locate#geo-studyo",
       blockedBy: [] as ProjectModuleKey[],
     }
-    : !zoningReadyForNextStage
+    : !zoningConditionsReadyForNextStage
       ? {
-        label: "İmar koşullarını ve kaynağını doğrula",
-        route: "/arsa-fizibilite-studyosu#geo-studyo",
+        label: "İmar koşullarını gir",
+        route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
         blockedBy: [] as ProjectModuleKey[],
       }
-      : nextNode
-        ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
-        : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
+      : !zoningSourceReadyForNextStage
+        ? {
+          label: "İmar kaynağını ekle",
+          route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo",
+          blockedBy: [] as ProjectModuleKey[],
+        }
+        : quickSiteScenarioReady && !systemDecisionReady
+          ? {
+            label: "Sistemi ve yöntemi seç",
+            route: "/sistem-karsilastirma",
+            blockedBy: [] as ProjectModuleKey[],
+          }
+        : nextNode
+          ? { label: nextNode.label, route: nextNode.route, blockedBy: nextNode.blockedBy }
+          : { label: "Koordinasyon kayıtlarını kapatın", route: "/muhendislik-koordinasyon", blockedBy: [] as ProjectModuleKey[] };
 
   return {
     canonical,
     nodes,
     issues,
+    completedControls,
     handoffs,
     metrics: { activeCount, totalCount: nodes.length, readiness, quality, critical: issues.filter((issue) => issue.severity === "critical").length, review: issues.filter((issue) => issue.severity === "review").length },
     nextAction,

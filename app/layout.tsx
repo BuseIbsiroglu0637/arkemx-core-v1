@@ -96,6 +96,7 @@ import { FloatingContact } from "./components/SiteChrome";
 import { ProjectKernelProvider } from "./components/ProjectKernel";
 import { LanguageProvider } from "./components/LanguageSystem";
 import { V21Analytics } from "./components/V21Analytics";
+import { ThemeControl } from "./components/ThemeSystem";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext", "cyrillic"] });
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin", "latin-ext", "cyrillic"] });
@@ -166,5 +167,6 @@ const structuredData = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#061a2b"/><meta name="google" content="notranslate"/><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><div id="main-content">{children}</div><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
+  const themeBoot = `try{var t=localStorage.getItem("arkemx-theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light";document.documentElement.style.colorScheme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}`;
+  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#f8f9fa"/><meta name="google" content="notranslate"/><script dangerouslySetInnerHTML={{ __html: themeBoot }} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><div id="main-content">{children}</div><ThemeControl/><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
 }

@@ -347,7 +347,7 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
 
   if (input.coordinates?.length) {
     sideHeading("Koordinat özeti");
-    input.coordinates.slice(0, 4).forEach(([point, first, second]) => {
+    input.coordinates.slice(0, 5).forEach(([point, first, second]) => {
       page.drawText(point, { x: sideLeft, y: sideY, size: 5.8, font: bold, color: COLORS.copper });
       page.drawText(first, { x: sideLeft + 43, y: sideY, size: 5.6, font: regular, color: COLORS.navy });
       page.drawText(second, { x: sideLeft + 180, y: sideY, size: 5.6, font: regular, color: COLORS.navy });

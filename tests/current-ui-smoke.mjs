@@ -15,8 +15,14 @@ async function render(pathname, requestHeaders = {}) {
   );
 }
 
-test("local build renders the current ARKEMX tools homepage", async () => {
+test("local build sends unauthenticated root entry to ARKEMX sign-in", async () => {
   const response = await render("/");
+  assert.ok(response.status === 307 || response.status === 308);
+  assert.match(response.headers.get("location") ?? "", /\/giris\?return_to=%2Fdijital-proje-merkezi$/);
+});
+
+test("local build renders the ARKEMX tools catalogue on its dedicated route", async () => {
+  const response = await render("/araclar");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
@@ -33,6 +39,400 @@ test("local build renders the current ARKEMX tools homepage", async () => {
   assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
+
+test("ARKEMX workspace subroutes do not render the public WhatsApp contact widget", () => {
+  const chrome = fs.readFileSync(new URL("../app/components/SiteChrome.tsx", import.meta.url), "utf8");
+
+  assert.match(chrome, /arkemxWorkspaceRoots/);
+  assert.match(chrome, /"\/mimari-program-studyosu"/);
+  assert.match(chrome, /"\/tasarim-calismalari"/);
+  assert.match(chrome, /pathname\?\.startsWith/);
+  assert.match(chrome, /return null/);
+});
+
+
+test("KAKS program correction opens a focused architectural workspace", () => {
+  const page = fs.readFileSync(new URL("../app/mimari-program-studyosu/kaks-duzeltme/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/mimari-program-studyosu/kaks-duzeltme/kaks-duzeltme.css", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(page, /className="arx-kaks-page-intro"/);
+  assert.match(page, /KONTROL · PLN-012/);
+  assert.match(page, /Program brütünü düzelt/);
+  assert.match(page, /stage=zoning&focus=kaks#geo-studyo/);
+  assert.match(page, /ArchitecturalProgramStudio issueFocus="kaks"/);
+  assert.match(studio, /arx-kaks-project-strip/);
+  assert.match(studio, /PROGRAM \/ KULLANIM UYUMSUZLUĞU/);
+  assert.match(studio, /programUseMismatch/);
+  assert.match(studio, /şablonuna geçir/);
+  assert.match(studio, /architectural-program-kaks-focus/);
+  assert.match(studio, /KAKS'A GÖRE AZAMİ/);
+  assert.match(studio, /KAKS sınırı geçti/);
+  assert.match(studio, /Program dağılımını koruyarak sınır içine indir/);
+  assert.match(studio, /arx-kaks-space-columns/);
+  assert.match(studio, /setSpaces\(\(current\) => current\.map/);
+  assert.match(css, /KAKS correction UI v4/);
+  assert.match(graph, /\/mimari-program-studyosu\/kaks-duzeltme/);
+});
+
+
+test("PLN-010 expert review is explicit, non-authoritative and invalidated by zoning changes", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+
+  assert.match(zoning, /expertReviewStatus/);
+  assert.match(zoning, /expertReviewed: expertReviewComplete/);
+  assert.match(zoning, /authoritative:/);
+  assert.match(zoning, /zoning\.verification === "certified-document"/);
+
+  assert.match(geo, /Uzman incelemesi/);
+  assert.match(geo, /PLN-010 için gerekli/);
+  assert.match(geo, /Kaynak ile girilen imar koşulları uyumlu/);
+  assert.match(geo, /İnceleyen \/ uzman adı/);
+  assert.match(geo, /Rol \/ uzmanlık/);
+  assert.match(geo, /Dayanak \/ referans/);
+  assert.match(geo, /PLN-010 kapanmaya hazır/);
+  assert.match(geo, /expertReviewStatus: "not-reviewed"/);
+  assert.match(geo, /resmî onay değildir/);
+
+  assert.match(graph, /zoningAuthoritative \|\| geoZoningProvenance\.expertReviewed === true/);
+  assert.match(css, /04 \/ İmar · uzman inceleme kaydı/);
+  assert.match(css, /geo-expert-review-result/);
+});
+
+
+test("project centre shows completed controls and zoning review links preserve field focus", () => {
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+
+  assert.match(graph, /export type CompletedControl/);
+  assert.match(graph, /completedControls/);
+  assert.match(graph, /code: "PLN-011"/);
+  assert.match(graph, /code: "PLN-012"/);
+  assert.match(graph, /focus=kaks/);
+
+  assert.match(hub, /Tamamlanan kontroller \/ düzeltmeler/);
+  assert.match(hub, /thread\.completedControls/);
+  assert.match(hub, /arx-completed-control-list/);
+
+  assert.match(geo, /const \[zoningFocus, setZoningFocus\]/);
+  assert.match(geo, /requestedFocus === "kaks"/);
+  assert.match(geo, /PLN-012 · KAKS GİRDİSİ/);
+  assert.match(geo, /geo-zoning-focus-target/);
+  assert.match(geo, /geo-zoning-source-focus/);
+  assert.match(css, /Sade Arazi\/Parsel UI v8/);
+});
+
+
+test("STR-031 opens a focused structural sync workspace and preserves synchronized geometry on full-studio hydration", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/model-senkronizasyonu/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/StructuralSyncStudio.tsx", import.meta.url), "utf8");
+  const structural = fs.readFileSync(new URL("../app/components/StructuralDesigner.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/model-senkronizasyonu/model-senkronizasyonu.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · STR-031 \/ STR-032 \/ STR-033/);
+  assert.match(page, /Plan ile taşıyıcı modeli senkronize et/);
+  assert.match(page, /StructuralSyncStudio/);
+
+  assert.match(studio, /H-03 · PLAN → TAŞIYICI MODEL/);
+  assert.match(studio, /Plan verisini taşıyıcı modele aktar/);
+  assert.match(studio, /SENKRON TAMAMLANDI/);
+  assert.match(studio, /Geometri eşleşiyor/);
+  assert.match(studio, /SENKRONİZE EDİLEN ALANLAR/);
+  assert.match(studio, /patchModule\("structural-concept"/);
+  assert.match(studio, /floors: planFloors/);
+  assert.match(studio, /width: Number\(planWidth\.toFixed\(3\)\)/);
+  assert.match(studio, /depth: Number\(planDepth\.toFixed\(3\)\)/);
+  assert.match(studio, /fields: \["floors", "width", "depth", "baysX", "baysY"\]/);
+
+  assert.match(structural, /const \[modelHydrated, setModelHydrated\] = useState\(false\)/);
+  assert.match(structural, /if \(!hydrated \|\| !modelHydrated\) return/);
+  assert.match(structural, /setModelHydrated\(true\)/);
+
+  assert.match(graph, /STR-031/);
+  assert.match(graph, /\/tasarim-calismalari\/model-senkronizasyonu/);
+  assert.match(css, /arx-struct-sync-page/);
+  assert.match(css, /Structural sync UX v2/);
+  assert.match(css, /arx-struct-sync-complete/);
+});
+
+
+test("ARC-021 can preserve the program by expanding plan footprint when TAKS permits", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/program-plan-alani/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · ARC-021/);
+  assert.match(page, /Plan tabanını programa göre koordine et/);
+  assert.match(page, /AdvancedPlanEditor issueFocus="program-area"/);
+
+  assert.match(studio, /canExpandPlanToProgram/);
+  assert.match(studio, /programTargetFootprint/);
+  assert.match(studio, /Plan tabanını programa göre düzenle/);
+  assert.match(studio, /href="\/tasarim-calismalari\/program-plan-alani"/);
+  assert.match(studio, /Programı mevcut plana küçült/);
+
+  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| "program-area" \| false/);
+  assert.match(editor, /programFootprintTarget/);
+  assert.match(editor, /programFootprintFeasible/);
+  assert.match(editor, /applyProgramFootprintSuggestion/);
+  assert.match(editor, /Plan tabanını program kapasitesine getir/);
+  assert.match(editor, /Kat adedi ve imar girdileri burada değiştirilmez/);
+});
+
+
+test("ARC-021 uses a focused program-plan coordination workspace", () => {
+  const page = fs.readFileSync(new URL("../app/mimari-program-studyosu/plan-koordinasyonu/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/mimari-program-studyosu/plan-koordinasyonu/plan-koordinasyonu.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · ARC-021/);
+  assert.match(page, /Program ile plan alanını koordine et/);
+  assert.match(page, /ArchitecturalProgramStudio issueFocus="plan-sync"/);
+
+  assert.match(studio, /architectural-program-plan-sync/);
+  assert.match(studio, /ARC-021 · PROGRAM ↔ PLAN ALAN KOORDİNASYONU/);
+  assert.match(studio, /Programı mevcut plan kapasitesine ölçekle/);
+  assert.match(studio, /applyPlanCoordinationSuggestion/);
+  assert.match(studio, /setTargetGross\(Math\.max\(100, Number\(planGross\.toFixed\(1\)\)\)\)/);
+  assert.match(studio, /if \(planFloorCount > 0\) setFloors\(planFloorCount\)/);
+  assert.match(studio, /ÖNCE PROGRAM KULLANIMINI DÜZELTİN/);
+
+  assert.match(graph, /ARC-021/);
+  assert.match(graph, /\/mimari-program-studyosu\/plan-koordinasyonu/);
+  assert.match(graph, /Program \/ plan alan koordinasyonu/);
+  assert.match(css, /arx-plan-sync-page/);
+});
+
+
+test("SYS-041 uses a focused decision workspace instead of forcing the MCDA winner", () => {
+  const page = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/sistem-karari/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/SystemDecisionStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/sistem-karari/sistem-karari.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · SYS-041/);
+  assert.match(page, /Taşıyıcı sistem kararını gerekçesiyle bağla/);
+  assert.match(page, /SystemDecisionStudio/);
+  assert.match(page, /href="\/yapi-sistemi-karsilastirma\/mcda"/);
+  assert.match(page, /href="\/tasiyici-on-tasarim"/);
+  assert.doesNotMatch(page, /yapi-sistemi-karsilastirma#sistem-karsilastirma/);
+  assert.doesNotMatch(page, /tasarim-calismalari#tasiyici-on-tasarim/);
+
+  assert.match(studio, /MCDA önerisini modele uygula/);
+  assert.match(studio, /Mevcut sistemi gerekçeli olarak koru/);
+  assert.match(studio, /decisionType: "retain-modeled-system"/);
+  assert.match(studio, /decisionType: "aligned-with-mcda"/);
+  assert.match(studio, /mcdaSourceKey: currentSourceKey/);
+  assert.match(studio, /MCDA güncel değil/);
+  assert.match(studio, /Sistem kararı geçici olarak kilitlendi/);
+  assert.match(studio, /href="\/yapi-sistemi-karsilastirma\/mcda"/);
+  assert.match(studio, /patchModule\("structural-concept", \{ input: \{ system: recommendedId \} \}\)/);
+  assert.match(studio, /patchModule\("system-comparison"/);
+  assert.match(studio, /MCDA sonucu nihai mühendislik kararı değildir/);
+  assert.match(studio, /nihai statik sistem onayı değildir/);
+
+  assert.match(graph, /SYS-040/);
+  assert.match(graph, /MCDA girdileri güncel proje verisiyle eşleşmiyor/);
+  assert.match(graph, /systemDecisionRecorded/);
+  assert.match(graph, /\/yapi-sistemi-karsilastirma\/sistem-karari/);
+  assert.match(graph, /Taşıyıcı sistem karar koordinasyonu/);
+  assert.match(css, /arx-system-decision-page/);
+});
+
+
+test("project MCDA link opens a focused workspace instead of the public comparison page", () => {
+  const page = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/mcda/page.tsx", import.meta.url), "utf8");
+  const tool = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/yapi-sistemi-karsilastirma/mcda/mcda.css", import.meta.url), "utf8");
+
+  assert.match(page, /Taşıyıcı sistemleri proje verisiyle karşılaştır/);
+  assert.match(page, /SystemComparisonTool simple/);
+  assert.match(page, /href="\/yapi-sistemi-karsilastirma\/sistem-karari"/);
+  assert.match(page, /href="\/tasiyici-on-tasarim"/);
+  assert.doesNotMatch(page, /SiteHeader/);
+  assert.doesNotMatch(page, /SiteFooter/);
+
+  assert.match(tool, /if \(simple\)/);
+  assert.match(tool, /arx-system-project-strip/);
+  assert.match(tool, /ARKEMX \/ MCDA/);
+  assert.doesNotMatch(tool.match(/if \(simple\)[\s\S]*?return <section className="system-comparison-tool/)?.[0] ?? "", /ProjectKernelBar module="STRUCTURAL SYSTEM MCDA"/);
+  assert.match(tool, /Proje verilerini aktar/);
+  assert.match(tool, /PROJE VERİSİ DEĞİŞTİ/);
+  assert.match(tool, /MCDA güncellemesi gerekli/);
+  assert.match(tool, /Güncel proje verisini aktar ve yeniden hesapla/);
+  assert.match(tool, /Persist the canonical project source immediately/);
+  assert.match(tool, /sourceKey: mcdaSourceKey\(currentProjectSource\)/);
+  assert.match(tool, /sourceStatus: "current"/);
+  assert.match(tool, /sourceSnapshot/);
+  assert.match(tool, /sourceStatus: sourceStale/);
+  assert.match(tool, /buildMcdaProjectSnapshot/);
+  assert.match(tool, /Beş sistemin karşılaştırması/);
+  assert.match(tool, /href="\/tasiyici-on-tasarim"/);
+  assert.match(css, /arx-mcda-page/);
+  assert.match(css, /arx-system-project-strip/);
+  assert.match(css, /arx-mcda-source-status\.is-stale/);
+});
+
+
+test("BIM-052 safely recenters only fully conceptual KM-KR source sets", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · BIM-052 \/ BIM-053/);
+  assert.match(page, /KM–KR ön kontrolünü düzenle/);
+
+  assert.match(editor, /const highX = Math\.max\(0, baysX - 1 - lowX\)/);
+  assert.match(editor, /const highY = Math\.max\(0, baysY - 1 - lowY\)/);
+  assert.match(editor, /manualMassPointCount/);
+  assert.match(editor, /manualRigidityPointCount/);
+  assert.match(editor, /canRecenterConceptualKmKr/);
+  assert.match(editor, /metrics\.manualMassPointCount === 0/);
+  assert.match(editor, /metrics\.manualRigidityPointCount === 0/);
+  assert.match(editor, /Temsilî kaynakları yeniden merkezle/);
+  assert.match(editor, /Aks dışı kütle kaynaklarını güncel plana uyarla/);
+  assert.match(editor, /outOfGridMassPointCount/);
+  assert.match(editor, /canRemapManualMassSources/);
+  assert.match(editor, /remapManualMassSourcesToCurrentGrid/);
+  assert.match(editor, /sourceBaysX/);
+  assert.match(editor, /sourceBaysY/);
+  assert.match(editor, /canAlignConceptualRigidityToMass/);
+  assert.match(editor, /alignConceptualRigidityToMass/);
+  assert.match(editor, /nearestBracket/);
+  assert.match(editor, /Temsilî rijitlik setini KM çevresine yerleştir/);
+  assert.match(editor, /manuel kütle verisi korunurken temsilî rijitlik seti KM çevresindeki akslara taşınabilir/);
+  assert.match(editor, /Dışmerkezlik göstergesi yüksek/);
+});
+
+
+test("BIM-053 uses a focused KM-KR source workspace with explicit conceptual provenance", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/km-kr-kaynaklari/km-kr-kaynaklari.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · BIM-052 \/ BIM-053/);
+  assert.match(page, /KM–KR ön kontrolünü düzenle/);
+  assert.match(page, /AdvancedPlanEditor issueFocus="kmkr"/);
+
+  assert.match(editor, /issueFocus\?: "taks" \| "kmkr" \| "program-area" \| false/);
+  assert.match(editor, /Temsilî kaynak seti oluştur/);
+  assert.match(editor, /provenance: "conceptual-seed"/);
+  assert.match(editor, /conceptualMassPointCount/);
+  assert.match(editor, /conceptualRigidityPointCount/);
+  assert.match(editor, /KM\/KR ön kontrolü hesaplanabilir/);
+  assert.match(editor, /Geometrik plaka merkezi KR kabul edilmez/);
+  assert.match(editor, /deprem düzensizlik hesabı değildir/);
+
+  assert.match(graph, /BIM-053/);
+  assert.match(graph, /\/tasarim-calismalari\/km-kr-kaynaklari/);
+  assert.match(graph, /KM–KR kaynak yeterliliği/);
+  assert.match(css, /arx-kmkr-page/);
+});
+
+
+test("PLN-013 opens a focused Hmax workspace and edits the real floor-count owner", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/page.tsx", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/HeightCorrectionStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/yukseklik-duzeltme/yukseklik-duzeltme.css", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · PLN-013/);
+  assert.match(page, /Yapı yüksekliğini düzelt/);
+  assert.match(page, /stage=zoning&focus=hmax#geo-studyo/);
+  assert.match(page, /HeightCorrectionStudio/);
+
+  assert.match(studio, /Plan & aks modeli/);
+  assert.match(studio, /Taşıyıcı ön tasarım/);
+  assert.match(studio, /Kat adedini \{maxFloorsAtCurrentHeight\} yap/);
+  assert.match(studio, /DÜZELTME UYGULANDI/);
+  assert.match(studio, /fromFloors/);
+  assert.match(studio, /toFloors/);
+  assert.match(studio, /Hmax sınırı içinde/);
+  assert.match(studio, /patchModule\("plan-editor", \{ floorCount: safe \}\)/);
+  assert.match(studio, /patchModule\("architectural-program", \{ input: \{ floors: safe \} \}\)/);
+  assert.match(studio, /patchModule\("geo-parcel", \{ floors: safe \}\)/);
+  assert.match(studio, /MODEL KOORDİNASYONU/);
+  assert.match(studio, /Hmax sınırı içinde/);
+
+  assert.match(graph, /code: "PLN-013"/);
+  assert.match(graph, /Hmax \/ yapı yüksekliği ön kontrolü/);
+  assert.match(graph, /\/tasarim-calismalari\/yukseklik-duzeltme/);
+  assert.match(css, /arx-height-fix-page/);
+  assert.match(css, /Hmax correction UX v2/);
+  assert.match(css, /background:#fff !important/);
+  assert.match(css, /arx-height-change-summary/);
+});
+
+
+test("TAKS plan correction preserves saved geometry before writes and uses the focused shell", () => {
+  const page = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/page.tsx", import.meta.url), "utf8");
+  const editor = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/tasarim-calismalari/plan-duzeltme/plan-duzeltme.css", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(page, /KONTROL · PLN-011/);
+  assert.match(page, /Plan tabanını düzelt/);
+  assert.match(page, /stage=zoning&focus=taks#geo-studyo/);
+  assert.match(page, /AdvancedPlanEditor issueFocus/);
+  assert.doesNotMatch(page, /SiteHeader/);
+
+  assert.match(editor, /const \[modelHydrated, setModelHydrated\] = useState\(false\)/);
+  assert.match(editor, /setModelHydrated\(true\)/);
+  assert.match(editor, /if \(!hydrated \|\| !modelHydrated\) return/);
+  assert.match(editor, /cad-issue-project-strip/);
+  assert.match(editor, /PLN-011 yalnız taban geometrisini düzenler/);
+  assert.match(editor, /TAKS sınırı geçti/);
+  assert.match(editor, /TAKS'A GÖRE AZAMİ/);
+  assert.match(editor, /Oranı koruyarak önerilen ölçüleri uygula/);
+  assert.match(css, /arx-plan-fix-page/);
+  assert.match(css, /cad-issue-project-strip/);
+  assert.match(graph, /\/tasarim-calismalari\/plan-duzeltme/);
+});
+
+
+test("project centre next action follows the first incomplete guided journey step", () => {
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+
+  assert.match(kernel, /export function deriveProjectJourneyState/);
+  assert.match(kernel, /firstIncompleteIndex/);
+  assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
+  assert.match(center, /deriveProjectJourneyState\(thread\)/);
+  assert.match(center, /journeyNextAction\.label/);
+  assert.match(center, /journeyNextAction\.route/);
+  assert.match(hub, /deriveProjectJourneyState\(thread\)/);
+  assert.match(hub, /journeyNextAction\.label/);
+  assert.match(hub, /journeyNextAction\.route/);
+  assert.doesNotMatch(center, /thread\.nextAction\.(label|route)/);
+});
+
+
+test("project centre separates project type and does not count undecided structure as ready", () => {
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+
+  assert.match(kernel, /normalizeProjectName/);
+  assert.match(kernel, /Proje\\s\+türü/);
+  assert.match(center, /Proje türü: \{projectType\}/);
+  assert.match(kernel, /step\.short === "Sistem"/);
+  assert.match(kernel, /systemDecisionReady/);
+  assert.match(hub, /journeyState\.systemDecisionReady/);
+  assert.match(hub, /ready: systemDecisionReady/);
+  assert.match(graph, /quickSiteScenarioReady/);
+  assert.match(graph, /label: "Sistemi ve yöntemi seç"/);
+});
+
 
 test("local build renders the simplified, device-scoped project centre", async () => {
   const response = await render("/dijital-proje-merkezi");
@@ -161,10 +561,11 @@ test("authenticated prototype headers open the account directly", async () => {
   const cookie = { cookie: "arkemx_prototype_session=1" };
 
   const homeResponse = await render("/", cookie);
-  assert.equal(homeResponse.status, 200);
-  const homeHtml = await homeResponse.text();
-  assert.match(homeHtml, /href="\/hesabim">Hesabım<\/a>/);
-  assert.doesNotMatch(homeHtml, /href="\/giris\?return_to=%2Fhesabim">Hesabım<\/a>/);
+  assert.ok(homeResponse.status === 307 || homeResponse.status === 308);
+  assert.match(
+    homeResponse.headers.get("location") ?? "",
+    /\/hesap-kurulum\?return_to=%2Fdijital-proje-merkezi$/,
+  );
 
   const centerResponse = await render("/dijital-proje-merkezi", cookie);
   assert.equal(centerResponse.status, 200);
@@ -254,7 +655,7 @@ test("guided drafts sync to the account and remain portable between preview orig
   assert.match(startSource, /Taslak yükle/);
   assert.match(draftApi, /customer_project_drafts/);
   assert.match(draftApi, /owner_email TEXT PRIMARY KEY/);
-  assert.match(accountSource, /Devam eden taslak/);
+  assert.match(accountSource, /Devam eden proje taslağı/);
   assert.match(accountSource, /href="\/proje-baslat"/);
 });
 
@@ -294,7 +695,7 @@ test("active projects do not reopen as a blank new-project form", () => {
   assert.match(startSource, /Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi/);
   assert.match(startSource, /Yeni Bir Proje Başlat/);
   assert.match(graphSource, /Parsel kimliğini ve sınırını doğrula/);
-  assert.match(graphSource, /\/arsa-fizibilite-studyosu#geo-studyo/);
+  assert.match(graphSource, /\/arsa-fizibilite-studyosu\?stage=locate#geo-studyo/);
   assert.match(coreSource, /bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"/);
 });
 
@@ -338,7 +739,10 @@ test("account automatically reconciles an active local project missing from acco
   const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
   assert.match(accountSource, /accountHasActiveProject/);
   assert.match(accountSource, /Aktif proje hesabınızla eşitleniyor/);
-  assert.match(accountSource, /expectedAccountUpdatedAt: null/);
+  assert.match(
+    accountSource,
+    /expectedAccountUpdatedAt: accountActiveProject\?\.updatedAt \?\? null/,
+  );
   assert.match(accountSource, /arx-account-local-project/);
   assert.match(accountSource, /Şimdi kaydet/);
 });
@@ -422,4 +826,378 @@ test("active project summary cannot be overwritten by a separate unfinished draf
   assert.match(account, /const removeDraft = async \(\) =>/);
   assert.match(account, /fetch\("\/api\/project-draft", \{ method: "DELETE" \}\)/);
   assert.match(account, /window\.localStorage\.removeItem\(GUIDED_DRAFT_KEY\)/);
+});
+
+
+test("TKGM parcel boundaries stay read-only until an editable copy is created", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+
+  assert.match(studio, /officialBoundaryLocked/);
+  assert.match(studio, /officialBoundaryLockedRef/);
+  assert.match(studio, /Düzenlenebilir Kopya Oluştur/);
+  assert.match(studio, /Orijinal TKGM Sınırına Dön/);
+  assert.match(studio, /TKGM sınırı salt okunurdur/);
+  assert.match(studio, /officialBoundaryEvidence/);
+  assert.match(studio, /TKGM kaynaklı kullanıcı kopyası · uzman doğrulaması gerekli/);
+  assert.match(studio, /if \(officialBoundaryLockedRef\.current\)/);
+  assert.match(studio, /setOfficialBoundaryEvidence\(\{/);
+  assert.match(studio, /officialBoundaryEvidence,/);
+});
+
+
+test("3D terrain opens without massing and labels preliminary calculations", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const viewer = fs.readFileSync(new URL("../app/components/GeoTerrainViewer.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("showTerrainMassing"));
+  assert.ok(studio.includes("Temsili kütleyi göster"));
+  assert.ok(studio.includes("Temsili Ön Kütle"));
+  assert.ok(studio.includes("\"building-mass\": showTerrainMassing"));
+  assert.ok(viewer.includes("Temsili Ön Kütle"));
+  assert.ok(viewer.includes("Parametrik ön hesap"));
+  assert.ok(viewer.includes("Ölçülmüş veri değildir"));
+});
+
+
+test("3D terrain hides building-dependent metrics until conceptual massing is enabled", () => {
+  const viewer = fs.readFileSync(new URL("../app/components/GeoTerrainViewer.tsx", import.meta.url), "utf8");
+  assert.ok(viewer.includes('layers["building-mass"] && <>'));
+  assert.ok(viewer.includes('geo-terrain-analysis'));
+  assert.ok(viewer.includes('terrain-only'));
+  assert.ok(viewer.includes('YAPI ALTI Δ'));
+  assert.ok(viewer.includes('ÖN HAFRİYAT'));
+});
+
+
+test("coordinate data view distinguishes parametric terrain values from measured data", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("PARAMETRİK KOT FARKI"));
+  assert.ok(studio.includes("Ölçülmüş Z verisi yok"));
+  assert.ok(studio.includes("TEMSİLİ EŞ YÜKSELTİ"));
+  assert.ok(studio.includes("Parametrik yüzeyden üretildi"));
+  assert.ok(studio.includes("Yerel ENU başlangıcı"));
+  assert.ok(studio.includes("Parsel merkezi (0,0) kabul edilir"));
+  assert.ok(studio.includes("resmî pafta koordinatı değil"));
+});
+
+
+test("zoning form starts empty and does not invent planning rights", () => {
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+
+  assert.ok(zoning.includes('planScale: ""'));
+  assert.ok(zoning.includes('buildingOrder: ""'));
+  assert.ok(zoning.includes('taks: -1'));
+  assert.ok(zoning.includes('kaks: -1'));
+  assert.ok(zoning.includes('hmax: -1'));
+  assert.ok(zoning.includes('frontSetback: -1'));
+  assert.ok(zoning.includes('sourceType: ""'));
+  assert.ok(zoning.includes('sourceDate: ""'));
+  assert.ok(zoning.includes('sourceNote: ""'));
+  assert.ok(studio.includes("İmar girdileri bekleniyor"));
+  assert.ok(studio.includes("Yapı zarfı henüz üretilmedi"));
+  assert.ok(studio.includes("Plan ölçeğini seçin"));
+  assert.ok(studio.includes("Yapı nizamını seçin"));
+  assert.ok(studio.includes("TAKS girin"));
+  assert.ok(studio.includes("KAKS / emsal girin"));
+  assert.ok(studio.includes("looksLikeLegacyPlaceholder"));
+  assert.ok(studio.includes("zoningFormReady"));
+  assert.ok(studio.includes("Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz"));
+});
+
+
+test("unverified zoning massing uses qualified language and flags manual Hmax conflicts", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("Girilen imar koşullarında ön kütleyi sınayın."));
+  assert.ok(studio.includes("GİRDİYE GÖRE AZAMİ TABAN"));
+  assert.ok(studio.includes("GİRDİYE GÖRE AZAMİ EMSAL ALAN"));
+  assert.ok(studio.includes("GİRDİYE GÖRE YÜKSEKLİK / KAT SINIRI"));
+  assert.ok(studio.includes("GİRDİLERLE ÖN UYUMLU"));
+  assert.ok(studio.includes("Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır."));
+  assert.ok(studio.includes("manualHeightExceedsZoning"));
+  assert.ok(studio.includes("Yükseklik sınırı aşılıyor."));
+});
+
+
+test("unverified massing terminology avoids implying official zoning rights", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"));
+  assert.ok(studio.includes("Girdi kullanım oranı"));
+  assert.ok(studio.includes('massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU"'));
+  assert.ok(studio.includes('massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"'));
+});
+
+
+test("2D map distinguishes TKGM boundary, conceptual setback envelope and read-only points", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("setbackEnvelopeLayerRef"));
+  assert.ok(studio.includes("Kavramsal çekme zarfı · ön kontrol"));
+  assert.ok(studio.includes("Temsili Ön Kütle"));
+  assert.ok(studio.includes("TKGM parsel sınırı"));
+  assert.ok(studio.includes("TKGM sınır noktası · salt okunur"));
+  assert.ok(studio.includes('dashArray: "7 6"'));
+});
+
+
+test("2D conceptual massing visibility is independent from 3D massing toggle", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("showConceptualOverlays && zoningFormReady && parcel.length >= 3"));
+  assert.ok(!studio.includes('showConceptualOverlays && terrainLayers["building-mass"] && parcel.length >= 3'));
+  assert.ok(studio.includes("Temsili Ön Kütle<br>"));
+});
+
+
+test("2D map warns when conceptual massing breaches parcel or setback pre-check", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("geo-map-placement-warning"));
+  assert.ok(studio.includes("Yerleşim ön kontrolü uyarısı."));
+  assert.ok(studio.includes("Temsili Ön Kütle parsel sınırını aşıyor veya sınırla kesişiyor."));
+  assert.ok(studio.includes("KENAR BAZLI ÇEKME UYARISI"));
+  assert.ok(studio.includes('color: placementWarning ? "#e27b42" : "#ffffff"'));
+});
+
+
+test("north-relative rotation control supports negative angles", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('min="-180" max="180" step="5"'));
+  assert.ok(studio.includes("normalizeSignedRotation"));
+  assert.ok(studio.includes("setRotation(normalizeSignedRotation(saved.rotation))"));
+});
+
+
+test("manual placement uses edge-specific front side rear setbacks", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("assessParcelEdgeSetbacks"));
+  assert.ok(studio.includes("setbackRoleLabel"));
+  assert.ok(studio.includes("Ön/yan/arka çekmeler kenar bazında ayrı kontrol edilir"));
+  assert.ok(studio.includes("en kritik"));
+});
+
+
+test("live massing precheck surfaces TAKS KAKS and Hmax violations", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const taksExceeded"));
+  assert.ok(studio.includes("const kaksExceeded"));
+  assert.ok(studio.includes("const hmaxExceeded"));
+  assert.ok(studio.includes("İmar ön kontrolü uyarısı."));
+  assert.ok(studio.includes("TAKS ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("KAKS ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("HMAX ÖN KONTROL UYARISI"));
+  assert.ok(studio.includes("İmar oranı ön kontrolü aşılıyor."));
+  assert.ok(studio.includes("placementPrecheckWarning"));
+});
+
+
+test("manual massing area uses the same one-decimal dimensions shown in UI", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("normalizeMassingDimension"));
+  assert.ok(studio.includes("const canonicalWidth = normalizeMassingDimension(buildingWidth)"));
+  assert.ok(studio.includes("const canonicalDepth = normalizeMassingDimension(buildingDepth)"));
+  assert.ok(studio.includes("const footprint = canonicalWidth * canonicalDepth"));
+  assert.ok(studio.includes("const gross = footprint * floors"));
+  assert.ok(studio.includes('calculationBasis: "displayed-rectangular-dimensions-0.1m"'));
+  assert.equal(Number((22.5 * 16.6).toFixed(2)), 373.5);
+  assert.equal(Number((22.5 * 16.6 * 4).toFixed(2)), 1494);
+  assert.equal(Number((30 * 16.6).toFixed(2)), 498);
+});
+
+
+test("TAKS and KAKS thresholds use displayed allowed areas at dimension-step precision", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("metrics.footprint > metrics.allowedFootprint + .01"));
+  assert.ok(studio.includes("metrics.gross > metrics.allowedGross + .01"));
+  assert.ok(studio.includes('!taksExceeded && !kaksExceeded && !hmaxExceeded, "İmar girdileriyle ön uyum"'));
+  assert.equal(Number((22.5 * 21.3).toFixed(2)), 479.25);
+  assert.equal(Number((22.5 * 21.4).toFixed(2)), 481.5);
+});
+
+
+test("placement decision summary combines zoning limits, setbacks and source trust", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("YERLEŞİM ÖN KONTROLÜ"));
+  assert.ok(studio.includes("Parametrik ön kontrolde açık ihlal bulunmadı"));
+  assert.ok(studio.includes("Kaynak bilgisi kayıtlı · uzman doğrulaması gerekli"));
+  assert.ok(studio.includes("setbackDecision.front"));
+  assert.ok(studio.includes("setbackDecision.side"));
+  assert.ok(studio.includes("setbackDecision.rear"));
+  assert.ok(studio.includes("Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir."));
+});
+
+
+test("simple parcel workspace keeps project kernel compact and splits long zoning and placement controls", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('compact /> : <ProjectKernelBar'));
+  assert.ok(studio.includes('className="geo-collapsible-block"'));
+  assert.ok(studio.includes(">Plan ve kaynak<"));
+  assert.ok(studio.includes(">Belge ve notlar<"));
+  assert.ok(studio.includes('className="geo-design-tabs"'));
+  assert.ok(studio.includes('designPanel === "summary"'));
+  assert.ok(studio.includes('designPanel === "massing"'));
+  assert.ok(studio.includes('designPanel === "adjust"'));
+});
+
+
+test("simple parcel workspace collapses legal limits and resets placement to summary", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes('if (stage === "design") setDesignPanel("summary")'));
+  assert.ok(studio.includes('geo-studio-foot-collapsible'));
+  assert.ok(studio.includes('ⓘ Teknik ve hukuki sınırlar'));
+  assert.ok(studio.includes('Ayrıntıları göster'));
+});
+
+
+test("parking demand result is visible beside inputs and in technical summary", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const parkingDemand = gross / 100 * parkingPer100"));
+  assert.ok(studio.includes("const parkingNeed = Math.ceil(parkingDemand)"));
+  assert.ok(studio.includes("Hesaplanan park ihtiyacı"));
+  assert.ok(studio.includes("→ yukarı yuvarlandı"));
+  assert.ok(studio.includes("<small>Park ihtiyacı</small><b>{metrics.parkingNeed} araç</b>"));
+});
+
+
+test("application exposes persistent light and dark theme controls", () => {
+  const theme = fs.readFileSync(new URL("../app/components/ThemeSystem.tsx", import.meta.url), "utf8");
+  const layout = fs.readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.ok(theme.includes('type ArkemTheme = "light" | "dark"'));
+  assert.ok(theme.includes('localStorage.setItem(STORAGE_KEY, next)'));
+  assert.ok(theme.includes('aria-label="Tema seçimi"'));
+  assert.ok(theme.includes('Açık'));
+  assert.ok(theme.includes('Koyu'));
+  assert.ok(layout.includes("<ThemeControl/>"));
+  assert.ok(layout.includes('localStorage.getItem("arkemx-theme")'));
+  assert.ok(globals.includes('html[data-theme="dark"]'));
+});
+
+
+test("dark theme uses true black surfaces and high-contrast parcel UI", () => {
+  const theme = fs.readFileSync(new URL("../app/components/ThemeSystem.tsx", import.meta.url), "utf8");
+  const globals = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  const geo = fs.readFileSync(new URL("../app/arsa-fizibilite-studyosu/sade-arazi.css", import.meta.url), "utf8");
+  assert.ok(theme.includes('theme === "dark" ? "#000000"'));
+  assert.ok(globals.includes("/* ARKEMX true-black dark pass */"));
+  assert.ok(globals.includes("background: #000000 !important"));
+  assert.ok(geo.includes("/* ARKEMX geo true-black contrast pass */"));
+  assert.ok(geo.includes("color: #ffffff !important"));
+  assert.ok(geo.includes("Keep satellite/terrain imagery natural"));
+});
+
+
+test("geo parcel state survives reloads and can recover from project backup", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("arkemx-geo-draft:"));
+  assert.ok(studio.includes("PROJECT_BACKUP_KEY"));
+  assert.ok(studio.includes("decodeProjectEnvelope"));
+  assert.ok(studio.includes("if (!Object.keys(project.modules).length) return"));
+  assert.ok(studio.includes('setNeighborhood(saved.neighborhood ?? "")'));
+  assert.ok(studio.includes('setBlock(saved.block ?? "")'));
+  assert.ok(studio.includes('setParcelNo(saved.parcelNo ?? "")'));
+  assert.ok(studio.includes("if (!hydrated || !transferApplied.current) return"));
+  assert.ok(studio.includes("window.localStorage.setItem(geoDraftKey(project.id)"));
+  assert.ok(studio.includes('patchModule("geo-parcel", moduleSnapshot)'));
+});
+
+test("account navigation stays inside the Next app so project kernel remains mounted", () => {
+  const accountLink = fs.readFileSync(new URL("../app/components/AccountHeaderLink.tsx", import.meta.url), "utf8");
+  assert.ok(accountLink.includes('import Link from "next/link"'));
+  assert.ok(accountLink.includes("return <Link href={href}>{label}</Link>"));
+  assert.ok(!accountLink.includes("return <a href={href}>{label}</a>"));
+});
+
+
+test("project geocoding cannot erase a restored parcel identity", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("const hasExplicitParcelIdentity = Boolean("));
+  assert.ok(studio.includes("saved?.previewParcel?.length"));
+  assert.ok(studio.includes("|| neighborhood"));
+  assert.ok(studio.includes("|| block"));
+  assert.ok(studio.includes("|| parcelNo"));
+  assert.ok(studio.includes("if (result.province && !province) setProvince(result.province)"));
+  assert.ok(studio.includes("if (result.district && !district) setDistrict(result.district)"));
+  const geocodeEffectStart = studio.indexOf("const hasExplicitParcelIdentity = Boolean(");
+  const geocodeEffectEnd = studio.indexOf("const coordinateCenter = useMemo", geocodeEffectStart);
+  const geocodeEffect = studio.slice(geocodeEffectStart, geocodeEffectEnd);
+  assert.ok(!geocodeEffect.includes('setNeighborhood("")'));
+  assert.ok(!geocodeEffect.includes('setBlock("")'));
+  assert.ok(!geocodeEffect.includes('setParcelNo("")'));
+});
+
+
+
+
+test("restored parcel identity stays visible while TKGM lists reload", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(studio.includes("function keepSelectedAdministrativeOption("));
+  assert.ok(studio.includes("const visibleProvinceOptions = useMemo("));
+  assert.ok(studio.includes("const visibleDistrictOptions = useMemo("));
+  assert.ok(studio.includes("const visibleNeighborhoodOptions = useMemo("));
+  assert.ok(studio.includes('setParcelLookup(hasSavedBoundary || hasSavedPreviewBoundary ? "found" : "idle")'));
+  assert.ok(studio.includes('"parcel-boundary": restoredParcel.length >= 3 ? true'));
+  assert.ok(studio.includes("visibleNeighborhoodOptions.map((item) => <option"));
+});
+
+
+test("account project open preserves newer local state and avoids full reload", () => {
+  const account = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
+  assert.ok(account.includes('import { useRouter } from "next/navigation"'));
+  assert.ok(account.includes("const accountCopyNeedsUpdate = hasActiveProject"));
+  assert.ok(account.includes("localProjectUpdatedAt > accountPayloadUpdatedAt"));
+  assert.ok(account.includes("expectedAccountUpdatedAt: accountActiveProject?.updatedAt ?? null"));
+  assert.ok(account.includes("const openingCurrentLocalProject = hasActiveProject"));
+  assert.ok(account.includes("localProjectUpdatedAt >= payloadUpdatedAt(item.payload)"));
+  assert.ok(account.includes('router.push("/dijital-proje-merkezi")'));
+  assert.ok(!account.includes('window.location.assign("/dijital-proje-merkezi")'));
+});
+
+
+test("zoning source metadata is explicit, persistent and never treated as approval", () => {
+  const zoning = fs.readFileSync(new URL("../app/lib/zoning.ts", import.meta.url), "utf8");
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.ok(zoning.includes("sourceType: string"));
+  assert.ok(zoning.includes("sourceDate: string"));
+  assert.ok(zoning.includes("sourceNote: string"));
+  assert.ok(zoning.includes("type: zoning.sourceType || null"));
+  assert.ok(zoning.includes("date: zoning.sourceDate || null"));
+  assert.ok(studio.includes("Kaynak türünü seçin"));
+  assert.ok(studio.includes("Belge / kaynak tarihi"));
+  assert.ok(studio.includes("Kaynak açıklaması"));
+  assert.ok(studio.includes("Kaynak bilgisi eklendi · uzman doğrulaması gerekli"));
+  assert.ok(studio.includes("Kaynak bilgisi eksik"));
+  assert.ok(studio.includes("zoningSourceReferenceReady"));
+  assert.ok(studio.includes('zoning.sourceType === "Kullanıcı beyanı" && zoning.sourceNote.trim()'));
+  assert.ok(studio.includes("zoningSourceReady"));
+});
+
+
+test("project next-action links can open the exact parcel workflow stage", () => {
+  const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  assert.ok(studio.includes("const search = new URLSearchParams(window.location.search)"));
+  assert.ok(studio.includes('const requestedStage = search.get("stage")'));
+  assert.ok(studio.includes("stages.some((stage) => stage.id === requestedStage)"));
+  assert.ok(graph.includes('/arsa-fizibilite-studyosu?stage=locate#geo-studyo'));
+  assert.ok(graph.includes('/arsa-fizibilite-studyosu?stage=zoning#geo-studyo'));
+  assert.ok(studio.includes('[zoningSourceReady, "İmar kaynak bilgisi kayıtlı"]'));
+});
+
+
+test("simple project center distinguishes working package readiness from official release", () => {
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  assert.match(hub, /Resmî teslim için uygun değil/);
+  assert.match(hub, /Ön fizibilite \/ çalışma paketi hazır · manifest üretilebilir/);
+  assert.match(hub, /Teknik kapanışı bekleyen inceleme kayıtları/);
+  assert.match(hub, /data-testid="delivery-review-issues"/);
+});
+
+
+test("BIM coordination exposes explicit beam-MEP section strategy", () => {
+  const studio = fs.readFileSync(new URL("../app/components/EngineeringCoordinationStudio.tsx", import.meta.url), "utf8");
+  const engine = fs.readFileSync(new URL("../app/lib/bim-coordination.ts", import.meta.url), "utf8");
+  assert.match(studio, /Kiriş–MEP düşey ilişkisi/);
+  assert.match(studio, /Ayrık · kiriş \+ MEP toplanır/);
+  assert.match(studio, /Entegre · ortak servis bandı/);
+  assert.match(studio, /sectionStrategy/);
+  assert.match(engine, /calculateConceptualClearHeight/);
+  assert.match(engine, /Math\.max\(beamDepth, serviceZone\)/);
+  assert.match(engine, /sectionStrategy/);
 });

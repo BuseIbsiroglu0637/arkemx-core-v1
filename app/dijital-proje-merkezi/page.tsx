@@ -18,7 +18,7 @@ export default function DigitalProjectCenterPage() {
     <div className="arx-simple-shell">
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <nav className="arx-simple-head-actions" aria-label="Proje Çalışma Alanı bağlantıları"><Link href="/" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link><AccountHeaderLink /></nav>
+        <nav className="arx-simple-head-actions" aria-label="Proje Çalışma Alanı bağlantıları"><Link href="/araclar" className="arx-center-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Araçlara dön</Link><AccountHeaderLink /></nav>
       </header>
       <div className="arx-center-intro">
         <span>ÇALIŞMA ALANI</span>

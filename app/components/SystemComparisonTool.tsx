@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "../lib/mcda-source";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type SystemId = "light" | "steel" | "precast" | "concrete" | "hybrid";
@@ -43,6 +44,32 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   const [weights, setWeights] = useState(defaultWeights);
   const [shortlist, setShortlist] = useState<SystemId[]>(["steel", "precast", "hybrid"]);
   const [view, setView] = useState<"ranking" | "matrix" | "sensitivity">("ranking");
+  const [sourceSnapshot, setSourceSnapshot] = useState<McdaSourceSnapshot | null>(null);
+
+  const currentProjectSource = useMemo(() => buildMcdaProjectSnapshot({
+    use: thread.canonical.architecture.use,
+    floors: thread.canonical.architecture.floors,
+    grossArea: thread.canonical.architecture.grossArea,
+    spanX: thread.canonical.structure.spanX,
+    spanY: thread.canonical.structure.spanY,
+  }), [thread.canonical]);
+
+  const currentMcdaInput = useMemo(() => ({ usage, floors, span, area }), [area, floors, span, usage]);
+  const sourceSnapshotCurrent = sourceSnapshot && currentProjectSource
+    ? mcdaSourceMatches(sourceSnapshot, currentProjectSource)
+    : false;
+  const inputMatchesProject = mcdaInputMatchesSource(currentMcdaInput, currentProjectSource);
+  const sourceStale = Boolean(
+    transferReady
+    && currentProjectSource
+    && (sourceSnapshot ? !sourceSnapshotCurrent : !inputMatchesProject)
+  );
+  const manualOverride = Boolean(
+    transferReady
+    && currentProjectSource
+    && sourceSnapshotCurrent
+    && !inputMatchesProject
+  );
 
   const ranking = useMemo(() => {
     const totalWeight = Object.values(weights).reduce((sum, value) => sum + value, 0);
@@ -68,26 +95,59 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   useEffect(() => {
     // Do not overwrite the intake's saved MCDA values before state restoration.
     if (!hydrated || !transferReady) return;
-    patchModule("system-comparison", { input: { usage, floors, span, area, repetition, transport, fireRating }, weights, ranking, shortlist, status: "mcda-pre-screen" });
-  }, [area, fireRating, floors, hydrated, patchModule, ranking, repetition, shortlist, span, transferReady, transport, usage, weights]);
+    patchModule("system-comparison", {
+      input: { usage, floors, span, area, repetition, transport, fireRating },
+      weights,
+      ranking,
+      shortlist,
+      sourceSnapshot,
+      sourceKey: mcdaSourceKey(sourceSnapshot),
+      sourceStatus: sourceStale ? "stale" : manualOverride ? "manual-override" : "current",
+      status: "mcda-pre-screen",
+    });
+  }, [area, fireRating, floors, hydrated, manualOverride, patchModule, ranking, repetition, shortlist, sourceSnapshot, sourceStale, span, transferReady, transport, usage, weights]);
 
   const updateWeight = (id: CriterionId, value: number) => setWeights((current) => ({ ...current, [id]: value }));
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const importProjectGeometry = useCallback(() => {
-    const source = thread.canonical;
-    if (source.architecture.floors > 0) setFloors(Math.max(1, Math.min(50, source.architecture.floors)));
-    if (source.architecture.grossArea > 0) setArea(Math.max(50, Math.min(100000, Math.round(source.architecture.grossArea))));
-    const maxSpan = Math.max(source.structure.spanX, source.structure.spanY);
-    if (maxSpan > 0) setSpan(Math.max(3, Math.min(60, Number(maxSpan.toFixed(2)))));
-    const projectUse = source.architecture.use.toLocaleLowerCase("tr-TR");
-    if (projectUse.includes("konut")) setUsage("residential"); else if (projectUse.includes("depo")) setUsage("storage"); else if (projectUse.includes("ticari") || projectUse.includes("ofis")) setUsage("commercial"); else if (projectUse) setUsage("industrial");
-  }, [thread.canonical]);
+    if (!currentProjectSource) return;
+
+    // Persist the canonical project source immediately. Relying only on the
+    // render-driven effect leaves a short window where another workspace can
+    // still read the previous MCDA input/source snapshot.
+    patchModule("system-comparison", {
+      input: {
+        usage: currentProjectSource.usage,
+        floors: currentProjectSource.floors,
+        span: currentProjectSource.span,
+        area: currentProjectSource.area,
+        repetition,
+        transport,
+        fireRating,
+      },
+      sourceSnapshot: currentProjectSource,
+      sourceKey: mcdaSourceKey(currentProjectSource),
+      sourceStatus: "current",
+      status: "mcda-pre-screen",
+    });
+
+    setFloors(currentProjectSource.floors);
+    setArea(currentProjectSource.area);
+    setSpan(currentProjectSource.span);
+    setUsage(currentProjectSource.usage);
+    setSourceSnapshot(currentProjectSource);
+  }, [currentProjectSource, fireRating, patchModule, repetition, transport]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
     const timer = window.setTimeout(() => {
     if (transferApplied.current) return;
     transferApplied.current = true;
-    const saved = project.modules["system-comparison"] as { input?: Record<string, unknown>; weights?: Record<CriterionId, number>; shortlist?: SystemId[] } | undefined;
+    const saved = project.modules["system-comparison"] as {
+      input?: Record<string, unknown>;
+      weights?: Record<CriterionId, number>;
+      shortlist?: SystemId[];
+      sourceSnapshot?: McdaSourceSnapshot;
+    } | undefined;
     if (saved?.input) {
       const input = saved.input;
       if (typeof input.usage === "string") setUsage(input.usage);
@@ -99,19 +159,44 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       if (typeof input.fireRating === "number") setFireRating(input.fireRating);
       if (saved.weights) setWeights(saved.weights);
       if (saved.shortlist) setShortlist(saved.shortlist);
+      if (saved.sourceSnapshot) {
+        setSourceSnapshot(saved.sourceSnapshot);
+      } else if (currentProjectSource && mcdaInputMatchesSource(input, currentProjectSource)) {
+        setSourceSnapshot(currentProjectSource);
+      }
     } else {
       importProjectGeometry();
     }
     setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, importProjectGeometry, project.modules]);
+  }, [currentProjectSource, hydrated, importProjectGeometry, project.modules]);
   const exportJson = () => downloadTextFile("arkem-sistem-mcda.json", JSON.stringify({ schema: "ARKEM-MCDA/1.0", inputs: { usage, floors, span, area, repetition, transport, fireRating }, weights, results: ranking, shortlist }, null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-sistem-karsilastirma.csv", ["rank,system,score,low,high,constraints", ...ranking.map((item, index) => `${index + 1},${item.name},${item.score.toFixed(1)},${item.low.toFixed(1)},${item.high.toFixed(1)},"${item.constraints.join("; ")}"`)].join("\n"), "text/csv;charset=utf-8");
 
   if (simple) {
     return <section className="arx-system-tool" data-testid="system-comparison-tool">
-      <ProjectKernelBar module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" compact />
+      <div className="arx-system-project-strip" aria-label="Aktif proje ve MCDA durumu">
+        <div><span>ARKEMX / MCDA</span><b>{project.name}</b></div>
+        <div><span>{project.phase}</span><span>{project.revision}</span><span>Çok ölçütlü ön eleme</span></div>
+      </div>
+      {sourceStale && currentProjectSource ? <section className="arx-mcda-source-status is-stale" role="alert">
+        <div>
+          <span>PROJE VERİSİ DEĞİŞTİ</span>
+          <b>MCDA güncellemesi gerekli</b>
+          <p>Kayıtlı MCDA: {area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {floors} kat · {span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık. Güncel proje: {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat · {currentProjectSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık.</p>
+        </div>
+        <button type="button" onClick={importProjectGeometry}>Güncel proje verisini aktar ve yeniden hesapla</button>
+      </section> : manualOverride && currentProjectSource ? <section className="arx-mcda-source-status is-override" role="note">
+        <div>
+          <span>MANUEL MCDA SENARYOSU</span>
+          <b>Proje snapshot'ı güncel; MCDA girdileri bilinçli olarak farklı.</b>
+          <p>Güncel proje referansı {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat. İstersen proje değerlerine geri dönebilirsin.</p>
+        </div>
+        <button type="button" onClick={importProjectGeometry}>Proje değerlerine dön</button>
+      </section> : currentProjectSource ? <section className="arx-mcda-source-status is-current" role="status">
+        <div><span>PROJE VERİSİ GÜNCEL</span><b>MCDA kaynak snapshot'ı aktif proje ile eşleşiyor.</b></div>
+      </section> : null}
       <div className="arx-system-grid">
         <section className="arx-system-panel" aria-labelledby="arx-system-input-title">
           <header className="arx-system-panel-head">
@@ -134,7 +219,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
               <input type="number" min="3" max="60" step=".5" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
             </label>
             <label>Brüt alan (m²)
-              <input type="number" min="50" max="100000" step="50" value={area} onChange={(event) => setArea(Number(event.target.value))} />
+              <input type="number" min="50" max="100000" step=".1" value={area} onChange={(event) => setArea(Number(event.target.value))} />
             </label>
           </div>
           <details className="arx-system-detail">

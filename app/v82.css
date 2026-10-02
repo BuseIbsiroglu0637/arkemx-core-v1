@@ -60,3 +60,49 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+.geo-terrain-analysis p > i {
+  color: #f1a276;
+  font-size: .5rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .035em;
+}
+
+.geo-terrain-massing-badge {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  right: 54px;
+  padding: .42rem .58rem;
+  border: 1px solid rgb(242 148 95 / 55%);
+  background: rgb(4 20 31 / 82%);
+  color: #f2945f;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+
+.geo-terrain-analysis.terrain-only {
+  width: min(430px, calc(100% - 130px));
+}
+
+.geo-terrain-analysis.terrain-only > div {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.geo-terrain-analysis p > b {
+  color: #eef6f8;
+  font-weight: 760;
+}
+
+.geo-terrain-analysis p > small {
+  color: #a3b8c2;
+}
+
+.geo-terrain-analysis p > i {
+  color: #ffad7d;
+}

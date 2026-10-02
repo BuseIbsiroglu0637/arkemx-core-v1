@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <div className="arx-auth-shell">
       <header className="arx-auth-header">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <Link href="/" className="arx-auth-back">Çalışma alanına dön</Link>
+        <Link href="/araclar" className="arx-auth-back">Araçları görüntüle</Link>
       </header>
 
       <section className="arx-auth-card" aria-labelledby="arx-auth-title">

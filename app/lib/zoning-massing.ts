@@ -1,10 +1,12 @@
 import {
   fromLocalMeters,
+  geoCentroid,
   localBounds,
-  minimumBoundaryDistance,
   pointInPolygon,
   polygonArea,
+  polygonEdgesCross,
   polygonSelfIntersects,
+  toLocalMeters,
   type GeoPoint,
 } from "./geo.ts";
 import type { ZoningVerification } from "./zoning.ts";
@@ -63,6 +65,148 @@ const ALTERNATIVE_PROFILES: AlternativeProfile[] = [
 
 const finiteNonNegative = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 const round = (value: number, digits = 2) => Number(value.toFixed(digits));
+
+type CardinalEdge = "north" | "east" | "south" | "west";
+type SetbackRole = "front" | "side" | "rear";
+
+const oppositeEdge: Record<CardinalEdge, CardinalEdge> = {
+  north: "south",
+  east: "west",
+  south: "north",
+  west: "east",
+};
+
+function classifyParcelEdge(
+  a: { east: number; north: number },
+  b: { east: number; north: number },
+  polygonOrientation: 1 | -1,
+): CardinalEdge {
+  const edgeEast = b.east - a.east;
+  const edgeNorth = b.north - a.north;
+  // CCW polygons keep their interior on the left side of each edge, so the
+  // outward normal is the right-hand normal. CW polygons use the opposite.
+  const outwardEast = polygonOrientation > 0 ? edgeNorth : -edgeNorth;
+  const outwardNorth = polygonOrientation > 0 ? -edgeEast : edgeEast;
+  if (Math.abs(outwardEast) > Math.abs(outwardNorth)) return outwardEast >= 0 ? "east" : "west";
+  return outwardNorth >= 0 ? "north" : "south";
+}
+
+function setbackRoleForEdge(edge: CardinalEdge, frontEdge: ParcelFrontEdge): SetbackRole {
+  if (edge === frontEdge) return "front";
+  if (edge === oppositeEdge[frontEdge]) return "rear";
+  return "side";
+}
+
+function distancePointToSegment(
+  point: { east: number; north: number },
+  a: { east: number; north: number },
+  b: { east: number; north: number },
+) {
+  const dx = b.east - a.east;
+  const dy = b.north - a.north;
+  const lengthSquared = dx * dx + dy * dy;
+  if (!lengthSquared) return Math.hypot(point.east - a.east, point.north - a.north);
+  const t = Math.max(0, Math.min(1, ((point.east - a.east) * dx + (point.north - a.north) * dy) / lengthSquared));
+  return Math.hypot(point.east - (a.east + t * dx), point.north - (a.north + t * dy));
+}
+
+function orientationsIntersect(
+  a: { east: number; north: number },
+  b: { east: number; north: number },
+  c: { east: number; north: number },
+  d: { east: number; north: number },
+) {
+  const cross = (p: { east: number; north: number }, q: { east: number; north: number }, r: { east: number; north: number }) =>
+    (q.east - p.east) * (r.north - p.north) - (q.north - p.north) * (r.east - p.east);
+  const abC = cross(a, b, c);
+  const abD = cross(a, b, d);
+  const cdA = cross(c, d, a);
+  const cdB = cross(c, d, b);
+  return abC * abD < -1e-9 && cdA * cdB < -1e-9;
+}
+
+function distanceSegmentToSegment(
+  a: { east: number; north: number },
+  b: { east: number; north: number },
+  c: { east: number; north: number },
+  d: { east: number; north: number },
+) {
+  if (orientationsIntersect(a, b, c, d)) return 0;
+  return Math.min(
+    distancePointToSegment(a, c, d),
+    distancePointToSegment(b, c, d),
+    distancePointToSegment(c, a, b),
+    distancePointToSegment(d, a, b),
+  );
+}
+
+export function assessParcelEdgeSetbacks(params: {
+  parcel: GeoPoint[];
+  building: GeoPoint[];
+  frontEdge: ParcelFrontEdge;
+  front: number;
+  side: number;
+  rear: number;
+}) {
+  const { parcel, building, frontEdge } = params;
+  if (parcel.length < 3 || building.length < 3) {
+    return {
+      pass: false,
+      buildingFits: false,
+      minimumDistance: 0,
+      governing: null,
+      edges: [],
+    };
+  }
+
+  const origin = geoCentroid(parcel);
+  const parcelLocal = parcel.map((point) => toLocalMeters(point, origin));
+  const buildingLocal = building.map((point) => toLocalMeters(point, origin));
+  const signedAreaTwice = parcelLocal.reduce((sum, point, index) => {
+    const next = parcelLocal[(index + 1) % parcelLocal.length];
+    return sum + point.east * next.north - next.east * point.north;
+  }, 0);
+  const polygonOrientation: 1 | -1 = signedAreaTwice >= 0 ? 1 : -1;
+
+  const buildingFits = building.every((corner) => pointInPolygon(corner, parcel)) && !polygonEdgesCross(parcel, building);
+  const requiredByRole: Record<SetbackRole, number> = {
+    front: finiteNonNegative(params.front),
+    side: finiteNonNegative(params.side),
+    rear: finiteNonNegative(params.rear),
+  };
+
+  const edges = parcelLocal.map((a, index) => {
+    const b = parcelLocal[(index + 1) % parcelLocal.length];
+    const cardinal = classifyParcelEdge(a, b, polygonOrientation);
+    const role = setbackRoleForEdge(cardinal, frontEdge);
+    const required = requiredByRole[role];
+    const distance = Math.min(...buildingLocal.map((c, buildingIndex) => {
+      const d = buildingLocal[(buildingIndex + 1) % buildingLocal.length];
+      return distanceSegmentToSegment(a, b, c, d);
+    }));
+    const margin = distance - required;
+    return {
+      index,
+      cardinal,
+      role,
+      required: round(required),
+      distance: round(distance),
+      margin: round(margin),
+      pass: buildingFits && distance + .01 >= required,
+    };
+  });
+
+  const governing = edges.reduce<typeof edges[number] | null>((worst, edge) =>
+    !worst || edge.margin < worst.margin ? edge : worst, null);
+
+  return {
+    pass: buildingFits && edges.every((edge) => edge.pass),
+    buildingFits,
+    minimumDistance: round(Math.min(...edges.map((edge) => edge.distance))),
+    governing,
+    edges,
+  };
+}
 
 function createEnvelope(parcel: GeoPoint[], frontEdge: ParcelFrontEdge, front: number, side: number, rear: number) {
   const bounds = localBounds(parcel);
@@ -140,7 +284,6 @@ export function createZoningMassingModel(input: ZoningMassingInput) {
   const allowedFootprint = parcelArea * taks;
   const allowedGrossArea = parcelArea * kaks;
   const maxFloors = Math.floor(hmax / floorHeight);
-  const minimumSetback = Math.min(front, side, rear);
   const maximumCandidateFootprint = Math.max(0, Math.min(allowedFootprint, allowedGrossArea, envelope.area));
 
   const alternatives = ALTERNATIVE_PROFILES.map((profile) => {
@@ -154,14 +297,26 @@ export function createZoningMassingModel(input: ZoningMassingInput) {
     depth *= Math.max(0, boundScale);
 
     let polygon = candidatePolygon(bounds.origin, width, depth, envelope.offsetEast, envelope.offsetNorth);
-    let insideParcel = polygon.every((point) => pointInPolygon(point, input.parcel));
-    let boundaryDistance = polygon.length ? minimumBoundaryDistance(input.parcel, polygon) : 0;
-    for (let attempt = 0; attempt < 14 && (!insideParcel || boundaryDistance + .01 < minimumSetback); attempt += 1) {
+    let setbackAssessment = assessParcelEdgeSetbacks({
+      parcel: input.parcel,
+      building: polygon,
+      frontEdge: input.frontEdge,
+      front,
+      side,
+      rear,
+    });
+    for (let attempt = 0; attempt < 14 && !setbackAssessment.pass; attempt += 1) {
       width *= .94;
       depth *= .94;
       polygon = candidatePolygon(bounds.origin, width, depth, envelope.offsetEast, envelope.offsetNorth);
-      insideParcel = polygon.every((point) => pointInPolygon(point, input.parcel));
-      boundaryDistance = minimumBoundaryDistance(input.parcel, polygon);
+      setbackAssessment = assessParcelEdgeSetbacks({
+        parcel: input.parcel,
+        building: polygon,
+        frontEdge: input.frontEdge,
+        front,
+        side,
+        rear,
+      });
     }
 
     const footprint = width * depth;
@@ -171,7 +326,7 @@ export function createZoningMassingModel(input: ZoningMassingInput) {
     const height = floors * floorHeight;
     const checks = [
       { code: "ZM-01", label: "Parsel geometrisi", pass: geometryValid },
-      { code: "ZM-02", label: "Çekme zarfı", pass: envelope.area > 0 && insideParcel && boundaryDistance + .01 >= minimumSetback },
+      { code: "ZM-02", label: "Kenar bazlı çekme", pass: envelope.area > 0 && setbackAssessment.pass },
       { code: "ZM-03", label: "TAKS", pass: footprint <= allowedFootprint + .01 },
       { code: "ZM-04", label: "KAKS / emsal", pass: grossArea <= allowedGrossArea + .01 },
       { code: "ZM-05", label: "Hmax / Yençok", pass: floors > 0 && height <= hmax + .01 },
@@ -197,7 +352,8 @@ export function createZoningMassingModel(input: ZoningMassingInput) {
       rotation: envelope.rotation,
       offsetEast: envelope.offsetEast,
       offsetNorth: envelope.offsetNorth,
-      boundaryDistance: round(boundaryDistance),
+      boundaryDistance: setbackAssessment.minimumDistance,
+      setbackAssessment,
       polygon,
       checks,
       governingConstraint: envelope.area < allowedFootprint
@@ -237,7 +393,7 @@ export function createZoningMassingModel(input: ZoningMassingInput) {
       ?? alternatives.find((item) => item.status === "fits")?.id
       ?? null,
     limitations: [
-      "Yapı zarfı parselin kuzey yönlü lokal sınır kutusundan üretilen kavramsal ön değerlendirmedir; yol cephesi ve aplikasyon doğrulanmalıdır.",
+      "Çekme kontrolü parselin gerçek kenarlarına göre ön/yan/arka mesafeleri ayrı değerlendirir; ön cephe yönü kullanıcı seçimine dayanır ve yol cephesi/aplikasyon resmî kaynaktan doğrulanmalıdır.",
       "Plan notları, çıkmalar, bodrum ve çatı hükümleri, kotlandırma, yangın, otopark ve kullanım kararları ayrıca incelenir.",
       authoritative
         ? "Kaynak statüsü doğrulanmış olsa da bu sonuç ruhsat projesi veya resmî imar uygunluk belgesi değildir."

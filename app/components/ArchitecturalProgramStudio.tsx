@@ -84,7 +84,7 @@ const templates: Record<ProgramUse, { label: string; netRatio: number; liveLoad:
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min)); }
 function objectValue(value: unknown) { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 
-export function ArchitecturalProgramStudio({ simple = false }: { simple?: boolean } = {}) {
+export function ArchitecturalProgramStudio({ simple = false, issueFocus = false }: { simple?: boolean; issueFocus?: "kaks" | "plan-sync" | false } = {}) {
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const transferApplied = useRef(false);
   const [transferReady, setTransferReady] = useState(false);
@@ -245,8 +245,216 @@ export function ArchitecturalProgramStudio({ simple = false }: { simple?: boolea
     setWwr(strategy.wwr);
     setStatus(`${strategy.label} senaryosu programa uygulandı`);
   };
+  const allowedGross = thread.canonical.site.allowedGross;
+  const programGross = result.grossDemand;
+  const grossOverage = allowedGross > 0 ? Math.max(0, programGross - allowedGross) : 0;
+  const grossPass = allowedGross > 0 && programGross <= allowedGross + .01;
+  const grossTarget = allowedGross > 0 ? allowedGross * .995 : 0;
+  const grossScale = grossTarget > 0 && programGross > 0 ? Math.min(1, grossTarget / programGross) : 1;
+  const allowedNetAtCurrentRatio = allowedGross > 0 ? allowedGross * (netRatio / 100) : 0;
+  const programTemplateUse = (() => {
+    const prefix = spaces[0]?.id?.split("-")[0];
+    return prefix === "IND" ? "industrial" : prefix === "OFF" ? "office" : prefix === "RES" ? "residential" : prefix === "EDU" ? "education" : null;
+  })();
+  const programUseMismatch = Boolean(programTemplateUse && programTemplateUse !== use);
+  const planModule = objectValue(project.modules["plan-editor"]);
+  const planMetrics = objectValue(planModule.metrics);
+  const planFloorArea = typeof planMetrics.floorArea === "number" ? planMetrics.floorArea : 0;
+  const planFloorCount = typeof planModule.floorCount === "number" ? planModule.floorCount : 0;
+  const planGross = planFloorArea * planFloorCount;
+  const planSyncDelta = programGross - planGross;
+  const planSyncPass = programGross > 0 && planGross > 0 && Math.abs(planSyncDelta) / programGross <= .1;
+  const planSyncScale = programGross > 0 && planGross > 0 ? planGross / programGross : 1;
+  const allowedFootprint = thread.canonical.site.allowedFootprint;
+  const programTargetFootprint = planFloorCount > 0 && programGross > 0 ? programGross / planFloorCount : 0;
+  const canExpandPlanToProgram = planSyncDelta > 0
+    && programTargetFootprint > 0
+    && allowedFootprint > 0
+    && programTargetFootprint <= allowedFootprint + .01;
+
+  const applyCurrentUseTemplate = () => {
+    setSpaces(templates[use].spaces.map((space) => ({ ...space })));
+    setRelationships(templates[use].relationships.map((relationship) => ({ ...relationship })));
+    setNetRatio(templates[use].netRatio);
+    setTargetGross(Math.max(100, Math.floor(allowedGross > 0 ? allowedGross * .995 : targetGross)));
+    setGrossDraft(null);
+    setStatus(`${templates[use].label} mahal programı proje kullanımına göre yüklendi`);
+  };
+
+  const applyKaksSuggestion = () => {
+    if (!(allowedGross > 0) || !(programGross > 0) || grossPass) return;
+    setSpaces((current) => current.map((space) => ({
+      ...space,
+      unitArea: Number(Math.max(2, space.unitArea * grossScale).toFixed(2)),
+    })));
+    setTargetGross(Math.max(100, Math.floor(grossTarget)));
+    setGrossDraft(null);
+    setStatus(`Mahal alanları mevcut dağılım korunarak KAKS sınırına göre küçültüldü · hedef ≤ ${allowedGross.toFixed(1)} m²`);
+  };
+
+  const applyPlanCoordinationSuggestion = () => {
+    if (!(planGross > 0) || !(programGross > 0) || planSyncPass || programUseMismatch) return;
+    setSpaces((current) => current.map((space) => ({
+      ...space,
+      unitArea: Number(Math.max(2, space.unitArea * planSyncScale).toFixed(2)),
+    })));
+    setTargetGross(Math.max(100, Number(planGross.toFixed(1))));
+    if (planFloorCount > 0) setFloors(planFloorCount);
+    setGrossDraft(null);
+    setStatus(`Mahal programı plan toplam alanına göre koordine edildi · hedef ≈ ${planGross.toFixed(1)} m²`);
+  };
+
+  if (issueFocus === "plan-sync") {
+    return <section className="architect-app arx-architect-plan-sync" data-testid="architectural-program-plan-sync">
+      <div className="arx-plan-sync-project-strip" aria-label="Aktif proje">
+        <div><span>ARKEMX / ARC SYNC</span><b>{project.name}</b></div>
+        <div><span>{project.phase}</span><span>{project.revision}</span></div>
+      </div>
+
+      {programUseMismatch ? <section className="arx-plan-sync-use-warning" role="alert">
+        <div>
+          <span>ÖNCE PROGRAM KULLANIMINI DÜZELTİN</span>
+          <b>Kullanım “{templates[use].label}”, mevcut mahal seti ise “{programTemplateUse ? templates[programTemplateUse].label : "tanımsız"}”.</b>
+          <p>Yanlış kullanım şablonunu plan alanına ölçeklemek programı matematiksel olarak eşler ama mimari olarak yanlış kayıt üretir.</p>
+        </div>
+        <button type="button" onClick={applyCurrentUseTemplate}>{templates[use].label} şablonuna geçir</button>
+      </section> : null}
+
+      <section className="arx-plan-sync-summary" data-state={planSyncPass ? "pass" : "review"}>
+        <div><span>MİMARİ PROGRAM BRÜTÜ</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+        <div><span>PLAN TOPLAMI</span><b>{planGross > 0 ? `${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+        <div><span>FARK</span><b>{planGross > 0 ? `${planSyncDelta.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+        {!planSyncPass && planGross > 0 && !programUseMismatch
+          ? canExpandPlanToProgram
+            ? <div className="arx-plan-sync-actions">
+                <Link href="/tasarim-calismalari/program-plan-alani">Plan tabanını programa göre düzenle</Link>
+                <button type="button" onClick={applyPlanCoordinationSuggestion}>Programı mevcut plana küçült</button>
+              </div>
+            : <button type="button" onClick={applyPlanCoordinationSuggestion}>Programı mevcut plan kapasitesine ölçekle</button>
+          : planSyncPass
+            ? <div className="arx-plan-sync-complete"><span>KOORDİNASYON TAMAMLANDI</span><b>Program ve plan alanı uyumlu</b></div>
+            : null}
+      </section>
+
+      <div className="arx-plan-sync-grid">
+        <main>
+          <section className="arx-plan-sync-equation">
+            <span>ARC-021 · PROGRAM ↔ PLAN ALAN KOORDİNASYONU</span>
+            <div>
+              <article><small>PLAN TABANI</small><b>{planFloorArea > 0 ? `${planFloorArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b><p>Plan & aks modeli</p></article>
+              <i>×</i>
+              <article><small>KAT ADEDİ</small><b>{planFloorCount || "—"}</b><p>Plan & aks modeli</p></article>
+              <i>=</i>
+              <article><small>PLAN TOPLAMI</small><b>{planGross > 0 ? `${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b><p>Program hedefi için fiziksel referans</p></article>
+            </div>
+          </section>
+
+          <section className="arx-plan-sync-program">
+            <header>
+              <div><span>MAHAL PROGRAMI</span><b>{spaces.length} mahal türü · net {result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+              <div><span>NET / BRÜT</span><b>%{netRatio}</b></div>
+            </header>
+            <div className="arx-plan-sync-space-head" aria-hidden="true"><span>Mahal</span><span>Adet</span><span>Birim alan</span><span>Toplam net</span></div>
+            <div className="arx-plan-sync-space-list">
+              {spaces.map((space) => <article key={space.id}>
+                <div><small>{space.code}</small><b>{space.name}</b><span>{space.zone}</span></div>
+                <label><input aria-label={`${space.name} adedi`} type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/></label>
+                <label><div><input aria-label={`${space.name} birim alanı`} type="number" min="2" max="50000" step=".5" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><i>m²</i></div></label>
+                <strong>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</strong>
+              </article>)}
+            </div>
+          </section>
+        </main>
+
+        <aside>
+          <section>
+            <strong>ALAN KOORDİNASYONU</strong>
+            <div><span>Program brütü</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>Plan toplamı</span><b>{planGross > 0 ? `${planGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Fark oranı</span><b className={planSyncPass ? "good" : "risk"}>{programGross > 0 && planGross > 0 ? `%${(Math.abs(planSyncDelta) / programGross * 100).toFixed(1)}` : "—"}</b></div>
+          </section>
+          <section>
+            <strong>İMAR / YÜKSEKLİK BAĞLAMI</strong>
+            <div><span>KAKS azami</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>TAKS azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Programdan hedef taban</span><b>{programTargetFootprint > 0 ? `${programTargetFootprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Plan kat adedi</span><b>{planFloorCount || "—"}</b></div>
+            <div><span>Program kat adedi</span><b>{floors}</b></div>
+            <small>{canExpandPlanToProgram ? "Programın mevcut kat adedindeki hedef tabanı TAKS sınırı içindedir. Programı küçültmeden önce plan geometrisini bu hedefe koordine etmek mümkündür." : "KAKS üst sınırdır; mevcut Hmax, TAKS ve plan kat adedi fiziksel kullanılabilir alanı ayrıca sınırlar. ARC-021 bu iki modeli koordine eder."}</small>
+          </section>
+        </aside>
+      </div>
+
+      <footer className="arx-plan-sync-foot"><b>Koordinasyon statüsü · Kavramsal</b><p>Bu ekran program ve plan alanlarını aynı proje kaydında tutarlı hale getirir. Mahal gereksinimleri, kullanıcı kapasitesi, mevzuat ve mimari tasarım kararları ayrıca doğrulanmalıdır.</p></footer>
+    </section>;
+  }
+
   const matrixSpaces = spaces.slice(0, 8);
   const matrixRelation = (from: string, to: string) => relationships.find((item) => (item.from === from && item.to === to) || (item.from === to && item.to === from));
+  if (issueFocus === "kaks") {
+    return <section className="architect-app arx-architect-kaks-focus" data-testid="architectural-program-kaks-focus">
+      <div className="arx-kaks-project-strip" aria-label="Aktif proje">
+        <div><span>ARKEMX / ARC</span><b>{project.name}</b></div>
+        <div><span>{project.phase}</span><span>{project.revision}</span></div>
+      </div>
+
+      {programUseMismatch ? <section className="arx-kaks-use-warning" role="alert">
+        <div>
+          <span>PROGRAM / KULLANIM UYUMSUZLUĞU</span>
+          <b>Kullanım “{templates[use].label}”, mevcut mahal seti ise “{programTemplateUse ? templates[programTemplateUse].label : "tanımsız"}”.</b>
+          <p>KAKS hesabı matematiksel olarak geçse bile yanlış kullanım şablonuyla program üretmek doğru değildir. Mevcut kayıt otomatik silinmez.</p>
+        </div>
+        <button type="button" onClick={applyCurrentUseTemplate}>{templates[use].label} şablonuna geçir</button>
+      </section> : null}
+
+      <section className="arx-kaks-summary" data-state={grossPass ? "pass" : "review"}>
+        <div><span>MEVCUT PROGRAM BRÜTÜ</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+        <div><span>KAKS'A GÖRE AZAMİ</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+        <div><span>DURUM</span><b>{allowedGross <= 0 ? "İmar girdisi eksik" : grossPass ? "KAKS sınırı geçti" : `${grossOverage.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² azaltılmalı`}</b></div>
+        {!grossPass && allowedGross > 0 && !programUseMismatch ? <button type="button" onClick={applyKaksSuggestion}>Program dağılımını koruyarak sınır içine indir</button> : null}
+      </section>
+
+      <div className="arx-kaks-workspace">
+        <main>
+          <header className="arx-kaks-program-head">
+            <div><span>MAHAL PROGRAMI</span><b>{spaces.length} mahal türü · net {result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>NET / BRÜT</span><b>%{netRatio}</b><small>KAKS sınırında mevcut oranla azami net ≈ {allowedNetAtCurrentRatio.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</small></div>
+          </header>
+
+          <div className="arx-kaks-space-columns" aria-hidden="true">
+            <span>Mahal</span><span>Adet</span><span>Birim alan</span><span>Toplam net</span>
+          </div>
+          <div className="arx-kaks-space-list">
+            {spaces.map((space) => <article key={space.id}>
+              <div className="arx-kaks-space-name"><small>{space.code}</small><b>{space.name}</b><span>{space.zone}</span></div>
+              <label><span className="arx-kaks-mobile-label">Adet</span><input aria-label={`${space.name} adedi`} type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/></label>
+              <label><span className="arx-kaks-mobile-label">Birim alan</span><div className="arx-kaks-area-input"><input aria-label={`${space.name} birim alanı`} type="number" min="2" max="50000" step=".5" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><i>m²</i></div></label>
+              <div className="arx-kaks-space-total"><small>TOPLAM NET</small><b>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            </article>)}
+          </div>
+        </main>
+        <aside>
+          <section>
+            <strong>KAKS ÖN KONTROLÜ</strong>
+            <div><span>Program neti</span><b>{result.netArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>Program brütü</span><b>{programGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²</b></div>
+            <div><span>Azami brüt</span><b>{allowedGross > 0 ? `${allowedGross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <div><span>Fark</span><b className={grossPass ? "good" : "risk"}>{allowedGross > 0 ? `${(programGross - allowedGross).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "—"}</b></div>
+            <small>KAKS/emsal girdisi değiştirilmez. Mahal adetlerini veya birim alanlarını düzenleyerek program brütünü sınır içine alın.</small>
+          </section>
+          <section className="arx-kaks-context">
+            <strong>PROGRAM BAĞLAMI</strong>
+            <div><span>Kullanım</span><b>{templates[use].label}</b></div>
+            <div><span>Kat adedi</span><b>{floors}</b></div>
+            <div><span>Kat yüksekliği</span><b>{floorHeight.toFixed(1)} m</b></div>
+            <small>Kat ve yükseklik PLN-013 kapsamında ayrıca koordine edilir; bu ekranda KAKS açığını kapatmaya odaklanın.</small>
+          </section>
+        </aside>
+      </div>
+      <footer className="arx-kaks-foot"><b>Program statüsü · Kavramsal</b><p>Bu ön kontrol ruhsat veya resmî imar uygunluğu değildir. KAKS kaynağı uzman doğrulaması bekler; mahal alanları proje gereksinimleri ve ilgili mevzuat açısından ayrıca doğrulanmalıdır.</p></footer>
+    </section>;
+  }
+
   return <section className={simple ? "architect-app arx-architect-simple" : "architect-app"} data-testid="architectural-program-studio">
     {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>

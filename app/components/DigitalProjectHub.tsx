@@ -6,7 +6,7 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 import { downloadTextFile } from "../lib/engineering";
 import { createDeliveryReadiness, createWorkingDeliveryManifest } from "../lib/delivery-readiness";
 import { ProjectCoreRegistry } from "./ProjectCoreRegistry";
-import { PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { deriveProjectJourneyState, PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type View = "control" | "journey" | "graph" | "federated" | "rules" | "history";
 const stages = ["Tanım", "Arsa", "Tasarım", "Koordinasyon", "Teslim"] as const;
@@ -52,14 +52,14 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     thread.canonical.delivery.projectHealth > 0 ? `%${thread.canonical.delivery.projectHealth} proje sağlığı` : "Program, bütçe ve karar kayıtları bekleniyor",
     thread.canonical.delivery.informationMaturity > 0 ? `%${thread.canonical.delivery.informationMaturity} bilgi olgunluğu` : "Onaylı teslim paketi henüz oluşmadı",
   ];
-  const completedJourney = PROJECT_JOURNEY.map((step) => {
-    if (step.short === "Arazi") {
-      return thread.canonical.site.geometryValid && thread.canonical.site.parcelArea > 0;
-    }
-    return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
-  });
-  const firstIncompleteJourney = completedJourney.findIndex((completed) => !completed);
-  const currentJourneyIndex = firstIncompleteJourney < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteJourney;
+  const journeyState = deriveProjectJourneyState(thread);
+  const completedJourney = journeyState.completed;
+  const currentJourneyIndex = journeyState.currentIndex;
+  const systemDecisionReady = journeyState.systemDecisionReady;
+  const journeyNextAction = {
+    label: journeyState.nextStep.label,
+    route: journeyState.nextStep.href,
+  };
 
   const synchronize = () => {
     const count = synchronizeProject();
@@ -70,7 +70,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
     { code: "BRF", label: "Yatırım ve karar briefi", ready: Boolean(project.modules["decision-assistant"]), format: "JSON / PDF" },
     { code: "GIS", label: "Parsel, koordinat ve yerleşim verisi", ready: thread.canonical.site.parcelArea > 0, format: "DXF / KML / GEOJSON" },
     { code: "ARC", label: "Mimari program ve mahal kaydı", ready: thread.canonical.architecture.grossArea > 0, format: "CSV / JSON" },
-    { code: "STR", label: "Taşıyıcı sistem ön değerlendirmesi", ready: Boolean(thread.canonical.structure.system), format: "PDF / DXF" },
+    { code: "STR", label: "Taşıyıcı sistem ön değerlendirmesi", ready: systemDecisionReady, format: "PDF / DXF" },
     { code: "ICE", label: "Disiplin koordinasyon ve issue kaydı", ready: thread.canonical.coordination.openIssues > 0 || Boolean(project.modules["engineering-coordination"]), format: "CSV / BCF-LIKE" },
     { code: "CDE", label: "Dijital teslim ve proje pasaportu", ready: deliveryGate.workingExportEligible, format: deliveryGate.officialReleaseEligible ? "RESMÎ TESLİM" : "ÇALIŞMA MANİFESTOSU" },
   ];
@@ -97,10 +97,11 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
         quality: thread.metrics.quality,
         outputs: `${readyOutputs}/${projectOutputs.length}`,
       },
-      nextAction: thread.nextAction,
+      nextAction: journeyNextAction,
       canonical: thread.canonical,
       projectCore: core,
       issues: thread.issues,
+      completedControls: thread.completedControls,
       outputs: projectOutputs,
       eventLog: project.events,
       boundary: "Ön değerlendirme ve veri koordinasyon paketidir; yetkili proje, resmî onay veya uygulama projesi değildir.",
@@ -169,7 +170,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
 
       <div className="arx-advanced-layout">
         <section className="arx-advanced-panel" aria-labelledby="arx-readiness-title">
-          <header><h4 id="arx-readiness-title">Proje adımları</h4><span>Sıradaki: {thread.nextAction.label}</span></header>
+          <header><h4 id="arx-readiness-title">Proje adımları</h4><span>Sıradaki: {journeyNextAction.label}</span></header>
           <div className="arx-advanced-readiness">
             {readinessRows.map((row, index) => <article key={row.href} className={row.ready ? "ready" : ""}>
               <i>{row.ready ? "✓" : String(index + 1).padStart(2, "0")}</i>
@@ -177,20 +178,41 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
               <span>{row.ready ? "Hazır" : "Bekliyor"}</span>
             </article>)}
           </div>
-          <footer><Link href={thread.nextAction.route}>Sıradaki çalışmayı aç →</Link></footer>
+          <footer><Link href={journeyNextAction.route}>Sıradaki çalışmayı aç →</Link></footer>
         </section>
 
-        <section className="arx-advanced-panel" aria-labelledby="arx-issues-title">
-          <header><h4 id="arx-issues-title">Açık konular</h4><span>{thread.issues.length} kayıt</span></header>
-          <div className="arx-advanced-issues">
-            {priorityIssues.map((issue) => <article className={issue.severity} key={issue.id}>
-              <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
-              <div><b>{issue.title}</b><small>{issue.id} · {issue.discipline}</small><p>{issue.evidence}</p></div>
-              <Link href={issue.route}>Aç</Link>
-            </article>)}
-            {!priorityIssues.length ? <p className="arx-advanced-empty">Aktif proje verisinde açık kontrol konusu görünmüyor.</p> : null}
-          </div>
-        </section>
+        <div className="arx-advanced-issue-column">
+          <section className="arx-advanced-panel" aria-labelledby="arx-issues-title">
+            <header><h4 id="arx-issues-title">Açık konular</h4><span>{thread.issues.length} kayıt</span></header>
+            <div className="arx-advanced-issues">
+              {priorityIssues.map((issue) => <article className={issue.severity} key={issue.id}>
+                <i>{issue.severity === "critical" ? "!" : issue.severity === "review" ? "?" : "i"}</i>
+                <div>
+                  <b>{issue.title}</b>
+                  <small>{issue.id} · {issue.discipline}</small>
+                  <p>{issue.evidence}</p>
+                  <em className="arx-issue-recommendation">Önerilen düzeltme: {issue.action}</em>
+                </div>
+                <div className="arx-issue-actions">
+                  <Link href={issue.route}>{issue.routeLabel ?? "Aç"}</Link>
+                  {issue.secondaryRoute ? <Link className="secondary" href={issue.secondaryRoute}>{issue.secondaryRouteLabel ?? "Kaynağı incele"}</Link> : null}
+                </div>
+              </article>)}
+              {!priorityIssues.length ? <p className="arx-advanced-empty">Aktif proje verisinde açık kontrol konusu görünmüyor.</p> : null}
+            </div>
+          </section>
+
+          {thread.completedControls.length ? <section className="arx-advanced-panel arx-completed-controls" aria-labelledby="arx-completed-controls-title">
+            <header><h4 id="arx-completed-controls-title">Tamamlanan kontroller / düzeltmeler</h4><span>{thread.completedControls.length} kayıt</span></header>
+            <div className="arx-completed-control-list">
+              {thread.completedControls.map((control) => <article key={control.code}>
+                <i>✓</i>
+                <div><b>{control.code} · {control.title}</b><p>{control.summary}</p></div>
+                <Link href={control.route}>{control.routeLabel}</Link>
+              </article>)}
+            </div>
+          </section> : null}
+        </div>
       </div>
 
       <details className="arx-advanced-detail">
@@ -198,12 +220,16 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
         <div className="arx-advanced-delivery" data-testid="delivery-release-gate" data-state={deliveryGate.state}>
           <div className="arx-advanced-delivery-status">
             <span>Resmî/onaylı teslim</span>
-            <b>{deliveryGate.officialReleaseEligible ? "Uygun" : "Uygun değil"}</b>
-            <small>Çalışma manifestosu: {deliveryGate.workingExportEligible ? "üretilebilir" : "bekliyor"}</small>
+            <b>{deliveryGate.officialReleaseEligible ? "Resmî teslim için uygun" : "Resmî teslim için uygun değil"}</b>
+            <small>{deliveryGate.workingExportEligible ? "Ön fizibilite / çalışma paketi hazır · manifest üretilebilir" : "Çalışma manifestosu bekliyor"}</small>
           </div>
           {deliveryGate.blockingIssues.length > 0 ? <div className="arx-advanced-blockers" data-testid="delivery-active-blockers">
             <b>Bloke eden konular</b>
             {deliveryGate.blockingIssues.slice(0, 5).map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}
+          </div> : null}
+          {deliveryGate.reviewIssues.length > 0 ? <div className="arx-advanced-blockers is-review" data-testid="delivery-review-issues">
+            <b>Teknik kapanışı bekleyen inceleme kayıtları</b>
+            {deliveryGate.reviewIssues.slice(0, 5).map((issue) => <p key={issue.source + issue.id}>{issue.id} · {issue.title}</p>)}
           </div> : null}
           <div className="arx-advanced-outputs">
             {projectOutputs.map((output) => <article key={output.code}>
@@ -238,14 +264,14 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
   return <section className="digital-hub" data-testid="digital-project-hub">
     <ProjectKernelBar module="ORTAK PROJE VERİ ZİNCİRİ" confidence="Geliştirme prototipi / çapraz disiplin" />
     <header className="digital-hub-head"><div><p className="eyebrow light">ARKEMX Prototip Proje Veri Alanı</p><h2>Bağlı çalışma alanları.<br/><em>Ortak proje kimliği.</em></h2></div><p>Her çalışma alanı kendi veri sorumluluğunu korur; ortak proje çekirdeği alan, kat, aks, sistem, miktar, sorun ve teslim verisini kaynak–revizyon iziyle ilişkilendirmeyi araştırır.</p><div className="hub-file-control"><span>OTURUM / DOSYA</span><b>{notice}</b><button onClick={() => fileRef.current?.click()}>Proje JSON yükle ↑</button><input ref={fileRef} className="sr-only" type="file" accept="application/json,.json" onChange={(event) => loadProject(event.target.files?.[0])}/></div></header>
-    <div className="digital-hub-metrics"><article><span>BAĞLI VERİ ALANI</span><strong>{thread.metrics.activeCount}<small>/ {thread.metrics.totalCount}</small></strong><i style={{ "--value": `${thread.metrics.readiness}%` } as React.CSSProperties}></i><b>%{thread.metrics.readiness} veri zinciri</b></article><article><span>MODEL KALİTESİ</span><strong>{thread.metrics.quality}<small>/ 100</small></strong><i style={{ "--value": `${thread.metrics.quality}%` } as React.CSSProperties}></i><b>Kural tabanlı gösterge</b></article><article><span>KOORDİNASYON</span><strong className={thread.metrics.critical ? "risk" : "good"}>{thread.metrics.critical}<small>kritik</small></strong><b>{thread.metrics.review} inceleme · {thread.issues.length} toplam</b></article><article><span>SONRAKİ AKIŞ</span><strong className="next">{thread.nextAction.label}</strong><Link href={thread.nextAction.route}>Çalışma alanını aç ↗</Link></article></div>
+    <div className="digital-hub-metrics"><article><span>BAĞLI VERİ ALANI</span><strong>{thread.metrics.activeCount}<small>/ {thread.metrics.totalCount}</small></strong><i style={{ "--value": `${thread.metrics.readiness}%` } as React.CSSProperties}></i><b>%{thread.metrics.readiness} veri zinciri</b></article><article><span>MODEL KALİTESİ</span><strong>{thread.metrics.quality}<small>/ 100</small></strong><i style={{ "--value": `${thread.metrics.quality}%` } as React.CSSProperties}></i><b>Kural tabanlı gösterge</b></article><article><span>KOORDİNASYON</span><strong className={thread.metrics.critical ? "risk" : "good"}>{thread.metrics.critical}<small>kritik</small></strong><b>{thread.metrics.review} inceleme · {thread.issues.length} toplam</b></article><article><span>SONRAKİ AKIŞ</span><strong className="next">{journeyNextAction.label}</strong><Link href={journeyNextAction.route}>Çalışma alanını aç ↗</Link></article></div>
     <div className="digital-hub-workspace"><header><nav aria-label="Proje merkezi görünümleri">{(["control", "journey", "graph", "federated", "rules", "history"] as View[]).map((item) => <button type="button" role="tab" aria-selected={view === item} key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "control" ? "Proje kontrol merkezi" : item === "journey" ? "Yönlendirmeli akış" : item === "graph" ? "Proje veri haritası" : item === "federated" ? "Federasyon verisi" : item === "rules" ? `Kural / konu (${thread.issues.length})` : `Revizyon izi (${project.events.length})`}</button>)}</nav><span>{project.id} · {project.revision} · {project.phase}</span></header>
       {view === "control" && <div className="hub-control-center">
         <ProjectCoreRegistry compact />
         <section className="hub-control-main">
           <header><div><span>PROJE HAZIRLIK MATRİSİ</span><h3>Ne tamamlandı,<br/>sırada ne var?</h3></div><strong>%{thread.metrics.readiness}</strong></header>
           <div className="hub-readiness-grid">{readinessRows.map((row, index) => <article className={row.ready ? "ready" : ""} key={row.href}><i>{row.ready ? "✓" : String(index + 1).padStart(2, "0")}</i><div><b>{row.label}</b><small>{row.summary}</small></div><span>{row.ready ? "HAZIR" : "BEKLİYOR"}</span></article>)}</div>
-          <div className="hub-control-recommendation"><i>→</i><div><b>Önerilen sonraki çalışma: {thread.nextAction.label}</b><small>Mevcut proje verisi ve eksik bağlantılar üzerinden belirlenir.</small></div><Link href={thread.nextAction.route}>Çalışmayı aç ↗</Link></div>
+          <div className="hub-control-recommendation"><i>→</i><div><b>Önerilen sonraki çalışma: {journeyNextAction.label}</b><small>Mevcut proje verisi ve eksik bağlantılar üzerinden belirlenir.</small></div><Link href={journeyNextAction.route}>Çalışmayı aç ↗</Link></div>
         </section>
         <aside className="hub-control-side">
           <header><div><span>VERİ DEVİR TESLİMİ / TEKNİK ÇIKTI KAYDI</span><h3>{readyOutputs}/{projectOutputs.length} paket hazır</h3></div></header>
@@ -282,7 +308,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
       </div>}
       {view === "graph" && <div className="hub-graph"><div className="hub-stage-row">{stages.map((stage) => <section key={stage}><header><span>{String(stages.indexOf(stage) + 1).padStart(2, "0")}</span><b>{stage}</b><small>{thread.nodes.filter((node) => node.stage === stage && node.active).length}/{thread.nodes.filter((node) => node.stage === stage).length} aktif</small></header><div>{thread.nodes.filter((node) => node.stage === stage).map((node) => <Link href={node.route} className={`${node.active ? "active" : ""}${node.blockedBy.length ? " blocked" : ""}`} key={node.id}><i>{node.code}</i><span><b>{node.label}</b><small>{node.discipline}</small></span><strong>{node.active ? node.blockedBy.length ? "KAYIT / BAĞ EKSİK" : "BAĞLI" : node.blockedBy.length ? `${node.blockedBy.length} GİRDİ BEKLİYOR` : "BAŞLAT"}</strong><em>{node.output}</em></Link>)}</div></section>)}</div><div className="hub-handoffs"><header><span>VERİ DEVİR TESLİMİ</span><b>Kaynak → hedef / aktarılan sözleşme</b></header>{thread.handoffs.map((handoff) => <article className={handoff.state} key={handoff.id}><i>{handoff.state === "ready" ? "✓" : handoff.state === "conflict" ? "!" : "…"}</i><div><b>{handoff.label}</b><small>{handoff.payload.join(" · ")}</small></div><span>{handoff.state === "ready" ? "AKTARIM HAZIR" : handoff.state === "conflict" ? "ÇELİŞKİYİ İNCELE" : "KAYNAK / HEDEF BEKLİYOR"}</span></article>)}</div></div>}
       {view === "federated" && <div className="hub-federated"><header><div><span>KANONİK PROJE ANLIK GÖRÜNTÜSÜ</span><b>Uygulamalar arasında son geçerli değer seçimi</b></div><p>Değerler kaynağı değiştirmez; proje zinciri plan, mimari, statik ve GIS kayıtlarını karşılaştırarak ortak karar görünümü üretir.</p></header><div>{canonicalSections.map((section) => <article key={section.code}><header><i>{section.code}</i><b>{section.label}</b></header>{section.values.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</article>)}</div><footer><span>VERİ SAHİPLİĞİ</span><p>GIS → koordinat/parsel · Mimari → kullanım/program · Statik → yük/kesit · MEP → servis/şaft · PM → durum/onay. Federasyon görünümü disiplin sorumluluğunu devralmaz.</p></footer></div>}
-      {view === "rules" && <div className="hub-rules"><header><div><span>ÇAPRAZ DİSİPLİN KURAL MOTORU</span><b>Alan · kat · yükseklik · aks · sistem · performans</b></div><div><b>{thread.metrics.critical} kritik</b><span>{thread.metrics.review} inceleme</span></div></header>{thread.issues.map((issue) => <article className={issue.severity} key={issue.id}><i>{issue.severity === "critical" ? "×" : issue.severity === "review" ? "!" : "i"}</i><div><span>{issue.id} · {issue.discipline}</span><h3>{issue.title}</h3><p>{issue.evidence}</p><small>ÖNERİLEN AKSİYON · {issue.action}</small></div><Link href={issue.route}>Kaynak uygulamayı aç ↗</Link></article>)}{!thread.issues.length && <div className="hub-empty"><b>Aktif veriler arasında çelişki görünmüyor.</b><p>Bu sonuç teknik onay değildir; yeni disiplin kayıtları geldikçe kural seti tekrar çalışır.</p></div>}</div>}
+      {view === "rules" && <div className="hub-rules"><header><div><span>ÇAPRAZ DİSİPLİN KURAL MOTORU</span><b>Alan · kat · yükseklik · aks · sistem · performans</b></div><div><b>{thread.metrics.critical} kritik</b><span>{thread.metrics.review} inceleme</span></div></header>{thread.issues.map((issue) => <article className={issue.severity} key={issue.id}><i>{issue.severity === "critical" ? "×" : issue.severity === "review" ? "!" : "i"}</i><div><span>{issue.id} · {issue.discipline}</span><h3>{issue.title}</h3><p>{issue.evidence}</p><small>ÖNERİLEN AKSİYON · {issue.action}</small></div><div className="hub-rule-actions"><Link href={issue.route}>{issue.routeLabel ?? "Kaynak uygulamayı aç"} ↗</Link>{issue.secondaryRoute ? <Link href={issue.secondaryRoute}>{issue.secondaryRouteLabel ?? "Kaynağı incele"} ↗</Link> : null}</div></article>)}{!thread.issues.length && <div className="hub-empty"><b>Aktif veriler arasında çelişki görünmüyor.</b><p>Bu sonuç teknik onay değildir; yeni disiplin kayıtları geldikçe kural seti tekrar çalışır.</p></div>}</div>}
       {view === "history" && <div className="hub-history"><header><div><span>REVİZYON / OLAY GÜNLÜĞÜ</span><b>Son 80 yerel modül işlemi</b></div><small>Sunucu tabanlı CDE denetim izi değildir</small></header>{[...project.events].reverse().map((event, index) => { const definition = PROJECT_MODULES.find((item) => item.id === event.module); return <article key={`${event.id}-${index}`}><i>{event.action === "create" ? "+" : event.action === "remove" ? "×" : event.action === "import" ? "↑" : event.action === "handoff" ? "⇄" : "↻"}</i><span><b>{definition?.label ?? event.module}</b><small>{event.action === "create" ? "Modül oluşturuldu" : event.action === "remove" ? "Modül kaldırıldı" : event.action === "import" ? "Proje içe aktarıldı" : event.action === "handoff" ? "Modüller arası veri aktarıldı" : "Veri güncellendi"}</small></span><strong>{event.revision}</strong><time>{new Date(event.timestamp).toLocaleString("tr-TR")}</time></article>; })}{!project.events.length && <div className="hub-empty"><b>Henüz revizyon olayı yok.</b><p>Bir teknik uygulamayı açıp veri ürettiğinizde değişiklikler burada görünür.</p></div>}</div>}
     </div>
     <footer className="digital-hub-foot"><b>ARKEM PROJECT THREAD / 1.0</b><p>Bu prototip cihaz içi proje oturumuyla çalışır. Çok kullanıcılı yetki, değiştirilemez denetim izi, sunucu veritabanı, gerçek CDE/IFC/BCF servisleri ve elektronik onay için proje özelinde kurumsal altyapı gerekir.</p></footer>

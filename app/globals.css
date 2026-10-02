@@ -622,3 +622,403 @@ footer{background:#071a27;padding-top:80px}
 .geo-basemap-switch button:focus-visible{outline:2px solid #b96636;outline-offset:2px}
 .geo-basemap-warning{position:absolute;z-index:511;top:61px;right:14px;max-width:300px;padding:9px 12px;border-radius:6px;background:#fff3e6;color:#693b12;font-size:12px;box-shadow:0 3px 12px #061d2d24}
 @media(max-width:560px){.geo-basemap-switch{top:9px;right:9px}.geo-basemap-switch button{padding:0 7px;font-size:10px}.geo-basemap-warning{top:52px;right:9px;left:9px;max-width:none}}
+
+
+/* 2B parcel legend: provenance-aware parcel, conceptual setback envelope and massing. */
+.geo-map-legend {
+  flex-wrap: wrap;
+  max-width: calc(100% - 90px);
+}
+.geo-map-legend .parcel i {
+  width: 12px;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #b96636;
+}
+.geo-map-legend .setback i {
+  width: 14px;
+  height: 0;
+  border-top: 2px dashed #73aeb7;
+  background: transparent;
+}
+.geo-map-legend .building i {
+  width: 12px;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+.geo-map-legend .point i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #0a2639;
+}
+.geo-map-legend .point.readonly i {
+  border-color: #d7e1e4;
+  background: #6f8791;
+  opacity: .82;
+}
+
+
+/* ARKEMX light/dark theme control */
+html[data-theme="light"] {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  --paper: #071824;
+  --ink: #e7eff2;
+  --cream: #102735;
+  --muted: #9aadb5;
+  color-scheme: dark;
+}
+html[data-theme="dark"] body {
+  background: #071824;
+  color: #e7eff2;
+}
+
+.arkem-theme-control {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 2200;
+  display: grid;
+  gap: 5px;
+  min-width: 148px;
+  padding: 8px;
+  border: 1px solid #d8e1e4;
+  border-radius: 10px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 10px 28px rgba(9,31,42,.12);
+  backdrop-filter: blur(10px);
+}
+.arkem-theme-control-label {
+  padding: 0 4px;
+  color: #6e818a;
+  font: 700 8px/1.2 var(--font-manrope),Arial,sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.arkem-theme-control-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.arkem-theme-control button {
+  min-height: 31px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #45626f;
+  font: 700 9px/1.1 var(--font-inter),Arial,sans-serif;
+  cursor: pointer;
+}
+.arkem-theme-control button[aria-pressed="true"] {
+  border-color: #244756;
+  background: #244756;
+  color: #fff;
+}
+.arkem-theme-control button:focus-visible {
+  outline: 2px solid #b96636;
+  outline-offset: 2px;
+}
+html[data-theme="dark"] .arkem-theme-control {
+  border-color: #31505f;
+  background: rgba(6,26,43,.95);
+  box-shadow: 0 12px 34px rgba(0,0,0,.28);
+}
+html[data-theme="dark"] .arkem-theme-control-label {
+  color: #88a0aa;
+}
+html[data-theme="dark"] .arkem-theme-control button {
+  color: #afc0c7;
+}
+html[data-theme="dark"] .arkem-theme-control button[aria-pressed="true"] {
+  border-color: #c67647;
+  background: #b96636;
+  color: #fff;
+}
+
+/* Shared ARKEMX application chrome */
+html[data-theme="dark"] .arx-simple-home {
+  background: #071824;
+  color: #e7eff2;
+}
+html[data-theme="dark"] .arx-simple-head {
+  border-color: #213b48;
+}
+html[data-theme="dark"] .arx-simple-head-label,
+html[data-theme="dark"] .arx-simple-head-actions > a {
+  color: #9db0b8;
+}
+html[data-theme="dark"] .arx-simple-tool {
+  border-color: #294653;
+  background: #0b2433;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-simple-tool:hover,
+html[data-theme="dark"] .arx-simple-tool:focus-visible {
+  border-color: #567582;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
+}
+html[data-theme="dark"] .arx-simple-tool-icon {
+  background: #123444;
+  color: #8fb0ba;
+}
+html[data-theme="dark"] .arx-simple-tool-content small,
+html[data-theme="dark"] .arx-simple-tool-arrow,
+html[data-theme="dark"] .arx-simple-footer {
+  color: #8da1a9;
+}
+html[data-theme="dark"] .arx-simple-footer {
+  border-color: #213b48;
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color-scheme: dark;
+}
+
+@media (max-width: 620px) {
+  .arkem-theme-control {
+    left: 10px;
+    bottom: 10px;
+    min-width: 132px;
+  }
+}
+
+
+/* ARKEMX true-black dark pass */
+html[data-theme="dark"] {
+  --paper: #000000;
+  --ink: #f5f7f8;
+  --cream: #070707;
+  --muted: #b7c0c4;
+  background: #000000;
+}
+html[data-theme="dark"] body,
+html[data-theme="dark"] #main-content,
+html[data-theme="dark"] .arx-simple-home,
+html[data-theme="dark"] .arx-geo-page {
+  background: #000000 !important;
+  color: #f5f7f8 !important;
+}
+html[data-theme="dark"] .arx-simple-shell {
+  background: #000000;
+}
+html[data-theme="dark"] .arx-simple-head {
+  border-color: #242424;
+}
+html[data-theme="dark"] .arx-simple-brand,
+html[data-theme="dark"] .arx-simple-tools h1,
+html[data-theme="dark"] .arx-geo-intro h1 {
+  color: #ffffff;
+}
+html[data-theme="dark"] .arx-simple-head-label,
+html[data-theme="dark"] .arx-simple-head-actions > a,
+html[data-theme="dark"] .arx-geo-back a,
+html[data-theme="dark"] .arx-geo-intro p {
+  color: #d0d6d9;
+}
+html[data-theme="dark"] .arx-simple-tool {
+  border-color: #2b2b2b;
+  background: #080808;
+  color: #f8f8f8;
+}
+html[data-theme="dark"] .arx-simple-tool-icon {
+  background: #111111;
+  color: #d5e3e8;
+}
+html[data-theme="dark"] .arx-simple-tool-content small,
+html[data-theme="dark"] .arx-simple-tool-arrow,
+html[data-theme="dark"] .arx-simple-footer {
+  color: #b8c0c4;
+}
+html[data-theme="dark"] .arx-simple-footer {
+  border-color: #242424;
+}
+html[data-theme="dark"] .arkem-theme-control {
+  border-color: #303030;
+  background: rgba(0,0,0,.96);
+  box-shadow: 0 12px 34px rgba(0,0,0,.65);
+}
+html[data-theme="dark"] .arkem-theme-control-label {
+  color: #c0c7ca;
+}
+html[data-theme="dark"] .arkem-theme-control button {
+  color: #d7dde0;
+}
+html[data-theme="dark"] .arkem-theme-control button[aria-pressed="true"] {
+  border-color: #d07b49;
+  background: #b96636;
+  color: #fff;
+}
+
+
+/* Focused project issue resolution · plan footprint / TAKS */
+.plan-fix-page {
+  min-height:100vh;
+  background:#f4f7f8;
+}
+.plan-fix-shell {
+  padding-top:32px;
+  padding-bottom:48px;
+}
+.plan-fix-nav {
+  display:flex;
+  justify-content:space-between;
+  gap:32px;
+  align-items:flex-end;
+  margin-bottom:20px;
+  padding:22px 24px;
+  border:1px solid #dce5e8;
+  background:#fff;
+}
+.plan-fix-nav span {
+  color:#b96636;
+  font:750 9px var(--font-manrope);
+  letter-spacing:.1em;
+}
+.plan-fix-nav h1 {
+  margin:7px 0 5px;
+  color:#102c3b;
+  font:560 32px/1.05 var(--font-manrope);
+  letter-spacing:-.04em;
+}
+.plan-fix-nav p {
+  max-width:720px;
+  margin:0;
+  color:#6b7f88;
+  font-size:12px;
+  line-height:1.55;
+}
+.plan-fix-nav nav {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+.plan-fix-nav a {
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:0 11px;
+  border:1px solid #cbd8dc;
+  border-radius:4px;
+  background:#fff;
+  color:#315968;
+  font-size:9px;
+  font-weight:700;
+}
+.cad-issue-focus {
+  margin:0 !important;
+  color:#142b3b !important;
+}
+.cad-issue-focus .project-kernel-compact {
+  margin-bottom:12px;
+}
+.cad-issue-focus .plan-editor-head {
+  grid-template-columns:minmax(0,1fr) minmax(320px,.8fr);
+  gap:36px;
+  margin:0 0 16px;
+  padding:18px 20px;
+  border:1px solid #dce5e8;
+  background:#fff;
+}
+.cad-issue-focus .plan-editor-head h2 {
+  color:#102c3b;
+  font-size:34px;
+}
+.cad-issue-focus .plan-editor-head h2 em {
+  color:#b96636;
+}
+.cad-issue-focus .plan-editor-head > p {
+  color:#6b7f88;
+  font-size:11px;
+}
+.cad-issue-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+  align-items:stretch;
+  margin-bottom:12px;
+  border:1px solid #d7e2e5;
+  background:#fff;
+}
+.cad-issue-summary > div {
+  padding:13px 15px;
+  border-right:1px solid #e1e8ea;
+}
+.cad-issue-summary span {
+  display:block;
+  color:#788b93;
+  font-size:8px;
+  font-weight:750;
+  letter-spacing:.06em;
+}
+.cad-issue-summary b {
+  display:block;
+  margin-top:5px;
+  color:#173746;
+  font-size:15px;
+}
+.cad-issue-summary[data-state="review"] > div:nth-child(3) b { color:#a34f40; }
+.cad-issue-summary[data-state="pass"] > div:nth-child(3) b { color:#3d745b; }
+.cad-issue-summary button {
+  min-width:210px;
+  border:0;
+  background:#0d3244;
+  color:#fff;
+  padding:0 16px;
+  font-size:9px;
+  font-weight:750;
+  cursor:pointer;
+}
+.cad-issue-focus .cad-editor-grid {
+  grid-template-columns:minmax(0,1fr) 300px;
+}
+.cad-issue-focus .cad-canvas {
+  min-height:610px;
+}
+.cad-issue-focus .cad-inspector {
+  background:#f9fbfb;
+}
+.cad-footprint-control > div {
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 0;
+  border-bottom:1px solid #dfe7e9;
+}
+.cad-footprint-control > div span {
+  color:#72858d;
+  font-size:9px;
+}
+.cad-footprint-control > div b {
+  font-size:11px;
+}
+.cad-footprint-control b.risk { color:#a34f40; }
+.cad-footprint-control b.good { color:#3d745b; }
+.cad-footprint-control small {
+  display:block;
+  margin-top:12px;
+  color:#6d8189;
+  font-size:9px;
+  line-height:1.5;
+}
+.cad-issue-focus .cad-editor-foot {
+  padding:12px 18px;
+}
+@media(max-width:900px) {
+  .plan-fix-nav,
+  .cad-issue-focus .plan-editor-head {
+    grid-template-columns:1fr;
+    display:grid;
+  }
+  .plan-fix-nav nav { justify-content:flex-start; }
+  .cad-issue-summary { grid-template-columns:1fr 1fr; }
+  .cad-issue-summary button { min-height:42px; grid-column:1/-1; }
+  .cad-issue-focus .cad-editor-grid { grid-template-columns:1fr; }
+}

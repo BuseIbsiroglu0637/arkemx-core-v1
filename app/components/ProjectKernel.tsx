@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { clearProjectStorage, loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, reconcileProjectSnapshots, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -82,6 +82,34 @@ export const PROJECT_JOURNEY = [
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
 
+export function deriveProjectJourneyState(thread: ProjectThread) {
+  const systemValue = thread.canonical.structure.system.trim();
+  const systemDecisionReady = Boolean(systemValue)
+    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(systemValue);
+
+  const completed = PROJECT_JOURNEY.map((step) => {
+    if (step.short === "Arazi") {
+      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
+    }
+    if (step.short === "Sistem") {
+      return systemDecisionReady;
+    }
+    return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
+  });
+
+  const firstIncompleteIndex = completed.findIndex((value) => !value);
+  const currentIndex = firstIncompleteIndex < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteIndex;
+  const nextStep = PROJECT_JOURNEY[currentIndex];
+
+  return {
+    completed,
+    currentIndex,
+    nextStep,
+    systemDecisionReady,
+    allComplete: firstIncompleteIndex < 0,
+  };
+}
+
 const createDefaultProject = (): ProjectKernelState => ({
   schema: "ARKEM-PROJECT/1.0",
   id: "ARK-26-0001",
@@ -120,6 +148,13 @@ function numeric(value: unknown, fallback = 0) {
 
 function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function normalizeProjectName(value: string) {
+  const cleaned = value
+    .replace(/\s+Proje\s+türü\s*:\s*.+$/iu, "")
+    .trim();
+  return cleaned || "Yeni ARKEMX Projesi";
 }
 
 function projectUse(value: string) {
@@ -511,6 +546,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
   return { modules, applied, synchronizedAt };
 }
 
+
 const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(null);
 
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
@@ -533,6 +569,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
           const parsed = stored.value;
           if (parsed?.schema === "ARKEM-PROJECT/1.0" && parsed.id && parsed.modules && typeof parsed.modules === "object") setProject((current) => ({
             ...parsed,
+            name: normalizeProjectName(parsed.name || current.name),
             experience: { ...current.experience, ...record(parsed.experience) },
             events: [...(Array.isArray(parsed.events) ? parsed.events : []), ...current.events].slice(-80),
             modules: ensureProjectModuleStamps({ ...current.modules, ...parsed.modules }, {
@@ -542,10 +579,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
             }),
           }));
           setPersistence({
-            state: stored.source === "backup" ? "recovered" : "device-saved",
+            state: ["backup", "recovery", "reconciled"].includes(stored.source) ? "recovered" : "device-saved",
             integrity: stored.integrity,
             lastSavedAt: stored.savedAt,
-            backupAvailable: stored.source === "backup" || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
+            backupAvailable: ["backup", "recovery", "reconciled"].includes(stored.source) || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
             cloud: "not-configured",
           });
         } else {
@@ -571,8 +608,12 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const timer = window.setTimeout(() => {
       try {
         const result = saveProjectToStorage(window.localStorage, project);
+        if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
+          skipNextPersistenceRef.current = true;
+          setProject(result.payload);
+        }
         setPersistence({
-          state: "device-saved",
+          state: result.reconciled ? "recovered" : "device-saved",
           integrity: "verified",
           lastSavedAt: result.savedAt,
           backupAvailable: result.backupAvailable,
@@ -584,6 +625,28 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const mergeExternalProject = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== PROJECT_STORAGE_KEY || !event.newValue) return;
+      const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
+      const storedProject = stored.value;
+      if (!storedProject) return;
+      setProject((current) => {
+        // A storage event means the disk primary was written by another tab.
+        // Treat that primary as authoritative for overlapping modules and keep
+        // only modules that exist exclusively in the current in-memory tab.
+        const merged = supplementMissingProjectModules(storedProject, current);
+        return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
+      });
+      if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
+        setPersistence((current) => ({ ...current, state: "recovered", lastSavedAt: stored.savedAt || current.lastSavedAt }));
+      }
+    };
+    window.addEventListener("storage", mergeExternalProject);
+    return () => window.removeEventListener("storage", mergeExternalProject);
+  }, [hydrated]);
 
   useEffect(() => {
     document.documentElement.dataset.arkemMode = project.experience.mode;
@@ -707,6 +770,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       ...defaults,
       ...candidate,
       schema: "ARKEM-PROJECT/1.0",
+      name: normalizeProjectName(candidate.name || defaults.name),
       experience: { ...defaults.experience, ...record(candidate.experience) },
       modules: ensureProjectModuleStamps(candidate.modules, {
         projectId: candidate.id,
@@ -837,7 +901,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     setProject({
       ...createDefaultProject(),
       id: projectCode,
-      name: intake.name.trim() || "Yeni ARKEMX Projesi",
+      name: normalizeProjectName(intake.name),
       phase: guidedJourney.readiness >= 45 ? "Ön fizibilite" : "Fikir",
       revision: "P01",
       updatedAt: timestamp,

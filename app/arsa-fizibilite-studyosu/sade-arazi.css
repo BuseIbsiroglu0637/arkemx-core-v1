@@ -274,3 +274,1346 @@
     width: 100%;
   }
 }
+
+
+/* TKGM boundary provenance: the fetched geometry is evidence and stays read-only. */
+.arx-geo-simple .geo-official-boundary-lock {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid #b7d8cb;
+  border-radius: 7px;
+  background: #f4faf7;
+}
+.arx-geo-simple .geo-official-boundary-lock > b {
+  display: block;
+  margin-bottom: 5px;
+  color: #245e4f;
+  font-size: 12px;
+}
+.arx-geo-simple .geo-official-boundary-lock > p {
+  margin: 0 0 11px;
+  color: #5f7475;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.arx-geo-simple .geo-official-boundary-lock > button,
+.arx-geo-simple .geo-restore-official {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #244756;
+  border-radius: 6px;
+  background: #244756;
+  color: #fff;
+  font: 700 11px/1.3 var(--font-inter),Arial,sans-serif;
+  cursor: pointer;
+}
+.arx-geo-simple .geo-restore-official {
+  margin-top: 10px;
+  background: #fff;
+  color: #244756;
+}
+
+
+.arx-geo-simple .geo-terrain-massing-control {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:0;
+  padding:13px 14px;
+  border-inline:1px solid #dce5e8;
+  border-top:1px solid #dce5e8;
+  background:#f8faf9;
+}
+.arx-geo-simple .geo-terrain-massing-control > div {
+  display:grid;
+  gap:3px;
+}
+.arx-geo-simple .geo-terrain-massing-control b {
+  color:#244756;
+  font-size:12px;
+}
+.arx-geo-simple .geo-terrain-massing-control small {
+  max-width:620px;
+  color:#6d7f86;
+  font-size:10px;
+  line-height:1.45;
+}
+.arx-geo-simple .geo-terrain-massing-control button {
+  flex:0 0 auto;
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid #244756;
+  border-radius:6px;
+  background:#fff;
+  color:#244756;
+  font:700 10px/1.2 var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-geo-simple .geo-terrain-massing-control button[aria-pressed="true"] {
+  background:#244756;
+  color:#fff;
+}
+
+
+.arx-geo-simple .geo-inline-warning {
+  margin: 10px 0 14px;
+  padding: 11px 12px;
+  border-left: 3px solid #c76938;
+  background: #fbf1eb;
+  color: #7b4a32;
+  font-size: 9px;
+  line-height: 1.55;
+}
+.arx-geo-simple .geo-inline-warning b {
+  color: #9c4625;
+}
+
+
+.arx-geo-simple .geo-map-placement-warning {
+  margin: 0;
+  padding: 11px 13px;
+  border-inline: 1px solid #dce5e8;
+  border-bottom: 1px solid #dce5e8;
+  border-left: 3px solid #c76938;
+  background: #fbf1eb;
+  color: #744a38;
+  font-size: 9px;
+  line-height: 1.55;
+}
+.arx-geo-simple .geo-map-placement-warning b {
+  color: #9c4625;
+}
+
+
+.arx-geo-simple .geo-parking-result {
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #d9e3e6;
+  background: #f7fafb;
+  display: grid;
+  gap: 4px;
+}
+.arx-geo-simple .geo-parking-result span {
+  color: #526f7b;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.arx-geo-simple .geo-parking-result b {
+  color: #08283a;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.arx-geo-simple .geo-parking-result small {
+  color: #66808a;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+
+/* ARKEMX geo studio dark theme */
+html[data-theme="dark"] .arx-geo-page {
+  background: #071824;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-back a,
+html[data-theme="dark"] .arx-geo-intro p {
+  color: #9db0b8;
+}
+html[data-theme="dark"] .arx-geo-intro > span {
+  color: #c9845c;
+}
+html[data-theme="dark"] .arx-geo-simple {
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-quick-nav {
+  border-color: #294552;
+  background: #0a2130;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button,
+html[data-theme="dark"] .arx-geo-extra summary {
+  border-color: #31505d;
+  background: #0c2a3a;
+  color: #aec0c7;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button.active,
+html[data-theme="dark"] .arx-geo-quick-nav button[aria-current="step"] {
+  border-color: #c27244;
+  background: #b96636;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-extra > div {
+  border-color: #31505d;
+  background: #0a2231;
+  box-shadow: 0 14px 30px rgba(0,0,0,.3);
+}
+html[data-theme="dark"] .arx-geo-extra > div button {
+  background: #0a2231;
+  color: #b6c6cc;
+}
+html[data-theme="dark"] .arx-geo-extra > div button:hover {
+  background: #123444;
+}
+html[data-theme="dark"] .arx-geo-extra > div button.active,
+html[data-theme="dark"] .arx-geo-extra > div button[aria-pressed="true"] {
+  background: #153b3b;
+  color: #b9ddd0;
+}
+html[data-theme="dark"] .arx-geo-source-note {
+  border-color: #453a2b;
+  background: #2a241b;
+  color: #d9bd92;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center,
+html[data-theme="dark"] .arx-geo-simple .geo-workspace,
+html[data-theme="dark"] .arx-geo-simple .geo-controls,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section {
+  border-color: #294552;
+  background: #091f2d;
+  color: #e6eef1;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary > article {
+  border-color: #31505d;
+  background: #0c2a3a;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > small {
+  color: #91a7b0;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3 {
+  color: #f0f5f6;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section label:not(.geo-file-drop) {
+  color: #a6b8bf;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:not([type="range"]),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea {
+  border-color: #3b5865;
+  background: #0d2b3c;
+  color: #edf4f6;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage {
+  background: #071a27;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar {
+  border-color: #31505d;
+  background: #0a2231;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button {
+  border-color: #31505d;
+  background: #0a2231;
+  color: #9eb1b9;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button[aria-pressed="true"],
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button.active {
+  background: #0d3347;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-frame {
+  border-color: #31505d;
+}
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results {
+  border-color: #294552;
+  background: #091f2d;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot {
+  border-color: #294552;
+  background: #071b29;
+  color: #8ea3ac;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result {
+  border-color: #31505d;
+  background: #0c2a3a;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result span,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result small {
+  color: #8fa6af;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result b {
+  color: #f1f6f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control {
+  border-color: #31505d;
+  background: #0a2231;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control b {
+  color: #e7eff2;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control small {
+  color: #92a7af;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button {
+  border-color: #54717d;
+  background: #0d2b3c;
+  color: #dce7ea;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button[aria-pressed="true"] {
+  border-color: #c27244;
+  background: #b96636;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning {
+  border-color: #74432d;
+  border-left-color: #d07947;
+  background: #2c201b;
+  color: #e5bca5;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning b,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning b {
+  color: #f0a272;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock {
+  border-color: #356657;
+  background: #102b29;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > b {
+  color: #9dd2be;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > p {
+  color: #94aaa7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-restore-official {
+  background: #0d2b3c;
+  color: #dce7ea;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-offline-label {
+  border-color: #31505d;
+  background: rgba(7,31,44,.94);
+  color: #aac0c8;
+}
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-query {
+  border-color: #665439;
+  background: #29241b;
+  color: #d6bd96;
+}
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert > button {
+  border-color: #9b7348;
+  background: #33281e;
+  color: #e0c49d;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle {
+  border-color: #3b5965;
+  background: #0d2b3c;
+  color: #afc0c7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle[aria-pressed="true"] {
+  border-color: #548e7a;
+  background: #143d35;
+  color: #b7dfd1;
+}
+
+
+/* ARKEMX geo true-black contrast pass */
+html[data-theme="dark"] .arx-geo-page,
+html[data-theme="dark"] .arx-geo-simple,
+html[data-theme="dark"] .arx-geo-simple .geo-workspace,
+html[data-theme="dark"] .arx-geo-simple .geo-controls,
+html[data-theme="dark"] .arx-geo-simple .geo-stage {
+  background: #000000 !important;
+  color: #f4f7f8 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section,
+html[data-theme="dark"] .arx-geo-simple .geo-results,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar,
+html[data-theme="dark"] .arx-geo-quick-nav,
+html[data-theme="dark"] .arx-geo-extra > div,
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+  color: #f4f7f8 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header *,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > h3 *,
+html[data-theme="dark"] .arx-geo-simple .geo-results h3,
+html[data-theme="dark"] .arx-geo-simple .geo-results h4 {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary > article {
+  background: #0a0a0a !important;
+  border-color: #303030 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > b {
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > small,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section label:not(.geo-file-drop),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section small,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result span,
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result small {
+  color: #c4ced2 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-control-section > span,
+html[data-theme="dark"] .arx-geo-intro > span,
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-summary article > span,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section b {
+  color: #e28a57;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:not([type="range"]),
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea {
+  background: #0b0b0b !important;
+  border-color: #3a3a3a !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input::placeholder,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea::placeholder {
+  color: #8f9a9f !important;
+  opacity: 1;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-control-section input:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section select:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section textarea:disabled {
+  color: #8c969a !important;
+  background: #111111 !important;
+  opacity: 1;
+}
+
+html[data-theme="dark"] .arx-geo-quick-nav button,
+html[data-theme="dark"] .arx-geo-extra summary,
+html[data-theme="dark"] .arx-geo-extra > div button,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button {
+  background: #090909 !important;
+  border-color: #303030 !important;
+  color: #dce3e6 !important;
+}
+html[data-theme="dark"] .arx-geo-quick-nav button.active,
+html[data-theme="dark"] .arx-geo-quick-nav button[aria-current="step"],
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button.active,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button[aria-pressed="true"] {
+  background: #12344a !important;
+  border-color: #31556a !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar .arx-geo-concept-toggle[aria-pressed="true"] {
+  background: #14372f !important;
+  border-color: #4d7b6b !important;
+  color: #d9f0e7 !important;
+}
+
+html[data-theme="dark"] .arx-geo-source-note {
+  background: #17130d !important;
+  border-color: #4b3a24 !important;
+  color: #f0c883 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning {
+  background: #1b0f0a !important;
+  border-color: #6f3a25 !important;
+  border-left-color: #df7a42 !important;
+  color: #ffd7c3 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-placement-warning b,
+html[data-theme="dark"] .arx-geo-simple .geo-inline-warning b {
+  color: #ff9b64 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock {
+  background: #07110e !important;
+  border-color: #2f5b4d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > b {
+  color: #bce7d6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > p {
+  color: #b6c7c0 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-restore-official,
+html[data-theme="dark"] .arx-geo-simple .geo-official-boundary-lock > button {
+  background: #0a0a0a !important;
+  border-color: #4a4a4a !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-alert,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-offline-query {
+  background: #17130d !important;
+  border-color: #5c4528 !important;
+  color: #ead0a2 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-parking-result b {
+  color: #ffffff !important;
+}
+
+/* Keep satellite/terrain imagery natural; only UI chrome becomes true black. */
+html[data-theme="dark"] .arx-geo-simple .geo-map-frame,
+html[data-theme="dark"] .arx-geo-simple .geo-leaflet-map {
+  border-color: #2b2b2b !important;
+}
+
+/* Remove the remaining white breadcrumb/status slab visible in dark mode. */
+html[data-theme="dark"] .arx-geo-simple .geo-controls [style*="background: #fff"],
+html[data-theme="dark"] .arx-geo-simple .geo-controls [style*="background:#fff"],
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center [style*="background: #fff"],
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center [style*="background:#fff"] {
+  background: #080808 !important;
+  color: #f0f3f4 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-controls hr,
+html[data-theme="dark"] .arx-geo-simple .geo-control-section hr {
+  border-color: #2a2a2a !important;
+}
+
+
+.geo-zoning-source-status {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #c8d5da;
+  background: #f7fafb;
+}
+.geo-zoning-source-status > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.geo-zoning-source-status > b {
+  font-size: 14px;
+}
+.geo-zoning-source-status > small {
+  line-height: 1.45;
+}
+.geo-zoning-source-status[data-ready="ready"] {
+  border-color: #86b7a4;
+  background: #f1f8f5;
+}
+.geo-zoning-source-status[data-ready="missing"] {
+  border-color: #d7b28e;
+  background: #fff8f1;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status {
+  border-color: #303030;
+  background: #070707;
+  color: #f3f6f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="ready"] {
+  border-color: #31594d;
+  background: #07120f;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="missing"] {
+  border-color: #6a482f;
+  background: #160d07;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > small {
+  color: #bdc8cc;
+}
+
+
+/* 05 / Yapı Yerleşimi · tek karar özeti */
+.arx-geo-simple .geo-placement-decision {
+  margin: 14px 0 16px;
+  border: 1px solid #cfdadd;
+  background: #f8fbfb;
+}
+.arx-geo-simple .geo-placement-decision > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 14px;
+  border-bottom: 1px solid #d9e2e4;
+}
+.arx-geo-simple .geo-placement-decision > header div {
+  display: grid;
+  gap: 3px;
+}
+.arx-geo-simple .geo-placement-decision > header span,
+.arx-geo-simple .geo-placement-decision > footer > b {
+  color: #b85d32;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.arx-geo-simple .geo-placement-decision > header b {
+  color: #0c2c3c;
+  font-size: 12px;
+}
+.arx-geo-simple .geo-placement-decision > header em {
+  align-self: start;
+  padding: 5px 7px;
+  border: 1px solid #cfdadd;
+  color: #547078;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+}
+.arx-geo-simple .geo-placement-decision[data-state="pass"] > header em {
+  border-color: #9ccbb8;
+  color: #247455;
+}
+.arx-geo-simple .geo-placement-decision[data-state="review"] > header em {
+  border-color: #e1b395;
+  color: #a4522a;
+}
+.arx-geo-simple .geo-placement-decision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.arx-geo-simple .geo-placement-decision-grid p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border-right: 1px solid #e1e8ea;
+  border-bottom: 1px solid #e1e8ea;
+  font-size: 10px;
+}
+.arx-geo-simple .geo-placement-decision-grid p:nth-child(2n) {
+  border-right: 0;
+}
+.arx-geo-simple .geo-placement-decision-grid span,
+.arx-geo-simple .geo-placement-source span {
+  color: #667c84;
+}
+.arx-geo-simple .geo-placement-decision-grid b {
+  color: #0d3542;
+}
+.arx-geo-simple .geo-placement-decision-grid b.pass {
+  color: #237453;
+}
+.arx-geo-simple .geo-placement-decision-grid b.fail {
+  color: #b3562e;
+}
+.arx-geo-simple .geo-placement-source {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #d9e2e4;
+  font-size: 10px;
+}
+.arx-geo-simple .geo-placement-source b {
+  text-align: right;
+  color: #a4522a;
+}
+.arx-geo-simple .geo-placement-decision > footer {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px 13px;
+}
+.arx-geo-simple .geo-placement-decision > footer span {
+  color: #153944;
+  font-size: 10px;
+  font-weight: 700;
+}
+.arx-geo-simple .geo-placement-decision > footer small {
+  color: #6d7e83;
+  font-size: 9px;
+  line-height: 1.45;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision {
+  border-color: #32464d;
+  background: #071116;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > header,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid p,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-source {
+  border-color: #263b42;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > header b,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision > footer span {
+  color: #eef7f7;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b.pass {
+  color: #79d2ad;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-placement-decision-grid b.fail,
+html[data-theme="dark"] .arx-geo-simple .geo-placement-source b {
+  color: #f0a272;
+}
+@media (max-width: 720px) {
+  .arx-geo-simple .geo-placement-decision-grid {
+    grid-template-columns: 1fr;
+  }
+  .arx-geo-simple .geo-placement-decision-grid p {
+    border-right: 0;
+  }
+}
+
+
+/* Sade Arazi/Parsel UI v2 · odaklı bilgi hiyerarşisi */
+.arx-geo-simple .geo-studio-top {
+  display: none !important;
+}
+.arx-geo-simple .v109-parcel-center {
+  padding: 10px 18px 12px !important;
+}
+.arx-geo-simple .v109-parcel-center > header {
+  padding: 0 0 8px !important;
+}
+.arx-geo-simple .v109-parcel-center > header > div > span {
+  display: none;
+}
+.arx-geo-simple .v109-parcel-center > header h3 {
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 700;
+}
+.arx-geo-simple .v109-parcel-summary {
+  gap: 6px !important;
+}
+.arx-geo-simple .v109-parcel-summary > article {
+  padding: 9px 11px !important;
+  border-radius: 5px !important;
+}
+.arx-geo-simple .v109-parcel-summary article > span {
+  font-size: 8px !important;
+}
+.arx-geo-simple .v109-parcel-summary article > b {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+.arx-geo-simple .v109-parcel-summary article > small {
+  font-size: 9px !important;
+  line-height: 1.35 !important;
+}
+.arx-geo-simple .arx-geo-source-note {
+  padding: 8px 18px !important;
+  font-size: 10px !important;
+}
+.arx-geo-simple .geo-workspace {
+  border-top: 1px solid #e6ecee;
+}
+.arx-geo-simple .geo-controls {
+  position: relative;
+}
+.arx-geo-simple .geo-control-section {
+  padding: 18px 16px !important;
+}
+.arx-geo-simple .geo-control-section > h3 {
+  margin: 8px 0 14px !important;
+  font-size: 16px !important;
+}
+.arx-geo-simple .geo-stage {
+  padding-top: 12px !important;
+}
+.arx-geo-simple .geo-stage-toolbar {
+  margin-bottom: 8px;
+}
+.arx-geo-simple[data-arx-sources="open"] .v109-source-network,
+.arx-geo-simple[data-arx-sources="open"] .geo-integration-map {
+  margin-top: 8px;
+}
+.arx-geo-simple .geo-studio-foot {
+  padding: 10px 18px !important;
+}
+.arx-geo-simple .geo-studio-foot > p {
+  margin-top: 4px !important;
+  font-size: 9px !important;
+  line-height: 1.45 !important;
+}
+
+
+/* Sade Arazi/Parsel UI v3 · masaüstünde tek çalışma yüzeyi */
+@media (min-width: 901px) {
+  .arx-geo-simple .geo-workspace {
+    align-items: start;
+    min-height: 0 !important;
+  }
+
+  .arx-geo-simple .geo-controls {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .arx-geo-simple .geo-stage {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    min-height: 0 !important;
+  }
+
+  .arx-geo-simple .geo-map-frame {
+    height: min(72vh, 680px) !important;
+    min-height: 480px !important;
+  }
+
+  .arx-geo-simple .geo-data-view {
+    max-height: min(72vh, 680px);
+    overflow: auto;
+  }
+
+  .arx-geo-simple .geo-connectors {
+    margin-bottom: 0 !important;
+  }
+}
+
+.arx-geo-simple .geo-controls::-webkit-scrollbar {
+  width: 8px;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-thumb {
+  background: #c7d3d7;
+  border-radius: 999px;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls::-webkit-scrollbar-thumb {
+  background: #3b4b50;
+}
+
+
+/* Sade Arazi/Parsel UI v4 · ikincil teknik paneller ana akışı büyütmesin */
+.arx-geo-simple .geo-integration-map {
+  display: none !important;
+}
+
+.arx-geo-simple[data-arx-sources="open"] .v109-source-network {
+  display: block !important;
+  margin: 8px 0 0 !important;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #dbe4e7;
+}
+
+.arx-geo-simple[data-arx-results="open"] .geo-results {
+  display: block !important;
+  grid-column: 1 / -1 !important;
+  max-height: 46vh;
+  overflow: auto;
+  padding: 14px 18px !important;
+  border-top: 1px solid #e2eaed;
+  background: #fff;
+}
+
+.arx-geo-simple .arx-geo-extra > div {
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  z-index: 40;
+}
+
+.arx-geo-simple .v109-source-network::-webkit-scrollbar,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar {
+  width: 8px;
+}
+
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #c6d2d6;
+  border-radius: 999px;
+}
+
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results,
+html[data-theme="dark"] .arx-geo-simple[data-arx-sources="open"] .v109-source-network {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #3b4b50;
+}
+
+
+/* Sade Arazi/Parsel UI v5 · kompakt proje barı + 04/05 bölümleme */
+.arx-geo-simple > .project-kernel-compact {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 10px 18px;
+  border: 0;
+  border-bottom: 1px solid #e1e8ea;
+  background: #f8fafb;
+}
+.arx-geo-simple .project-kernel-compact-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.arx-geo-simple .project-kernel-compact-code {
+  flex: 0 0 auto;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #b45d33;
+}
+.arx-geo-simple .project-kernel-compact-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #123544;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+}
+.arx-geo-simple .project-kernel-compact-meta {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: #71858d;
+  font-size: 9px;
+}
+.arx-geo-simple .project-kernel-compact-meta span {
+  padding-left: 7px;
+  border-left: 1px solid #d8e1e4;
+}
+.arx-geo-simple .project-kernel-compact-actions {
+  display: flex;
+  align-items: center;
+}
+.arx-geo-simple .project-kernel-compact-actions > * {
+  display: none !important;
+}
+.arx-geo-simple .project-kernel-compact-actions > a[href="/dijital-proje-merkezi"] {
+  display: inline-flex !important;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #ccd9dd;
+  border-radius: 4px;
+  color: #284b57;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.arx-geo-simple .geo-zoning-core {
+  display: grid;
+  gap: 10px;
+}
+.arx-geo-simple .geo-collapsible-block {
+  margin-top: 10px;
+  border: 1px solid #d9e3e6;
+  background: #fbfcfc;
+}
+.arx-geo-simple .geo-collapsible-block > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.arx-geo-simple .geo-collapsible-block > summary::-webkit-details-marker {
+  display: none;
+}
+.arx-geo-simple .geo-collapsible-block > summary::after {
+  content: "＋";
+  color: #b45d33;
+  font-weight: 800;
+}
+.arx-geo-simple .geo-collapsible-block[open] > summary::after {
+  content: "−";
+}
+.arx-geo-simple .geo-collapsible-block > summary span {
+  color: #153845;
+  font-size: 10px;
+  font-weight: 800;
+}
+.arx-geo-simple .geo-collapsible-block > summary small {
+  margin-left: auto;
+  color: #72868d;
+  font-size: 8px;
+  text-align: right;
+}
+.arx-geo-simple .geo-collapsible-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+  border-top: 1px solid #e3eaec;
+}
+
+.arx-geo-simple .geo-design-tabs {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 4px;
+  border: 1px solid #d6e1e4;
+  background: #f4f8f8;
+}
+.arx-geo-simple .geo-design-tabs button {
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: #60767e;
+  font-size: 9px;
+  font-weight: 700;
+}
+.arx-geo-simple .geo-design-tabs button.active {
+  background: #0d3244;
+  color: #fff;
+}
+.arx-geo-simple .geo-design-control .geo-placement-decision {
+  margin-bottom: 0;
+}
+
+@media (min-width: 901px) {
+  .arx-geo-simple .geo-controls {
+    max-height: min(72vh, 720px);
+  }
+}
+
+@media (max-width: 760px) {
+  .arx-geo-simple > .project-kernel-compact {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .arx-geo-simple .project-kernel-compact-meta {
+    flex-wrap: wrap;
+  }
+  .arx-geo-simple .project-kernel-compact-actions {
+    justify-content: flex-start;
+  }
+}
+
+html[data-theme="dark"] .arx-geo-simple > .project-kernel-compact,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block,
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs {
+  background: #080808 !important;
+  border-color: #2b2b2b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-name,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary span {
+  color: #f4f7f8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-meta,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary small {
+  color: #9ba9ae !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-actions > a[href="/dijital-proje-merkezi"] {
+  border-color: #3b3b3b;
+  color: #e9f0f2;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-body {
+  border-color: #2b2b2b;
+}
+
+
+/* Sade Arazi/Parsel UI v6 · teknik sınırlar kompakt */
+.arx-geo-simple .geo-studio-foot-collapsible {
+  margin: 0;
+  padding: 0 !important;
+  border-top: 1px solid #e4ebed;
+  background: #f8fafb;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary b {
+  color: #1a3d49;
+  font-size: 9px;
+  letter-spacing: .02em;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > summary span {
+  color: #7a8a90;
+  font-size: 8px;
+}
+.arx-geo-simple .geo-studio-foot-collapsible[open] > summary span {
+  font-size: 0;
+}
+.arx-geo-simple .geo-studio-foot-collapsible[open] > summary span::after {
+  content: "Ayrıntıları gizle";
+  font-size: 8px;
+}
+.arx-geo-simple .geo-studio-foot-collapsible > p {
+  margin: 0 !important;
+  padding: 0 18px 12px;
+  font-size: 9px !important;
+  line-height: 1.5 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible {
+  background: #060606 !important;
+  border-color: #2a2a2a !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary b {
+  color: #f1f5f6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary span,
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > p {
+  color: #9eaaae !important;
+}
+
+
+/* Sade Arazi/Parsel UI v7 · mikro UX son rötuş */
+@media (min-width: 901px) {
+  .arx-geo-simple .geo-workspace {
+    grid-template-columns: 360px minmax(0, 1fr) !important;
+  }
+
+  /* Sol panel genişlerken harita çalışma yüzeyini mümkün olduğunca koru. */
+  .arx-geo-simple .geo-stage {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
+/* 05 / Yapı Yerleşimi sekmelerini daha görünür hale getir. */
+.arx-geo-simple .geo-design-tabs {
+  gap: 5px;
+  padding: 5px;
+  border-color: #cbd9dd;
+  border-radius: 6px;
+  background: #f0f5f5;
+}
+.arx-geo-simple .geo-design-tabs button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.arx-geo-simple .geo-design-tabs button:hover {
+  border-color: #c6d5d9;
+  background: #fff;
+  color: #244b58;
+}
+.arx-geo-simple .geo-design-tabs button.active {
+  border-color: #0d3244;
+  background: #0d3244;
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(13 50 68 / 18%);
+}
+
+/* 04 / İmar ikincil bölümleri kaybolmasın; ana formu uzatmadan fark edilir kalsın. */
+.arx-geo-simple .geo-collapsible-block {
+  border-left: 3px solid #c56a3a;
+  border-radius: 4px;
+  background: #f9fbfb;
+}
+.arx-geo-simple .geo-collapsible-block > summary {
+  min-height: 46px;
+  padding: 11px 12px 11px 10px;
+  background: #f4f8f8;
+}
+.arx-geo-simple .geo-collapsible-block > summary:hover {
+  background: #eef4f4;
+}
+.arx-geo-simple .geo-collapsible-block > summary span {
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.arx-geo-simple .geo-collapsible-block > summary small {
+  max-width: 54%;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.arx-geo-simple .geo-collapsible-block > summary::after {
+  font-size: 14px;
+}
+
+/* Yardımcı panellerin scrollbar'larını daha geri planda tut. */
+.arx-geo-simple .geo-controls {
+  scrollbar-width: thin;
+  scrollbar-color: #b9c8cd transparent;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-track,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-track,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-track,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-track {
+  background: transparent;
+}
+.arx-geo-simple .geo-controls::-webkit-scrollbar-thumb,
+.arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+.arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+.arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #b9c8cd;
+  border-radius: 999px;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block,
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary {
+  background: #080808 !important;
+  border-color: #333 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block {
+  border-left-color: #d47a49 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs button:hover {
+  border-color: #414141;
+  background: #101010;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-design-tabs button.active {
+  border-color: #315f71;
+  background: #123f52;
+  color: #fff;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls {
+  scrollbar-color: #46565b transparent;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-controls::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .v109-source-network::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple[data-arx-results="open"] .geo-results::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-extra > div::-webkit-scrollbar-thumb {
+  background: #46565b;
+}
+
+
+/* Sade Arazi/Parsel UI v8 · issue-origin zoning focus */
+.arx-geo-simple .geo-zoning-focus-target {
+  position:relative;
+  margin:-5px;
+  padding:5px;
+  border:1px solid #d98555;
+  border-radius:5px;
+  background:#fff8f3;
+  box-shadow:0 0 0 2px rgb(201 105 56 / 8%);
+}
+.arx-geo-simple .geo-zoning-focus-target::before {
+  content:"İNCELENEN GİRDİ";
+  display:block;
+  margin-bottom:5px;
+  color:#b45d33;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.07em;
+}
+.arx-geo-simple .geo-zoning-focus-note {
+  display:grid;
+  gap:5px;
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid #e2c6b6;
+  border-left:3px solid #c86f3e;
+  border-radius:4px;
+  background:#fff9f5;
+}
+.arx-geo-simple .geo-zoning-focus-note > span {
+  color:#b45d33;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.075em;
+}
+.arx-geo-simple .geo-zoning-focus-note > b {
+  color:#3e4d53;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-geo-simple .geo-zoning-focus-note > small {
+  color:#7b6c65;
+  font-size:8px;
+  line-height:1.45;
+}
+.arx-geo-simple .geo-zoning-source-focus {
+  border-color:#d9a786 !important;
+  box-shadow:inset 3px 0 0 #c86f3e;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-target,
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note {
+  background:#120d0a !important;
+  border-color:#6e4430 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note > b {
+  color:#e5eaec !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-focus-note > small {
+  color:#b0a39d !important;
+}
+
+
+/* 04 / İmar · uzman inceleme kaydı */
+.arx-geo-simple .geo-zoning-source-status[data-reviewed="true"] {
+  border-color:#79aa91;
+  background:#f2f8f4;
+  box-shadow:inset 3px 0 0 #4f8064;
+}
+.arx-geo-simple .geo-expert-review-block {
+  border-left-color:#4f8064;
+}
+.arx-geo-simple .geo-expert-review-warning {
+  margin:0;
+  padding:10px 11px;
+  border-left:3px solid #c56a3a;
+  background:#fff8f3;
+  color:#725e54;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-geo-simple .geo-expert-review-warning b {
+  color:#9f5433;
+}
+.arx-geo-simple .geo-expert-review-result {
+  display:grid;
+  gap:4px;
+  padding:11px 12px;
+  border:1px solid #d7e1e4;
+  background:#f8fafb;
+}
+.arx-geo-simple .geo-expert-review-result b {
+  color:#526971;
+  font-size:10px;
+}
+.arx-geo-simple .geo-expert-review-result small {
+  color:#778990;
+  font-size:8px;
+  line-height:1.45;
+}
+.arx-geo-simple .geo-expert-review-result[data-state="reviewed-consistent"] {
+  border-color:#86b7a4;
+  background:#f1f8f5;
+}
+.arx-geo-simple .geo-expert-review-result[data-state="reviewed-consistent"] b {
+  color:#35684e;
+}
+.arx-geo-simple .geo-expert-review-result[data-state="reviewed-revision-required"] {
+  border-color:#d7b28e;
+  background:#fff8f1;
+}
+.arx-geo-simple .geo-expert-review-result[data-state="reviewed-revision-required"] b {
+  color:#a45b37;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-reviewed="true"],
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result[data-state="reviewed-consistent"] {
+  border-color:#31594d;
+  background:#07120f;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-warning,
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result[data-state="reviewed-revision-required"] {
+  border-color:#6a482f;
+  background:#160d07;
+}
