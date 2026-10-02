@@ -74,7 +74,7 @@ export function AccountSetupGate({
       <h2>Hesabınız hazır</h2>
       <p>{message}</p>
       <div className="arx-setup-existing-actions single">
-        <a href={returnTo}>Çalışma Alanına Git <span aria-hidden="true">→</span></a>
+        <a href="/dijital-proje-merkezi">Çalışma Alanına Git <span aria-hidden="true">→</span></a>
       </div>
     </div>;
   }
