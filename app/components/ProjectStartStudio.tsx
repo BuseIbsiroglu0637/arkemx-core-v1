@@ -199,6 +199,7 @@ export function ProjectStartStudio({
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [creatingNewProject, setCreatingNewProject] = useState(newProjectMode);
   const [summaryReady, setSummaryReady] = useState(false);
+  const [summaryUnavailable, setSummaryUnavailable] = useState(false);
   const [activeBriefLoaded, setActiveBriefLoaded] = useState(false);
   const [briefSaveState, setBriefSaveState] = useState<"idle" | "saved">("idle");
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
@@ -302,10 +303,24 @@ export function ProjectStartStudio({
   }, [activeBriefLoaded, creatingNewProject, hasActiveProject, hydrated, newProjectMode, project.modules, summaryMode]);
 
   useEffect(() => {
-    if (!summaryMode || !hasActiveProject || summaryReady) return;
-    const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
-    if (!storedIntake) return;
+    if (!summaryMode || !hydrated || summaryReady) return;
     const timer = window.setTimeout(() => {
+      if (!hasActiveProject) {
+        setSummaryUnavailable(true);
+        setNotice("Aktif proje çalışma kaydı bulunamadı. Hesabınızdaki projelerden birini açıp tekrar deneyin.");
+        setSummaryReady(true);
+        return;
+      }
+
+      const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
+      if (!storedIntake) {
+        setSummaryUnavailable(true);
+        setNotice("Bu projenin başlangıç briefi eski veya eksik kayıt formatında. Proje başlangıç bilgilerini açıp kaydı güncelleyin.");
+        setSummaryReady(true);
+        return;
+      }
+
+      setSummaryUnavailable(false);
       setIntake(storedIntake);
       setNumericDrafts({
         targetArea: String(storedIntake.targetArea),
@@ -317,7 +332,7 @@ export function ProjectStartStudio({
       setSummaryReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
+  }, [hasActiveProject, hydrated, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
     if (!hydrated || freshProjectMode) return;
@@ -708,11 +723,24 @@ export function ProjectStartStudio({
     downloadTextFile(`${project.id || "arkem"}-kurumsal-baslangic-pafta.pdf`, pdf, "application/pdf");
   };
 
+  if (summaryMode && summaryReady && summaryUnavailable) {
+    return <section className="start-summary-unavailable" aria-live="polite">
+      <span>PROJE / BAŞLANGIÇ ÖZETİ</span>
+      <h2>Brief özeti görüntülenemedi</h2>
+      <p>{notice}</p>
+      <div>
+        <Link className="button navy" href="/hesabim">Hesabımdaki projeleri aç</Link>
+        <Link className="button copper" href="/proje-baslat">Başlangıç bilgilerini aç</Link>
+        <Link className="button" href="/dijital-proje-merkezi">Proje Çalışma Alanına Dön</Link>
+      </div>
+    </section>;
+  }
+
   if (completed || summaryReady) {
     return <section className="start-success" aria-live="polite">
-      <header><span>ARKEMX / PROJE ÇEKİRDEĞİ HAZIR</span><b>{project.id}</b></header>
+      <header><span>{summaryMode ? "ARKEMX / PROJE BAŞLANGIÇ ÖZETİ" : "ARKEMX / PROJE ÇEKİRDEĞİ HAZIR"}</span><b>{project.id}</b></header>
       <div className="start-success-main">
-        <div><i>✓</i><p className="eyebrow">Başlangıç Tamamlandı</p><h2>{intake.name}</h2><p>{notice}</p></div>
+        <div><i>✓</i><p className="eyebrow">{summaryMode ? "Başlangıç Özeti" : "Başlangıç Tamamlandı"}</p><h2>{intake.name}</h2><p>{notice}</p></div>
         <aside><span>PROJE HAZIRLIĞI</span><strong>%{roadmap.readiness}</strong><p>{thread.metrics.activeCount} çalışma alanı başlangıç verisiyle bağlı. Sonraki teknik adım aynı proje kaydını kullanacak.</p></aside>
       </div>
       <div className="start-success-flow">{stageCounts.map((item, index) => <article key={item.stage}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.stage}</b><small>{item.count} veri alanı</small>{index < stageCounts.length - 1 && <i aria-hidden="true">→</i>}</article>)}</div>
@@ -728,14 +756,14 @@ export function ProjectStartStudio({
       </section>
       <ProjectCoreRegistry compact />
       <div className="start-success-actions"><Link className="button copper" href={roadmap.nextAction.route}>{roadmap.nextAction.title} <span>→</span></Link><Link className="button navy" href="/dijital-proje-merkezi">Proje Çalışma Alanını Aç <span>↗</span></Link></div>
-      <div className="start-account-save">
+      {!summaryMode && <div className="start-account-save">
         <div><span>CİHAZLAR ARASI DEVAMLILIK</span><b>Projeyi Arkem hesabınıza bağlayın.</b><p>Bu cihazdaki bütünlük denetimli kayıt korunur. Hesaba kaydettiğinizde proje müşteri çalışma alanınızda da görünür.</p></div>
         <button type="button" onClick={saveToAccount} disabled={cloudState === "saving" || cloudState === "saved"}>
           <span key={cloudState}>{cloudState === "saving" ? "Kaydediliyor…" : cloudState === "saved" ? "Hesaba kaydedildi ✓" : "Projeyi hesabıma kaydet"}</span>
         </button>
         {cloudState === "login" && <p><Link href="/giris">Önce müşteri hesabınıza giriş yapın →</Link></p>}
         {cloudState === "error" && <p>Hesap kaydı tamamlanamadı; proje bu cihazda güvende. Daha sonra müşteri alanından yeniden deneyebilirsiniz.</p>}
-      </div>
+      </div>}
       <div className="start-export-panel"><div><span>İLK TEKNİK PAKET</span><b>Kurumsal pafta ve izlenebilir başlangıç verisi</b><p>PDF ve CAD paftaları aynı proje kodu, revizyon ve teknik sınır bilgisiyle oluşturulur. Resmî parsel ve tasarım geometrisi doğrulandıkça paket güncellenir.</p></div><button onClick={exportPdf}>Kurumsal PDF ↓</button><button onClick={exportDxf}>CAD / DXF ↓</button><button onClick={exportBrief}>Proje JSON ↓</button><button onClick={exportCsv}>Düzenli CSV ↓</button></div>
     </section>;
   }
