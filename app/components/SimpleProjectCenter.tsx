@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight, Check, Download, FileUp, FolderOpen,
   MoreHorizontal, ShieldAlert, Trash2, X,
@@ -23,6 +23,7 @@ const journeyDescriptions: Record<(typeof PROJECT_JOURNEY)[number]["short"], str
 export function SimpleProjectCenter() {
   const { project, thread, importProject, clearLocalProject, persistence } = useProjectKernel();
   const fileRef = useRef<HTMLInputElement>(null);
+  const operationsRef = useRef<HTMLDivElement>(null);
   const [notice, setNotice] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -40,6 +41,30 @@ export function SimpleProjectCenter() {
     : persistence.state === "unavailable"
       ? "Yerel kayıt kullanılamıyor"
       : "Bu cihazda kayıtlı";
+  useEffect(() => {
+    if (!operationsOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!operationsRef.current?.contains(event.target as Node)) {
+        setOperationsOpen(false);
+      }
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOperationsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [operationsOpen]);
+
   const projectType = (() => {
     const decision = project.modules["decision-assistant"];
     if (!decision || typeof decision !== "object" || Array.isArray(decision)) return "";
@@ -142,12 +167,13 @@ export function SimpleProjectCenter() {
           <FileUp size={18} aria-hidden="true" /> Proje Yedeği Yükle
         </button> : null}
 
-        {hasProject ? <div className="arx-center-more-wrap">
+        {hasProject ? <div className="arx-center-more-wrap" ref={operationsRef}>
           <button type="button" className="arx-center-more-trigger" aria-expanded={operationsOpen}
+            aria-haspopup="menu" aria-controls="arx-project-operations-menu"
             onClick={() => { setOperationsOpen((value) => !value); setDeleteOpen(false); }}>
             <MoreHorizontal size={19} aria-hidden="true" /> Proje işlemleri
           </button>
-          {operationsOpen ? <div className="arx-center-more-menu">
+          {operationsOpen ? <div id="arx-project-operations-menu" className="arx-center-more-menu" role="menu">
             <button type="button" onClick={() => { setOperationsOpen(false); fileRef.current?.click(); }}><FileUp size={16} aria-hidden="true" /> Başka yedek yükle</button>
             <button type="button" onClick={exportProject}><Download size={16} aria-hidden="true" /> Proje yedeğini indir</button>
             <button type="button" className="danger" onClick={() => { setOperationsOpen(false); setDeleteOpen(true); }}><Trash2 size={16} aria-hidden="true" /> Aktif projeyi sil</button>
