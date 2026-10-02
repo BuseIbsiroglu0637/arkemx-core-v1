@@ -19,7 +19,9 @@ type ProjectStartPageProps = {
 export default async function ProjectStartPage({ searchParams }: ProjectStartPageProps) {
   const params = await searchParams;
   const rawView = Array.isArray(params?.view) ? params?.view[0] : params?.view;
+  const rawNew = Array.isArray(params?.new) ? params?.new[0] : params?.new;
   const summaryMode = rawView === "summary";
+  const newProjectMode = rawNew === "1";
 
   return (
     <main className="arx-simple-home arx-start-page">
@@ -33,7 +35,7 @@ export default async function ProjectStartPage({ searchParams }: ProjectStartPag
           <h1>{summaryMode ? "Proje başlangıç özeti" : "Yeni proje oluştur"}</h1>
           <p>{summaryMode ? "Başlangıç kararlarını, yol haritasını ve doğrulama bekleyen verileri tekrar inceleyin." : "Proje bilgilerinizi adım adım girin. Çalışmanız bu cihazda taslak olarak saklanır."}</p>
         </div>
-        <ProjectStartStudio summaryMode={summaryMode} />
+        <ProjectStartStudio summaryMode={summaryMode} newProjectMode={newProjectMode} />
       </div>
     </main>
   );
