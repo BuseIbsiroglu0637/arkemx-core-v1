@@ -558,6 +558,11 @@ body:has(.arx-account-page) .v4-floating-contact {
   color:#fff;
 }
 
+.arx-account-project-actions button:disabled {
+  opacity:.55;
+  cursor:wait;
+}
+
 .arx-account-list .arx-account-local-project > button {
   border-color:#bd7244;
   background:#bd7244;
