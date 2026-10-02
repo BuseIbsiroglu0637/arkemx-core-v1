@@ -172,12 +172,14 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   if (clearHeight < 2.4) addClash(clashes, input.projectId, {
     type: "hard", severity: "critical", title: "Kiriş ve MEP zonu net kullanım yüksekliğini ihlal ediyor",
     disciplines: ["STR", "MEP", "ARC"], location: "Tip kat · ana servis koridoru",
-    evidence: `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net`,
+    evidence: sectionStrategy === "integrated"
+      ? `${floorHeight.toFixed(2)} m kat − max(${beamDepth.toFixed(2)} m kiriş, ${serviceZone.toFixed(2)} m MEP) − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · entegre servis bandı`
+      : `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · ayrık servis bandı`,
     requiredAction: "Kiriş güzergâhını, kanal/boru kotunu veya kat yüksekliğini ortak kesitte yeniden çözün.", assignee: "BIM Koordinatörü", sourceRefs: ["ARC:LEVELS", "STR:PRELIMINARY-BEAM", "MEP:SERVICE-ZONE"],
   });
   else if (clearHeight < 2.7) addClash(clashes, input.projectId, {
     type: "soft", severity: "review", title: "Net kullanım yüksekliği inceleme bandında",
-    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik`,
+    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik · ${sectionStrategy === "integrated" ? "entegre servis bandı" : "ayrık servis bandı"}`,
     requiredAction: "Mahal kullanım hedefi ile bakım boşluklarını doğrulayın.", assignee: "Mimar", sourceRefs: ["ARC:LEVELS", "MEP:SERVICE-ZONE"],
   });
   if (shaftRatio < 1.5) addClash(clashes, input.projectId, {
