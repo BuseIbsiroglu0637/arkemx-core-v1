@@ -90,8 +90,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
 
   const completed = PROJECT_JOURNEY.map((step) => {
     if (step.short === "Arazi") {
-      const geoNode = thread.nodes.find((node) => node.id === "geo-parcel");
-      return Boolean(geoNode?.active && geoNode.readiness >= 70);
+      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
     }
     if (step.short === "Mimari") {
       const architectureNode = thread.nodes.find((node) => node.id === "architectural-program");
