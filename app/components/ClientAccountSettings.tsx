@@ -363,10 +363,25 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
               <span className="arx-account-project-actions arx-account-draft-actions"><Link href="/proje-baslat">Taslağa Devam Et <span aria-hidden="true">→</span></Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
             </article> : null}
 
-            {visibleProjects.map((item) => <article key={item.id}>
-              <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
-              <span className="arx-account-project-actions"><button type="button" onClick={() => openAccountProject(item)}>Aç</button><button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button></span>
-            </article>)}
+            {visibleProjects.map((item) => {
+              const isCurrentProject = hasActiveProject && item.id === project.id;
+              return <article key={item.id} className={isCurrentProject ? "is-current-project" : undefined}>
+                <div>
+                  <span className="arx-account-project-title-row">
+                    <b>{item.name}</b>
+                    {isCurrentProject ? <em><i aria-hidden="true"></i> Aktif proje</em> : null}
+                  </span>
+                  <small>{item.id} · {item.revision} · {item.phase}</small>
+                  <time>{formatProjectDateTime(item.updatedAt)}</time>
+                </div>
+                <span className="arx-account-project-actions">
+                  {isCurrentProject
+                    ? <Link href="/dijital-proje-merkezi">Çalışma Alanına Git <span aria-hidden="true">→</span></Link>
+                    : <button type="button" onClick={() => openAccountProject(item)}>Aç</button>}
+                  <button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button>
+                </span>
+              </article>;
+            })}
 
             {data && data.projects.length === 0 && !(hasActiveProject && !accountHasActiveProject) && !meaningfulDraft ? <div className="arx-account-empty">
               <span aria-hidden="true">⌁</span>
@@ -378,11 +393,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             {!data ? <p className="arx-account-loading">Hesap kayıtları yükleniyor…</p> : null}
           </div>
 
-          {data && (data.projects.length > 0 || Boolean(meaningfulDraft) || hasActiveProject) ? <footer className="arx-account-card-footer">
-            {data.projects.length > 4 ? <button type="button" onClick={() => setShowAllProjects((value) => !value)}>
+          {data && data.projects.length > 4 ? <footer className="arx-account-card-footer">
+            <button type="button" onClick={() => setShowAllProjects((value) => !value)}>
               {showAllProjects ? "Daha az göster" : `Tüm projeleri göster (${data.projects.length})`}
-            </button> : <span></span>}
-            <Link href="/dijital-proje-merkezi">Proje Çalışma Alanına Git →</Link>
+            </button>
           </footer> : null}
         </section>
       </div>
