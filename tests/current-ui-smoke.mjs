@@ -1201,3 +1201,15 @@ test("BIM coordination exposes explicit beam-MEP section strategy", () => {
   assert.match(engine, /Math\.max\(beamDepth, serviceZone\)/);
   assert.match(engine, /sectionStrategy/);
 });
+
+
+test("project center labels 10-of-13 as module coverage rather than data errors", () => {
+  const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  assert.match(hub, /MODÜL BAĞLANTISI/);
+  assert.match(hub, /çalışma modülü bağlı/);
+  assert.match(hub, /Çalışma modülleri/);
+  assert.match(hub, /Bu sayı teknik hata sayısı değildir/);
+  assert.match(hub, /data-testid="module-coverage-detail"/);
+  assert.match(hub, /Henüz bağlı değil/);
+  assert.doesNotMatch(hub, /<span>VERİ HAZIRLIĞI<\/span><b>%\{thread\.metrics\.readiness\}/);
+});
