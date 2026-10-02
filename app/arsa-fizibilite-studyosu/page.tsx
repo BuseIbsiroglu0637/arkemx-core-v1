@@ -18,7 +18,7 @@ export default function SiteStudioPage() {
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-geo-back" aria-label="Sayfa bağlantıları">
-          <Link href="/proje-baslat?view=summary" className="arx-geo-back-secondary"><ArrowLeft size={16} aria-hidden="true" /> Brief özeti</Link>
+          <a href="/proje-baslat?view=summary" className="arx-geo-back-secondary"><ArrowLeft size={16} aria-hidden="true" /> Brief özeti</a>
           <Link href="/dijital-proje-merkezi" className="arx-geo-back-primary">Proje Çalışma Alanına Dön</Link>
         </nav>
       </header>
