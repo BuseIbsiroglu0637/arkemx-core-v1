@@ -459,6 +459,28 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>
     {simple && <div className="arx-architect-primary">
+  <div className="arx-architect-transfer" data-ready={transferReady ? "true" : "false"} role="status">
+    <div>
+      <span>01 / PROJE VERİSİ</span>
+      <b>{transferReady ? "Arazi ve proje verileri otomatik devralındı" : "Proje verileri açılıyor…"}</b>
+      <small>{transferReady ? status : "Aktif proje kaydı ve seçili kütle hazırlanıyor."}</small>
+    </div>
+    <div className="arx-architect-transfer-tags" aria-label="Aktarım özeti">
+      <span>{templates[use].label}</span>
+      <span>{targetGross.toLocaleString("tr-TR")} m²</span>
+      <span>{floors} kat</span>
+      <span>{siteContext.parcelReference ? "Parsel bağlı" : "Parsel referansı yok"}</span>
+      <span>{siteContext.massingModel ? "Kütle bağlı" : "Kütle bekleniyor"}</span>
+    </div>
+  </div>
+
+  <div className="arx-architect-stage-strip" aria-label="Mimari çalışma akışı">
+    <div className="done"><i>✓</i><span><b>Proje verisi</b><small>Devralındı</small></span></div>
+    <div className="current"><i>2</i><span><b>Mahal programı</b><small>Şu an buradasın</small></span></div>
+    <div><i>3</i><span><b>Plan & aks</b><small>Sonraki çalışma</small></span></div>
+    <div><i>4</i><span><b>Mimari kontroller</b><small>Karar kapısı</small></span></div>
+  </div>
+
   <div className="arx-architect-fields">
     <label>Yapı kullanımı
       <select value={use} onChange={(event) => setUse(event.target.value as ProgramUse)}>{Object.entries(templates).map(([key, template]) => <option value={key} key={key}>{template.label}</option>)}</select>
@@ -482,15 +504,12 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     </label>
   </div>
   <div className="arx-architect-actions">
-    <button type="button" onClick={importThread}>Mevcut proje verisini getir</button>
     <button type="button" onClick={() => { if (window.confirm("Kullanım şablonu mevcut mahal listesini değiştirecek. Devam edilsin mi?")) loadTemplate(); }}>Seçili kullanım şablonunu uygula</button>
     <button type="button" className={showAdvanced ? "arx-advanced-active" : ""} aria-expanded={showAdvanced} onClick={() => {
       setShowAdvanced((current) => !current);
       if (showAdvanced && (view === "zoning" || view === "matrix" || view === "envelope")) setView("schedule");
     }}>{showAdvanced ? "Gelişmiş ayarları kapat" : "Gelişmiş ayarlar"}</button>
-    <Link href="/plan-ve-aks">Plan ve aksa geç ↗</Link>
   </div>
-  <p className="arx-architect-sync" role="status">{transferReady ? status : "Kayıtlı proje verisi açılıyor..."}</p>
 </div>}
     <div className="architect-workspace">
       {(!simple || showAdvanced) && <aside className="architect-controls"><strong>01 / PROJE PROGRAMI</strong><label>Kullanım<select value={use} onChange={(event) => setUse(event.target.value as ProgramUse)}>{Object.entries(templates).map(([key, template]) => <option value={key} key={key}>{template.label}</option>)}</select></label><button className="thread-import-button" onClick={loadTemplate}>Seçili kullanım şablonunu yükle</button><button className="thread-import-button primary" onClick={importThread}>Parsel / proje zincirinden aktar ↘</button><div className="architect-input-grid"><label>Hedef brüt<input type="number" min="100" max="200000" step="50" value={targetGross} onChange={(event) => setTargetGross(clamp(Number(event.target.value), 100, 200000))}/><i>m²</i></label><label>Net / brüt<input type="number" min="40" max="95" value={netRatio} onChange={(event) => setNetRatio(clamp(Number(event.target.value), 40, 95))}/><i>%</i></label><label>Kat<input type="number" min="1" max="30" value={floors} onChange={(event) => setFloors(clamp(Number(event.target.value), 1, 30))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="10" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(clamp(Number(event.target.value), 2.6, 10))}/><i>m</i></label><label>Plaka oranı<input type="number" min=".5" max="4" step=".05" value={aspect} onChange={(event) => setAspect(clamp(Number(event.target.value), .5, 4))}/></label><label>Koridor hedefi<input type="number" min="1.2" max="5" step=".1" value={corridorWidth} onChange={(event) => setCorridorWidth(clamp(Number(event.target.value), 1.2, 5))}/><i>m</i></label><label>Kaçış hedefi<input type="number" min="10" max="80" step="1" value={targetTravel} onChange={(event) => setTargetTravel(clamp(Number(event.target.value), 10, 80))}/><i>m</i></label><label>Merdiven / asansör<div><input aria-label="Merdiven adedi" type="number" min="1" max="12" value={stairs} onChange={(event) => setStairs(clamp(Number(event.target.value), 1, 12))}/><input aria-label="Asansör adedi" type="number" min="0" max="12" value={elevators} onChange={(event) => setElevators(clamp(Number(event.target.value), 0, 12))}/></div></label></div><strong>02 / TEKNİK ÇIKTI</strong><div className="architect-export"><button onClick={exportJson}>JSON<b>Şema + kontroller</b></button><button onClick={exportCsv}>CSV<b>Mahal listesi</b></button><Link href="/plan-ve-aks">PLAN<b>Aks modeline geç ↗</b></Link></div></aside>}
