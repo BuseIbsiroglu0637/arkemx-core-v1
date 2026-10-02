@@ -144,7 +144,45 @@ function clampNumber(value: string, min: number, max: number, fallback: number) 
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 }
 
-export function ProjectStartStudio({ summaryMode = false, newProjectMode = false }: { summaryMode?: boolean; newProjectMode?: boolean }) {
+export function ProjectStartIntro({ summaryMode = false, newProjectMode = false }: { summaryMode?: boolean; newProjectMode?: boolean }) {
+  const { thread, hydrated } = useProjectKernel();
+  const hasActiveProject = thread.metrics.activeCount > 0;
+  const editingActiveProject = hydrated && hasActiveProject && !summaryMode && !newProjectMode;
+
+  const title = summaryMode
+    ? "Proje başlangıç özeti"
+    : newProjectMode
+      ? "Yeni proje oluştur"
+      : editingActiveProject
+        ? "Proje başlangıç bilgileri"
+        : hydrated
+          ? "Yeni proje oluştur"
+          : "Proje başlangıcı";
+
+  const copy = summaryMode
+    ? "Başlangıç kararlarını, yol haritasını ve doğrulama bekleyen verileri tekrar inceleyin."
+    : newProjectMode
+      ? "Yeni projenizi beş adımda tanımlayın. Mevcut aktif projeniz korunur; bu çalışma ayrı bir proje olarak oluşturulur."
+      : editingActiveProject
+        ? "Aktif projenizin başlangıç briefini inceleyin veya güncelleyin. Değişiklikler aynı proje kimliği altında korunur."
+        : "Proje bilgilerinizi adım adım girin. Çalışmanız bu cihazda taslak olarak saklanır.";
+
+  return <div className="arx-start-intro">
+    <span>PROJE / BAŞLANGIÇ</span>
+    <h1>{title}</h1>
+    <p>{copy}</p>
+  </div>;
+}
+
+export function ProjectStartStudio({
+  summaryMode = false,
+  newProjectMode = false,
+  freshProjectMode = false,
+}: {
+  summaryMode?: boolean;
+  newProjectMode?: boolean;
+  freshProjectMode?: boolean;
+}) {
   const { project, thread, hydrated, startProject, setIdentity, patchModule, removeModule } = useProjectKernel();
   const { language, translate } = useLanguage();
   const [step, setStep] = useState(0);
@@ -205,12 +243,40 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   const draftHasMeaningfulInput = step > 0 || intake.name.trim().length >= 3 || intake.location.trim().length >= 2;
 
   useEffect(() => {
-    if (!newProjectMode) return;
-    // The query flag is only a one-shot instruction to open a clean form.
-    // Remove it without navigation so any draft created from this point can
-    // be recovered normally after a reload.
-    window.history.replaceState(window.history.state, "", "/proje-baslat");
-  }, [newProjectMode]);
+    if (!newProjectMode || !freshProjectMode) return;
+    let cancelled = false;
+
+    const resetFreshProjectDraft = async () => {
+      try {
+        window.localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Account draft reset remains available if device storage is unavailable.
+      }
+
+      try {
+        await fetch("/api/project-draft", { method: "DELETE" });
+      } catch {
+        // A fresh local form can still start if the account draft service is offline.
+      }
+
+      if (cancelled) return;
+      setIntake(initial);
+      setNumericDrafts({
+        targetArea: String(initial.targetArea),
+        floors: String(initial.floors),
+        floorHeight: String(initial.floorHeight),
+      });
+      setStep(0);
+      setRestoredDraft(false);
+      setCreatingNewProject(true);
+      setDraftTransferMessage("");
+      setDraftReady(true);
+      window.history.replaceState(window.history.state, "", "/proje-baslat?new=1");
+    };
+
+    void resetFreshProjectDraft();
+    return () => { cancelled = true; };
+  }, [freshProjectMode, newProjectMode]);
 
   useEffect(() => {
     if (!hydrated || summaryMode || newProjectMode || !hasActiveProject || activeBriefLoaded || creatingNewProject) return;
@@ -254,13 +320,12 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    // Summary mode is the history of the current project. Explicit new-project
-    // mode always starts clean. When an active project exists, /proje-baslat
-    // represents that project's Brief step and must not be replaced by a draft.
+    if (!hydrated || freshProjectMode) return;
+    // Summary mode is read-only history. An active project's normal route is
+    // its Brief editor and must not be replaced by a new-project draft.
     /* eslint-disable react-hooks/set-state-in-effect -- route/project mode must synchronously prevent unrelated draft recovery. */
-    if (summaryMode || newProjectMode || hasActiveProject) {
-      if (summaryMode || newProjectMode) setDraftReady(true);
+    if (summaryMode || (hasActiveProject && !newProjectMode)) {
+      if (summaryMode) setDraftReady(true);
       return;
     }
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -311,7 +376,7 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [hasActiveProject, hydrated, newProjectMode, summaryMode]);
+  }, [freshProjectMode, hasActiveProject, hydrated, newProjectMode, summaryMode]);
 
   useEffect(() => {
     if (summaryMode || !draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
@@ -676,7 +741,22 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   }
 
   return <section className="project-start-studio" data-testid="project-start-studio">
-    {hasActiveProject && <div className="start-resume-banner"><div><span>AKTİF PROJE BULUNDU</span><b>{project.name}</b><small>{project.id} · {thread.metrics.activeCount} veri alanı bağlı</small></div><Link href="/dijital-proje-merkezi">Çalışmaya devam edin ↗</Link></div>}
+    {hasActiveProject && <div className={`start-resume-banner ${editingActiveProject ? "is-brief-edit" : newProjectMode ? "is-new-project" : ""}`}>
+      <div>
+        <span>{editingActiveProject ? "AKTİF PROJE / BRIEF" : newProjectMode ? "MEVCUT PROJE KORUNUYOR" : "AKTİF PROJE"}</span>
+        <b>{project.name}</b>
+        <small>
+          {editingActiveProject
+            ? `${project.id} · Başlangıç bilgilerini düzenliyorsunuz`
+            : newProjectMode
+              ? `${project.id} · Yeni proje ayrı bir kayıt olarak oluşturulacak`
+              : `${project.id} · ${thread.metrics.activeCount} veri alanı bağlı`}
+        </small>
+      </div>
+      <Link href="/dijital-proje-merkezi">
+        {editingActiveProject ? "Proje Çalışma Alanına Dön ↗" : newProjectMode ? "Mevcut projeye dön ↗" : "Çalışmaya devam edin ↗"}
+      </Link>
+    </div>}
     <header className="project-start-head">
       <div><p className="eyebrow light">ARKEMX / Yönlendirmeli Başlangıç</p><h2>Teknik bilgi gerekmez.<br/><em>Doğru soruyla başlayın.</em></h2></div>
       <p>Beş sade adımda ihtiyacı, parsel hazırlığını, bütçeyi ve hedef süreyi tanımlayın. ARKEMX yalnızca mevcut veriye göre kişisel yol haritası oluşturur; resmî bilgi olmayan yerde sonuç uydurmaz.</p>
@@ -686,7 +766,17 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
         <button type="button" className={intake.experienceMode === "technical" ? "active" : ""} aria-pressed={intake.experienceMode === "technical"} onClick={() => update("experienceMode", "technical")}><b>Uzman görünümü</b><small>Teknik girdiler görünür</small></button>
       </div>
     </header>
-    <nav className="project-start-steps" aria-label="Proje başlatma adımları">{steps.map((item, index) => <button type="button" key={item.code} className={`${index === step ? "active " : ""}${index < step ? "passed" : ""}`.trim()} onClick={() => index <= step && setStep(index)} aria-current={index === step ? "step" : undefined}><i>{index < step ? "✓" : item.code}</i><span><b>{item.title}</b><small>{item.copy}</small></span></button>)}</nav>
+    <nav className="project-start-steps" aria-label="Proje başlatma adımları">{steps.map((item, index) => {
+      const futureLocked = !editingActiveProject && index > step;
+      return <button type="button" key={item.code}
+        className={`${index === step ? "active " : ""}${index < step ? "passed " : ""}${futureLocked ? "locked" : ""}`.trim()}
+        onClick={() => { if (editingActiveProject || index <= step) setStep(index); }}
+        disabled={futureLocked}
+        aria-current={index === step ? "step" : undefined}>
+        <i>{index < step ? "✓" : item.code}</i>
+        <span><b>{item.title}</b><small>{item.copy}</small></span>
+      </button>;
+    })}</nav>
     <div className="project-start-workspace">
       <aside><span>ADIM {steps[step].code} / 05</span><h3>{steps[step].title}</h3><p>{steps[step].copy}</p><div><small>VERİ AKTARIMI</small><b>{step === 0 ? "Brief + proje kimliği" : step === 1 ? "GIS + belge hazırlığı" : step === 2 ? "Mimari program + alan hedefi" : step === 3 ? "MCDA + bütçe + takvim" : "Kişisel yol haritası + aşama kapıları"}</b></div><div className="start-draft-state"><small>TASLAK</small><b>Taslak cihazda ve oturum açıksa hesabınızda otomatik kaydedilir</b><span>%{roadmap.readiness} hazırlık</span><div className="start-draft-transfer"><button type="button" onClick={exportDraft}>Taslağı indir</button><label>Taslak yükle<input type="file" accept=".json,application/json" onChange={(event) => { void importDraftFile(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }}/></label></div>{draftTransferMessage ? <em role="status">{draftTransferMessage}</em> : null}</div></aside>
       <section className="project-start-form">
@@ -694,7 +784,7 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
         {step === 1 && <div className="start-fieldset"><label><span>İlk konum bilgisi</span><input autoFocus value={intake.location} onChange={(event) => update("location", event.target.value)} placeholder="İl / ilçe veya bilinen mevki" /></label><fieldset className="start-parcel-options"><legend>Arsa / parsel hangi durumda?</legend>{(Object.keys(parcelStatusLabels) as ProjectIntake["parcelStatus"][]).map((value) => <button type="button" className={intake.parcelStatus === value ? "selected" : ""} aria-pressed={intake.parcelStatus === value} onClick={() => update("parcelStatus", value)} key={value}><i>{intake.parcelStatus === value ? "✓" : "+"}</i><span><b>{parcelStatusLabels[value].title}</b><small>{parcelStatusLabels[value].copy}</small></span></button>)}</fieldset><fieldset className="start-document-grid"><legend>Şu anda elinizde olanlar</legend>{GUIDED_DOCUMENT_OPTIONS.map((item) => <button type="button" className={intake.documents.includes(item.id) ? "selected" : ""} aria-pressed={intake.documents.includes(item.id)} onClick={() => toggleDocument(item.id)} key={item.id}><i>{intake.documents.includes(item.id) ? "✓" : "+"}</i><span><b>{item.short}</b><small>{item.label}</small></span></button>)}</fieldset><div className="start-info-card"><i>GIS</i><div><b>Belge var demek doğrulandı demek değildir</b><p>Parsel geometrisi TKGM/MEGSİS veya yetkili harita verisiyle; imar hakları ise plan, belediye/e-Plan kaynağı ve gerektiğinde uzman incelemesiyle doğrulanır.</p></div></div></div>}
         {step === 2 && <div className="start-fieldset"><label><span>Yapı kullanımı</span><select value={intake.usage} onChange={(event) => update("usage", event.target.value as ProjectIntake["usage"])}>{(Object.keys(usageLabels) as ProjectIntake["usage"][]).map((value) => <option value={value} key={value}>{usageLabels[value]}</option>)}</select></label><div className="start-number-grid"><label><span>Hedef brüt alan</span><input type="number" min="20" max="1000000" value={numericDrafts.targetArea} onChange={(event) => updateNumericDraft("targetArea", event.target.value, 20, 1_000_000)} onBlur={() => commitNumericDraft("targetArea", 20, 1_000_000)}/><small>m²</small></label><label><span>Kat adedi</span><input type="number" min="1" max="100" value={numericDrafts.floors} onChange={(event) => updateNumericDraft("floors", event.target.value, 1, 100)} onBlur={() => commitNumericDraft("floors", 1, 100)}/><small>kat</small></label>{intake.experienceMode === "technical" && <label><span>Hedef kat yüksekliği</span><input type="number" step=".1" min="2.4" max="30" value={numericDrafts.floorHeight} onChange={(event) => updateNumericDraft("floorHeight", event.target.value, 2.4, 30)} onBlur={() => commitNumericDraft("floorHeight", 2.4, 30)}/><small>m</small></label>}</div>{intake.experienceMode === "guided" && <details className="start-technical-details"><summary>İsteğe bağlı teknik ayrıntı</summary><label><span>Hedef kat yüksekliği</span><input type="number" step=".1" min="2.4" max="30" value={numericDrafts.floorHeight} onChange={(event) => updateNumericDraft("floorHeight", event.target.value, 2.4, 30)} onBlur={() => commitNumericDraft("floorHeight", 2.4, 30)}/><small>m</small></label><p>Bilmiyorsanız değiştirmeyin; kullanım türüne göre başlangıç değeri uzman incelemesinde güncellenir.</p></details>}<div className="start-live-metric"><span>KAT BAŞINA YAKLAŞIK ALAN</span><b>{floorArea.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²</b><small>Kesin yerleşim parsel ve mimari program aşamasında oluşur.</small></div></div>}
         {step === 3 && <div className="start-fieldset"><div className="start-decision-grid"><label><span>Ön taşıyıcı sistem tercihi</span><select value={intake.system} onChange={(event) => update("system", event.target.value as ProjectIntake["system"])}>{(Object.keys(systemLabels) as ProjectIntake["system"][]).map((value) => <option value={value} key={value}>{systemLabels[value]}</option>)}</select></label><label><span>Yaklaşık yatırım bütçesi</span><select value={intake.budget} onChange={(event) => update("budget", event.target.value as ProjectIntake["budget"])}>{(Object.keys(budgetLabels) as ProjectIntake["budget"][]).map((value) => <option value={value} key={value}>{budgetLabels[value]}</option>)}</select></label><label><span>Hedef başlangıç</span><select value={intake.timeline} onChange={(event) => update("timeline", event.target.value as ProjectIntake["timeline"])}>{(Object.keys(timelineLabels) as ProjectIntake["timeline"][]).map((value) => <option value={value} key={value}>{timelineLabels[value]}</option>)}</select></label></div><fieldset><legend>Kararda öncelikli olanlar</legend>{priorityOptions.map(([value, label]) => <button type="button" className={intake.priorities.includes(value) ? "selected" : ""} aria-pressed={intake.priorities.includes(value)} onClick={() => togglePriority(value)} key={value}><i>{intake.priorities.includes(value) ? "✓" : "+"}</i><b>{label}</b></button>)}</fieldset><p className="start-boundary">Bütçe, süre ve sistem bilgileri müşteri hedefidir. Keşif, iş programı veya nihai taşıyıcı sistem kararı sayılmaz; parsel, zemin, açıklık, deprem, yangın, üretim ve tedarik verileriyle doğrulanır.</p></div>}
-        {step === 4 && <div className="start-review"><header><span>V107 / KİŞİSEL PROJE YOLU</span><b>Kontrol edin; sonra tek çalışma alanını oluşturun.</b><strong><small>BAŞLANGIÇ VERİ HAZIRLIĞI</small>%{roadmap.readiness}</strong></header><dl><div><dt>Proje</dt><dd>{intake.name}</dd></div><div><dt>Tür</dt><dd>{projectTypeLabels[intake.projectType]}</dd></div><div><dt>Konum / parsel</dt><dd>{intake.location} · {parcelReviewLabel}</dd></div><div><dt>Program</dt><dd>{usageLabels[intake.usage]} · {intake.targetArea.toLocaleString("tr-TR")} m² · {intake.floors} kat</dd></div><div><dt>Sistem</dt><dd>{systemLabels[intake.system]}</dd></div><div><dt>Bütçe / takvim</dt><dd>{budgetLabels[intake.budget]} · {timelineLabels[intake.timeline]}</dd></div></dl><section className="start-review-next"><span>SIRADAKİ DOĞRU ADIM</span><h4>{roadmap.nextAction.title}</h4><p>{roadmap.nextAction.copy}</p></section><div className="start-roadmap-gates">{roadmap.gates.map((gate, index) => <article className={`status-${gate.status}`} key={gate.id}><i>{String(index + 1).padStart(2, "0")}</i><div><span>{GUIDED_GATE_LABELS[gate.status]}</span><b>{gate.label}</b><small>{gate.detail}</small></div></article>)}</div>{reviewEvidenceItems.length > 0 && <aside className="start-missing-documents"><span>EKSİK / DOĞRULANACAK VERİLER VE BELGELER</span><ul>{reviewEvidenceItems.map((item) => <li key={item}>{item}</li>)}</ul></aside>}</div>}
+        {step === 4 && <div className="start-review"><header><span>V107 / KİŞİSEL PROJE YOLU</span><b>{editingActiveProject ? "Kontrol edin; mevcut projenin başlangıç bilgilerini güncelleyin." : "Kontrol edin; sonra tek çalışma alanını oluşturun."}</b><strong><small>BAŞLANGIÇ VERİ HAZIRLIĞI</small>%{roadmap.readiness}</strong></header><dl><div><dt>Proje</dt><dd>{intake.name}</dd></div><div><dt>Tür</dt><dd>{projectTypeLabels[intake.projectType]}</dd></div><div><dt>Konum / parsel</dt><dd>{intake.location} · {parcelReviewLabel}</dd></div><div><dt>Program</dt><dd>{usageLabels[intake.usage]} · {intake.targetArea.toLocaleString("tr-TR")} m² · {intake.floors} kat</dd></div><div><dt>Sistem</dt><dd>{systemLabels[intake.system]}</dd></div><div><dt>Bütçe / takvim</dt><dd>{budgetLabels[intake.budget]} · {timelineLabels[intake.timeline]}</dd></div></dl><section className="start-review-next"><span>SIRADAKİ DOĞRU ADIM</span><h4>{roadmap.nextAction.title}</h4><p>{roadmap.nextAction.copy}</p></section><div className="start-roadmap-gates">{roadmap.gates.map((gate, index) => <article className={`status-${gate.status}`} key={gate.id}><i>{String(index + 1).padStart(2, "0")}</i><div><span>{GUIDED_GATE_LABELS[gate.status]}</span><b>{gate.label}</b><small>{gate.detail}</small></div></article>)}</div>{reviewEvidenceItems.length > 0 && <aside className="start-missing-documents"><span>EKSİK / DOĞRULANACAK VERİLER VE BELGELER</span><ul>{reviewEvidenceItems.map((item) => <li key={item}>{item}</li>)}</ul></aside>}</div>}
         {!canContinue && <p className="start-validation" role="alert">Bu adımın zorunlu bilgisini tamamlayın.</p>}
         <footer className="project-start-actions"><button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>← Geri</button>{step < steps.length - 1 ? <button type="button" className="primary" disabled={!canContinue} onClick={() => setStep((current) => Math.min(steps.length - 1, current + 1))}>Sonraki adım →</button> : <button type="button" className="primary" onClick={finish}>{editingActiveProject ? (briefSaveState === "saved" ? "Başlangıç bilgileri güncellendi ✓" : "Başlangıç bilgilerini güncelle →") : "ARKEMX projesini başlat →"}</button>}</footer>
       </section>
