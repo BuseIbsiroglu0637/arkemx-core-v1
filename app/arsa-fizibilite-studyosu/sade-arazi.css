@@ -2889,3 +2889,163 @@ html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > p {
     min-height:430px !important;
   }
 }
+
+
+/* V05 / parcel lookup interaction polish */
+.arx-geo-simple .geo-parcel-query-success {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:9px;
+  padding:10px 11px;
+  border:1px solid #c9ded3;
+  border-radius:7px;
+  background:#f3faf6;
+}
+.arx-geo-simple .geo-parcel-query-success > span {
+  min-width:0;
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  gap:2px 8px;
+  align-items:center;
+}
+.arx-geo-simple .geo-parcel-query-success > span > i {
+  grid-row:1/3;
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#4f8a6d;
+  color:#fff;
+  font-size:11px;
+  font-style:normal;
+  font-weight:800;
+}
+.arx-geo-simple .geo-parcel-query-success b {
+  color:#35654d;
+  font-size:10px;
+}
+.arx-geo-simple .geo-parcel-query-success small {
+  color:#70867b;
+  font-size:8px;
+  line-height:1.4;
+}
+.arx-geo-simple .geo-parcel-query-success > button {
+  flex:0 0 auto;
+  min-height:32px;
+  padding:7px 9px;
+  border:1px solid #cad8d1;
+  border-radius:6px;
+  background:#fff;
+  color:#4d6e5e;
+  font:750 8px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+
+/* Coordinate navigation is secondary to the official parcel identity flow. */
+.arx-geo-simple .geo-coordinate-tools {
+  margin-top:10px;
+  overflow:hidden;
+  border:1px solid #dce4e7;
+  border-radius:7px;
+  background:#f8fafb;
+}
+.arx-geo-simple .geo-coordinate-tools > summary {
+  position:relative;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  padding:9px 34px 9px 11px;
+  color:#526d78;
+  font-size:9px;
+  font-weight:750;
+  cursor:pointer;
+  list-style:none;
+}
+.arx-geo-simple .geo-coordinate-tools > summary::-webkit-details-marker {
+  display:none;
+}
+.arx-geo-simple .geo-coordinate-tools > summary::after {
+  content:"＋";
+  position:absolute;
+  right:11px;
+  top:50%;
+  translate:0 -50%;
+  color:#82939a;
+  font-size:13px;
+}
+.arx-geo-simple .geo-coordinate-tools[open] > summary::after {
+  content:"−";
+}
+.arx-geo-simple .geo-coordinate-tools[open] > summary {
+  border-bottom:1px solid #e1e8ea;
+}
+.arx-geo-simple .geo-coordinate-tools-body {
+  padding:8px 11px 11px;
+}
+.arx-geo-simple .geo-coordinate-tools-body > p {
+  margin:8px 0 0;
+  color:#7b8d95;
+  font-size:8px;
+  line-height:1.45;
+}
+
+/* With secondary coordinates collapsed, let the grid finish at actual content height. */
+.arx-geo-simple .geo-workspace {
+  align-items:start !important;
+  background:transparent !important;
+}
+.arx-geo-simple .geo-stage {
+  height:auto !important;
+}
+
+/* Dark variants */
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success {
+  border-color:#315342 !important;
+  background:#0d1712 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success > span > i {
+  background:#559a76 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success b {
+  color:#cbe4d5 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success small {
+  color:#91a69b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success > button {
+  border-color:#365043 !important;
+  background:#101512 !important;
+  color:#b8d2c4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-parcel-query-success > button:hover {
+  border-color:#557565 !important;
+  background:#151c18 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools > summary {
+  color:#aebbc1 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools[open] > summary {
+  border-color:#2b2b2b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools > summary::after {
+  color:#87969c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools-body > p {
+  color:#8f9da3 !important;
+}
+
+@media(max-width:700px) {
+  .arx-geo-simple .geo-parcel-query-success {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
