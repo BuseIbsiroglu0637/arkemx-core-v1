@@ -1,3 +1,22 @@
+export type CoordinationSectionStrategy = "stacked" | "integrated";
+
+export function calculateConceptualClearHeight(
+  floorHeight: number,
+  beamDepth: number,
+  serviceZone: number,
+  ceilingBuildUp: number,
+  raisedFloor: number,
+  strategy: CoordinationSectionStrategy = "stacked",
+) {
+  const occupiedCeilingZone = strategy === "integrated"
+    ? Math.max(beamDepth, serviceZone)
+    : beamDepth + serviceZone;
+  return {
+    occupiedCeilingZone,
+    clearHeight: floorHeight - occupiedCeilingZone - ceilingBuildUp - raisedFloor,
+  };
+}
+
 export type BimCoordinationInput = {
   projectId: string;
   projectRevision: string;
@@ -10,6 +29,7 @@ export type BimCoordinationInput = {
   serviceZone: number;
   ceilingBuildUp: number;
   raisedFloor: number;
+  sectionStrategy?: CoordinationSectionStrategy;
   shaftArea: number;
   plantArea: number;
   factoredGravity: number;
