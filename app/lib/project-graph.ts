@@ -31,6 +31,7 @@ export type ProjectGraphNode = ProjectModuleDefinition & {
   readiness: number;
   blockedBy: ProjectModuleKey[];
   status: string;
+  milestoneComplete: boolean;
 };
 
 export type ProjectThreadIssue = {
@@ -229,7 +230,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
-  const system = structuralSystemLabel(text(structureInput.system) || text(geo.system) || (mcdaSourceCurrent ? text(comparisonWinner.name) : ""));
+  // Arazi/Yapı Yerleşimi taşıyıcı sistem kararı üretmez. Yapısal sistem
+  // yalnız yapı sistemi karşılaştırması veya taşıyıcı ön tasarım kaynaklarından gelir.
+  const system = structuralSystemLabel(text(structureInput.system) || (mcdaSourceCurrent ? text(comparisonWinner.name) : ""));
   const modeledSystemId = structuralSystemId(text(structureInput.system));
   const recommendedSystemId = mcdaSourceCurrent
     ? structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name))
@@ -582,6 +585,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     const active = activeKeys.has(definition.id);
     const blockedBy = definition.dependencies.filter((dependency) => !activeKeys.has(dependency));
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
+    const milestoneComplete = definition.id === "quick-site-scenario"
+      ? quickSiteScenarioReady
+      : moduleData.journeyComplete === true;
     const readiness = definition.id === "geo-parcel" && active
       ? !parcelReadyForNextStage
         ? 35
@@ -597,7 +603,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
         : active
           ? (blockedBy.length ? 68 : 100)
           : (blockedBy.length ? 0 : 20);
-    return { ...definition, active, readiness, blockedBy, status };
+    return { ...definition, active, readiness, blockedBy, status, milestoneComplete };
   });
   const handoffDefinitions: Omit<ProjectHandoff, "state">[] = [
     { id: "H-01", source: "geo-parcel", target: "architectural-program", label: "Parsel → mimari program", payload: ["izin girdileri", "kütle", "kat", "kullanım"] },
