@@ -4070,3 +4070,44 @@ html[data-theme="dark"] .arx-geo-simple .geo-stage-next[data-ready="false"] > bu
     width:100%;
   }
 }
+
+
+/* V05 / make the next-stage CTA visible immediately after the design tabs */
+.arx-geo-simple .geo-stage-next-prominent {
+  margin:10px 0 12px;
+  padding:12px 13px;
+  border-color:#2f6a53;
+  background:#0f1d17;
+  box-shadow:inset 3px 0 0 #59a77c;
+}
+.arx-geo-simple .geo-stage-next-prominent span {
+  color:#79c99f;
+}
+.arx-geo-simple .geo-stage-next-prominent b {
+  color:#f1f7f4;
+  font-size:11px;
+}
+.arx-geo-simple .geo-stage-next-prominent small {
+  color:#a8bbb1;
+}
+.arx-geo-simple .geo-stage-next-prominent > a {
+  min-height:40px;
+  padding:9px 13px;
+  border-color:#315f70;
+  background:#173f50;
+  white-space:nowrap;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .geo-stage-next-prominent {
+  border-color:#bfd7c9;
+  background:#f3faf6;
+  box-shadow:inset 3px 0 0 #5c9a79;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .geo-stage-next-prominent span {
+  color:#4d8066;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .geo-stage-next-prominent b {
+  color:#23493a;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .geo-stage-next-prominent small {
+  color:#667f73;
+}
