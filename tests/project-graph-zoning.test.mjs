@@ -133,7 +133,9 @@ test("completed expert review clears PLN-010 without claiming authoritative zoni
     "geo-parcel": geoModule(provenance),
   });
 
-  assert.equal(thread.nodes.find(node => node.id === "geo-parcel")?.readiness, 100);
+  // Expert review closes PLN-010, but user-declared zoning is still not
+  // authoritative; parcel readiness therefore remains 95 rather than 100.
+  assert.equal(thread.nodes.find(node => node.id === "geo-parcel")?.readiness, 95);
   assert.equal(thread.issues.some(issue => issue.id === "PLN-010"), false);
   const completed = thread.completedControls.find(control => control.code === "PLN-010");
   assert.ok(completed);
