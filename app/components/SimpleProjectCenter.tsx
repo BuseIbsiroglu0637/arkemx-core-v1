@@ -80,6 +80,16 @@ export function SimpleProjectCenter() {
           : "";
   })();
 
+  function openProjectControls() {
+    const controls = document.getElementById("arx-project-controls") as HTMLDetailsElement | null;
+    if (!controls) return;
+    controls.open = true;
+    window.requestAnimationFrame(() => {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      controls.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
+  }
+
   async function loadProject(file?: File) {
     if (!file) return;
     try {
@@ -245,7 +255,7 @@ export function SimpleProjectCenter() {
           <b>{thread.issues.length} konu işlem bekliyor</b>
           <small>{thread.metrics.critical > 0 ? `${thread.metrics.critical} kritik kayıt öncelikli olarak gözden geçirilmeli.` : "Ayrıntılı proje kontrollerinden eksik ve açık konuları inceleyebilirsiniz."}</small>
         </div>
-        <button type="button" onClick={() => document.getElementById("arx-project-controls")?.setAttribute("open", "")}>Kontrolleri aç</button>
+        <button type="button" onClick={openProjectControls}>Kontrolleri aç</button>
       </section> : null}
 
       <section className="arx-center-next-work" aria-labelledby="arx-center-next-title">
