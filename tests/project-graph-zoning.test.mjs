@@ -836,7 +836,6 @@ test("resolved PLN-013 moves into completed controls with the final Hmax equatio
   assert.equal(height?.route, "/tasarim-calismalari/yukseklik-duzeltme");
 });
 
-
 test("project graph coverage is explicitly based on the 13 project modules", () => {
   assert.equal(PROJECT_MODULES.length, 13);
   assert.deepEqual(PROJECT_MODULES.map(module => module.id), [

@@ -54,6 +54,10 @@ next-env.d.ts
 arkemx-*.log
 /ekran-test-sonuclari.txt
 
+# Repository hygiene
+/evidence/**/*.log
+/Arkem-Yapi-Sistemleri-*.zip
+
 # Local credentials and databases
 /.npmrc
 *.sqlite
