@@ -52,10 +52,12 @@ export function SimpleProjectCenter() {
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
-  const journeyNextAction = {
-    label: journeyState.allComplete ? "Teslim kontrollerini gözden geçir" : journeyState.nextStep.label,
-    route: journeyState.allComplete ? "#arx-project-controls" : journeyState.nextStep.href,
-  };
+  const currentJourneyStep = PROJECT_JOURNEY[journeyState.currentIndex];
+  const journeyNextAction = journeyState.allComplete
+    ? { label: "Teslim kontrollerini gözden geçir", route: "#arx-project-controls" }
+    : currentJourneyStep.short === "Arazi"
+      ? { label: thread.nextAction.label, route: thread.nextAction.route }
+      : { label: journeyState.nextStep.label, route: journeyState.nextStep.href };
   const storageLabel = persistence.state === "loading"
     ? "Çalışma kaydı kontrol ediliyor"
     : persistence.state === "unavailable"
