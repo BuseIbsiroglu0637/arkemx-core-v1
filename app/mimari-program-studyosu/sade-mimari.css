@@ -850,3 +850,216 @@ html[data-theme="dark"] .architect-next[data-ready="false"] > button {
     grid-column:1 / -1;
   }
 }
+
+
+/* V06 / complete dark pass for V113 plan scheme + architectural checks */
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine {
+  background:#090909 !important;
+  color:#eef3f5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine > header {
+  border-bottom-color:#2f2f2f !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine > header b,
+html[data-theme="dark"] .arx-architect-simple .v113-plan-heading b {
+  color:#edf3f5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine > header > strong {
+  color:#f3f6f7 !important;
+}
+
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel,
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-inspector {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+  color:#e7eef0 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-heading {
+  border-bottom-color:#303030 !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-heading small {
+  color:#8f9fa5 !important;
+}
+
+/* Plan canvas: dark studio grid instead of the legacy light paper. */
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board {
+  border-color:#315363 !important;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(105,142,155,.08) 40px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(105,142,155,.08) 40px),
+    #0b1114 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board:before {
+  background:#173f50 !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board > article {
+  border-color:#476876 !important;
+  background:rgba(19,39,48,.97) !important;
+  color:#eef3f5 !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.34) !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board > article.daylight {
+  border-color:#c66e3d !important;
+  background:rgba(43,28,20,.98) !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board > article > span {
+  color:#e48a55 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board > article > b {
+  color:#f1f5f6 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-board > article > small {
+  color:#a2b0b6 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-node {
+  border-color:#a8bbc3 !important;
+  background:#173f50 !important;
+  color:#fff !important;
+  box-shadow:0 0 0 1px #315f70 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-exit-node {
+  background:#408768 !important;
+  color:#fff !important;
+  box-shadow:0 0 0 2px #0b1114,0 0 0 3px #408768 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-circulation-spine {
+  background:repeating-linear-gradient(90deg,#40535b 0 12px,#26343a 12px 21px) !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-circulation-spine[data-strategy="split"]:after {
+  background:repeating-linear-gradient(0deg,#40535b 0 12px,#26343a 12px 21px) !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel > footer {
+  color:#93a4aa !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel > footer i {
+  border-color:#4a6976 !important;
+  background:#162b34 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel > footer i.daylight {
+  border-color:#c66e3d !important;
+  background:#2b1c15 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel > footer i.core {
+  background:#173f50 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-plan-panel > footer i.exit {
+  background:#408768 !important;
+}
+
+/* Right-hand inspector */
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-inspector > span {
+  color:#e18a55 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-options button {
+  border-color:#353535 !important;
+  background:#111 !important;
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-options button:last-child {
+  border-right-color:#353535 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-options button.active {
+  border-color:#c66e3d !important;
+  background:#c66e3d !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-options small {
+  color:#8e9ea4 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-core-options button.active small {
+  color:#fff0e7 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-metrics {
+  border-top-color:#303030 !important;
+  border-left-color:#303030 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-metrics > div {
+  border-right-color:#303030 !important;
+  border-bottom-color:#303030 !important;
+  background:#101010 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-metrics dt {
+  color:#8f9fa5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-metrics dd {
+  color:#edf3f5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-relation-list > b {
+  color:#d9e3e6 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-relation-list p {
+  border-color:#303030 !important;
+  background:#101010 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-relation-list p > span {
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-relation-list p small {
+  color:#8e9da3 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-relation-list p > strong {
+  color:#e9eff1 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-note {
+  background:#0c202a !important;
+  color:#e5ecef !important;
+}
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-note p {
+  color:#9eb0b7 !important;
+}
+
+/* Performance checks were still inheriting light legacy surfaces. */
+html[data-theme="dark"] .arx-architect-simple .architect-checks {
+  background:#090909 !important;
+  color:#eaf0f2 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > header {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > header span {
+  color:#e18a55 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > header b,
+html[data-theme="dark"] .arx-architect-simple .architect-checks > header strong {
+  color:#edf3f5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > article {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > article div span,
+html[data-theme="dark"] .arx-architect-simple .architect-checks > article div p {
+  color:#91a1a7 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-checks > article div b,
+html[data-theme="dark"] .arx-architect-simple .architect-checks > article > strong {
+  color:#edf3f5 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-next {
+  border-color:#30414a !important;
+  background:#0c1b22 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-next span {
+  color:#e18a55 !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-next b {
+  color:#e5ecef !important;
+}
+html[data-theme="dark"] .arx-architect-simple .architect-next a {
+  border-color:#315f70 !important;
+  background:#173f50 !important;
+  color:#fff !important;
+}
+
+/* Defensive pass: no light legacy input/card surface in V113 simple dark mode. */
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine input,
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine select,
+html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine textarea {
+  border-color:#383838 !important;
+  background:#101010 !important;
+  color:#eef3f5 !important;
+}
