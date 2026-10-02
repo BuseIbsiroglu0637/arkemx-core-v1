@@ -90,7 +90,8 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
 
   const completed = PROJECT_JOURNEY.map((step) => {
     if (step.short === "Arazi") {
-      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
+      const geoNode = thread.nodes.find((node) => node.id === "geo-parcel");
+      return Boolean(geoNode?.active && geoNode.readiness >= 70);
     }
     if (step.short === "Sistem") {
       return systemDecisionReady;
@@ -1046,7 +1047,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
           : activeJourneyIndex > 0
             ? { short: regularPreviousJourneyStep.short, href: regularPreviousJourneyStep.href }
             : null;
-  const completedJourney = PROJECT_JOURNEY.map((step) => step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)));
+  const completedJourney = deriveProjectJourneyState(thread).completed;
   const completedCount = completedJourney.filter(Boolean).length;
   const architectureModule = record(project.modules["architectural-program"]);
   const planModule = record(project.modules["plan-editor"]);
