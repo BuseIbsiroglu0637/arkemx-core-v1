@@ -219,6 +219,12 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
             <div className="arx-bim-fields">
               <label>Asma tavan (m)<input type="number" min="0" max=".5" step=".01" value={ceilingBuildUp} onChange={(event) => setCeilingBuildUp(clamp(Number(event.target.value), 0, .5))} /></label>
               <label>Yükseltilmiş döşeme (m)<input type="number" min="0" max=".5" step=".01" value={raisedFloor} onChange={(event) => setRaisedFloor(clamp(Number(event.target.value), 0, .5))} /></label>
+              <label>Kiriş–MEP düşey ilişkisi
+                <select value={sectionStrategy} onChange={(event) => setSectionStrategy(event.target.value as CoordinationSectionStrategy)}>
+                  <option value="stacked">Ayrık · kiriş + MEP toplanır</option>
+                  <option value="integrated">Entegre · ortak servis bandı</option>
+                </select>
+              </label>
               <label>Şaft rezervi (m²/kat)<input type="number" min="1" max="1000" value={shaftArea} onChange={(event) => setShaftArea(clamp(Number(event.target.value), 1, 1000))} /></label>
               <label>Teknik hacim (m²)<input type="number" min="1" max="5000" value={plantArea} onChange={(event) => setPlantArea(clamp(Number(event.target.value), 1, 5000))} /></label>
               <label>Zemin taşıma girdisi (kN/m²)<input type="number" min="25" max="2000" step="25" value={soilBearing} onChange={(event) => setSoilBearing(clamp(Number(event.target.value), 25, 2000))} /></label>
