@@ -494,6 +494,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const manualHeightExceedsZoning = zoningFormReady && manualBuildingHeight > zoning.hmax + 0.001;
   const [frontEdge, setFrontEdge] = useState<ParcelFrontEdge>("north");
   const [selectedMassingId, setSelectedMassingId] = useState("manual");
+  const [massingPreviewId, setMassingPreviewId] = useState("balanced");
   const parcelRecord = useMemo<ParcelRecord>(() => createParcelRecord({
     identity: { province, district, neighborhood, block, parcelNo },
     geometry: parcel,
@@ -1076,6 +1077,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       && Math.abs(alternative.offsetNorth - offsetNorth) < .11;
     return matches ? alternative.id : "manual";
   }, [buildingDepth, buildingWidth, floors, massingModel.alternatives, offsetEast, offsetNorth, rotation, selectedMassingId]);
+  const previewMassingAlternative = useMemo(
+    () => massingModel.alternatives.find((item) => item.id === massingPreviewId)
+      ?? massingModel.alternatives.find((item) => item.id === massingModel.recommendedAlternativeId)
+      ?? massingModel.alternatives[0],
+    [massingModel.alternatives, massingModel.recommendedAlternativeId, massingPreviewId],
+  );
   const exportReview = assessExportReview({
     geometryValid: metrics.geometryValid,
     buildingFits: metrics.buildingFits,
@@ -2112,7 +2119,39 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             <p><span>{massingModel.source.authoritative ? "İZİNLİ EMSAL" : "GİRDİYE GÖRE AZAMİ EMSAL ALAN"}</span><b>{massingModel.limits.allowedGrossArea.toFixed(0)} m²</b></p>
             <p><span>{massingModel.source.authoritative ? "KAT SINIRI" : "GİRDİYE GÖRE YÜKSEKLİK / KAT SINIRI"}</span><b>{massingModel.limits.maxFloors} kat / {massingModel.limits.allowedHeight.toFixed(1)} m</b></p>
           </div>
-          <div className="v112-massing-options">{massingModel.alternatives.map((alternative) => <article key={alternative.id} data-state={alternative.status} data-selected={activeMassingId === alternative.id}><div><span>{alternative.status === "fits" ? (massingModel.source.authoritative ? "ÖN UYUMLU" : "GİRDİLERLE ÖN UYUMLU") : "İNCELEME"}</span><b>{alternative.label}</b></div><strong>{alternative.grossArea.toFixed(0)} <i>m²</i></strong><p>{alternative.width.toFixed(1)} × {alternative.depth.toFixed(1)} m · {alternative.floors} kat</p><dl><div><dt>TAKS</dt><dd>%{alternative.coverage.toFixed(1)}</dd></div><div><dt>KAKS</dt><dd>{alternative.far.toFixed(2)}</dd></div><div><dt>{massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"}</dt><dd>%{alternative.utilization.toFixed(0)}</dd></div></dl><small>{alternative.note}</small><button onClick={() => applyMassingAlternative(alternative.id)} disabled={alternative.status !== "fits"}>{activeMassingId === alternative.id ? "Projede seçili" : "Bu alternatifi uygula"}</button></article>)}</div>
+          <div className="v112-massing-choice">
+            <nav aria-label="Kütle alternatifi seçimi">
+              {massingModel.alternatives.map((alternative) => <button
+                type="button"
+                key={alternative.id}
+                className={previewMassingAlternative?.id === alternative.id ? "active" : ""}
+                data-state={alternative.status}
+                onClick={() => setMassingPreviewId(alternative.id)}
+              >
+                <span>{alternative.label}</span>
+                <small>{alternative.status === "fits" ? "Uygun" : "İncele"}</small>
+              </button>)}
+            </nav>
+            {previewMassingAlternative && <article className="v112-massing-preview" data-state={previewMassingAlternative.status} data-selected={activeMassingId === previewMassingAlternative.id}>
+              <header>
+                <div><span>{previewMassingAlternative.status === "fits" ? (massingModel.source.authoritative ? "ÖN UYUMLU" : "GİRDİLERLE ÖN UYUMLU") : "İNCELEME"}</span><b>{previewMassingAlternative.label}</b></div>
+                {massingModel.recommendedAlternativeId === previewMassingAlternative.id && <em>ÖNERİLEN</em>}
+              </header>
+              <div className="v112-massing-preview-main">
+                <strong>{previewMassingAlternative.grossArea.toFixed(0)} <i>m²</i></strong>
+                <p>{previewMassingAlternative.width.toFixed(1)} × {previewMassingAlternative.depth.toFixed(1)} m · {previewMassingAlternative.floors} kat</p>
+              </div>
+              <dl>
+                <div><dt>TAKS</dt><dd>%{previewMassingAlternative.coverage.toFixed(1)}</dd></div>
+                <div><dt>KAKS</dt><dd>{previewMassingAlternative.far.toFixed(2)}</dd></div>
+                <div><dt>{massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanımı"}</dt><dd>%{previewMassingAlternative.utilization.toFixed(0)}</dd></div>
+              </dl>
+              <small>{previewMassingAlternative.note}</small>
+              <button onClick={() => applyMassingAlternative(previewMassingAlternative.id)} disabled={previewMassingAlternative.status !== "fits"}>
+                {activeMassingId === previewMassingAlternative.id ? "Projede seçili" : "Bu alternatifi uygula"}
+              </button>
+            </article>}
+          </div>
           {!massingModel.source.authoritative && <p className="v112-unverified-note">Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır.</p>}
         </section>
         <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
