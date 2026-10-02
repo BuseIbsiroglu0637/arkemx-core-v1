@@ -161,6 +161,72 @@ body:has(.arx-account-page) .v4-floating-contact {
   text-align:right;
 }
 
+.arx-account-selected-project {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:0;
+  padding:12px 14px;
+  border:1px solid #d9e3e6;
+  border-radius:9px;
+  background:#fff;
+}
+
+.arx-account-selected-project > div {
+  min-width:0;
+}
+
+.arx-account-selected-project > div > span {
+  display:block;
+  margin-bottom:3px;
+  color:#a65d36;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+
+.arx-account-selected-project > div > b {
+  display:block;
+  color:#284957;
+  font-size:13px;
+}
+
+.arx-account-selected-project > div > small {
+  display:block;
+  margin-top:3px;
+  color:#7a8c94;
+  font-size:9px;
+}
+
+.arx-account-selected-project > em {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border:1px solid #cfe0d7;
+  border-radius:999px;
+  background:#eef8f2;
+  color:#3f7257;
+  font-size:8px;
+  font-style:normal;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.arx-account-selected-project > em i {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#4f8a6d;
+}
+
+.arx-account-selected-project > span {
+  color:#7c8d95;
+  font-size:9px;
+  text-align:right;
+}
+
 .arx-account-metrics {
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -197,6 +263,14 @@ body:has(.arx-account-page) .v4-floating-contact {
   font-size:27px;
   line-height:1;
   font-variant-numeric:tabular-nums;
+}
+
+.arx-account-metrics article small {
+  display:block;
+  margin-top:6px;
+  color:#8a99a0;
+  font-size:8px;
+  line-height:1.35;
 }
 
 .arx-account-grid {
@@ -340,6 +414,42 @@ body:has(.arx-account-page) .v4-floating-contact {
 .arx-account-list > article:last-of-type {
   border-bottom:0;
 }
+.arx-account-list > article.is-selected-project:not(.is-current-project) {
+  margin:6px 0;
+  padding:14px;
+  border:1px solid #9fb8c2;
+  border-radius:8px;
+  background:#f7fafb;
+}
+
+.arx-account-project-overview-trigger {
+  min-width:0;
+  display:block;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+
+.arx-account-project-overview-trigger:hover .arx-account-project-title-row > b,
+.arx-account-project-overview-trigger:focus-visible .arx-account-project-title-row > b {
+  color:#1f5267;
+}
+
+.arx-account-project-overview-trigger:focus-visible {
+  outline:2px solid #8fb1bf;
+  outline-offset:4px;
+  border-radius:3px;
+}
+
+.arx-account-project-title-row em.is-selected {
+  border-color:#cddce2;
+  background:#eef4f6;
+  color:#4e6f7c;
+}
+
 .arx-account-list > article.is-current-project {
   margin:6px 0;
   padding:14px;
@@ -884,6 +994,43 @@ html[data-theme="dark"] .arx-account-list .arx-account-local-project {
   background:#17100c;
 }
 
+html[data-theme="dark"] .arx-account-selected-project {
+  border-color:#2f3639;
+  background:#0b0b0b;
+}
+
+html[data-theme="dark"] .arx-account-selected-project > div > b {
+  color:#f0f4f5;
+}
+
+html[data-theme="dark"] .arx-account-selected-project > div > small,
+html[data-theme="dark"] .arx-account-selected-project > span,
+html[data-theme="dark"] .arx-account-metrics article small {
+  color:#9daab0;
+}
+
+html[data-theme="dark"] .arx-account-selected-project > em {
+  border-color:#2d513e;
+  background:#0f1d15;
+  color:#96c5a8;
+}
+
+html[data-theme="dark"] .arx-account-list > article.is-selected-project:not(.is-current-project) {
+  border-color:#36515c;
+  background:#0c1215;
+}
+
+html[data-theme="dark"] .arx-account-project-overview-trigger:hover .arx-account-project-title-row > b,
+html[data-theme="dark"] .arx-account-project-overview-trigger:focus-visible .arx-account-project-title-row > b {
+  color:#d9edf5;
+}
+
+html[data-theme="dark"] .arx-account-project-title-row em.is-selected {
+  border-color:#34464e;
+  background:#111a1e;
+  color:#abc3cd;
+}
+
 html[data-theme="dark"] .arx-account-list > article.is-current-project {
   border-color:#31505c;
   background:#0d171b;
@@ -1005,6 +1152,15 @@ html[data-theme="dark"] body:has(.arx-account-page) .arkem-theme-control button[
     align-items:flex-start;
     flex-direction:column;
     gap:10px;
+  }
+
+  .arx-account-selected-project {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .arx-account-selected-project > span {
+    text-align:left;
   }
 
   .arx-account-metrics {
