@@ -149,6 +149,28 @@ function sameProject(a: unknown, b: unknown) {
   return Boolean(left.id && right.id && left.id === right.id && (!left.revision || !right.revision || left.revision === right.revision));
 }
 
+
+/**
+ * Recovery snapshots are fallback-only. They may restore a module that is
+ * completely missing from the authoritative snapshot, but they must never
+ * replace an overlapping module: doing so can resurrect stale plan/model data.
+ */
+export function supplementMissingProjectModules<T>(authoritative: T, fallback: T | null): T {
+  if (!fallback || !sameProject(authoritative, fallback)) return authoritative;
+  const primary = record(authoritative);
+  const secondary = record(fallback);
+  const modules = { ...projectModules(fallback), ...projectModules(authoritative) };
+  const events = mergeEvents(projectEvents(fallback), projectEvents(authoritative));
+  const authoritativeUpdatedAt = text(primary.updatedAt);
+  return {
+    ...secondary,
+    ...primary,
+    modules,
+    events,
+    updatedAt: authoritativeUpdatedAt || text(secondary.updatedAt),
+  } as T;
+}
+
 function hashText(value: string) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -202,21 +224,20 @@ export function loadProjectFromStorage<T>(storage: Storage, legacyKey: string): 
 
   const base = candidates[0];
   let merged = base.value;
-  let reconciled = false;
+  let recoveredMissingModules = false;
   let mergedSavedAt = base.savedAt;
 
   candidates.slice(1).forEach((candidate) => {
     if (!sameProject(merged, candidate.value)) return;
     const beforeCount = snapshotModuleCount(merged);
-    const before = JSON.stringify(merged);
-    merged = reconcileProjectSnapshots(merged, candidate.value);
-    if (JSON.stringify(merged) !== before || snapshotModuleCount(merged) > beforeCount) reconciled = true;
+    merged = supplementMissingProjectModules(merged, candidate.value);
+    if (snapshotModuleCount(merged) > beforeCount) recoveredMissingModules = true;
     if (timestampValue(candidate.savedAt) > timestampValue(mergedSavedAt)) mergedSavedAt = candidate.savedAt;
   });
 
   return {
     value: merged,
-    source: reconciled ? "reconciled" : base.source,
+    source: recoveredMissingModules ? "reconciled" : base.source,
     integrity: base.integrity,
     savedAt: mergedSavedAt,
   };
@@ -226,15 +247,17 @@ export function saveProjectToStorage<T>(storage: Storage, payload: T, savedAt = 
   const previousRaw = storage.getItem(PROJECT_STORAGE_KEY);
   const previous = decodeProjectEnvelope<T>(previousRaw);
   const recovery = decodeProjectEnvelope<T>(storage.getItem(PROJECT_RECOVERY_KEY));
+
+  // Only the immediately previous primary may win an overlapping-module
+  // conflict via recordedAt. Recovery is fallback-only and can add missing
+  // modules, never replace current/primary values.
   let reconciled = reconcileProjectSnapshots(payload, previous.value);
-  reconciled = reconcileProjectSnapshots(reconciled, recovery.value);
+  reconciled = supplementMissingProjectModules(reconciled, recovery.value);
 
   if (previousRaw) storage.setItem(PROJECT_BACKUP_KEY, previousRaw);
   storage.setItem(PROJECT_STORAGE_KEY, encodeProjectEnvelope(reconciled, savedAt));
 
-  const recoveryPayload = recovery.value && sameProject(reconciled, recovery.value)
-    ? reconcileProjectSnapshots(reconciled, recovery.value)
-    : reconciled;
+  const recoveryPayload = supplementMissingProjectModules(reconciled, recovery.value);
   storage.setItem(PROJECT_RECOVERY_KEY, encodeProjectEnvelope(recoveryPayload, savedAt));
 
   return {
