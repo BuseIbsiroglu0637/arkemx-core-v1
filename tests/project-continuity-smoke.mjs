@@ -93,7 +93,7 @@ try {
   await check("Proje merkezi temiz tarayıcı oturumunda açılıyor", async () => {
     const response = await page.goto(`${root}/dijital-proje-merkezi`, { waitUntil: "domcontentloaded" });
     assert.equal(response?.status(), 200);
-    await page.getByRole("heading", { name: "Proje merkezi", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Proje Çalışma Alanı", exact: true }).waitFor();
     await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), STORAGE_KEY, { timeout: 20_000 });
   });
 

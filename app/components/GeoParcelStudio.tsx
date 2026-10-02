@@ -553,10 +553,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       const declared = parseDeclaredLocation(declaredLocation);
 
       if (!saved) {
-        // ProjectKernel may render once with an empty module map while storage is
-        // still being hydrated. Do not permanently mark transfer as complete in
-        // that transient state; otherwise the real geo module can never restore.
-        if (!Object.keys(project.modules).length) return;
+        // hydrated=true means ProjectKernel storage hydration is complete.
+        // An empty module map is a valid clean project, so persistence must be
+        // enabled before the first parcel edit or spatial-file import.
         transferApplied.current = true;
         persistedGeoRef.current = false;
         setProvince(declared.province);
