@@ -1,4 +1,4 @@
-import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source";
+import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source.ts";
 
 export type ProjectModuleKey =
   | "decision-assistant"
