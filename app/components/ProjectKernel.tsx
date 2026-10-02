@@ -605,25 +605,24 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       skipNextPersistenceRef.current = false;
       return;
     }
-    const timer = window.setTimeout(() => {
-      try {
-        const result = saveProjectToStorage(window.localStorage, project);
-        if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
-          skipNextPersistenceRef.current = true;
-          setProject(result.payload);
-        }
-        setPersistence({
-          state: result.reconciled ? "recovered" : "device-saved",
-          integrity: "verified",
-          lastSavedAt: result.savedAt,
-          backupAvailable: result.backupAvailable,
-          cloud: "not-configured",
-        });
-      } catch {
-        setPersistence((current) => ({ ...current, state: "unavailable" }));
+    try {
+      // Persist in the same committed effect. A route change must not be able
+      // to cancel a queued timer and leave the next screen without the active project.
+      const result = saveProjectToStorage(window.localStorage, project);
+      if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
+        skipNextPersistenceRef.current = true;
+        setProject(result.payload);
       }
-    }, 0);
-    return () => window.clearTimeout(timer);
+      setPersistence({
+        state: result.reconciled ? "recovered" : "device-saved",
+        integrity: "verified",
+        lastSavedAt: result.savedAt,
+        backupAvailable: result.backupAvailable,
+        cloud: "not-configured",
+      });
+    } catch {
+      setPersistence((current) => ({ ...current, state: "unavailable" }));
+    }
   }, [hydrated, project]);
 
   useEffect(() => {
