@@ -373,6 +373,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [basemapWarning, setBasemapWarning] = useState("");
   const [activeStage, setActiveStage] = useState<Stage>("locate");
   const [zoningFocus, setZoningFocus] = useState<"taks" | "kaks" | "hmax" | "source" | null>(null);
+  const [zoningPanel, setZoningPanel] = useState<"conditions" | "source" | "expert" | "notes" | null>("conditions");
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
     const requestedStage = search.get("stage");
@@ -387,6 +388,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+  useEffect(() => {
+    if (zoningFocus === "source") setZoningPanel("source");
+    else if (zoningFocus === "taks" || zoningFocus === "kaks" || zoningFocus === "hmax") setZoningPanel("conditions");
+  }, [zoningFocus]);
   const [showSources, setShowSources] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -1910,14 +1915,24 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     import: <div className="geo-control-section"><span>02 / MEKÂNSAL VERİ</span><h3>Sınırı kaynağı ve statüsüyle içe alın.</h3><label>Kaynak koordinat sistemi<select value={sourceCrs} onChange={(event) => setSourceCrs(event.target.value)}><option>EPSG:4326 / WGS84</option><option>ITRF96 / 3° TM — dönüşüm gerekli</option><option>ED50 / UTM — dönüşüm gerekli</option><option>Yerel aplikasyon — sabit nokta gerekli</option></select></label><label>Veri statüsü<select value={dataStatus} onChange={(event) => setDataStatus(event.target.value)}><option>Kavramsal / doğrulanmamış</option><option>TKGM ekranından yaklaşık</option><option>Harita mühendisi ölçümü</option><option>Onaylı aplikasyon verisi</option></select></label><label className="geo-file-drop"><input type="file" accept=".kml,.geojson,.json,.csv,.txt" onChange={(event) => handleFile(event.target.files?.[0])} /><b>KML, GeoJSON veya CSV seçin</b><small>Dosya tarayıcıda okunur; sunucuya yüklenmez.</small></label><div className="geo-format-list"><p><b>KML / KMZ</b><span>Google Earth çalışma akışı</span><i>CANLI: KML</i></p><p><b>GeoJSON</b><span>WGS84 Polygon / MultiPolygon</span><i>CANLI</i></p><p><b>CSV</b><span>enlem, boylam, opsiyonel kot</span><i>CANLI</i></p><p><b>SHP / LandXML</b><span>proje dönüşüm hattı</span><i className="planned">KISMİ</i></p></div><p className="geo-caution">Tarayıcı EPSG:4326 enlem / boylam verisini doğrudan işler. ITRF/TM, ED50 veya yerel koordinatlar doğru EPSG, dönüşüm parametreleri ve sabit aplikasyon noktası olmadan WGS84 kabul edilmez.</p></div>,
     draw: <div className="geo-control-section"><span>03 / SINIR EDİTÖRÜ</span><h3>{officialBoundaryLocked ? "TKGM sınırını inceleyin." : "Noktaları harita üzerinde düzenleyin."}</h3>{officialBoundaryLocked ? <div className="geo-official-boundary-lock" role="status"><b>TKGM sınırı salt okunur</b><p>Bu geometri açık servis yanıtından geldi. Orijinal kanıt korunur ve doğrudan değiştirilemez.</p><button type="button" onClick={createEditableBoundaryCopy}>Düzenlenebilir Kopya Oluştur</button></div> : <><button className={`geo-toggle-draw${drawEnabled ? " active" : ""}`} onClick={() => setDrawEnabled((value) => !value)}><i></i>{drawEnabled ? "Haritaya tıklayarak nokta ekleniyor" : "Nokta ekleme kapalı"}</button><div className="geo-inline-actions"><button onClick={removeLastBoundaryPoint} disabled={!parcel.length}>Son noktayı geri al</button><button onClick={clearBoundary} disabled={!parcel.length}>Sınırı temizle</button></div>{officialBoundaryEvidence && <button className="geo-wide-action geo-restore-official" type="button" onClick={restoreOfficialBoundary}>Orijinal TKGM Sınırına Dön</button>}{!simple && <button className="geo-wide-action" onClick={loadSample}>Koordinatta örnek poligon üret</button>}</>}<div className="geo-point-table"><header><span>Nokta</span><span>Enlem</span><span>Boylam</span></header>{parcel.slice(0, 12).map((point, index) => <p key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></p>)}{parcel.length > 12 && <small>+ {parcel.length - 12} ek nokta</small>}</div></div>,
     zoning: <div className="geo-control-section geo-zoning-control">
-      <span>04 / PARSEL BAZLI İMAR</span>
+      <span>{simple ? "03 / PARSEL BAZLI İMAR" : "04 / PARSEL BAZLI İMAR"}</span>
       <h3>Plan kararını kaynağıyla birlikte projeye bağlayın.</h3>
       <div className="geo-zoning-status" data-state={zoning.verification}>
         <i></i>
         <div><b>{zoningVerificationLabel(zoning.verification)}</b><small>{reference}</small></div>
       </div>
 
-      <div className="geo-zoning-core">
+      <details
+        className="geo-collapsible-block geo-zoning-primary-block"
+        open={zoningPanel === "conditions"}
+        onToggle={(event) => {
+          if (event.currentTarget.open) setZoningPanel("conditions");
+          else if (zoningPanel === "conditions") setZoningPanel(null);
+        }}
+      >
+        <summary><span>İmar koşulları</span><small>{zoningFormReady ? "Temel imar girdileri tamam" : "TAKS, KAKS, Hmax ve çekme mesafeleri"}</small></summary>
+        <div className="geo-collapsible-body">
+          <div className="geo-zoning-core">
         <label>Arazi kullanım kararı<input value={zoning.landUse} onChange={(event) => updateZoning("landUse", event.target.value)} placeholder="Konut, ticaret, sanayi…" /></label>
         <label>Yapı nizamı<select value={zoning.buildingOrder} onChange={(event) => updateZoning("buildingOrder", event.target.value)}><option value="" disabled>Yapı nizamını seçin</option><option>Ayrık nizam</option><option>Bitişik nizam</option><option>Blok nizam</option><option>İkiz nizam</option><option>Serbest nizam</option><option>Plan notuna göre</option></select></label>
         <div className="geo-planning-grid geo-zoning-values">
@@ -1930,7 +1945,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <label>Yan bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.sideSetback)} onChange={(event) => updateSetback("sideSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Yan çekme"/></label>
           <label>Arka bahçe<input type="number" min="0" max="100" step=".5" value={displayOptionalZoningNumber(zoning.rearSetback)} onChange={(event) => updateSetback("rearSetback", parseOptionalZoningNumber(event.target.value))} placeholder="Arka çekme"/></label>
         </div>
-      </div>
+          </div>
+        </div>
+      </details>
 
       {zoningFocus ? <div className="geo-zoning-focus-note">
         <span>{zoningFocus === "kaks" ? "PLN-012 · KAKS GİRDİSİ" : zoningFocus === "taks" ? "PLN-011 · TAKS GİRDİSİ" : zoningFocus === "hmax" ? "PLN-013 · HMAX GİRDİSİ" : "İMAR KAYNAĞI"}</span>
@@ -1958,7 +1975,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
       </div>
 
-      <details className="geo-collapsible-block" {...(zoningFocus === "source" ? { open: true } : {})}>
+      <details
+        className="geo-collapsible-block"
+        open={zoningPanel === "source"}
+        onToggle={(event) => {
+          if (event.currentTarget.open) setZoningPanel("source");
+          else if (zoningPanel === "source") setZoningPanel(null);
+        }}
+      >
         <summary><span>Plan ve kaynak</span><small>{zoning.planScale || "Plan ölçeği ve kaynak bilgileri"}</small></summary>
         <div className="geo-collapsible-body">
           <div className="geo-zoning-source-grid">
@@ -1984,7 +2008,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </div>
       </details>
 
-      <details className="geo-collapsible-block geo-expert-review-block" {...(zoningFocus === "source" ? { open: true } : {})}>
+      <details
+        className="geo-collapsible-block geo-expert-review-block"
+        open={zoningPanel === "expert"}
+        onToggle={(event) => {
+          if (event.currentTarget.open) setZoningPanel("expert");
+          else if (zoningPanel === "expert") setZoningPanel(null);
+        }}
+      >
         <summary>
           <span>Uzman incelemesi</span>
           <small>{zoningExpertReviewComplete ? "İnceleme kaydı tamamlandı" : "PLN-010 için gerekli"}</small>
@@ -2018,7 +2049,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </div>
       </details>
 
-      <details className="geo-collapsible-block">
+      <details
+        className="geo-collapsible-block"
+        open={zoningPanel === "notes"}
+        onToggle={(event) => {
+          if (event.currentTarget.open) setZoningPanel("notes");
+          else if (zoningPanel === "notes") setZoningPanel(null);
+        }}
+      >
         <summary><span>Belge ve notlar</span><small>{zoning.sourceDocument || zoning.planNoteReference || zoning.sourceNote ? "Kayıt mevcut" : "İsteğe bağlı teknik kanıtlar"}</small></summary>
         <div className="geo-collapsible-body">
           <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
@@ -2032,7 +2070,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     </div>,
 
     design: zoningFormReady ? <div className="geo-control-section geo-design-control">
-      <span>05 / YAPI YERLEŞİMİ</span>
+      <span>{simple ? "04 / YAPI YERLEŞİMİ" : "05 / YAPI YERLEŞİMİ"}</span>
       <h3>{massingModel.source.authoritative ? "Doğrulanan imar koşullarında kütleyi sınayın." : "Girilen imar koşullarında ön kütleyi sınayın."}</h3>
 
       <nav className="geo-design-tabs" aria-label="Yapı yerleşimi bölümleri">
