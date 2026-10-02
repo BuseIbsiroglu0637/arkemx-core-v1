@@ -3541,3 +3541,185 @@ html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-expert-review-r
     max-width:48%;
   }
 }
+
+
+/* V05 / compact massing review rail
+   Keep the 04 / Yapı Yerleşimi side panel short while preserving all three
+   alternatives for comparison. On the narrow simple panel the alternatives
+   become a horizontal snap rail instead of three tall stacked cards. */
+.arx-geo-simple .v112-massing-engine {
+  margin-bottom:10px;
+  border-radius:7px;
+}
+.arx-geo-simple .v112-massing-engine > header {
+  gap:8px;
+  padding:10px 11px;
+}
+.arx-geo-simple .v112-massing-engine > header b {
+  margin-top:2px;
+  font-size:10px;
+  line-height:1.35;
+}
+.arx-geo-simple .v112-massing-engine > header em {
+  padding:5px 7px;
+  font-size:7px;
+}
+.arx-geo-simple .v112-front-edge {
+  grid-template-columns:82px minmax(0,1fr);
+  gap:4px 8px;
+  padding:8px 10px;
+}
+.arx-geo-simple .v112-front-edge small {
+  max-height:2.8em;
+  overflow:hidden;
+  font-size:7px;
+  line-height:1.4;
+}
+.arx-geo-simple .v112-envelope-ledger p {
+  padding:8px 9px;
+}
+.arx-geo-simple .v112-envelope-ledger span {
+  font-size:7px;
+}
+.arx-geo-simple .v112-envelope-ledger b {
+  margin-top:3px;
+  font-size:9px;
+}
+
+/* Horizontal comparison instead of vertical stacking. */
+.arx-geo-simple .v112-massing-options {
+  display:flex !important;
+  grid-template-columns:none !important;
+  gap:8px;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:thin;
+  padding:9px;
+}
+.arx-geo-simple .v112-massing-options article {
+  flex:0 0 min(248px,86%);
+  scroll-snap-align:start;
+  min-height:0;
+  padding:10px;
+}
+.arx-geo-simple .v112-massing-options article > div > span {
+  font-size:7px;
+}
+.arx-geo-simple .v112-massing-options article > div > b {
+  margin-top:2px;
+  font-size:10px;
+}
+.arx-geo-simple .v112-massing-options strong {
+  margin-top:7px;
+  font-size:18px;
+}
+.arx-geo-simple .v112-massing-options article > p {
+  margin-top:4px;
+  font-size:7px;
+}
+.arx-geo-simple .v112-massing-options dl {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px;
+  margin:7px 0 0;
+}
+.arx-geo-simple .v112-massing-options dl div {
+  display:block;
+  min-width:0;
+  padding:5px 4px;
+  border:1px solid rgb(255 255 255 / 9%);
+  text-align:center;
+}
+.arx-geo-simple .v112-massing-options dt {
+  overflow:hidden;
+  font-size:7px;
+  line-height:1.25;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.arx-geo-simple .v112-massing-options dd {
+  margin-top:2px;
+  font-size:8px;
+}
+.arx-geo-simple .v112-massing-options article > small {
+  display:-webkit-box;
+  min-height:0;
+  margin-top:6px;
+  overflow:hidden;
+  font-size:7px;
+  line-height:1.4;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.arx-geo-simple .v112-massing-options button {
+  min-height:34px;
+  margin-top:7px;
+  padding:7px;
+  font-size:8px;
+}
+.arx-geo-simple .v112-unverified-note {
+  padding:8px 10px;
+  font-size:7px;
+  line-height:1.4;
+}
+
+/* The fields below the alternative rail are secondary; keep them compact. */
+.arx-geo-simple .geo-design-control .v112-massing-engine + label,
+.arx-geo-simple .geo-design-control .v112-massing-engine + label + label {
+  padding-top:5px !important;
+  padding-bottom:5px !important;
+}
+
+/* Light-theme cards use the page palette instead of the V112 dark legacy block. */
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-engine {
+  color:#183641;
+  border-color:#d4e0e4;
+  background:#f8fafb;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-engine > header,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-front-edge,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-envelope-ledger,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-unverified-note {
+  border-color:#dce5e8;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-front-edge {
+  color:#405e68 !important;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options article {
+  border-color:#d5e1e5;
+  background:#fff;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options article[data-selected="true"] {
+  border-color:#c66e3d;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options strong,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-envelope-ledger b,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options dd {
+  color:#183641;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options article > p,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options article > small,
+html:not([data-theme="dark"]) .arx-geo-simple .v112-front-edge small {
+  color:#72868e;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options dl div {
+  border-color:#e1e8ea;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options button {
+  color:#284d59;
+  border-color:#c9d7dc;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-options article[data-selected="true"] button {
+  color:#fff;
+}
+html:not([data-theme="dark"]) .arx-geo-simple .v112-unverified-note {
+  color:#9c5d38;
+  background:#fff6f0;
+}
+
+@media(max-width:700px) {
+  .arx-geo-simple .v112-massing-options article {
+    flex-basis:92%;
+  }
+}
