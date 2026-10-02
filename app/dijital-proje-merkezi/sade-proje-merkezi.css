@@ -1288,3 +1288,140 @@ html[data-theme="dark"] body:has(.arx-center-page) .arkem-theme-control button[a
     right:14px;
   }
 }
+
+
+/* Automatic module handoff status / technical fallback */
+.arx-auto-handoff-status {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+  padding:7px 10px;
+  border:1px solid #d8e4df;
+  border-radius:7px;
+  background:#f5faf7;
+  color:#3f6d56;
+}
+.arx-auto-handoff-status > i {
+  flex:0 0 7px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#4f8a6d;
+}
+.arx-auto-handoff-status > span {
+  display:grid;
+  gap:2px;
+}
+.arx-auto-handoff-status b {
+  font-size:9px;
+  line-height:1.25;
+}
+.arx-auto-handoff-status small {
+  color:#6d8178;
+  font-size:8px;
+  line-height:1.3;
+}
+.arx-auto-handoff-status.is-off {
+  border-color:#e5d6c8;
+  background:#fff9f3;
+  color:#8a6037;
+}
+.arx-auto-handoff-status.is-off > i {
+  background:#b77a42;
+}
+.arx-auto-handoff-status.is-off small {
+  color:#8b7764;
+}
+
+.arx-transfer-tools-body {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:14px;
+  align-items:center;
+  padding:14px 16px 16px;
+}
+.arx-transfer-tools-body > div > b {
+  display:block;
+  color:#294954;
+  font-size:10px;
+}
+.arx-transfer-tools-body > div > p {
+  max-width:650px;
+  margin:5px 0 0;
+  color:#71848d;
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-transfer-toggle {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#516c77;
+  font-size:9px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.arx-transfer-toggle input {
+  width:15px;
+  height:15px;
+  accent-color:#244756;
+}
+.arx-transfer-tools-body > button {
+  min-height:36px;
+  padding:8px 10px;
+  border:1px solid #cfdadd;
+  border-radius:6px;
+  background:#fff;
+  color:#365766;
+  font:700 9px/1.25 var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-transfer-tools-body > button:hover {
+  border-color:#9fb4ba;
+}
+
+html[data-theme="dark"] .arx-auto-handoff-status {
+  border-color:#2e473a;
+  background:#0d1711;
+  color:#9bc2a9;
+}
+html[data-theme="dark"] .arx-auto-handoff-status small {
+  color:#8fa79a;
+}
+html[data-theme="dark"] .arx-auto-handoff-status.is-off {
+  border-color:#544333;
+  background:#17120c;
+  color:#d5ac7f;
+}
+html[data-theme="dark"] .arx-transfer-tools-body > div > b {
+  color:#f1f5f6;
+}
+html[data-theme="dark"] .arx-transfer-tools-body > div > p,
+html[data-theme="dark"] .arx-transfer-toggle {
+  color:#aebbc1;
+}
+html[data-theme="dark"] .arx-transfer-tools-body > button {
+  border-color:#343434;
+  background:#101010;
+  color:#d5e0e4;
+}
+
+@media(max-width:760px) {
+  .arx-advanced-head-actions {
+    width:100%;
+  }
+  .arx-auto-handoff-status {
+    flex:1 1 100%;
+  }
+  .arx-transfer-tools-body {
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .arx-transfer-toggle {
+    white-space:normal;
+  }
+  .arx-transfer-tools-body > button {
+    justify-self:start;
+  }
+}
