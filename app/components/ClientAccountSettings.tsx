@@ -263,20 +263,16 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
 
   if (simple) {
     return <div className="arx-account-panel" data-testid="account-settings-panel">
-      <section className="arx-account-status">
-        <div>
-          <span>AKTİF HESAP</span>
-          <h2>{profile.displayName || displayName}</h2>
-          <p>{email}</p>
-        </div>
+      <section className="arx-account-sync" aria-live="polite">
+        <span><i aria-hidden="true"></i> Hesap aktif</span>
         <small>{message}</small>
       </section>
 
       <section className="arx-account-metrics" aria-label="Hesap özeti">
-        <article><span>KAYITLI PROJE</span><b>{data?.projects.length ?? 0}</b></article>
-        <article><span>GÖRÜŞME</span><b>{data?.meetings.length ?? 0}</b></article>
-        <article><span>AKTİF REVİZYON</span><b>{hasActiveProject ? project.revision : "—"}</b></article>
-        <article><span>VERİ HAZIRLIĞI</span><b>{hasActiveProject ? `%${thread.metrics.readiness}` : "—"}</b></article>
+        <article><span>Kayıtlı proje</span><b>{data?.projects.length ?? 0}</b></article>
+        <article><span>Görüşme</span><b>{data?.meetings.length ?? 0}</b></article>
+        <article><span>Aktif revizyon</span><b>{hasActiveProject ? project.revision : "—"}</b></article>
+        <article><span>Veri hazırlığı</span><b>{hasActiveProject ? `%${thread.metrics.readiness}` : "—"}</b></article>
       </section>
 
       <div className="arx-account-grid">
@@ -289,11 +285,11 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             <label>E-posta<input value={email} readOnly/></label>
             <label>Firma / kurum<input value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })}/></label>
             <label>Telefon<input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}/></label>
-            <button type="submit">Profili kaydet</button>
+            <button type="submit">Profili Kaydet</button>
           </form>
         </section>
 
-        <section className="arx-account-card" aria-labelledby="arx-account-projects-title">
+        <section className="arx-account-card arx-account-project-card" aria-labelledby="arx-account-projects-title">
           <header>
             <div><span>PROJELER</span><h3 id="arx-account-projects-title">Hesaba bağlı projeler</h3></div>
           </header>
@@ -302,18 +298,30 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
               <div><b>{project.name}</b><small>{project.id} · {project.revision} · Yerel aktif proje</small><time>Hesap kaydı otomatik eşitleniyor…</time></div>
               <button type="button" onClick={saveProject}>Şimdi kaydet</button>
             </article> : null}
+
             {meaningfulDraft ? <article className="arx-account-draft">
               <div><b>{meaningfulDraft.intake.name?.trim() || "Devam eden proje taslağı"}</b><small>Yeni proje taslağı · kayıtlı projelerden ayrıdır · Adım {Math.min(5, Math.max(1, meaningfulDraft.step + 1))}/5</small><time>{formatProjectDateTime(meaningfulDraft.savedAt)}</time></div>
               <span className="arx-account-project-actions arx-account-draft-actions"><Link href="/proje-baslat">Taslağa Devam Et <span aria-hidden="true">→</span></Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
             </article> : null}
+
             {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
               <span className="arx-account-project-actions"><button type="button" onClick={() => openAccountProject(item)}>Aç</button><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></span>
             </article>)}
-            {data && data.projects.length === 0 ? <p>Henüz hesaba kaydedilmiş proje yok.</p> : null}
-            {!data ? <p>Hesap kayıtları yükleniyor…</p> : null}
+
+            {data && data.projects.length === 0 && !(hasActiveProject && !accountHasActiveProject) && !meaningfulDraft ? <div className="arx-account-empty">
+              <span aria-hidden="true">⌁</span>
+              <b>Henüz kayıtlı projeniz yok</b>
+              <p>Çalışma alanında oluşturduğunuz projeler burada görünecek.</p>
+              <Link href="/dijital-proje-merkezi">Proje Çalışma Alanına Git <span aria-hidden="true">→</span></Link>
+            </div> : null}
+
+            {!data ? <p className="arx-account-loading">Hesap kayıtları yükleniyor…</p> : null}
           </div>
-          <footer><Link href="/dijital-proje-merkezi">Projeye Devam Et →</Link></footer>
+
+          {data && (data.projects.length > 0 || Boolean(meaningfulDraft) || hasActiveProject) ? <footer>
+            <Link href="/dijital-proje-merkezi">Proje Çalışma Alanına Git →</Link>
+          </footer> : null}
         </section>
       </div>
 
@@ -326,7 +334,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
               <div><b>{item.subject}</b><small>{item.channel} · {formatProjectDateTime(item.meetingAt)}</small></div>
               <button type="button" onClick={() => remove("meeting", item.id)}>Kaldır</button>
             </article>)}
-            {data && data.meetings.length === 0 ? <p>Henüz görüşme kaydı yok.</p> : null}
+            {data && data.meetings.length === 0 ? <p className="arx-account-empty-inline">Henüz görüşme kaydı yok.</p> : null}
           </section>
           <section>
             <h3>Son işlemler</h3>
@@ -339,7 +347,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
                 </small>
               </div>
             </article>)}
-            {data && data.activities.length === 0 ? <p>Henüz işlem kaydı yok.</p> : null}
+            {data && data.activities.length === 0 ? <p className="arx-account-empty-inline">Henüz işlem kaydı yok.</p> : null}
           </section>
         </div>
       </details>
