@@ -3943,3 +3943,40 @@ html:not([data-theme="dark"]) .arx-geo-simple .v112-massing-preview[data-selecte
     text-align:left;
   }
 }
+
+
+/* V05 / deferred structural-system decision */
+.arx-geo-simple .geo-system-deferred {
+  display:grid;
+  gap:3px;
+  margin-top:8px;
+  padding:9px 10px;
+  border:1px solid #dce4e7;
+  border-radius:6px;
+  background:#f7fafb;
+}
+.arx-geo-simple .geo-system-deferred span {
+  color:#a65f39;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+.arx-geo-simple .geo-system-deferred b {
+  color:#365762;
+  font-size:9px;
+}
+.arx-geo-simple .geo-system-deferred small {
+  color:#7c8d94;
+  font-size:7px;
+  line-height:1.4;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-system-deferred {
+  border-color:#303030 !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-system-deferred b {
+  color:#e2e9ec !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-system-deferred small {
+  color:#95a3a9 !important;
+}
