@@ -1931,7 +1931,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             : "Plan ve kaynak bölümünden kaynak bilgilerini tamamlayın."}</small>
       </div>
 
-      <details className="geo-collapsible-block" defaultOpen={zoningFocus === "source"}>
+      <details className="geo-collapsible-block" {...(zoningFocus === "source" ? { open: true } : {})}>
         <summary><span>Plan ve kaynak</span><small>{zoning.planScale || "Plan ölçeği ve kaynak bilgileri"}</small></summary>
         <div className="geo-collapsible-body">
           <div className="geo-zoning-source-grid">
@@ -1957,7 +1957,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         </div>
       </details>
 
-      <details className="geo-collapsible-block geo-expert-review-block" defaultOpen={zoningFocus === "source"}>
+      <details className="geo-collapsible-block geo-expert-review-block" {...(zoningFocus === "source" ? { open: true } : {})}>
         <summary>
           <span>Uzman incelemesi</span>
           <small>{zoningExpertReviewComplete ? "İnceleme kaydı tamamlandı" : "PLN-010 için gerekli"}</small>
