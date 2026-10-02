@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
-import { createBimCoordinationModel } from "../lib/bim-coordination";
+import { createBimCoordinationModel, type CoordinationSectionStrategy } from "../lib/bim-coordination";
 import { createCoordinationPackage } from "../lib/coordination-package";
 import { restoreReviewedIds, summarizeIssueLifecycle } from "../lib/issue-lifecycle";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
@@ -26,6 +26,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
   const [serviceZone, setServiceZone] = useState(.45);
   const [ceilingBuildUp, setCeilingBuildUp] = useState(.12);
   const [raisedFloor, setRaisedFloor] = useState(.08);
+  const [sectionStrategy, setSectionStrategy] = useState<CoordinationSectionStrategy>("stacked");
   const [shaftArea, setShaftArea] = useState(32);
   const [plantArea, setPlantArea] = useState(110);
   const [soilBearing, setSoilBearing] = useState(200);
@@ -54,6 +55,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     serviceZone,
     ceilingBuildUp,
     raisedFloor,
+    sectionStrategy,
     shaftArea,
     plantArea,
     factoredGravity: source.structure.factoredGravity,
@@ -62,7 +64,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     outletCapacity,
     sprinkler,
     facadeTolerance,
-  }), [architecturalScheme, beamDepth, ceilingBuildUp, facadeTolerance, floorHeight, outletCapacity, plantArea, project.id, project.revision, rainfallIntensity, raisedFloor, serviceZone, shaftArea, slabDepth, soilBearing, source.site.crs, source.structure.factoredGravity, sprinkler, structuralStudio]);
+  }), [architecturalScheme, beamDepth, ceilingBuildUp, facadeTolerance, floorHeight, outletCapacity, plantArea, project.id, project.revision, rainfallIntensity, raisedFloor, sectionStrategy, serviceZone, shaftArea, slabDepth, soilBearing, source.site.crs, source.structure.factoredGravity, sprinkler, structuralStudio]);
 
   const result = useMemo(() => ({
     floorPlate: bimCoordination.spatial.plate.floorAreaM2,
@@ -107,7 +109,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     patchModule("engineering-coordination", {
       schema: "ARKEM-COORDINATION/3.0",
       previousSchema: "ARKEM-COORDINATION/2.0",
-      input: { floorHeight, beamDepth, slabDepth, serviceZone, ceilingBuildUp, raisedFloor, shaftArea, plantArea, soilBearing, rainfallIntensity, outletCapacity, sprinkler, facadeTolerance },
+      input: { floorHeight, beamDepth, slabDepth, serviceZone, ceilingBuildUp, raisedFloor, sectionStrategy, shaftArea, plantArea, soilBearing, rainfallIntensity, outletCapacity, sprinkler, facadeTolerance },
       result: { ...result, openIssues: localIssues.length, criticalOpen: activeCriticalClashes.length },
       issues: localIssues,
       bimCoordination,
@@ -117,7 +119,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
       issueGate: { blocked: activeCriticalClashes.length > 0, activeCriticalClashes: activeCriticalClashes.length, reviewedCriticalClashes: activeCriticalClashes.filter((issue) => reviewed.includes(issue.id)).length },
       status: "v115-bim-discipline-coordination",
     });
-  }, [activeCriticalClashes.length, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, result, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
+  }, [activeCriticalClashes.length, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, result, sectionStrategy, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
 
   const importThread = useCallback(() => {
     const scheme = record(architecturalScheme);
@@ -150,6 +152,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
       if (typeof input.serviceZone === "number") setServiceZone(input.serviceZone);
       if (typeof input.ceilingBuildUp === "number") setCeilingBuildUp(input.ceilingBuildUp);
       if (typeof input.raisedFloor === "number") setRaisedFloor(input.raisedFloor);
+      if (input.sectionStrategy === "integrated" || input.sectionStrategy === "stacked") setSectionStrategy(input.sectionStrategy);
       if (typeof input.shaftArea === "number") setShaftArea(input.shaftArea);
       if (typeof input.plantArea === "number") setPlantArea(input.plantArea);
       if (typeof input.soilBearing === "number") setSoilBearing(input.soilBearing);
