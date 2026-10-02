@@ -166,7 +166,10 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
   const autoSavedProjectRef = useRef("");
 
-  const update = <K extends keyof ProjectIntake>(key: K, value: ProjectIntake[K]) => setIntake((current) => ({ ...current, [key]: value }));
+  const update = <K extends keyof ProjectIntake>(key: K, value: ProjectIntake[K]) => {
+    setBriefSaveState("idle");
+    setIntake((current) => ({ ...current, [key]: value }));
+  };
   const updateNumericDraft = (key: "targetArea" | "floors" | "floorHeight", rawValue: string, min: number, max: number) => {
     setNumericDrafts((current) => ({ ...current, [key]: rawValue }));
     if (rawValue.trim() === "") return;
