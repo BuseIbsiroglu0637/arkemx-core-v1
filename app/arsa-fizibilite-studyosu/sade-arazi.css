@@ -2206,3 +2206,187 @@ html[data-theme="dark"] .arx-geo-simple .geo-studio-foot {
     border-bottom:1px solid #dfe6e8;
   }
 }
+
+
+/* V05 / final dark-surface normalization */
+html[data-theme="dark"] .arx-geo-simple > .project-kernel-compact {
+  border-color:#2d2d2d !important;
+  background:#070707 !important;
+  color:#f3f6f7 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-code {
+  color:#d18a61 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-name,
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-name-input {
+  color:#f4f7f8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-name-input {
+  border-color:#3a3a3a !important;
+  background:#111 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-meta {
+  color:#a4b1b6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-actions > :where(a,button) {
+  border-color:#343434 !important;
+  background:#0d0d0d !important;
+  color:#cdd8dc !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-actions > :where(a,button):hover {
+  border-color:#555 !important;
+  background:#151515 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .project-kernel-compact-actions > .is-primary {
+  border-color:#315565 !important;
+  background:#163746 !important;
+  color:#fff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header aside {
+  border-color:#343434 !important;
+  background:#0d0d0d !important;
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-parcel-center > header aside small {
+  color:#96a5ab !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .v109-source-network {
+  border-color:#2f2f2f !important;
+  background:#080808 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-source-network > header,
+html[data-theme="dark"] .arx-geo-simple .v109-source-network article {
+  border-color:#2f2f2f !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-source-network :where(b,strong) {
+  color:#edf2f4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .v109-source-network :where(span,small,em) {
+  color:#9eabb0 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop {
+  border-color:#414141 !important;
+  background:#101010 !important;
+  background-image:none !important;
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop b {
+  color:#edf2f4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop small {
+  color:#9eabb0 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list p,
+html[data-theme="dark"] .arx-geo-simple .geo-point-table,
+html[data-theme="dark"] .arx-geo-simple .geo-point-table p {
+  border-color:#303030 !important;
+  color:#c5d0d4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list span,
+html[data-theme="dark"] .arx-geo-simple .geo-point-table span,
+html[data-theme="dark"] .arx-geo-simple .geo-point-table small {
+  color:#99a7ad !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-official-link,
+html[data-theme="dark"] .arx-geo-simple .geo-wide-action {
+  border-color:#3b3b3b !important;
+  background:#111 !important;
+  color:#e4ecef !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-official-link > span {
+  background:#b96636 !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-inline-actions button,
+html[data-theme="dark"] .arx-geo-simple .geo-toggle-draw {
+  border-color:#393939 !important;
+  background:#101010 !important;
+  color:#c7d2d6 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-toggle-draw.active {
+  border-color:#3f705e !important;
+  background:#0d1712 !important;
+  color:#a9d5c1 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-caution,
+html[data-theme="dark"] .arx-geo-simple .arx-geo-field-warning {
+  color:#d6b89c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-caution {
+  border-left-color:#b96636 !important;
+  background:#160f0b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-caution b {
+  color:#f0c1a4 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-switch {
+  border-color:#343434 !important;
+  background:rgba(8,8,8,.94) !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-switch button {
+  background:transparent !important;
+  color:#aebbc1 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-switch button.active {
+  background:#183746 !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-offline-label {
+  border-color:#373737 !important;
+  background:rgba(10,10,10,.93) !important;
+  color:#c3cdd1 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-basemap-warning {
+  background:#17110c !important;
+  color:#e7c7a4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-loading {
+  background:#101010 !important;
+  color:#edf2f4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-map-loading small {
+  color:#9eabb0 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar > button:disabled,
+html[data-theme="dark"] .arx-geo-simple .geo-stage-toolbar button:disabled {
+  background:#0b0b0b !important;
+  color:#5f6a6f !important;
+  opacity:1 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-data-view {
+  border-color:#303030 !important;
+  background:#090f13 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-data-view > header,
+html[data-theme="dark"] .arx-geo-simple .geo-data-view > footer,
+html[data-theme="dark"] .arx-geo-simple .geo-data-table .head {
+  background:#0b0b0b !important;
+  border-color:#303030 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-data-table > div {
+  border-color:#2b2b2b !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button {
+  border-color:#3b3b3b !important;
+  background:#101010 !important;
+  color:#d6e0e4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-terrain-massing-control button[aria-pressed="true"] {
+  border-color:#315565 !important;
+  background:#163746 !important;
+  color:#fff !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-studio-foot-collapsible > summary {
+  background:#090909 !important;
+}
