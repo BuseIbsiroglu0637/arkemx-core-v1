@@ -378,6 +378,64 @@ body:has(.arx-account-page) .v4-floating-contact {
 }
 
 
+.arx-account-active-removal {
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:18px;
+  align-items:center;
+  margin-top:4px;
+  padding:13px 14px;
+  border:1px solid #e2c9be;
+  border-radius:7px;
+  background:#fff8f5;
+}
+.arx-account-active-removal > div:first-child b {
+  display:block;
+  color:#7f4739;
+  font-size:10px;
+}
+.arx-account-active-removal > div:first-child small {
+  display:block;
+  max-width:620px;
+  margin-top:4px;
+  color:#8b6a61;
+  font-size:9px;
+  line-height:1.45;
+}
+.arx-account-active-removal > div:last-child {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:7px;
+}
+.arx-account-active-removal button {
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid #cfdbdf;
+  border-radius:6px;
+  background:#fff;
+  color:#456471;
+  font:700 9px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-account-active-removal button.danger {
+  border-color:#aa5d4b;
+  background:#aa5d4b;
+  color:#fff;
+}
+.arx-account-active-removal button.cancel {
+  border-color:transparent;
+  background:transparent;
+  color:#71848c;
+}
+.arx-account-active-removal button:disabled {
+  opacity:.55;
+  cursor:wait;
+}
+
+
 .arx-account-list b {
   display:block;
   color:#29434f;
@@ -832,6 +890,32 @@ html[data-theme="dark"] .arx-account-project-title-row em {
   color:#96c5a8;
 }
 
+html[data-theme="dark"] .arx-account-active-removal {
+  border-color:#5a3931;
+  background:#170d0a;
+}
+html[data-theme="dark"] .arx-account-active-removal > div:first-child b {
+  color:#e3a08d;
+}
+html[data-theme="dark"] .arx-account-active-removal > div:first-child small {
+  color:#b7978e;
+}
+html[data-theme="dark"] .arx-account-active-removal button {
+  border-color:#3a3a3a;
+  background:#101010;
+  color:#d5e0e4;
+}
+html[data-theme="dark"] .arx-account-active-removal button.danger {
+  border-color:#a95c4d;
+  background:#a95c4d;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-account-active-removal button.cancel {
+  border-color:transparent;
+  background:transparent;
+  color:#aebbc1;
+}
+
 html[data-theme="dark"] .arx-account-empty > span {
   border-color:#333;
   color:#a7b7bd;
@@ -952,6 +1036,15 @@ html[data-theme="dark"] body:has(.arx-account-page) .arkem-theme-control button[
   }
 
   .arx-account-project-actions {
+    justify-content:flex-start;
+  }
+
+  .arx-account-active-removal {
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+
+  .arx-account-active-removal > div:last-child {
     justify-content:flex-start;
   }
 
