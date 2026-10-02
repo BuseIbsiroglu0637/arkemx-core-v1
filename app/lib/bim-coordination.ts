@@ -125,9 +125,11 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const serviceZone = clamp(input.serviceZone, .15, 2);
   const ceilingBuildUp = clamp(input.ceilingBuildUp, 0, .5);
   const raisedFloor = clamp(input.raisedFloor, 0, .5);
+  const sectionStrategy: CoordinationSectionStrategy = input.sectionStrategy === "integrated" ? "integrated" : "stacked";
+  const sectionBudget = calculateConceptualClearHeight(floorHeight, beamDepth, serviceZone, ceilingBuildUp, raisedFloor, sectionStrategy);
+  const clearHeight = sectionBudget.clearHeight;
   const shaftArea = clamp(input.shaftArea, 1, 5_000);
   const plantArea = clamp(input.plantArea, 1, 20_000);
-  const clearHeight = floorHeight - beamDepth - serviceZone - ceilingBuildUp - raisedFloor;
   const shaftRatio = shaftArea / floorPlate * 100;
   const serviceRatio = serviceZone / floorHeight * 100;
   const bearingPressure = input.factoredGravity > 0 ? input.factoredGravity / floorPlate : 0;
@@ -268,6 +270,8 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
     },
     coordination: {
       clearHeightM: round(clearHeight),
+      sectionStrategy,
+      occupiedCeilingZoneM: round(sectionBudget.occupiedCeilingZone),
       serviceZoneM: round(serviceZone),
       serviceRatioPct: round(serviceRatio, 1),
       shaftRatioPct: round(shaftRatio, 2),
