@@ -33,40 +33,35 @@ export default async function AccountSetupPage({ searchParams }: SetupPageProps)
   return <main className="arx-simple-home arx-auth-page arx-setup-page">
     <div className="arx-auth-shell">
       <header className="arx-auth-header">
-        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <Link href={`/giris?return_to=${encodeURIComponent(returnTo)}`} className="arx-auth-back">Girişe dön</Link>
+        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX ana sayfası">ARKEM<span>X</span></Link>
+        <Link href={`/giris?return_to=${encodeURIComponent(returnTo)}`} className="arx-auth-back">← Girişe dön</Link>
       </header>
 
       <section className="arx-setup-wrap" aria-labelledby="arx-setup-title">
         <div className="arx-setup-copy">
-          <span>İLK KULLANIM</span>
-          <h1 id="arx-setup-title">Hesap kurulumunu tamamlayın</h1>
-          <p>Kimliğinizi doğrulayın, temel iletişim bilgilerinizi ekleyin ve ARKEMX çalışma alanına geçin.</p>
+          <span>İLK KURULUM</span>
+          <h1 id="arx-setup-title">ARKEMX hesabınızı hazırlayın</h1>
+          <p>Çalışma alanınıza geçmek için kısa kurulumu tamamlayın.</p>
           <ol>
-            <li><i>1</i><span><b>Güvenli oturum</b><small>Hesabınız doğrulanmış oturum kimliğiyle eşleştirilir.</small></span></li>
-            <li><i>2</i><span><b>Kısa profil</b><small>Ad, firma ve iletişim bilgileri yeterlidir.</small></span></li>
-            <li><i>3</i><span><b>Çalışmaya devam</b><small>Kurulumdan sonra hedef çalışma alanına dönersiniz.</small></span></li>
+            <li><i>1</i><span><b>Güvenli giriş</b><small>Hesabınızla güvenli şekilde oturum açın.</small></span></li>
+            <li><i>2</i><span><b>Profil bilgileri</b><small>Ad, firma ve iletişim bilgilerinizi tamamlayın.</small></span></li>
+            <li><i>3</i><span><b>Tamamlandı</b><small>Kurulumdan sonra çalışma alanınıza yönlendirilirsiniz.</small></span></li>
           </ol>
         </div>
 
         <div className="arx-setup-card">
           {user ? <AccountSetupGate displayName={user.displayName} email={user.email} returnTo={returnTo} showExistingAccountChoice={explicitFirstUse}/> : <>
-            <span>1 / 2</span>
-            <h2>Önce güvenli oturumu açın</h2>
-            <p>Kimlik doğrulamasından sonra bu kurulum ekranına geri döneceksiniz.</p>
+            <span>ADIM 1 / 3</span>
+            <h2>Güvenli oturumunuzu açın</h2>
+            <p>Giriş yaptıktan sonra profil bilgilerinizi tamamlamak için bu ekrana geri döneceksiniz.</p>
             <form action="/hesap-baglantisi" method="get">
               <input type="hidden" name="return_to" value={setupReturn}/>
-              <button className="arx-auth-primary" type="submit">Güvenli girişle devam et <b>→</b></button>
+              <button className="arx-auth-primary" type="submit">Giriş Yap <b aria-hidden="true">→</b></button>
             </form>
-            <small>Bu ekranda parola veya ödeme bilgisi tutulmaz.</small>
+            <small>Bu ekranda parola, ödeme bilgisi veya proje dosyası tutulmaz.</small>
           </>}
         </div>
       </section>
-
-      <footer className="arx-auth-footer">
-        <span>ARKEMX hesap kurulumu</span>
-        <small>Kurulum tamamlandığında {returnTo === "/dijital-proje-merkezi" ? "Proje Çalışma Alanına" : "seçtiğiniz çalışma alanına"} geçilir.</small>
-      </footer>
     </div>
   </main>;
 }
