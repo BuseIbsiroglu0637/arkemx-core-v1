@@ -1187,3 +1187,16 @@ test("simple project center distinguishes working package readiness from officia
   assert.match(hub, /Teknik kapanışı bekleyen inceleme kayıtları/);
   assert.match(hub, /data-testid="delivery-review-issues"/);
 });
+
+
+test("BIM coordination exposes explicit beam-MEP section strategy", () => {
+  const studio = fs.readFileSync(new URL("../app/components/EngineeringCoordinationStudio.tsx", import.meta.url), "utf8");
+  const engine = fs.readFileSync(new URL("../app/lib/bim-coordination.ts", import.meta.url), "utf8");
+  assert.match(studio, /Kiriş–MEP düşey ilişkisi/);
+  assert.match(studio, /Ayrık · kiriş \+ MEP toplanır/);
+  assert.match(studio, /Entegre · ortak servis bandı/);
+  assert.match(studio, /sectionStrategy/);
+  assert.match(engine, /calculateConceptualClearHeight/);
+  assert.match(engine, /Math\.max\(beamDepth, serviceZone\)/);
+  assert.match(engine, /sectionStrategy/);
+});
