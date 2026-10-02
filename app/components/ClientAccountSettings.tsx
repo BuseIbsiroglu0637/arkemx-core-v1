@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
+import { deriveProjectThread } from "../lib/project-graph";
 import { formatProjectDateTime } from "../lib/date-format";
 
 type WorkspaceActivity = {
@@ -31,6 +32,13 @@ type GuidedDraftSummary = {
 
 const GUIDED_DRAFT_KEY = "arkem-guided-project-draft-v107";
 const ACCOUNT_SYNC_SUPPRESSION_KEY = "arkem-account-sync-suppressed-projects-v1";
+
+function payloadReadiness(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const modules = (payload as { modules?: unknown }).modules;
+  if (!modules || typeof modules !== "object" || Array.isArray(modules)) return null;
+  return deriveProjectThread(modules as Record<string, unknown>).metrics.readiness;
+}
 
 function payloadUpdatedAt(payload: unknown) {
   if (!payload || typeof payload !== "object") return 0;
@@ -77,6 +85,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [profileBaseline, setProfileBaseline] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showAllProjects, setShowAllProjects] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [activeProjectRemovalId, setActiveProjectRemovalId] = useState<string | null>(null);
   const [projectRemovalBusy, setProjectRemovalBusy] = useState(false);
   const [projectSwitchBusy, setProjectSwitchBusy] = useState(false);
@@ -102,6 +111,17 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     || profile.phone !== profileBaseline.phone
     || profile.preferredLanguage !== profileBaseline.preferredLanguage;
   const visibleProjects = data ? (showAllProjects ? data.projects : data.projects.slice(0, 4)) : [];
+  const selectedAccountProject = data?.projects.find((item) => item.id === selectedProjectId)
+    ?? accountActiveProject
+    ?? data?.projects[0]
+    ?? null;
+  const selectedProjectIsActive = Boolean(selectedAccountProject && hasActiveProject && selectedAccountProject.id === project.id);
+  const selectedProjectName = selectedProjectIsActive ? project.name : selectedAccountProject?.name ?? "";
+  const selectedProjectPhase = selectedProjectIsActive ? project.phase : selectedAccountProject?.phase ?? "";
+  const selectedProjectRevision = selectedProjectIsActive ? project.revision : selectedAccountProject?.revision ?? "—";
+  const selectedProjectReadiness = selectedProjectIsActive
+    ? thread.metrics.readiness
+    : payloadReadiness(selectedAccountProject?.payload);
   const statusError = /yüklenemedi|kaydedilemedi|kaldırılamadı|tamamlanamadı|çakış|bağlanılamadı/i.test(message);
   const statusBusy = /hazırlanıyor|kaydediliyor|eşitleniyor|kaldırılıyor|yükleniyor/i.test(message);
   const accountStatus = statusError ? "error" : (!data || statusBusy ? "syncing" : "ready");
@@ -139,6 +159,11 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       return;
     }
     setData(body);
+    setSelectedProjectId((currentSelection) => {
+      if (currentSelection && body.projects.some((item) => item.id === currentSelection)) return currentSelection;
+      const activeAccountProject = body.projects.find((item) => item.id === project.id);
+      return activeAccountProject?.id ?? body.projects[0]?.id ?? "";
+    });
     if (body.profile) {
       const loadedProfile = {
         displayName: body.profile.displayName,
@@ -446,11 +471,20 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         <small>{message}</small>
       </section>
 
-      <section className="arx-account-metrics" aria-label="Hesap özeti">
-        <article><span>Kayıtlı proje</span><b>{data ? data.projects.length : "—"}</b></article>
-        <article><span>Görüşme</span><b>{data ? data.meetings.length : "—"}</b></article>
-        <article><span>Aktif revizyon</span><b>{hasActiveProject ? project.revision : "—"}</b></article>
-        <article><span>Veri hazırlığı</span><b>{hasActiveProject ? `%${thread.metrics.readiness}` : "—"}</b></article>
+      {selectedAccountProject ? <section className="arx-account-selected-project" aria-live="polite">
+        <div>
+          <span>İNCELENEN PROJE</span>
+          <b>{selectedProjectName}</b>
+          <small>{selectedAccountProject.id} · {selectedProjectPhase || "Aşama belirtilmedi"}</small>
+        </div>
+        {selectedProjectIsActive ? <em><i aria-hidden="true"></i> Aktif proje</em> : <span>Proje listesinden farklı bir kayıt seçebilirsiniz.</span>}
+      </section> : null}
+
+      <section className="arx-account-metrics" aria-label="Hesap ve seçili proje özeti">
+        <article><span>Kayıtlı proje</span><b>{data ? data.projects.length : "—"}</b><small>hesabınızdaki toplam kayıt</small></article>
+        <article><span>Görüşme</span><b>{data ? data.meetings.length : "—"}</b><small>hesaba bağlı görüşme</small></article>
+        <article><span>Seçili revizyon</span><b>{selectedAccountProject ? selectedProjectRevision : "—"}</b><small>{selectedProjectName || "Proje seçilmedi"}</small></article>
+        <article><span>Veri hazırlığı</span><b>{selectedProjectReadiness === null || selectedProjectReadiness === undefined ? "—" : `%${selectedProjectReadiness}`}</b><small>{selectedProjectPhase || "Proje verisi bekleniyor"}</small></article>
       </section>
 
       <div className="arx-account-grid">
@@ -503,15 +537,19 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
 
             {visibleProjects.map((item) => {
               const isCurrentProject = hasActiveProject && item.id === project.id;
-              return <article key={item.id} className={isCurrentProject ? "is-current-project" : undefined}>
-                <div>
+              const isSelectedProject = selectedAccountProject?.id === item.id;
+              return <article key={item.id} className={`${isCurrentProject ? "is-current-project" : ""} ${isSelectedProject ? "is-selected-project" : ""}`.trim()}>
+                <button type="button" className="arx-account-project-overview-trigger"
+                  onClick={() => setSelectedProjectId(item.id)}
+                  aria-pressed={isSelectedProject}>
                   <span className="arx-account-project-title-row">
                     <b>{item.name}</b>
                     {isCurrentProject ? <em><i aria-hidden="true"></i> Aktif proje</em> : null}
+                    {isSelectedProject && !isCurrentProject ? <em className="is-selected">İnceleniyor</em> : null}
                   </span>
                   <small>{item.id} · {item.revision} · {item.phase}</small>
                   <time>{formatProjectDateTime(item.updatedAt)}</time>
-                </div>
+                </button>
                 <span className="arx-account-project-actions">
                   {isCurrentProject
                     ? <Link href="/dijital-proje-merkezi">Çalışma Alanına Git <span aria-hidden="true">→</span></Link>
