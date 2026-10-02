@@ -72,6 +72,7 @@ type ProjectKernelContextValue = {
 };
 
 const STORAGE_KEY = "arkem-project-kernel-v1";
+const SESSION_RECOVERY_KEY = "arkem-project-kernel-session-v1";
 export const PROJECT_JOURNEY = [
   { label: "İhtiyacı tanımla", short: "Brief", output: "Proje hedefi", href: "/proje-baslat", modules: ["DECISION", "BRIEF", "START"], projectKeys: ["decision-assistant"] },
   { label: "Parseli doğrula", short: "Arazi", output: "Konum + sınır", href: "/arsa-fizibilite-studyosu", modules: ["GEO", "PARCEL", "SITE"], projectKeys: ["geo-parcel", "quick-site-scenario"] },
@@ -586,10 +587,35 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
             cloud: "not-configured",
           });
         } else {
-          setProject((current) => Object.keys(current.modules).length || current.id !== "ARK-26-0001"
-            ? current
-            : createActiveProject());
-          setPersistence((current) => ({ ...current, state: "device-saved" }));
+          let sessionProject: ProjectKernelState | null = null;
+          try {
+            const rawSession = window.sessionStorage.getItem(SESSION_RECOVERY_KEY);
+            const parsedSession = rawSession ? JSON.parse(rawSession) as ProjectKernelState : null;
+            if (
+              parsedSession?.schema === "ARKEM-PROJECT/1.0"
+              && parsedSession.id
+              && parsedSession.modules
+              && typeof parsedSession.modules === "object"
+              && Object.keys(parsedSession.modules).length > 0
+            ) sessionProject = parsedSession;
+          } catch {
+            // Session recovery is best-effort.
+          }
+
+          if (sessionProject) {
+            setProject(sessionProject);
+            setPersistence((current) => ({
+              ...current,
+              state: "recovered",
+              integrity: "missing",
+              backupAvailable: true,
+            }));
+          } else {
+            setProject((current) => Object.keys(current.modules).length || current.id !== "ARK-26-0001"
+              ? current
+              : createActiveProject());
+            setPersistence((current) => ({ ...current, state: "device-saved" }));
+          }
         }
       } catch {
         setPersistence((current) => ({ ...current, state: "unavailable" }));
@@ -609,6 +635,11 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       // Persist in the same committed effect. A route change must not be able
       // to cancel a queued timer and leave the next screen without the active project.
       const result = saveProjectToStorage(window.localStorage, project);
+      try {
+        window.sessionStorage.setItem(SESSION_RECOVERY_KEY, JSON.stringify(result.payload));
+      } catch {
+        // Same-tab recovery is optional when session storage is unavailable.
+      }
       if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
         skipNextPersistenceRef.current = true;
         setProject(result.payload);
@@ -926,6 +957,11 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       clearProjectStorage(window.localStorage, STORAGE_KEY);
     } catch {
       // Local storage may be unavailable; the in-memory project is still cleared.
+    }
+    try {
+      window.sessionStorage.removeItem(SESSION_RECOVERY_KEY);
+    } catch {
+      // Session storage may be unavailable.
     }
     skipNextPersistenceRef.current = true;
     setProject(createActiveProject());
