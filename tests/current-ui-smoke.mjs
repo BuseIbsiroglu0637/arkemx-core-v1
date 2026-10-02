@@ -1088,7 +1088,7 @@ test("geo parcel state survives reloads and can recover from project backup", ()
   assert.ok(studio.includes("arkemx-geo-draft:"));
   assert.ok(studio.includes("PROJECT_BACKUP_KEY"));
   assert.ok(studio.includes("decodeProjectEnvelope"));
-  assert.ok(studio.includes("if (!Object.keys(project.modules).length) return"));
+  assert.ok(!studio.includes("if (!Object.keys(project.modules).length) return"));
   assert.ok(studio.includes('setNeighborhood(saved.neighborhood ?? "")'));
   assert.ok(studio.includes('setBlock(saved.block ?? "")'));
   assert.ok(studio.includes('setParcelNo(saved.parcelNo ?? "")'));
