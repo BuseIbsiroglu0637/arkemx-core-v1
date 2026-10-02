@@ -145,7 +145,7 @@ function clampNumber(value: string, min: number, max: number, fallback: number) 
 }
 
 export function ProjectStartStudio({ summaryMode = false, newProjectMode = false }: { summaryMode?: boolean; newProjectMode?: boolean }) {
-  const { project, thread, startProject } = useProjectKernel();
+  const { project, thread, hydrated, startProject, setIdentity, patchModule, removeModule } = useProjectKernel();
   const { language, translate } = useLanguage();
   const [step, setStep] = useState(0);
   const [intake, setIntake] = useState<ProjectIntake>(initial);
@@ -161,6 +161,8 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [creatingNewProject, setCreatingNewProject] = useState(newProjectMode);
   const [summaryReady, setSummaryReady] = useState(false);
+  const [activeBriefLoaded, setActiveBriefLoaded] = useState(false);
+  const [briefSaveState, setBriefSaveState] = useState<"idle" | "saved">("idle");
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
   const autoSavedProjectRef = useRef("");
 
@@ -196,6 +198,7 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
     ...roadmap.missingDocuments.map((item) => `${item} — eksik veya doğrulanacak.`),
   ]));
   const hasActiveProject = thread.metrics.activeCount > 0;
+  const editingActiveProject = hydrated && hasActiveProject && !summaryMode && !newProjectMode && !creatingNewProject;
   const draftHasMeaningfulInput = step > 0 || intake.name.trim().length >= 3 || intake.location.trim().length >= 2;
 
   useEffect(() => {
@@ -205,6 +208,29 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
     // be recovered normally after a reload.
     window.history.replaceState(window.history.state, "", "/proje-baslat");
   }, [newProjectMode]);
+
+  useEffect(() => {
+    if (!hydrated || summaryMode || newProjectMode || !hasActiveProject || activeBriefLoaded || creatingNewProject) return;
+    const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
+    if (!storedIntake) {
+      setDraftReady(true);
+      setActiveBriefLoaded(true);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setIntake(storedIntake);
+      setNumericDrafts({
+        targetArea: String(storedIntake.targetArea),
+        floors: String(storedIntake.floors),
+        floorHeight: String(storedIntake.floorHeight),
+      });
+      setStep(0);
+      setDraftReady(true);
+      setActiveBriefLoaded(true);
+      setNotice("Aktif projenin başlangıç bilgileri yüklendi. Beş adımda mevcut briefi inceleyebilir veya güncelleyebilirsiniz.");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [activeBriefLoaded, creatingNewProject, hasActiveProject, hydrated, newProjectMode, project.modules, summaryMode]);
 
   useEffect(() => {
     if (!summaryMode || !hasActiveProject || summaryReady) return;
@@ -225,12 +251,13 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
-    // Summary mode is the history of the currently active project.
-    // Explicit new-project mode always starts from a clean form and ignores older drafts.
-    // A separate unfinished "new project" draft must never overwrite it.
-    /* eslint-disable react-hooks/set-state-in-effect -- route mode must synchronously prevent draft recovery from taking over the requested screen. */
-    if (summaryMode || newProjectMode) {
-      setDraftReady(true);
+    if (!hydrated) return;
+    // Summary mode is the history of the current project. Explicit new-project
+    // mode always starts clean. When an active project exists, /proje-baslat
+    // represents that project's Brief step and must not be replaced by a draft.
+    /* eslint-disable react-hooks/set-state-in-effect -- route/project mode must synchronously prevent unrelated draft recovery. */
+    if (summaryMode || newProjectMode || hasActiveProject) {
+      if (summaryMode || newProjectMode) setDraftReady(true);
       return;
     }
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -281,7 +308,7 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [newProjectMode, summaryMode]);
+  }, [hasActiveProject, hydrated, newProjectMode, summaryMode]);
 
   useEffect(() => {
     if (summaryMode || !draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
@@ -357,6 +384,90 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
 
   const finish = () => {
     if (!canContinue) return;
+
+    if (editingActiveProject) {
+      const locationParts = intake.location.includes("/")
+        ? intake.location.split("/").map((value) => value.trim()).filter(Boolean)
+        : intake.location.trim().split(/\s+/).filter(Boolean);
+      const province = locationParts[0] ?? "";
+      const district = locationParts.slice(1).join(" ");
+      const comparisonWeights = {
+        schedule: intake.priorities.includes("time") ? 5 : 3,
+        certainty: intake.priorities.includes("cost") ? 5 : 3,
+        span: 4,
+        mass: intake.priorities.includes("safety") ? 5 : 3,
+        carbon: intake.priorities.includes("carbon") ? 5 : 3,
+        flexibility: intake.priorities.includes("flexibility") ? 5 : 3,
+        supply: 3,
+        fire: intake.priorities.includes("safety") ? 5 : 3,
+      };
+      const comparisonUsage: Record<ProjectIntake["usage"], string> = {
+        residential: "residential",
+        industrial: "industrial",
+        commercial: "commercial",
+        agricultural: "industrial",
+        mixed: "commercial",
+      };
+
+      setIdentity({ name: intake.name.trim() || project.name });
+      patchModule("decision-assistant", {
+        input: intake,
+        result: {
+          service: intake.projectType === "demolition" ? "Kontrollü yıkım mühendisliği" : "Bütünleşik projelendirme",
+          readiness: roadmap.readiness,
+          guidedJourney: roadmap,
+          nextAction: roadmap.nextAction,
+          missingDocuments: roadmap.missingDocuments,
+        },
+        status: `${roadmap.nextAction.title} · hazırlık %${roadmap.readiness}`,
+      });
+      patchModule("geo-parcel", {
+        reference: intake.location || "Parsel seçimi bekleniyor",
+        province,
+        district,
+        parcelStatus: intake.parcelStatus,
+        declaredDocuments: intake.documents,
+        floors: intake.floors,
+        floorHeight: intake.floorHeight,
+        status: intake.parcelStatus === "verified"
+          ? "Konum aktarıldı · resmî geometri doğrulaması bekleniyor"
+          : "Konum / parsel hazırlığı güncellendi",
+      });
+      patchModule("architectural-program", {
+        input: {
+          use: intake.usage,
+          targetGross: intake.targetArea,
+          floors: intake.floors,
+          floorHeight: intake.floorHeight,
+        },
+        status: "Başlangıç briefi güncellendi",
+      });
+      patchModule("system-comparison", {
+        input: {
+          usage: comparisonUsage[intake.usage],
+          area: intake.targetArea,
+          floors: intake.floors,
+          preferredSystem: intake.system,
+          priorities: intake.priorities,
+          budget: intake.budget,
+          timeline: intake.timeline,
+        },
+        weights: comparisonWeights,
+        status: intake.system === "undecided" ? "Alternatif karşılaştırması bekleniyor" : "Ön sistem tercihi güncellendi",
+      });
+      if (intake.projectType === "demolition") {
+        patchModule("demolition-screening", {
+          input: { location: intake.location, grossArea: intake.targetArea, floors: intake.floors },
+          status: "Yapı ve çevre verisi bekleniyor",
+        });
+      } else if (project.modules["demolition-screening"]) {
+        removeModule("demolition-screening");
+      }
+      setBriefSaveState("saved");
+      setNotice("Başlangıç bilgileri aynı proje kimliği altında güncellendi. Yeni proje oluşturulmadı.");
+      return;
+    }
+
     setCloudState("saving");
     startProject(intake);
     setCompleted(true);
@@ -529,29 +640,6 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
     downloadTextFile(`${project.id || "arkem"}-kurumsal-baslangic-pafta.pdf`, pdf, "application/pdf");
   };
 
-  if (draftReady && hasActiveProject && !summaryMode && !newProjectMode && !restoredDraft && !creatingNewProject && !completed) {
-    return <section className="start-active-project" data-testid="project-start-active-project">
-      <span>AKTİF PROJE</span>
-      <h2>{project.name}</h2>
-      <p>{project.id} · {project.revision} · {project.phase}</p>
-      <strong>Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi.</strong>
-      <small>“Yeni proje oluştur” ekranına geri dönmeniz mevcut projeyi silmez. Mevcut projeye devam etmek için Proje Çalışma Alanını açın; yalnızca gerçekten ikinci bir proje başlatmak istiyorsanız yeni form açın.</small>
-      <div>
-        <Link className="button navy" href="/dijital-proje-merkezi">Proje Çalışma Alanına Dön <span>→</span></Link>
-        <button type="button" onClick={() => {
-          setIntake(initial);
-          setNumericDrafts({
-            targetArea: String(initial.targetArea),
-            floors: String(initial.floors),
-            floorHeight: String(initial.floorHeight),
-          });
-          setStep(0);
-          setCreatingNewProject(true);
-        }}>Yeni Bir Proje Başlat</button>
-      </div>
-    </section>;
-  }
-
   if (completed || summaryReady) {
     return <section className="start-success" aria-live="polite">
       <header><span>ARKEMX / PROJE ÇEKİRDEĞİ HAZIR</span><b>{project.id}</b></header>
@@ -605,7 +693,7 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
         {step === 3 && <div className="start-fieldset"><div className="start-decision-grid"><label><span>Ön taşıyıcı sistem tercihi</span><select value={intake.system} onChange={(event) => update("system", event.target.value as ProjectIntake["system"])}>{(Object.keys(systemLabels) as ProjectIntake["system"][]).map((value) => <option value={value} key={value}>{systemLabels[value]}</option>)}</select></label><label><span>Yaklaşık yatırım bütçesi</span><select value={intake.budget} onChange={(event) => update("budget", event.target.value as ProjectIntake["budget"])}>{(Object.keys(budgetLabels) as ProjectIntake["budget"][]).map((value) => <option value={value} key={value}>{budgetLabels[value]}</option>)}</select></label><label><span>Hedef başlangıç</span><select value={intake.timeline} onChange={(event) => update("timeline", event.target.value as ProjectIntake["timeline"])}>{(Object.keys(timelineLabels) as ProjectIntake["timeline"][]).map((value) => <option value={value} key={value}>{timelineLabels[value]}</option>)}</select></label></div><fieldset><legend>Kararda öncelikli olanlar</legend>{priorityOptions.map(([value, label]) => <button type="button" className={intake.priorities.includes(value) ? "selected" : ""} aria-pressed={intake.priorities.includes(value)} onClick={() => togglePriority(value)} key={value}><i>{intake.priorities.includes(value) ? "✓" : "+"}</i><b>{label}</b></button>)}</fieldset><p className="start-boundary">Bütçe, süre ve sistem bilgileri müşteri hedefidir. Keşif, iş programı veya nihai taşıyıcı sistem kararı sayılmaz; parsel, zemin, açıklık, deprem, yangın, üretim ve tedarik verileriyle doğrulanır.</p></div>}
         {step === 4 && <div className="start-review"><header><span>V107 / KİŞİSEL PROJE YOLU</span><b>Kontrol edin; sonra tek çalışma alanını oluşturun.</b><strong><small>BAŞLANGIÇ VERİ HAZIRLIĞI</small>%{roadmap.readiness}</strong></header><dl><div><dt>Proje</dt><dd>{intake.name}</dd></div><div><dt>Tür</dt><dd>{projectTypeLabels[intake.projectType]}</dd></div><div><dt>Konum / parsel</dt><dd>{intake.location} · {parcelReviewLabel}</dd></div><div><dt>Program</dt><dd>{usageLabels[intake.usage]} · {intake.targetArea.toLocaleString("tr-TR")} m² · {intake.floors} kat</dd></div><div><dt>Sistem</dt><dd>{systemLabels[intake.system]}</dd></div><div><dt>Bütçe / takvim</dt><dd>{budgetLabels[intake.budget]} · {timelineLabels[intake.timeline]}</dd></div></dl><section className="start-review-next"><span>SIRADAKİ DOĞRU ADIM</span><h4>{roadmap.nextAction.title}</h4><p>{roadmap.nextAction.copy}</p></section><div className="start-roadmap-gates">{roadmap.gates.map((gate, index) => <article className={`status-${gate.status}`} key={gate.id}><i>{String(index + 1).padStart(2, "0")}</i><div><span>{GUIDED_GATE_LABELS[gate.status]}</span><b>{gate.label}</b><small>{gate.detail}</small></div></article>)}</div>{reviewEvidenceItems.length > 0 && <aside className="start-missing-documents"><span>EKSİK / DOĞRULANACAK VERİLER VE BELGELER</span><ul>{reviewEvidenceItems.map((item) => <li key={item}>{item}</li>)}</ul></aside>}</div>}
         {!canContinue && <p className="start-validation" role="alert">Bu adımın zorunlu bilgisini tamamlayın.</p>}
-        <footer className="project-start-actions"><button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>← Geri</button>{step < steps.length - 1 ? <button type="button" className="primary" disabled={!canContinue} onClick={() => setStep((current) => Math.min(steps.length - 1, current + 1))}>Sonraki adım →</button> : <button type="button" className="primary" onClick={finish}>ARKEMX projesini başlat →</button>}</footer>
+        <footer className="project-start-actions"><button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>← Geri</button>{step < steps.length - 1 ? <button type="button" className="primary" disabled={!canContinue} onClick={() => setStep((current) => Math.min(steps.length - 1, current + 1))}>Sonraki adım →</button> : <button type="button" className="primary" onClick={finish}>{editingActiveProject ? (briefSaveState === "saved" ? "Başlangıç bilgileri güncellendi ✓" : "Başlangıç bilgilerini güncelle →") : "ARKEMX projesini başlat →"}</button>}</footer>
       </section>
     </div>
     <footer className="project-start-foot"><b>VERİ SINIRI</b><p>Bu çalışma cihazınızda saklanan bir ön proje oturumudur. Resmî parsel, imar, ruhsat, statik hesap, maliyet ve uygulama onayı değildir. Yetkili disiplinlerin doğrulaması proje ilerledikçe karar kayıtlarına eklenir.</p></footer>
