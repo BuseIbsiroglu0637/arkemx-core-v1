@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight, Check, Download, FileUp, FolderOpen,
@@ -22,12 +23,14 @@ const journeyDescriptions: Record<(typeof PROJECT_JOURNEY)[number]["short"], str
 
 export function SimpleProjectCenter() {
   const { project, thread, importProject, clearLocalProject, persistence } = useProjectKernel();
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const operationsRef = useRef<HTMLDivElement>(null);
   const [notice, setNotice] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [operationsOpen, setOperationsOpen] = useState(false);
+  const [newProjectBusy, setNewProjectBusy] = useState(false);
   const hasProject = Object.keys(project.modules).length > 0;
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
@@ -88,6 +91,63 @@ export function SimpleProjectCenter() {
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       controls.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     });
+  }
+
+  async function startAnotherProject() {
+    if (newProjectBusy) return;
+    if (!hasProject) {
+      router.push("/proje-baslat?new=1");
+      return;
+    }
+
+    setNewProjectBusy(true);
+    setOperationsOpen(false);
+    setNotice("Mevcut proje hesabınıza güvenli biçimde kaydediliyor…");
+
+    try {
+      const workspaceResponse = await fetch("/api/customer-workspace", { cache: "no-store" });
+      if (workspaceResponse.status === 401) {
+        setNotice("Yeni proje başlatmadan önce mevcut projeyi korumak için giriş yapın veya proje yedeğini indirin.");
+        return;
+      }
+
+      const workspace = await workspaceResponse.json().catch(() => ({})) as {
+        projects?: Array<{ id: string; updatedAt?: string }>;
+        error?: string;
+      };
+      if (!workspaceResponse.ok) {
+        setNotice(workspace.error || "Mevcut proje hesabınızda doğrulanamadı. Yeni proje başlatılmadı.");
+        return;
+      }
+
+      const accountProject = workspace.projects?.find((item) => item.id === project.id);
+      const saveResponse = await fetch("/api/customer-workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "project",
+          id: project.id,
+          name: project.name,
+          phase: project.phase,
+          revision: project.revision,
+          payload: project,
+          expectedAccountUpdatedAt: accountProject?.updatedAt ?? null,
+        }),
+      });
+      const body = await saveResponse.json().catch(() => ({})) as { error?: string };
+
+      if (!saveResponse.ok) {
+        setNotice(body.error || "Mevcut proje hesaba kaydedilemedi. Veri kaybını önlemek için yeni proje başlatılmadı.");
+        return;
+      }
+
+      setNotice("Mevcut proje hesabınıza kaydedildi. Yeni proje formu açılıyor…");
+      router.push("/proje-baslat?new=1");
+    } catch {
+      setNotice("Hesap servisine ulaşılamadı. Veri kaybını önlemek için yeni proje başlatılmadı.");
+    } finally {
+      setNewProjectBusy(false);
+    }
   }
 
   async function loadProject(file?: File) {
@@ -177,6 +237,10 @@ export function SimpleProjectCenter() {
           <FileUp size={18} aria-hidden="true" /> Proje Yedeği Yükle
         </button> : null}
 
+        {hasProject ? <button type="button" className="arx-center-new-project" onClick={() => { void startAnotherProject(); }} disabled={newProjectBusy}>
+          {newProjectBusy ? "Mevcut proje kaydediliyor…" : "+ Yeni Proje"}
+        </button> : null}
+
         {hasProject ? <div className="arx-center-more-wrap" ref={operationsRef}>
           <button type="button" className="arx-center-more-trigger" aria-expanded={operationsOpen}
             aria-haspopup="menu" aria-controls="arx-project-operations-menu"
@@ -184,6 +248,8 @@ export function SimpleProjectCenter() {
             <MoreHorizontal size={19} aria-hidden="true" /> Proje işlemleri
           </button>
           {operationsOpen ? <div id="arx-project-operations-menu" className="arx-center-more-menu" role="menu">
+            <Link href="/hesabim" onClick={() => setOperationsOpen(false)}><FolderOpen size={16} aria-hidden="true" /> Başka proje aç</Link>
+            <button type="button" onClick={() => { void startAnotherProject(); }} disabled={newProjectBusy}><span aria-hidden="true">＋</span> Yeni proje başlat</button>
             <button type="button" onClick={() => { setOperationsOpen(false); fileRef.current?.click(); }}><FileUp size={16} aria-hidden="true" /> Başka yedek yükle</button>
             <button type="button" onClick={exportProject}><Download size={16} aria-hidden="true" /> Proje yedeğini indir</button>
             <button type="button" className="danger" onClick={() => { setOperationsOpen(false); setDeleteOpen(true); }}><Trash2 size={16} aria-hidden="true" /> Aktif projeyi sil</button>
