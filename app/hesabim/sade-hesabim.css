@@ -340,6 +340,43 @@ body:has(.arx-account-page) .v4-floating-contact {
 .arx-account-list > article:last-of-type {
   border-bottom:0;
 }
+.arx-account-list > article.is-current-project {
+  margin:6px 0;
+  padding:14px;
+  border:1px solid #315a69;
+  border-radius:8px;
+  background:#f4f9fa;
+}
+
+.arx-account-project-title-row {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:9px;
+}
+
+.arx-account-project-title-row em {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 7px;
+  border:1px solid #cfe0d7;
+  border-radius:999px;
+  background:#eef8f2;
+  color:#3f7257;
+  font-size:8px;
+  font-style:normal;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.arx-account-project-title-row em i {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#4f8a6d;
+}
+
 
 .arx-account-list b {
   display:block;
@@ -477,7 +514,7 @@ body:has(.arx-account-page) .v4-floating-contact {
 .arx-account-card-footer {
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:14px;
 }
 
@@ -782,6 +819,17 @@ html[data-theme="dark"] .arx-account-list .arx-account-draft {
 html[data-theme="dark"] .arx-account-list .arx-account-local-project {
   border-color:#664630;
   background:#17100c;
+}
+
+html[data-theme="dark"] .arx-account-list > article.is-current-project {
+  border-color:#31505c;
+  background:#0d171b;
+}
+
+html[data-theme="dark"] .arx-account-project-title-row em {
+  border-color:#2d513e;
+  background:#0f1d15;
+  color:#96c5a8;
 }
 
 html[data-theme="dark"] .arx-account-empty > span {
