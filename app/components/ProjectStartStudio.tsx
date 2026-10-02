@@ -199,6 +199,14 @@ export function ProjectStartStudio({ summaryMode = false, newProjectMode = false
   const draftHasMeaningfulInput = step > 0 || intake.name.trim().length >= 3 || intake.location.trim().length >= 2;
 
   useEffect(() => {
+    if (!newProjectMode) return;
+    // The query flag is only a one-shot instruction to open a clean form.
+    // Remove it without navigation so any draft created from this point can
+    // be recovered normally after a reload.
+    window.history.replaceState(window.history.state, "", "/proje-baslat");
+  }, [newProjectMode]);
+
+  useEffect(() => {
     if (!summaryMode || !hasActiveProject || summaryReady) return;
     const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
     if (!storedIntake) return;
