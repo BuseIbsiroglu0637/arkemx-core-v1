@@ -247,6 +247,11 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   };
   const allowedGross = thread.canonical.site.allowedGross;
   const programGross = result.grossDemand;
+  const programTargetDelta = programGross - targetGross;
+  const programTargetDeltaRatio = Math.abs(programTargetDelta) / Math.max(targetGross, 1);
+  const programTargetPass = programTargetDeltaRatio <= .1;
+  const targetNetArea = targetGross * (netRatio / 100);
+  const targetProgramScale = result.netArea > 0 ? targetNetArea / result.netArea : 1;
   const grossOverage = allowedGross > 0 ? Math.max(0, programGross - allowedGross) : 0;
   const grossPass = allowedGross > 0 && programGross <= allowedGross + .01;
   const grossTarget = allowedGross > 0 ? allowedGross * .995 : 0;
@@ -279,6 +284,15 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     setTargetGross(Math.max(100, Math.floor(allowedGross > 0 ? allowedGross * .995 : targetGross)));
     setGrossDraft(null);
     setStatus(`${templates[use].label} mahal programı proje kullanımına göre yüklendi`);
+  };
+
+  const applyTargetGrossSuggestion = () => {
+    if (!(result.netArea > 0) || programTargetPass) return;
+    setSpaces((current) => current.map((space) => ({
+      ...space,
+      unitArea: Number(Math.max(2, space.unitArea * targetProgramScale).toFixed(2)),
+    })));
+    setStatus(`Mahal alanları mevcut dağılım korunarak ${targetGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² hedef brüte ölçeklendi`);
   };
 
   const applyKaksSuggestion = () => {
@@ -456,7 +470,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   }
 
   return <section className={simple ? "architect-app arx-architect-simple" : "architect-app"} data-testid="architectural-program-studio">
-    {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve tam JSON yedeği</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
+    {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve yedek</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>
     {simple && <div className="arx-architect-primary">
   <div className="arx-architect-transfer" data-ready={transferReady ? "true" : "false"} role="status">
