@@ -44,6 +44,7 @@ type GeoParcelSavedState = {
   neighborhoodId?: string;
   block?: string;
   parcelNo?: string;
+  center?: GeoPoint;
   buildingWidth?: number;
   buildingDepth?: number;
   rotation?: number;
@@ -667,6 +668,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         setLatitude(savedCenter.lat.toFixed(7));
         setLongitude(savedCenter.lng.toFixed(7));
         pendingCenterRef.current = savedCenter;
+      } else {
+        const savedCenter = saved.center && validPoint(Number(saved.center.lat), Number(saved.center.lng));
+        if (savedCenter) {
+          setLatitude(savedCenter.lat.toFixed(7));
+          setLongitude(savedCenter.lng.toFixed(7));
+          pendingCenterRef.current = savedCenter;
+        }
       }
 
       if (typeof saved.buildingWidth === "number") setBuildingWidth(normalizeMassingDimension(saved.buildingWidth));
