@@ -15,10 +15,14 @@ function text(value: unknown, fallback = "") {
 }
 function safeIssue(value: unknown) {
   const issue = record(value);
+  const severity = text(issue.severity);
+  const normalizedSeverity = severity === "critical" || severity === "info"
+    ? severity
+    : "review";
   return {
     id: text(issue.guid, text(issue.id, "unidentified")),
     title: text(issue.title, "Koordinasyon konusu"),
-    severity: text(issue.severity, "review"),
+    severity: normalizedSeverity,
     evidence: text(issue.evidence),
   };
 }

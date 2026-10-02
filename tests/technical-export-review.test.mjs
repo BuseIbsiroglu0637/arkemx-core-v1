@@ -67,3 +67,40 @@ test("exports and drawings consume the same review status", () => {
   assert.match(sheet, /if \(input.reviewBanner\)/);
   assert.match(cad, /\["ARKEM_UYARI", 1\]/);
 });
+
+test("malformed boolean-like values cannot satisfy trusted review checks", () => {
+  const result = assessExportReview({
+    ...baseline,
+    geometryValid: "false",
+    zoningAuthoritative: "false",
+    officialCadastre: "false",
+    licensedSurvey: "false",
+    measuredTerrain: "false",
+  });
+
+  assert.equal(result.status, "review-required");
+  assert.equal(result.checks.geometry, false);
+  assert.equal(result.checks.zoningSource, false);
+  assert.equal(result.checks.officialBoundary, false);
+  assert.equal(result.checks.measuredTerrain, false);
+  assert.equal(result.officialReleaseEligible, false);
+});
+
+test("negative engineering and zoning numeric values cannot pass preliminary review", () => {
+  const result = assessExportReview({
+    ...baseline,
+    coverage: -1,
+    far: -0.5,
+    buildingHeight: -3,
+    zoningAuthoritative: true,
+    officialCadastre: true,
+    licensedSurvey: true,
+    measuredTerrain: true,
+  });
+
+  assert.equal(result.status, "review-required");
+  assert.equal(result.checks.taks, false);
+  assert.equal(result.checks.kaks, false);
+  assert.equal(result.checks.height, false);
+  assert.equal(result.officialReleaseEligible, false);
+});
