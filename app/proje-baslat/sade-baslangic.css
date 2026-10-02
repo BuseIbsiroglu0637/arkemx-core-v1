@@ -236,3 +236,210 @@
   font-weight:750;
   cursor:pointer;
 }
+
+
+/* V04 / project-start flow polish */
+.arx-start-page .arx-simple-head {
+  padding-right:82px;
+}
+
+.arx-start-page .project-start-steps button.locked {
+  cursor:not-allowed;
+  opacity:.48;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit {
+  border-color:#cddce2;
+  background:#edf5f7;
+  color:#294d5c;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit > div > span {
+  color:#527582;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit > a {
+  color:#294d5c;
+}
+
+.arx-start-page .start-resume-banner.is-new-project {
+  border-color:#ead2bf;
+  background:#fff6ef;
+  color:#7f4c2d;
+}
+
+.arx-start-page .start-resume-banner.is-new-project > div > span {
+  color:#a45e35;
+}
+
+.arx-start-page .start-resume-banner.is-new-project > a {
+  color:#8d4d29;
+}
+
+/* Compact theme control — consistent with account/workspace screens. */
+body:has(.arx-start-page) .arkem-theme-control {
+  top:20px;
+  right:20px;
+  bottom:auto;
+  left:auto;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+
+body:has(.arx-start-page) .arkem-theme-control-label {
+  display:none;
+}
+
+body:has(.arx-start-page) .arkem-theme-control-options {
+  display:flex;
+  gap:4px;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button {
+  width:34px;
+  min-height:34px;
+  padding:0;
+  border:1px solid #d7e1e4;
+  border-radius:7px;
+  background:#fff;
+  color:#526d78;
+  font-size:0;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button span {
+  font-size:14px;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#244756;
+  background:#244756;
+  color:#fff;
+}
+
+/* Dark mode for route-specific light overrides. */
+html[data-theme="dark"] .arx-start-page {
+  background:#000;
+}
+
+html[data-theme="dark"] .arx-start-page .arx-start-back {
+  color:#c3d0d5;
+}
+
+html[data-theme="dark"] .arx-start-page .arx-start-back:hover,
+html[data-theme="dark"] .arx-start-page .arx-start-back:focus-visible {
+  color:#e19a6c;
+}
+
+html[data-theme="dark"] .arx-start-intro h1 {
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-intro p {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-studio,
+html[data-theme="dark"] .arx-start-page .project-start-head,
+html[data-theme="dark"] .arx-start-page .project-start-workspace,
+html[data-theme="dark"] .arx-start-page .project-start-form {
+  border-color:#2d2d2d;
+  background:#090909;
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch > span {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch button {
+  border-color:#343434;
+  background:#111;
+  color:#d5e0e4;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch button.active {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps {
+  border-color:#2a2a2a;
+  background:#0d0d0d;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button.active {
+  border-bottom-color:#d07b49;
+  background:#111;
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button i {
+  border-color:#3b3b3b;
+  color:#c4d0d4;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-foot {
+  border-color:#292929;
+  background:#0d0d0d;
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit {
+  border-color:#304d58;
+  background:#0d181d;
+  color:#d8e8ee;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit > div > span,
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit > a {
+  color:#9fc1cd;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project {
+  border-color:#5b3b2a;
+  background:#170f0a;
+  color:#ecc2a4;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project > div > span,
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project > a {
+  color:#df9a6e;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control {
+  background:transparent;
+  box-shadow:none;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control button {
+  border-color:#333;
+  background:#0b0b0b;
+  color:#cbd4d8;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+@media(max-width:700px) {
+  .arx-start-page .arx-simple-head {
+    padding-right:76px;
+  }
+
+  body:has(.arx-start-page) .arkem-theme-control {
+    top:15px;
+    right:14px;
+  }
+}
