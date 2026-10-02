@@ -107,7 +107,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     setProfileStatus("idle");
   };
 
-  const load = async () => {
+  const load = async (finalMessage = "Hesabınız ve proje kayıtlarınız güncel.") => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
     const body = await response.json() as WorkspaceData & { error?: string };
     if (!response.ok) {
@@ -134,7 +134,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     } catch {
       // Account/project data remains usable if draft sync is temporarily unavailable.
     }
-    setMessage("Hesabınız ve proje kayıtlarınız güncel.");
+    setMessage(finalMessage);
   };
 
   useEffect(() => {
@@ -170,8 +170,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
           if (response.status === 409) await load();
           return;
         }
-        setMessage("Yerel proje hesabınızla eşitlendi.");
-        await load();
+        await load("Yerel proje hesabınızla eşitlendi.");
       }).catch(() => {
         setMessage("Aktif proje hesaba otomatik kaydedilemedi.");
       }).finally(() => {
@@ -208,8 +207,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         setMessage(error);
         return false;
       }
-      setMessage(success);
-      await load();
+      await load(success);
       return true;
     } catch {
       setMessage("Hesap servisine bağlanılamadı.");
@@ -281,8 +279,8 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     setMessage(resource === "project" ? "Proje kaldırılıyor…" : "Görüşme kaydı kaldırılıyor…");
     try {
       const response = await fetch(`/api/customer-workspace?resource=${resource}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
-      setMessage(response.ok ? "Kayıt kaldırıldı." : "Kayıt kaldırılamadı.");
-      if (response.ok) await load();
+      if (response.ok) await load("Kayıt kaldırıldı.");
+      else setMessage("Kayıt kaldırılamadı.");
     } catch {
       setMessage("Kayıt kaldırılamadı.");
     }
