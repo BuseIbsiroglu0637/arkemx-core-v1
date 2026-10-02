@@ -144,7 +144,7 @@ function clampNumber(value: string, min: number, max: number, fallback: number) 
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 }
 
-export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: boolean }) {
+export function ProjectStartStudio({ summaryMode = false, newProjectMode = false }: { summaryMode?: boolean; newProjectMode?: boolean }) {
   const { project, thread, startProject } = useProjectKernel();
   const { language, translate } = useLanguage();
   const [step, setStep] = useState(0);
@@ -159,7 +159,7 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
   const [draftReady, setDraftReady] = useState(false);
   const [draftTransferMessage, setDraftTransferMessage] = useState("");
   const [restoredDraft, setRestoredDraft] = useState(false);
-  const [creatingNewProject, setCreatingNewProject] = useState(false);
+  const [creatingNewProject, setCreatingNewProject] = useState(newProjectMode);
   const [summaryReady, setSummaryReady] = useState(false);
   const [cloudState, setCloudState] = useState<"idle" | "saving" | "saved" | "login" | "error">("idle");
   const autoSavedProjectRef = useRef("");
@@ -218,9 +218,10 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
 
   useEffect(() => {
     // Summary mode is the history of the currently active project.
+    // Explicit new-project mode always starts from a clean form and ignores older drafts.
     // A separate unfinished "new project" draft must never overwrite it.
-    /* eslint-disable react-hooks/set-state-in-effect -- summary mode must synchronously prevent unfinished draft recovery from taking over the active project. */
-    if (summaryMode) {
+    /* eslint-disable react-hooks/set-state-in-effect -- route mode must synchronously prevent draft recovery from taking over the requested screen. */
+    if (summaryMode || newProjectMode) {
       setDraftReady(true);
       return;
     }
@@ -272,7 +273,7 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [summaryMode]);
+  }, [newProjectMode, summaryMode]);
 
   useEffect(() => {
     if (summaryMode || !draftReady || !draftHasMeaningfulInput || completed || (hasActiveProject && !creatingNewProject && !restoredDraft)) return;
@@ -520,7 +521,7 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
     downloadTextFile(`${project.id || "arkem"}-kurumsal-baslangic-pafta.pdf`, pdf, "application/pdf");
   };
 
-  if (draftReady && hasActiveProject && !summaryMode && !restoredDraft && !creatingNewProject && !completed) {
+  if (draftReady && hasActiveProject && !summaryMode && !newProjectMode && !restoredDraft && !creatingNewProject && !completed) {
     return <section className="start-active-project" data-testid="project-start-active-project">
       <span>AKTİF PROJE</span>
       <h2>{project.name}</h2>
