@@ -1042,7 +1042,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
       : normalizedModule.includes("SYSTEM")
         ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
         : activeJourneyIndex === 1
-          ? { short: "Proje başlangıç özeti", href: "/proje-baslat?view=summary" }
+          ? { short: "Brief", href: "/proje-baslat" }
           : activeJourneyIndex > 0
             ? { short: regularPreviousJourneyStep.short, href: regularPreviousJourneyStep.href }
             : null;
