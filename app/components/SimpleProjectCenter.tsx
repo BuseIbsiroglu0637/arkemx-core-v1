@@ -33,7 +33,7 @@ export function SimpleProjectCenter() {
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
   const journeyNextAction = {
     label: journeyState.allComplete ? "Teslim kontrollerini gözden geçir" : journeyState.nextStep.label,
-    route: journeyState.nextStep.href,
+    route: journeyState.allComplete ? "#arx-project-controls" : journeyState.nextStep.href,
   };
   const storageLabel = persistence.state === "loading"
     ? "Çalışma kaydı kontrol ediliyor"
@@ -148,9 +148,9 @@ export function SimpleProjectCenter() {
             <MoreHorizontal size={19} aria-hidden="true" /> Proje işlemleri
           </button>
           {operationsOpen ? <div className="arx-center-more-menu">
-            <button type="button" onClick={() => fileRef.current?.click()}><FileUp size={16} aria-hidden="true" /> Başka yedek yükle</button>
+            <button type="button" onClick={() => { setOperationsOpen(false); fileRef.current?.click(); }}><FileUp size={16} aria-hidden="true" /> Başka yedek yükle</button>
             <button type="button" onClick={exportProject}><Download size={16} aria-hidden="true" /> Proje yedeğini indir</button>
-            <button type="button" className="danger" onClick={() => setDeleteOpen(true)}><Trash2 size={16} aria-hidden="true" /> Aktif projeyi sil</button>
+            <button type="button" className="danger" onClick={() => { setOperationsOpen(false); setDeleteOpen(true); }}><Trash2 size={16} aria-hidden="true" /> Aktif projeyi sil</button>
           </div> : null}
         </div> : null}
 
