@@ -3049,3 +3049,314 @@ html[data-theme="dark"] .arx-geo-simple .geo-coordinate-tools-body > p {
     flex-direction:column;
   }
 }
+
+
+/* V05 / final visual normalization for 02-04 stages */
+
+/* 02 / spatial data upload */
+.arx-geo-simple .geo-file-drop {
+  min-height:112px;
+  display:grid;
+  place-items:center;
+  gap:5px;
+  padding:18px 14px !important;
+  border:1px dashed #b8c8ce;
+  border-radius:8px;
+  background:#f8fafb;
+  text-align:center;
+  cursor:pointer;
+}
+.arx-geo-simple .geo-file-drop input {
+  position:absolute;
+  inline-size:1px;
+  block-size:1px;
+  overflow:hidden;
+  opacity:0;
+  pointer-events:none;
+}
+.arx-geo-simple .geo-file-drop b {
+  color:#365762;
+  font-size:10px;
+}
+.arx-geo-simple .geo-file-drop small {
+  color:#7c8d94;
+  font-size:8px;
+  line-height:1.4;
+}
+.arx-geo-simple .geo-format-list {
+  display:grid;
+  gap:6px;
+}
+.arx-geo-simple .geo-format-list p {
+  display:grid;
+  grid-template-columns:minmax(72px,.8fr) minmax(0,1.35fr) auto;
+  gap:8px;
+  align-items:center;
+  margin:0;
+  padding:9px 10px;
+  border:1px solid #e0e7e9;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-geo-simple .geo-format-list b {
+  color:#365762;
+  font-size:9px;
+}
+.arx-geo-simple .geo-format-list span {
+  color:#74858d;
+  font-size:8px;
+}
+.arx-geo-simple .geo-format-list i {
+  color:#4f8064;
+  font-size:7px;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.arx-geo-simple .geo-format-list i.planned {
+  color:#a8643d;
+}
+
+/* 04 / zoning verification status — removes the last bright slab in dark mode. */
+.arx-geo-simple .geo-zoning-status {
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  margin:0 0 12px;
+  padding:10px 11px;
+  border:1px solid #d9e3e6;
+  border-radius:7px;
+  background:#f7fafb;
+}
+.arx-geo-simple .geo-zoning-status > i {
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border:1px solid #d0dadd;
+  border-radius:50%;
+  background:#fff;
+}
+.arx-geo-simple .geo-zoning-status > i::after {
+  content:"i";
+  color:#b96636;
+  font-size:10px;
+  font-style:normal;
+  font-weight:800;
+}
+.arx-geo-simple .geo-zoning-status b {
+  display:block;
+  color:#365762;
+  font-size:9px;
+}
+.arx-geo-simple .geo-zoning-status small {
+  display:block;
+  margin-top:3px;
+  color:#7e8f96;
+  font-size:8px;
+}
+.arx-geo-simple .geo-zoning-status[data-state="document-pending-review"] {
+  border-color:#dcc7b8;
+  background:#fff8f3;
+}
+.arx-geo-simple .geo-zoning-status[data-state="municipal-viewer"] {
+  border-color:#cbdcdf;
+  background:#f3f8f9;
+}
+
+/* Main zoning form rhythm */
+.arx-geo-simple .geo-zoning-core {
+  gap:12px;
+}
+.arx-geo-simple .geo-zoning-values {
+  gap:8px;
+}
+.arx-geo-simple .geo-zoning-values label {
+  position:relative;
+}
+.arx-geo-simple .geo-zoning-values label > b {
+  position:absolute;
+  right:10px;
+  bottom:12px;
+  color:#7b8c93;
+  font-size:8px;
+  pointer-events:none;
+}
+
+/* Source status and collapsible blocks */
+.arx-geo-simple .geo-zoning-source-status {
+  margin-top:12px;
+  padding:11px 12px;
+  border-radius:7px;
+}
+.arx-geo-simple .geo-zoning-source-status > span {
+  color:#a55f39;
+  font-size:8px;
+}
+.arx-geo-simple .geo-zoning-source-status > b {
+  color:#405961;
+  font-size:10px;
+}
+.arx-geo-simple .geo-zoning-source-status > small {
+  color:#788a91;
+  font-size:8px;
+}
+.arx-geo-simple .geo-collapsible-block {
+  overflow:hidden;
+  border-radius:7px;
+}
+.arx-geo-simple .geo-collapsible-block > summary {
+  min-height:48px;
+}
+.arx-geo-simple .geo-collapsible-body {
+  padding:12px !important;
+  background:#fff;
+}
+.arx-geo-simple .geo-collapsible-body > label,
+.arx-geo-simple .geo-collapsible-body .geo-field-grid label {
+  padding-top:4px !important;
+  padding-bottom:4px !important;
+}
+.arx-geo-simple .geo-expert-review-warning,
+.arx-geo-simple .geo-expert-review-result {
+  border-radius:6px;
+}
+
+/* Locked design stage should read as a decision gate, not an error block. */
+.arx-geo-simple .geo-design-control > .geo-caution,
+.arx-geo-simple .geo-control-section > .geo-caution:last-child {
+  border-radius:0 7px 7px 0;
+}
+.arx-geo-simple .geo-wide-action {
+  min-height:40px;
+  border-radius:6px;
+}
+
+/* Dark variants */
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop {
+  border-color:#414141 !important;
+  background:#0e0e0e !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop:hover {
+  border-color:#5a5a5a !important;
+  background:#121212 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop b {
+  color:#edf2f4 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-file-drop small {
+  color:#9ca9ae !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list p {
+  border-color:#2e2e2e !important;
+  background:#0d0d0d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list b {
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list span {
+  color:#97a5aa !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list i {
+  color:#8bc1a2 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-format-list i.planned {
+  color:#d59a73 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status {
+  border-color:#303030 !important;
+  background:#0e0e0e !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status > i {
+  border-color:#3a3a3a !important;
+  background:#121212 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status > i::after {
+  color:#d27a45 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status b {
+  color:#e4ebee !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status small {
+  color:#9ca9ae !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status[data-state="document-pending-review"] {
+  border-color:#5a4132 !important;
+  background:#17100c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-status[data-state="municipal-viewer"] {
+  border-color:#34474f !important;
+  background:#0d1519 !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-values label > b {
+  color:#89979c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status {
+  border-color:#333 !important;
+  background:#0e0e0e !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="ready"] {
+  border-color:#315342 !important;
+  background:#0d1712 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status[data-ready="missing"] {
+  border-color:#5b3b2a !important;
+  background:#17100c !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > span {
+  color:#d27a45 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > b {
+  color:#e2e9ec !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-source-status > small {
+  color:#9ca9ae !important;
+}
+
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block {
+  border-color:#343434 !important;
+  border-left-color:#d27a45 !important;
+  background:#0b0b0b !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary {
+  background:#0e0e0e !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary:hover {
+  background:#131313 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary span {
+  color:#e5ecef !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-block > summary small {
+  color:#95a3a9 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-collapsible-body {
+  border-color:#2f2f2f !important;
+  background:#090909 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-warning {
+  border-left-color:#c66e3c !important;
+  background:#17100c !important;
+  color:#c9aa96 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-warning b {
+  color:#e0a37d !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result {
+  border-color:#333 !important;
+  background:#0e0e0e !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result b {
+  color:#dce5e8 !important;
+}
+html[data-theme="dark"] .arx-geo-simple .geo-expert-review-result small {
+  color:#98a6ac !important;
+}
+
+/* Keep secondary copy readable without adding more visual blocks. */
+html[data-theme="dark"] .arx-geo-simple .geo-zoning-control .geo-caution {
+  color:#c7a995 !important;
+}
