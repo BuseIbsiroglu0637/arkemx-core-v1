@@ -93,6 +93,21 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
       const geoNode = thread.nodes.find((node) => node.id === "geo-parcel");
       return Boolean(geoNode?.active && geoNode.readiness >= 70);
     }
+    if (step.short === "Mimari") {
+      const architectureNode = thread.nodes.find((node) => node.id === "architectural-program");
+      const planNode = thread.nodes.find((node) => node.id === "plan-editor");
+      const architectureWorked = Boolean(
+        architectureNode?.active
+        && architectureNode.status
+        && architectureNode.status !== "Brief verisi aktarıldı"
+      );
+      const planWorked = Boolean(
+        planNode?.active
+        && planNode.status
+        && planNode.status !== "Başlatılmadı"
+      );
+      return architectureWorked && planWorked;
+    }
     if (step.short === "Sistem") {
       return systemDecisionReady;
     }
