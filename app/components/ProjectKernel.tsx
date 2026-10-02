@@ -1092,7 +1092,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
         <span>{persistence.state === "recovered" ? "Yedekten kurtarıldı" : persistence.state === "unavailable" ? "Tarayıcı kaydı kapalı" : "Bu cihazda kayıtlı"}</span>
       </div>
       <div className="project-kernel-compact-actions">
-        {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← Önceki adım</Link> : null}
+        {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← {previousJourneyStep.short}</Link> : null}
         <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
         <button onClick={exportProject}>JSON indir</button>
         {activeJourneyIndex < PROJECT_JOURNEY.length - 1 ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
