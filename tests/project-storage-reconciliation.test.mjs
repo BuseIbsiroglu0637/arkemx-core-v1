@@ -9,6 +9,7 @@ import {
   PROJECT_RECOVERY_KEY,
   reconcileProjectSnapshots,
   saveProjectToStorage,
+  supplementMissingProjectModules,
 } from "../app/lib/project-storage.ts";
 
 class MemoryStorage {
@@ -128,4 +129,45 @@ test("loader can recover missing modules from legacy or recovery snapshots of th
   assert.ok(loaded.value.modules["structural-concept"]);
   assert.ok(loaded.value.modules["engineering-coordination"]);
   assert.ok(loaded.value.modules["project-os"]);
+});
+
+
+test("recovery snapshot never replaces an overlapping primary module", () => {
+  const primary = project("2026-10-02T06:00:00.000Z", {
+    "plan-editor": moduleAt("2026-10-01T18:50:00.000Z", { floorArea: 476.9, state: "coordinated" }),
+    "engineering-coordination": moduleAt("2026-10-01T19:05:00.000Z", { openIssues: 1 }),
+  });
+  const recovery = project("2026-10-02T05:55:00.000Z", {
+    "plan-editor": moduleAt("2026-10-02T05:50:00.000Z", { floorArea: 325.75, state: "stale-restored" }),
+    "engineering-coordination": moduleAt("2026-10-02T05:51:00.000Z", { openIssues: 3 }),
+    "project-os": moduleAt("2026-10-01T19:00:00.000Z", { health: 77 }),
+  });
+
+  const merged = supplementMissingProjectModules(primary, recovery);
+  assert.equal(merged.modules["plan-editor"].floorArea, 476.9);
+  assert.equal(merged.modules["plan-editor"].state, "coordinated");
+  assert.equal(merged.modules["engineering-coordination"].openIssues, 1);
+  assert.equal(merged.modules["project-os"].health, 77);
+});
+
+test("loader keeps overlapping primary modules even when recovery has newer recordedAt", () => {
+  const storage = new MemoryStorage();
+  const primary = project("2026-10-02T06:00:00.000Z", {
+    "plan-editor": moduleAt("2026-10-01T18:50:00.000Z", { floorArea: 476.9 }),
+    "engineering-coordination": moduleAt("2026-10-01T19:05:00.000Z", { openIssues: 1 }),
+  });
+  const recovery = project("2026-10-02T05:59:00.000Z", {
+    "plan-editor": moduleAt("2026-10-02T05:58:00.000Z", { floorArea: 325.75 }),
+    "engineering-coordination": moduleAt("2026-10-02T05:58:30.000Z", { openIssues: 3 }),
+    "structural-concept": moduleAt("2026-10-01T18:45:00.000Z", { system: "light" }),
+  });
+
+  storage.setItem(PROJECT_STORAGE_KEY, encodeProjectEnvelope(primary, "2026-10-02T06:00:00.000Z"));
+  storage.setItem(PROJECT_RECOVERY_KEY, encodeProjectEnvelope(recovery, "2026-10-02T05:59:00.000Z"));
+
+  const loaded = loadProjectFromStorage(storage, "arkem-project-kernel-v1");
+  assert.equal(loaded.source, "reconciled");
+  assert.equal(loaded.value.modules["plan-editor"].floorArea, 476.9);
+  assert.equal(loaded.value.modules["engineering-coordination"].openIssues, 1);
+  assert.equal(loaded.value.modules["structural-concept"].system, "light");
 });
