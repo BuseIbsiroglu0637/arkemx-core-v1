@@ -494,6 +494,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     geometry: parcel,
     source: parcelSource,
   }), [block, district, neighborhood, parcel, parcelNo, parcelSource, province]);
+  const parcelIdentityComplete = Boolean(
+    province.trim()
+    && district.trim()
+    && neighborhood.trim()
+    && block.trim()
+    && parcelNo.trim(),
+  );
   const visibleProvinceOptions = useMemo(
     () => keepSelectedAdministrativeOption(provinceOptions, provinceId, province),
     [province, provinceId, provinceOptions],
@@ -610,7 +617,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       );
       setOfficialBoundaryEvidence(restoredOfficialEvidence);
 
-      if ((hasSavedBoundary || hasSavedPreviewBoundary) && saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
+      if (saved.parcelRecord?.schema === "ARKEM-PARCEL-RECORD/1.0") {
         setParcelSource({
           kind: saved.parcelRecord.evidence.sourceKind,
           authority: saved.parcelRecord.evidence.authority,
@@ -2151,11 +2158,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <div><span>V109 / PARSEL VERİ MERKEZİ</span><h3>Parsel kimliği, sınırı ve kaynağı tek kayıtta.</h3></div>
         <aside data-eligible={parcelRecord.projectEligible}>
           <i>{parcelRecord.projectEligible ? "✓" : "i"}</i>
-          <span><b>{parcelRecord.projectEligible ? "Aktif projeye bağlı" : parcel.length ? "Sınır doğrulaması bekleniyor" : "Ada / parsel seçimi bekleniyor"}</b><small>{project.id} · {project.revision}</small></span>
+          <span><b>{parcelRecord.projectEligible ? "Aktif projeye bağlı" : parcel.length ? "Sınır doğrulaması bekleniyor" : parcelIdentityComplete ? "Parsel kimliği hazır · sınır bekleniyor" : "Ada / parsel seçimi bekleniyor"}</b><small>{project.id} · {project.revision}</small></span>
         </aside>
       </header>
       <div className="v109-parcel-summary">
-        <article><span>PARSEL KAYDI</span><b>{parcelRecord.reference}</b><small>{!block || !parcelNo ? "Ada / parsel seçimi bekleniyor" : parcelRecord.state === "identified" ? "TKGM açık servis kaydı" : parcelRecord.state === "user-supplied" ? "Kullanıcı mekânsal dosyası" : "Uzman doğrulaması gerekli"}</small></article>
+        <article><span>PARSEL KAYDI</span><b>{parcelRecord.reference}</b><small>{!block || !parcelNo ? "Ada / parsel seçimi bekleniyor" : !parcelRecord.geometry.valid ? "Parsel kimliği kayıtlı · sınır sorgusu bekleniyor" : parcelRecord.state === "identified" ? "TKGM açık servis kaydı" : parcelRecord.state === "user-supplied" ? "Kullanıcı mekânsal dosyası" : "Uzman doğrulaması gerekli"}</small></article>
         <article><span>SINIR GEOMETRİSİ</span><b>{parcelRecord.geometry.valid ? `${parcelRecord.geometry.vertexCount} köşe · ${parcelRecord.geometry.computedArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "Geçerli sınır bekleniyor"}</b><small>{parcelRecord.geometry.coordinateReferenceSystem} · {parcelRecord.evidence.officialCadastre ? "resmî kadastro" : "aplikasyon değildir"}</small>{parcelRecord.geometry.reportedArea !== null && <small>TKGM bildirilen: {parcelRecord.geometry.reportedArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · Fark: {Math.abs(parcelRecord.geometry.reportedArea - parcelRecord.geometry.computedArea).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² (%{parcelRecord.geometry.areaVariancePercent?.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}). Hesap, WGS84 koordinatlarından yerel düzlem yaklaşımıdır; aplikasyon alanı değildir.</small>}</article>
         <article><span>KAYNAK VE KANIT</span><b>{parcelRecord.evidence.label}</b><small>{parcelRecord.evidence.sourceKind === "sample" ? "Örnek veri · resmî sorgu zamanı yok" : `${parcelRecord.evidence.authority} · ${parcelRecord.evidence.capturedAt.replace("T", " ").slice(0, 16)}`}</small></article>
       </div>
