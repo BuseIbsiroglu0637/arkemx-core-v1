@@ -146,6 +146,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
       })
       .slice(0, 5);
     const recentEvents = [...project.events].reverse().slice(0, 6);
+    const recentHandoff = [...project.events].reverse().find((event) => event.action === "handoff");
 
     return <section className="arx-advanced-hub" data-testid="digital-project-hub">
       <header className="arx-advanced-head">
@@ -154,7 +155,17 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
           <p>Eksik adımlar, açık konular ve teslim hazırlığını tek görünümde kontrol edin.</p>
         </div>
         <div className="arx-advanced-head-actions">
-          <button type="button" onClick={synchronize}>Hazır veriyi senkronize et</button>
+          <span className={`arx-auto-handoff-status ${project.experience.autoHandoff ? "is-on" : "is-off"}`}>
+            <i aria-hidden="true"></i>
+            <span>
+              <b>{project.experience.autoHandoff ? "Otomatik veri aktarımı açık" : "Otomatik veri aktarımı kapalı"}</b>
+              <small>{project.experience.autoHandoff
+                ? recentHandoff
+                  ? `Son aktarım: ${new Date(recentHandoff.timestamp).toLocaleString("tr-TR")}`
+                  : "Hazır proje verileri ilgili modüllere otomatik aktarılır."
+                : "Teknik seçeneklerden manuel aktarım yapılabilir."}</small>
+            </span>
+          </span>
           <button type="button" onClick={exportExecutivePackage}>Proje paketini indir</button>
         </div>
       </header>
@@ -234,6 +245,22 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
           </section> : null}
         </div>
       </div>
+
+      <details className="arx-advanced-detail arx-transfer-tools">
+        <summary>Teknik veri aktarımı</summary>
+        <div className="arx-transfer-tools-body">
+          <div>
+            <b>Modüller arası veri aktarımı</b>
+            <p>Normal kullanımda ARKEMX, bir çalışma modülünde güncellenen hazır veriyi ilgili sonraki modüllere otomatik aktarır. Bu bölüm yalnızca teknik kontrol veya yeniden deneme için kullanılır.</p>
+          </div>
+          <label className="arx-transfer-toggle">
+            <input type="checkbox" checked={project.experience.autoHandoff}
+              onChange={(event) => setExperience({ autoHandoff: event.target.checked })}/>
+            <span>Otomatik veri aktarımı</span>
+          </label>
+          <button type="button" onClick={synchronize}>Veri Aktarımını Yeniden Kontrol Et</button>
+        </div>
+      </details>
 
       <details className="arx-advanced-detail">
         <summary>Teslim hazırlığı ve teknik çıktılar</summary>
