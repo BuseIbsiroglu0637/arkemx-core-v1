@@ -2087,6 +2087,15 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <button type="button" className={designPanel === "adjust" ? "active" : ""} onClick={() => setDesignPanel("adjust")}>İnce ayar</button>
       </nav>
 
+      {simple && placementDecisionPass && <div className="geo-stage-next geo-stage-next-prominent" data-ready="true">
+        <div>
+          <span>✓ ARAZİ ADIMI TAMAMLANDI</span>
+          <b>Mimari programı kur</b>
+          <small>Seçili kütle ve imar bağlamıyla Mimari aşamasına devam edin.</small>
+        </div>
+        <a href="/mimari-program-studyosu">Mimariye Geç <i>→</i></a>
+      </div>}
+
       {designPanel === "summary" && <>
         <div className="geo-zoning-summary">
           <span>AKTARILAN İMAR KOŞULLARI</span>
@@ -2171,16 +2180,6 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <label>Kuzey / güney ofseti <b>{offsetNorth} m</b><input type="range" min="-35" max="35" value={offsetNorth} onChange={(event) => setOffsetNorth(Number(event.target.value))} /></label>
       </>}
 
-      {simple && <div className="geo-stage-next" data-ready={placementDecisionPass ? "true" : "false"}>
-        <div>
-          <span>SIRADAKİ ADIM</span>
-          <b>{placementDecisionPass ? "Mimari programı kur" : "Yerleşim ön kontrolünü tamamlayın"}</b>
-          <small>{placementDecisionPass ? "Arazi karar kapısı geçti. Seçili kütle ve imar bağlamıyla Mimari aşamasına devam edin." : "Mimariye geçmeden önce TAKS, KAKS, Hmax ve çekme kontrollerinin tamamı geçmeli."}</small>
-        </div>
-        {placementDecisionPass
-          ? <a href="/mimari-program-studyosu">Mimariye Geç <i>→</i></a>
-          : <button type="button" disabled>Ön kontrol bekleniyor</button>}
-      </div>}
     </div> : <div className="geo-control-section geo-zoning-required">
       <span>05 / YAPI YERLEŞİMİ</span><h3>Önce imar girdilerini tamamlayın.</h3>
       <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yerleşim alternatifi hesaplamaz.</p>
