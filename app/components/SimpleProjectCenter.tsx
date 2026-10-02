@@ -21,6 +21,8 @@ type CenterAccountProject = {
   payload?: unknown;
 };
 
+const ACCOUNT_SYNC_SUPPRESSION_KEY = "arkem-account-sync-suppressed-projects-v1";
+
 const journeyDescriptions: Record<(typeof PROJECT_JOURNEY)[number]["short"], string> = {
   Brief: "Proje hedefini ve temel ihtiyacı netleştirin.",
   Arazi: "Konum, parsel ve saha verilerini doğrulayın.",
@@ -109,6 +111,17 @@ export function SimpleProjectCenter() {
     });
   }
 
+  function activeProjectIsAccountSuppressed() {
+    if (!hasProject || !project.id) return false;
+    try {
+      const raw = window.localStorage.getItem(ACCOUNT_SYNC_SUPPRESSION_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) && parsed.includes(project.id);
+    } catch {
+      return false;
+    }
+  }
+
   async function loadAccountProjects() {
     setProjectsState("loading");
     try {
@@ -141,6 +154,10 @@ export function SimpleProjectCenter() {
 
   async function persistCurrentProjectBeforeSwitch() {
     if (!hasProject) return true;
+    if (activeProjectIsAccountSuppressed()) {
+      setNotice("Aktif proje yalnız bu cihazda tutuluyor. Başka projeye geçmeden önce Hesabım sayfasından projeyi hesabınıza yeniden ekleyin.");
+      return false;
+    }
     const accountProject = accountProjects.find((item) => item.id === project.id);
     setNotice("Mevcut projenin son durumu hesabınıza kaydediliyor…");
     try {
@@ -190,6 +207,13 @@ export function SimpleProjectCenter() {
     if (newProjectBusy) return;
     if (!hasProject) {
       router.push("/proje-baslat?new=1");
+      return;
+    }
+
+    if (activeProjectIsAccountSuppressed()) {
+      setNotice("Aktif proje yalnız bu cihazda tutuluyor. Yeni proje başlatmadan önce Hesabım sayfasından projeyi hesabınıza yeniden ekleyin.");
+      setProjectsOpen(false);
+      setOperationsOpen(false);
       return;
     }
 
