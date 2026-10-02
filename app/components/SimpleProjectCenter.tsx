@@ -206,7 +206,7 @@ export function SimpleProjectCenter() {
   async function startAnotherProject() {
     if (newProjectBusy) return;
     if (!hasProject) {
-      router.push("/proje-baslat?new=1");
+      router.push("/proje-baslat?new=1&fresh=1");
       return;
     }
 
@@ -260,7 +260,7 @@ export function SimpleProjectCenter() {
       }
 
       setNotice("Mevcut proje hesabınıza kaydedildi. Yeni proje formu açılıyor…");
-      router.push("/proje-baslat?new=1");
+      router.push("/proje-baslat?new=1&fresh=1");
     } catch {
       setNotice("Hesap servisine ulaşılamadı. Veri kaybını önlemek için yeni proje başlatılmadı.");
     } finally {
