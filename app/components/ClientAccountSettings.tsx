@@ -73,6 +73,9 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
   const [draft, setDraft] = useState<GuidedDraftSummary | null>(null);
   const [message, setMessage] = useState("Güvenli çalışma alanı hazırlanıyor…");
   const [profile, setProfile] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
+  const [profileBaseline, setProfileBaseline] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
+  const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const [meeting, setMeeting] = useState({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
   const syncingProjectRef = useRef("");
   const recentActivities = data ? summarizeActivities(data.activities).slice(0, 5) : [];
@@ -85,6 +88,24 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     && Boolean(project.id)
     && (!accountActiveProject || localProjectUpdatedAt > accountPayloadUpdatedAt);
   const meaningfulDraft = draft && ((draft.intake.name?.trim() ?? "").length >= 3 || draft.step > 0) ? draft : null;
+  const profileDirty = profile.displayName !== profileBaseline.displayName
+    || profile.company !== profileBaseline.company
+    || profile.phone !== profileBaseline.phone
+    || profile.preferredLanguage !== profileBaseline.preferredLanguage;
+  const visibleProjects = data ? (showAllProjects ? data.projects : data.projects.slice(0, 4)) : [];
+  const statusError = /yüklenemedi|kaydedilemedi|kaldırılamadı|tamamlanamadı|çakış|bağlanılamadı/i.test(message);
+  const statusBusy = /hazırlanıyor|kaydediliyor|eşitleniyor|kaldırılıyor|yükleniyor/i.test(message);
+  const accountStatus = statusError ? "error" : (!data || statusBusy ? "syncing" : "ready");
+  const accountStatusLabel = accountStatus === "error"
+    ? "İşlem başarısız"
+    : accountStatus === "syncing"
+      ? "Eşitleniyor"
+      : "Hesap güncel";
+
+  const updateProfile = (patch: Partial<typeof profile>) => {
+    setProfile((currentProfile) => ({ ...currentProfile, ...patch }));
+    setProfileStatus("idle");
+  };
 
   const load = async () => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
@@ -94,12 +115,16 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       return;
     }
     setData(body);
-    if (body.profile) setProfile({
-      displayName: body.profile.displayName,
-      company: body.profile.company,
-      phone: body.profile.phone,
-      preferredLanguage: body.profile.preferredLanguage,
-    });
+    if (body.profile) {
+      const loadedProfile = {
+        displayName: body.profile.displayName,
+        company: body.profile.company,
+        phone: body.profile.phone,
+        preferredLanguage: body.profile.preferredLanguage,
+      };
+      setProfile(loadedProfile);
+      setProfileBaseline(loadedProfile);
+    }
     try {
       const draftResponse = await fetch("/api/project-draft", { cache: "no-store" });
       if (draftResponse.ok) {
@@ -170,25 +195,39 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
 
   const post = async (payload: Record<string, unknown>, success: string) => {
     setMessage("Kaydediliyor…");
-    const response = await fetch("/api/customer-workspace", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const body = await response.json() as { error?: string };
-    if (!response.ok) {
-      const error = body.error || "Kayıt tamamlanamadı.";
-      if (response.status === 409) await load();
-      setMessage(error);
-      return;
+    try {
+      const response = await fetch("/api/customer-workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) {
+        const error = body.error || "Kayıt tamamlanamadı.";
+        if (response.status === 409) await load();
+        setMessage(error);
+        return false;
+      }
+      setMessage(success);
+      await load();
+      return true;
+    } catch {
+      setMessage("Hesap servisine bağlanılamadı.");
+      return false;
     }
-    setMessage(success);
-    await load();
   };
 
-  const saveProfile = (event: FormEvent) => {
+  const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
-    void post({ action: "profile", ...profile }, "Profil bilgileriniz güncellendi.");
+    if (!profileDirty || profileStatus === "saving") return;
+    setProfileStatus("saving");
+    const ok = await post({ action: "profile", ...profile }, "Profil bilgileriniz güncellendi.");
+    if (ok) {
+      setProfileBaseline(profile);
+      setProfileStatus("saved");
+    } else {
+      setProfileStatus("error");
+    }
   };
 
   const saveProject = () => {
@@ -235,13 +274,22 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     setMeeting({ subject: "", meetingAt: "", projectId: "", channel: "Çevrim içi", notes: "" });
   };
 
-  const remove = async (resource: "project" | "meeting", id: string) => {
-    const response = await fetch(`/api/customer-workspace?resource=${resource}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    setMessage(response.ok ? "Kayıt kaldırıldı." : "Kayıt kaldırılamadı.");
-    if (response.ok) await load();
+  const remove = async (resource: "project" | "meeting", id: string, label?: string) => {
+    const resourceName = resource === "project" ? "projeyi" : "görüşme kaydını";
+    const target = label ? ` “${label}”` : "";
+    if (!window.confirm(`${target} ${resourceName} hesabınızdan kaldırmak istediğinize emin misiniz?`)) return;
+    setMessage(resource === "project" ? "Proje kaldırılıyor…" : "Görüşme kaydı kaldırılıyor…");
+    try {
+      const response = await fetch(`/api/customer-workspace?resource=${resource}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      setMessage(response.ok ? "Kayıt kaldırıldı." : "Kayıt kaldırılamadı.");
+      if (response.ok) await load();
+    } catch {
+      setMessage("Kayıt kaldırılamadı.");
+    }
   };
 
   const removeDraft = async () => {
+    if (!window.confirm("Devam eden proje taslağını kaldırmak istediğinize emin misiniz? Kayıtlı projeleriniz etkilenmez.")) return;
     setMessage("Yeni proje taslağı kaldırılıyor…");
     try {
       const response = await fetch("/api/project-draft", { method: "DELETE" });
@@ -263,14 +311,14 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
 
   if (simple) {
     return <div className="arx-account-panel" data-testid="account-settings-panel">
-      <section className="arx-account-sync" aria-live="polite">
-        <span><i aria-hidden="true"></i> Hesap aktif</span>
+      <section className={`arx-account-sync is-${accountStatus}`} aria-live="polite">
+        <span><i aria-hidden="true"></i> {accountStatusLabel}</span>
         <small>{message}</small>
       </section>
 
       <section className="arx-account-metrics" aria-label="Hesap özeti">
-        <article><span>Kayıtlı proje</span><b>{data?.projects.length ?? 0}</b></article>
-        <article><span>Görüşme</span><b>{data?.meetings.length ?? 0}</b></article>
+        <article><span>Kayıtlı proje</span><b>{data ? data.projects.length : "—"}</b></article>
+        <article><span>Görüşme</span><b>{data ? data.meetings.length : "—"}</b></article>
         <article><span>Aktif revizyon</span><b>{hasActiveProject ? project.revision : "—"}</b></article>
         <article><span>Veri hazırlığı</span><b>{hasActiveProject ? `%${thread.metrics.readiness}` : "—"}</b></article>
       </section>
@@ -281,11 +329,24 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             <div><span>PROFİL</span><h3 id="arx-account-profile-title">Hesap bilgileri</h3></div>
           </header>
           <form className="arx-account-form" onSubmit={saveProfile}>
-            <label>Ad soyad<input value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}/></label>
-            <label>E-posta<input value={email} readOnly/></label>
-            <label>Firma / kurum<input value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })}/></label>
-            <label>Telefon<input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}/></label>
-            <button type="submit">Profili Kaydet</button>
+            <label>Ad soyad<input required autoComplete="name" value={profile.displayName} onChange={(e) => updateProfile({ displayName: e.target.value })}/></label>
+            <label>E-posta<input type="email" autoComplete="email" value={email} readOnly aria-readonly="true"/></label>
+            <label>Firma / kurum<input autoComplete="organization" value={profile.company} onChange={(e) => updateProfile({ company: e.target.value })}/></label>
+            <label>Telefon<input autoComplete="tel" inputMode="tel" value={profile.phone} onChange={(e) => updateProfile({ phone: e.target.value })} placeholder="+90 …"/></label>
+            <label className="arx-account-language">Dil
+              <select value={profile.preferredLanguage} onChange={(e) => updateProfile({ preferredLanguage: e.target.value })}>
+                <option value="tr">Türkçe</option>
+                <option value="en" disabled>İngilizce (yakında)</option>
+              </select>
+            </label>
+            <div className="arx-account-form-actions">
+              <button type="submit" disabled={!profileDirty || profileStatus === "saving"}>
+                {profileStatus === "saving" ? "Kaydediliyor…" : "Profili Kaydet"}
+              </button>
+              <small className={`is-${profileStatus}`} aria-live="polite">
+                {profileStatus === "saved" ? "Kaydedildi ✓" : profileStatus === "error" ? "Kaydedilemedi" : profileDirty ? "Kaydedilmemiş değişiklik var" : "Bilgiler güncel"}
+              </small>
+            </div>
           </form>
         </section>
 
@@ -304,9 +365,9 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
               <span className="arx-account-project-actions arx-account-draft-actions"><Link href="/proje-baslat">Taslağa Devam Et <span aria-hidden="true">→</span></Link><button type="button" onClick={() => { void removeDraft(); }}>Kaldır</button></span>
             </article> : null}
 
-            {data?.projects.slice(0, 4).map((item) => <article key={item.id}>
+            {visibleProjects.map((item) => <article key={item.id}>
               <div><b>{item.name}</b><small>{item.id} · {item.revision} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div>
-              <span className="arx-account-project-actions"><button type="button" onClick={() => openAccountProject(item)}>Aç</button><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></span>
+              <span className="arx-account-project-actions"><button type="button" onClick={() => openAccountProject(item)}>Aç</button><button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button></span>
             </article>)}
 
             {data && data.projects.length === 0 && !(hasActiveProject && !accountHasActiveProject) && !meaningfulDraft ? <div className="arx-account-empty">
@@ -319,7 +380,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             {!data ? <p className="arx-account-loading">Hesap kayıtları yükleniyor…</p> : null}
           </div>
 
-          {data && (data.projects.length > 0 || Boolean(meaningfulDraft) || hasActiveProject) ? <footer>
+          {data && (data.projects.length > 0 || Boolean(meaningfulDraft) || hasActiveProject) ? <footer className="arx-account-card-footer">
+            {data.projects.length > 4 ? <button type="button" onClick={() => setShowAllProjects((value) => !value)}>
+              {showAllProjects ? "Daha az göster" : `Tüm projeleri göster (${data.projects.length})`}
+            </button> : <span></span>}
             <Link href="/dijital-proje-merkezi">Proje Çalışma Alanına Git →</Link>
           </footer> : null}
         </section>
@@ -332,7 +396,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
             <h3>Son görüşmeler</h3>
             {data?.meetings.slice(0, 4).map((item) => <article key={item.id}>
               <div><b>{item.subject}</b><small>{item.channel} · {formatProjectDateTime(item.meetingAt)}</small></div>
-              <button type="button" onClick={() => remove("meeting", item.id)}>Kaldır</button>
+              <button type="button" onClick={() => { void remove("meeting", item.id, item.subject); }}>Kaldır</button>
             </article>)}
             {data && data.meetings.length === 0 ? <p className="arx-account-empty-inline">Henüz görüşme kaydı yok.</p> : null}
           </section>
@@ -364,12 +428,12 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     </section>
     <div className="customer-workspace-grid">
       <section className="customer-panel customer-projects"><div className="customer-panel-title"><div><span>01 / PROJELERİM</span><h3>Tek proje kimliğiyle kaydedin.</h3></div><button type="button" onClick={saveProject} disabled={!hasActiveProject}>Aktif projeyi kaydet ↗</button></div>
-        <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => remove("project", item.id)}>Kaldır</button></article>) : <p>Henüz hesaba kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
+        <div className="customer-list">{data?.projects.length ? data.projects.map((item) => <article key={item.id}><span>{item.revision}</span><div><b>{item.name}</b><small>{item.id} · {item.phase}</small><time>{formatProjectDateTime(item.updatedAt)}</time></div><button type="button" onClick={() => { void remove("project", item.id, item.name); }}>Kaldır</button></article>) : <p>Henüz hesaba kaydedilmiş proje yok. ARKEMX’te başlattığınız aktif projeyi tek düğmeyle hesabınıza ekleyin.</p>}</div>
         <Link className="customer-inline-link" href="/proje-baslat">Yeni proje başlatın →</Link>
       </section>
       <section className="customer-panel"><div className="customer-panel-title"><div><span>02 / GÖRÜŞMELERİM</span><h3>Teknik görüşme geçmişi.</h3></div></div>
         <form className="customer-form" onSubmit={saveMeeting}><label>Konu<input required value={meeting.subject} onChange={(e) => setMeeting({ ...meeting, subject: e.target.value })} placeholder="Örn. Ön fizibilite görüşmesi"/></label><div><label>Tarih & saat<input required type="datetime-local" value={meeting.meetingAt} onChange={(e) => setMeeting({ ...meeting, meetingAt: e.target.value })}/></label><label>Kanal<select value={meeting.channel} onChange={(e) => setMeeting({ ...meeting, channel: e.target.value })}><option>Çevrim içi</option><option>Ofis</option><option>Telefon</option><option>Şantiye</option></select></label></div><label>Not<textarea value={meeting.notes} onChange={(e) => setMeeting({ ...meeting, notes: e.target.value })} placeholder="Görüşme gündemi veya takip notu"/></label><button>Görüşmeyi kaydet</button></form>
-        <div className="customer-list compact">{data?.meetings.map((item) => <article key={item.id}><span>{item.status}</span><div><b>{item.subject}</b><small>{item.channel} · {item.projectId || "Genel"}</small><time>{formatProjectDateTime(item.meetingAt)}</time></div><button type="button" onClick={() => remove("meeting", item.id)}>Kaldır</button></article>)}</div>
+        <div className="customer-list compact">{data?.meetings.map((item) => <article key={item.id}><span>{item.status}</span><div><b>{item.subject}</b><small>{item.channel} · {item.projectId || "Genel"}</small><time>{formatProjectDateTime(item.meetingAt)}</time></div><button type="button" onClick={() => { void remove("meeting", item.id, item.subject); }}>Kaldır</button></article>)}</div>
       </section>
       <section className="customer-panel"><div className="customer-panel-title"><div><span>03 / PROFİL</span><h3>Kurumsal iletişim bilgileri.</h3></div></div>
         <form className="customer-form" onSubmit={saveProfile}><label>Ad soyad<input value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}/></label><label>Firma<input value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })}/></label><label>Telefon<input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}/></label><button>Profili güncelle</button></form>
