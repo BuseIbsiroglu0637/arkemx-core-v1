@@ -103,6 +103,8 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     [combinedIssues, reviewed],
   );
   const activeCriticalClashes = localIssues.filter((issue) => issue.severity === "critical");
+  const activeCriticalClashCount = activeCriticalClashes.length;
+  const reviewedCriticalClashCount = activeCriticalClashes.filter((issue) => reviewed.includes(issue.id)).length;
 
   useEffect(() => {
     if (!hydrated || !transferReady) return;
@@ -110,16 +112,16 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
       schema: "ARKEM-COORDINATION/3.0",
       previousSchema: "ARKEM-COORDINATION/2.0",
       input: { floorHeight, beamDepth, slabDepth, serviceZone, ceilingBuildUp, raisedFloor, sectionStrategy, shaftArea, plantArea, soilBearing, rainfallIntensity, outletCapacity, sprinkler, facadeTolerance },
-      result: { ...result, openIssues: localIssues.length, criticalOpen: activeCriticalClashes.length },
+      result: { ...result, openIssues: localIssues.length, criticalOpen: activeCriticalClashCount },
       issues: localIssues,
       bimCoordination,
       reviewed,
       resolved: [], // In legacy projects, resolved meant acknowledged, not verified.
       issueReview: lifecycle,
-      issueGate: { blocked: activeCriticalClashes.length > 0, activeCriticalClashes: activeCriticalClashes.length, reviewedCriticalClashes: activeCriticalClashes.filter((issue) => reviewed.includes(issue.id)).length },
+      issueGate: { blocked: activeCriticalClashCount > 0, activeCriticalClashes: activeCriticalClashCount, reviewedCriticalClashes: reviewedCriticalClashCount },
       status: "v115-bim-discipline-coordination",
     });
-  }, [activeCriticalClashes.length, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, result, sectionStrategy, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
+  }, [activeCriticalClashCount, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, reviewedCriticalClashCount, result, sectionStrategy, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
 
   const importThread = useCallback(() => {
     const scheme = record(architecturalScheme);
@@ -168,7 +170,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated]);
+  }, [hydrated, importThread, project.modules]);
   const exportBcf = () => downloadTextFile("arkem-koordinasyon-issues.bcf.json", JSON.stringify(createCoordinationPackage({
     projectId: project.id,
     coordinateReference: source.site.crs,

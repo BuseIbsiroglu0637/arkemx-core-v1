@@ -190,12 +190,12 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       </section> : manualOverride && currentProjectSource ? <section className="arx-mcda-source-status is-override" role="note">
         <div>
           <span>MANUEL MCDA SENARYOSU</span>
-          <b>Proje snapshot'ı güncel; MCDA girdileri bilinçli olarak farklı.</b>
+          <b>{"Proje snapshot'ı güncel; MCDA girdileri bilinçli olarak farklı."}</b>
           <p>Güncel proje referansı {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat. İstersen proje değerlerine geri dönebilirsin.</p>
         </div>
         <button type="button" onClick={importProjectGeometry}>Proje değerlerine dön</button>
       </section> : currentProjectSource ? <section className="arx-mcda-source-status is-current" role="status">
-        <div><span>PROJE VERİSİ GÜNCEL</span><b>MCDA kaynak snapshot'ı aktif proje ile eşleşiyor.</b></div>
+        <div><span>PROJE VERİSİ GÜNCEL</span><b>{"MCDA kaynak snapshot'ı aktif proje ile eşleşiyor."}</b></div>
       </section> : null}
       <div className="arx-system-grid">
         <section className="arx-system-panel" aria-labelledby="arx-system-input-title">

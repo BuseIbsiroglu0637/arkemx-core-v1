@@ -376,12 +376,15 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     const search = new URLSearchParams(window.location.search);
     const requestedStage = search.get("stage");
     const requestedFocus = search.get("focus");
-    if (requestedStage && stages.some((stage) => stage.id === requestedStage)) {
-      setActiveStage(requestedStage as Stage);
-    }
-    if (requestedFocus === "taks" || requestedFocus === "kaks" || requestedFocus === "hmax" || requestedFocus === "source") {
-      setZoningFocus(requestedFocus);
-    }
+    const timer = window.setTimeout(() => {
+      if (requestedStage && stages.some((stage) => stage.id === requestedStage)) {
+        setActiveStage(requestedStage as Stage);
+      }
+      if (requestedFocus === "taks" || requestedFocus === "kaks" || requestedFocus === "hmax" || requestedFocus === "source") {
+        setZoningFocus(requestedFocus);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   const [showSources, setShowSources] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
@@ -796,7 +799,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
   useEffect(() => {
     officialBoundaryLockedRef.current = officialBoundaryLocked;
-    if (officialBoundaryLocked && drawEnabled) setDrawEnabled(false);
+    if (!officialBoundaryLocked || !drawEnabled) return;
+    const timer = window.setTimeout(() => setDrawEnabled(false), 0);
+    return () => window.clearTimeout(timer);
   }, [drawEnabled, officialBoundaryLocked]);
 
   useEffect(() => {
@@ -876,10 +881,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   // Discard it instead of treating it as an actual mahalle or parcel lookup ID.
   useEffect(() => {
     if (administrativeSource !== "fallback") return;
-    if (neighborhood.includes("mahalle-köy bilgisini proje notunda belirtin")) {
+    if (!neighborhood.includes("mahalle-köy bilgisini proje notunda belirtin")) return;
+    const timer = window.setTimeout(() => {
       setNeighborhood("");
       setNeighborhoodId("");
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [administrativeSource, neighborhood]);
 
   useEffect(() => {

@@ -202,24 +202,29 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
     if (!summaryMode || !hasActiveProject || summaryReady) return;
     const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
     if (!storedIntake) return;
-    setIntake(storedIntake);
-    setNumericDrafts({
-      targetArea: String(storedIntake.targetArea),
-      floors: String(storedIntake.floors),
-      floorHeight: String(storedIntake.floorHeight),
-    });
-    setStep(4);
-    setNotice("Başlangıç kararları proje çekirdeğinden yeniden yüklendi. Sıradaki teknik adıma buradan devam edebilirsiniz.");
-    setSummaryReady(true);
+    const timer = window.setTimeout(() => {
+      setIntake(storedIntake);
+      setNumericDrafts({
+        targetArea: String(storedIntake.targetArea),
+        floors: String(storedIntake.floors),
+        floorHeight: String(storedIntake.floorHeight),
+      });
+      setStep(4);
+      setNotice("Başlangıç kararları proje çekirdeğinden yeniden yüklendi. Sıradaki teknik adıma buradan devam edebilirsiniz.");
+      setSummaryReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [hasActiveProject, project.modules, summaryMode, summaryReady]);
 
   useEffect(() => {
     // Summary mode is the history of the currently active project.
     // A separate unfinished "new project" draft must never overwrite it.
+    /* eslint-disable react-hooks/set-state-in-effect -- summary mode must synchronously prevent unfinished draft recovery from taking over the active project. */
     if (summaryMode) {
       setDraftReady(true);
       return;
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
@@ -407,7 +412,7 @@ export function ProjectStartStudio({ summaryMode = false }: { summaryMode?: bool
     void persistProjectToAccount().then((saved) => {
       if (!saved) autoSavedProjectRef.current = "";
     });
-  }, [completed, project.id, project.name, project.updatedAt, thread.metrics.activeCount]);
+  }, [completed, project.id, project.name, project.updatedAt, thread.metrics.activeCount]); // eslint-disable-line react-hooks/exhaustive-deps -- guarded one-shot autosave intentionally tracks project identity/update state
 
   const exportBrief = () => downloadTextFile(
     `${project.id || "arkem"}-proje-briefi.json`,
