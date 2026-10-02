@@ -88,7 +88,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
   const systemDecisionReady = Boolean(systemValue)
     && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(systemValue);
 
-  const completed = PROJECT_JOURNEY.map((step) => {
+  const rawCompleted = PROJECT_JOURNEY.map((step) => {
     if (step.short === "Arazi") {
       return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
     }
@@ -112,6 +112,13 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
     }
     return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
   });
+
+  // Project journey is intentionally sequential. A later module may already
+  // contain seeded or historical data, but it must not appear completed while
+  // an earlier decision gate is still open.
+  const completed = rawCompleted.map((value, index) =>
+    value && rawCompleted.slice(0, index).every(Boolean)
+  );
 
   const firstIncompleteIndex = completed.findIndex((value) => !value);
   const currentIndex = firstIncompleteIndex < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteIndex;
