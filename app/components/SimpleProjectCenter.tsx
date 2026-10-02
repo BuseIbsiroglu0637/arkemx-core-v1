@@ -3,33 +3,43 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
-  ArrowRight, ClipboardList, Download, DraftingCompass,
-  FileUp, GitMerge, Layers3, ShieldAlert, Trash2, Wrench, X,
+  ArrowRight, Check, Download, FileUp, FolderOpen,
+  MoreHorizontal, ShieldAlert, Trash2, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
-import { deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
-const quickTools = [
-  { label: "Yeni proje oluştur", href: "/proje-baslat", Icon: ClipboardList },
-  { label: "Mimari program", href: "/mimari-program-studyosu", Icon: Layers3 },
-  { label: "Plan ve aks", href: "/plan-ve-aks", Icon: DraftingCompass },
-  { label: "BIM koordinasyon", href: "/bim-koordinasyon", Icon: GitMerge },
-  { label: "Proje takibi", href: "/proje-takibi", Icon: Wrench },
-] as const;
+const journeyDescriptions: Record<(typeof PROJECT_JOURNEY)[number]["short"], string> = {
+  Brief: "Proje hedefini ve temel ihtiyacı netleştirin.",
+  Arazi: "Konum, parsel ve saha verilerini doğrulayın.",
+  Mimari: "Alan programını ve plan kararlarını geliştirin.",
+  Sistem: "Taşıyıcı sistem ve yöntem kararını netleştirin.",
+  Koordinasyon: "Mühendislik disiplinlerini ortak modelde koordine edin.",
+  Planlama: "Süre, maliyet ve proje takibini yönetin.",
+  Teslim: "Kontrolleri tamamlayın ve dijital teslim paketini hazırlayın.",
+};
 
 export function SimpleProjectCenter() {
-  const { project, thread, importProject, clearLocalProject } = useProjectKernel();
+  const { project, thread, importProject, clearLocalProject, persistence } = useProjectKernel();
   const fileRef = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [operationsOpen, setOperationsOpen] = useState(false);
   const hasProject = Object.keys(project.modules).length > 0;
   const journeyState = deriveProjectJourneyState(thread);
+  const completedCount = journeyState.completed.filter(Boolean).length;
+  const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
   const journeyNextAction = {
-    label: journeyState.nextStep.label,
+    label: journeyState.allComplete ? "Teslim kontrollerini gözden geçir" : journeyState.nextStep.label,
     route: journeyState.nextStep.href,
   };
+  const storageLabel = persistence.state === "loading"
+    ? "Çalışma kaydı kontrol ediliyor"
+    : persistence.state === "unavailable"
+      ? "Yerel kayıt kullanılamıyor"
+      : "Bu cihazda kayıtlı";
   const projectType = (() => {
     const decision = project.modules["decision-assistant"];
     if (!decision || typeof decision !== "object" || Array.isArray(decision)) return "";
@@ -51,10 +61,10 @@ export function SimpleProjectCenter() {
       const data: unknown = JSON.parse(await file.text());
       const accepted = importProject(data);
       setNotice(accepted
-        ? "Proje yüklendi. Proje adı ve bağlı veri alanlarını kontrol edin."
-        : "Bu dosya tam ARKEMX proje yedeği değil. Proje JSON dosyasını seçin.");
+        ? "Proje yedeği yüklendi. Proje adı ve bağlı veri alanlarını kontrol edin."
+        : "Bu dosya tam ARKEMX proje yedeği değil. ARKEMX proje JSON dosyasını seçin.");
     } catch {
-      setNotice("Dosya okunamadı. Geçerli bir proje JSON dosyası seçin.");
+      setNotice("Dosya okunamadı. Geçerli bir ARKEMX proje yedeği seçin.");
     }
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -66,13 +76,15 @@ export function SimpleProjectCenter() {
       JSON.stringify(project, null, 2),
       "application/json",
     );
-    setNotice("Tam proje JSON yedeği indirildi.");
+    setNotice("Tam proje yedeği indirildi.");
+    setOperationsOpen(false);
   }
 
   function removeLocalWorkingCopy() {
     clearLocalProject();
     setDeleteOpen(false);
-    setNotice("Bu tarayıcıdaki yerel çalışma kaydı silindi. Hesabınıza kaydedilmiş proje etkilenmedi.");
+    setOperationsOpen(false);
+    setNotice("Bu tarayıcıdaki çalışma kaydı silindi. Hesabınıza kaydedilmiş proje etkilenmedi.");
   }
 
   async function removeEverywhere() {
@@ -90,7 +102,8 @@ export function SimpleProjectCenter() {
       }
       clearLocalProject();
       setDeleteOpen(false);
-      setNotice("Proje hem bu tarayıcıdaki yerel çalışma alanından hem de hesabınızdaki proje listesinden silindi.");
+      setOperationsOpen(false);
+      setNotice("Proje hem bu tarayıcıdaki çalışma alanından hem de hesabınızdaki proje listesinden silindi.");
     } catch {
       setNotice("Hesap servisine ulaşılamadı. Yerel çalışma kaydı korunuyor.");
     } finally {
@@ -99,84 +112,158 @@ export function SimpleProjectCenter() {
   }
 
   return <div className="arx-center-content">
-    <section className="arx-center-project" aria-label="Aktif proje">
+    <section className={`arx-center-project ${hasProject ? "has-project" : "is-empty"}`} aria-label="Aktif proje">
       <div className="arx-center-project-heading">
         <div>
-          <span>AKTİF PROJE</span>
-          <h2>{hasProject ? project.name : "Henüz proje seçilmedi"}</h2>
+          <span>{hasProject ? "AKTİF PROJE" : "PROJE SEÇİMİ"}</span>
+          <h2>{hasProject ? project.name : "Henüz aktif projeniz yok"}</h2>
           <p>{hasProject
             ? `${project.id} · ${project.revision} · ${project.phase}`
-            : "Yeni bir proje oluşturun veya mevcut proje yedeğinizi yükleyin."}</p>
-          {hasProject && projectType ? <small className="arx-center-project-type">Proje türü: {projectType}</small> : null}
+            : "Yeni bir proje başlatın, hesabınızdaki bir projeyi açın veya ARKEMX proje yedeğinizi yükleyin."}</p>
+          {hasProject && projectType ? <small className="arx-center-project-type">{projectType}</small> : null}
         </div>
-        <span className="arx-center-storage">Yerel çalışma</span>
+        {hasProject ? <span className={`arx-center-storage is-${persistence.state}`}><i aria-hidden="true"></i>{storageLabel}</span> : null}
       </div>
+
       <div className="arx-center-actions">
         <Link className="arx-center-primary" href={hasProject ? journeyNextAction.route : "/proje-baslat"}>
-          {hasProject ? "Sonraki çalışmaya geç" : "Yeni proje oluştur"} <ArrowRight size={17} aria-hidden="true" />
+          <span>
+            <small>{hasProject ? "SIRADAKİ ADIM" : "BAŞLANGIÇ"}</small>
+            <b>{hasProject ? journeyNextAction.label : "Yeni Proje Başlat"}</b>
+          </span>
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
-        <button type="button" onClick={() => fileRef.current?.click()}>
-          <FileUp size={18} aria-hidden="true" /> Proje JSON yükle
-        </button>
-        <button type="button" onClick={exportProject} disabled={!hasProject}
-          title={!hasProject ? "Yedek indirmek için önce bir proje oluşturun veya yükleyin." : "Bütün proje modüllerini içeren JSON yedeği"}>
-          <Download size={18} aria-hidden="true" /> Proje yedeğini indir
-        </button>
-        {hasProject ? <button type="button" className="arx-center-delete-trigger" onClick={() => setDeleteOpen((value) => !value)}>
-          <Trash2 size={17} aria-hidden="true" /> Aktif projeyi sil
+
+        {!hasProject ? <Link href="/hesabim">
+          <FolderOpen size={18} aria-hidden="true" /> Hesabımdaki Projeleri Aç
+        </Link> : null}
+
+        {!hasProject ? <button type="button" onClick={() => fileRef.current?.click()}>
+          <FileUp size={18} aria-hidden="true" /> Proje Yedeği Yükle
         </button> : null}
+
+        {hasProject ? <div className="arx-center-more-wrap">
+          <button type="button" className="arx-center-more-trigger" aria-expanded={operationsOpen}
+            onClick={() => { setOperationsOpen((value) => !value); setDeleteOpen(false); }}>
+            <MoreHorizontal size={19} aria-hidden="true" /> Proje işlemleri
+          </button>
+          {operationsOpen ? <div className="arx-center-more-menu">
+            <button type="button" onClick={() => fileRef.current?.click()}><FileUp size={16} aria-hidden="true" /> Başka yedek yükle</button>
+            <button type="button" onClick={exportProject}><Download size={16} aria-hidden="true" /> Proje yedeğini indir</button>
+            <button type="button" className="danger" onClick={() => setDeleteOpen(true)}><Trash2 size={16} aria-hidden="true" /> Aktif projeyi sil</button>
+          </div> : null}
+        </div> : null}
+
         <input ref={fileRef} type="file" accept=".json,application/json"
-          className="sr-only" aria-label="ARKEMX proje JSON dosyası seç"
+          className="sr-only" aria-label="ARKEMX proje yedeği seç"
           onChange={(event) => { void loadProject(event.target.files?.[0]); }} />
       </div>
+
       {deleteOpen && hasProject ? <section className="arx-center-delete-panel" aria-label="Aktif projeyi silme seçenekleri">
         <div>
           <span>PROJEYİ SİL</span>
           <b>{project.name}</b>
           <small>{project.id} · {project.revision}</small>
-          <p>Bu işlem proje modüllerindeki mevcut çalışmayı kaldırır. Önce yedek indirmek isterseniz yukarıdaki “Proje yedeğini indir” düğmesini kullanın.</p>
+          <p>Bu işlem proje modüllerindeki mevcut çalışmayı kaldırır. Önce yedek indirmek isterseniz “Proje yedeğini indir” işlemini kullanın.</p>
         </div>
         <div className="arx-center-delete-actions">
           <article>
-            <button type="button" onClick={removeLocalWorkingCopy} disabled={deleteBusy}>Bu tarayıcıdaki çalışma kaydını sil</button>
+            <button type="button" onClick={removeLocalWorkingCopy} disabled={deleteBusy}>Yalnız bu cihazdaki kaydı sil</button>
             <small>Hesabınıza kaydedilmiş proje etkilenmez.</small>
           </article>
           <article>
             <button type="button" className="danger" onClick={() => { void removeEverywhere(); }} disabled={deleteBusy}>
               {deleteBusy ? "Siliniyor…" : "Projeyi her yerden sil"}
             </button>
-            <small>Hem bu tarayıcıdaki çalışma hem de hesabınızdaki proje kaydı silinir.</small>
+            <small>Bu cihazdaki çalışma ve hesabınızdaki proje kaydı silinir.</small>
           </article>
           <button type="button" className="cancel icon-only" onClick={() => setDeleteOpen(false)} disabled={deleteBusy} aria-label="Silme panelini kapat" title="Kapat"><X size={17} aria-hidden="true" /></button>
         </div>
       </section> : null}
+
       {notice && <p className="arx-center-notice" role="status" aria-live="polite">{notice}</p>}
     </section>
 
-    {hasProject && <section className="arx-center-overview" aria-label="Proje özeti">
-      <article><span>Bağlı veri alanı</span><strong>{thread.metrics.activeCount} / {thread.metrics.totalCount}</strong></article>
-      <article><span>Kontrol gerektiren konu</span><strong>{thread.issues.length}</strong></article>
-      <article><span>Sıradaki çalışma</span><strong className="arx-center-next">{journeyNextAction.label}</strong></article>
-    </section>}
+    {hasProject ? <>
+      <section className="arx-center-journey" aria-labelledby="arx-center-journey-title">
+        <div className="arx-center-section-heading">
+          <div>
+            <span>PROJE YOLCULUĞU</span>
+            <h2 id="arx-center-journey-title">Neredeyiz?</h2>
+          </div>
+          <small>{completedCount} / {PROJECT_JOURNEY.length} adım tamamlandı</small>
+        </div>
+        <div className="arx-center-journey-track">
+          {PROJECT_JOURNEY.map((step, index) => {
+            const done = journeyState.completed[index];
+            const current = index === journeyState.currentIndex && !journeyState.allComplete;
+            const state = done ? "done" : current ? "current" : "upcoming";
+            return <Link key={step.short} href={step.href} className={`arx-center-journey-step is-${state}`}
+              aria-current={current ? "step" : undefined}>
+              <i aria-hidden="true">{done ? <Check size={13} strokeWidth={2.4} /> : index + 1}</i>
+              <span><b>{step.short}</b><small>{done ? "Tamamlandı" : current ? "Şu an buradasın" : "Henüz başlanmadı"}</small></span>
+            </Link>;
+          })}
+        </div>
+      </section>
 
-    <section className="arx-center-tool-section" aria-labelledby="arx-center-tools-title">
-      <div className="arx-center-section-heading">
-        <h2 id="arx-center-tools-title">Çalışma araçları</h2>
-        <Link href="/">Tüm araçlar <ArrowRight size={16} aria-hidden="true" /></Link>
-      </div>
-      <div className="arx-center-tool-grid">
-        {quickTools.map(({ label, href, Icon }) => <Link key={label} className="arx-center-tool" href={href}>
-          <Icon size={23} strokeWidth={1.7} aria-hidden="true" />
-          <strong>{label}</strong>
-          <ArrowRight size={17} aria-hidden="true" />
-        </Link>)}
-      </div>
-    </section>
+      <section className="arx-center-overview" aria-label="Proje özeti">
+        <article><span>Proje ilerlemesi</span><strong>{completedCount} / {PROJECT_JOURNEY.length}</strong><small>tamamlanan ana adım</small></article>
+        <article><span>Açık konu</span><strong className={thread.issues.length ? "watch" : "good"}>{thread.issues.length}</strong><small>kontrol bekleyen kayıt</small></article>
+        <article><span>Veri hazırlığı</span><strong>%{thread.metrics.readiness}</strong><small>bağlı proje verisi</small></article>
+      </section>
 
-    <details className="arx-center-advanced">
-      <summary><span><ShieldAlert size={19} strokeWidth={1.7} aria-hidden="true" /> Ayrıntılı proje kontrolleri</span><small>Eksik adımlar, açık konular ve teslim hazırlığı</small></summary>
+      {thread.issues.length > 0 ? <section className={`arx-center-issue-banner ${thread.metrics.critical > 0 ? "is-critical" : ""}`} aria-label="Kontrol bekleyen konular">
+        <ShieldAlert size={19} strokeWidth={1.8} aria-hidden="true" />
+        <div>
+          <b>{thread.issues.length} konu işlem bekliyor</b>
+          <small>{thread.metrics.critical > 0 ? `${thread.metrics.critical} kritik kayıt öncelikli olarak gözden geçirilmeli.` : "Ayrıntılı proje kontrollerinden eksik ve açık konuları inceleyebilirsiniz."}</small>
+        </div>
+        <button type="button" onClick={() => document.getElementById("arx-project-controls")?.setAttribute("open", "")}>Kontrolleri aç</button>
+      </section> : null}
+
+      <section className="arx-center-next-work" aria-labelledby="arx-center-next-title">
+        <div>
+          <span>SIRADAKİ ADIM</span>
+          <h2 id="arx-center-next-title">{journeyNextAction.label}</h2>
+          <p>{journeyDescriptions[journeyState.nextStep.short]}</p>
+        </div>
+        <Link href={journeyNextAction.route}>Çalışmaya Devam Et <ArrowRight size={17} aria-hidden="true" /></Link>
+      </section>
+
+      <section className="arx-center-step-section" aria-labelledby="arx-center-steps-title">
+        <div className="arx-center-section-heading">
+          <div>
+            <span>PROJE ADIMLARI</span>
+            <h2 id="arx-center-steps-title">Çalışma akışı</h2>
+          </div>
+          <small>Her adım aynı proje kaydını kullanır.</small>
+        </div>
+        <div className="arx-center-step-grid">
+          {PROJECT_JOURNEY.map((step, index) => {
+            const done = journeyState.completed[index];
+            const current = index === journeyState.currentIndex && !journeyState.allComplete;
+            return <Link key={step.short} href={step.href} className={`arx-center-step-card ${done ? "is-done" : current ? "is-current" : ""}`}>
+              <span>{String(index + 1).padStart(2, "0")} / {step.short.toUpperCase()}</span>
+              <b>{step.label}</b>
+              <p>{journeyDescriptions[step.short]}</p>
+              <small>{done ? "Tamamlandı ✓" : current ? "Devam et →" : "Henüz başlanmadı"}</small>
+            </Link>;
+          })}
+        </div>
+      </section>
+    </> : null}
+
+    <details id="arx-project-controls" className="arx-center-advanced">
+      <summary>
+        <span><ShieldAlert size={19} strokeWidth={1.7} aria-hidden="true" /> Proje Kontrolleri</span>
+        <small>{hasProject
+          ? `${thread.issues.length} açık konu · ${remainingCount} eksik adım · ${journeyState.allComplete ? "Teslim akışı tamamlandı" : "Teslim henüz hazır değil"}`
+          : "Aktif proje seçildikten sonra kontroller burada görünür."}</small>
+      </summary>
       <div className="arx-center-advanced-content"><DigitalProjectHub simple /></div>
     </details>
-    <p className="arx-center-boundary">Bu ekran proje çalışma kaydını gösterir; teknik inceleme veya resmî onay yerine geçmez.</p>
+
+    <p className="arx-center-boundary">Bu ekran proje çalışma kaydını ve yönlendirici kontrolleri gösterir; teknik inceleme veya resmî onay yerine geçmez.</p>
   </div>;
 }
