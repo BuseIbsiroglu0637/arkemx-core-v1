@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, reconcileProjectSnapshots, saveProjectToStorage } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, reconcileProjectSnapshots, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -633,7 +633,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
       if (!stored.value) return;
       setProject((current) => {
-        const merged = reconcileProjectSnapshots(current, stored.value);
+        // A storage event means the disk primary was written by another tab.
+        // Treat that primary as authoritative for overlapping modules and keep
+        // only modules that exist exclusively in the current in-memory tab.
+        const merged = supplementMissingProjectModules(stored.value, current);
         return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
       });
       if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
