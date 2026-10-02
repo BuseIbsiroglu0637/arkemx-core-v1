@@ -695,7 +695,7 @@ test("active projects do not reopen as a blank new-project form", () => {
   assert.match(startSource, /Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi/);
   assert.match(startSource, /Yeni Bir Proje Başlat/);
   assert.match(graphSource, /Parsel kimliğini ve sınırını doğrula/);
-  assert.match(graphSource, /\/arsa-fizibilite-studyosu#geo-studyo/);
+  assert.match(graphSource, /\/arsa-fizibilite-studyosu\?stage=locate#geo-studyo/);
   assert.match(coreSource, /bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"/);
 });
 
@@ -1172,7 +1172,8 @@ test("zoning source metadata is explicit, persistent and never treated as approv
 test("project next-action links can open the exact parcel workflow stage", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
-  assert.ok(studio.includes('new URLSearchParams(window.location.search).get("stage")'));
+  assert.ok(studio.includes("const search = new URLSearchParams(window.location.search)"));
+  assert.ok(studio.includes('const requestedStage = search.get("stage")'));
   assert.ok(studio.includes("stages.some((stage) => stage.id === requestedStage)"));
   assert.ok(graph.includes('/arsa-fizibilite-studyosu?stage=locate#geo-studyo'));
   assert.ok(graph.includes('/arsa-fizibilite-studyosu?stage=zoning#geo-studyo'));
