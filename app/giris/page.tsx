@@ -18,7 +18,7 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const rawReturnTo = Array.isArray(params?.return_to) ? params?.return_to[0] : params?.return_to;
-  const returnTo = accountReturnPath(rawReturnTo);
+  const returnTo = accountReturnPath(rawReturnTo, "/hesabim");
 
   return <main className="arx-simple-home arx-auth-page">
     <div className="arx-auth-shell">
