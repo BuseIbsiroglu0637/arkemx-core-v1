@@ -443,7 +443,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [rotation, setRotation] = useState(15);
   const [offsetEast, setOffsetEast] = useState(0);
   const [offsetNorth, setOffsetNorth] = useState(0);
-  const [system, setSystem] = useState("Yapısal Çelik");
+  const [system, setSystem] = useState("Karar Bekleniyor");
   const [usage, setUsage] = useState("Sanayi / Depo");
   const [slope, setSlope] = useState(4);
   const [exaggeration, setExaggeration] = useState(1.5);
@@ -697,7 +697,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (typeof saved.offsetEast === "number") setOffsetEast(saved.offsetEast);
       if (typeof saved.offsetNorth === "number") setOffsetNorth(saved.offsetNorth);
       if (saved.usage) setUsage(saved.usage);
-      if (saved.system) setSystem(saved.system);
+      if (!simple && saved.system) setSystem(saved.system);
+      else if (simple) setSystem("Karar Bekleniyor");
       if (typeof saved.floors === "number") setFloors(saved.floors);
       if (typeof saved.floorHeight === "number") setFloorHeight(saved.floorHeight);
       if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
@@ -2155,7 +2156,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           {!massingModel.source.authoritative && <p className="v112-unverified-note">Doğrulanmamış kullanıcı imar girdilerine göre hesaplanmıştır.</p>}
         </section>
         <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
-        <label>Taşıyıcı sistem<select value={system} onChange={(event) => setSystem(event.target.value)}><option>Karar Bekleniyor</option><option>Betonarme</option><option>Betonarme Prefabrik</option><option>Yapısal Çelik</option><option>Hafif Çelik</option><option>Karma Sistem</option></select></label>
+        <div className="geo-system-deferred" role="note"><span>TAŞIYICI SİSTEM</span><b>Karar bekleniyor</b><small>Taşıyıcı sistem seçimi Arazi aşamasında yapılmaz; Sistem adımında karşılaştırma ve gerekçe kaydıyla belirlenir.</small></div>
       </>}
 
       {designPanel === "adjust" && <>
