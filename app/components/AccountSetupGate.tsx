@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AccountOnboarding } from "./AccountOnboarding";
-import { useProjectKernel } from "./ProjectKernel";
 
 type SetupState = "checking" | "setup" | "existing" | "error";
 
@@ -17,8 +16,6 @@ export function AccountSetupGate({
   returnTo: string;
   showExistingAccountChoice?: boolean;
 }) {
-  const { project, hydrated } = useProjectKernel();
-  const hasActiveProject = hydrated && Object.keys(project.modules).length > 0;
   const [state, setState] = useState<SetupState>("checking");
   const [message, setMessage] = useState("Hesap bilgileri kontrol ediliyor…");
 
@@ -44,14 +41,14 @@ export function AccountSetupGate({
       if (body.profile) {
         if (showExistingAccountChoice) {
           setState("existing");
-          setMessage("Bu oturum için hesap kurulumu daha önce tamamlanmış.");
+          setMessage("ARKEMX hesabınız daha önce oluşturulmuş.");
           return;
         }
         window.location.replace(returnTo);
         return;
       }
       setState("setup");
-      setMessage("İlk kullanım için temel hesap bilgilerinizi tamamlayın.");
+      setMessage("Profil bilgilerinizi tamamlayarak kurulumu bitirin.");
     } catch {
       setState("error");
       setMessage("Hesap servisine bağlanılamadı. Lütfen tekrar deneyin.");
@@ -74,13 +71,11 @@ export function AccountSetupGate({
   if (state === "existing") {
     return <div className="arx-setup-gate arx-setup-existing" role="status">
       <span>HESAP HAZIR</span>
-      <h2>Hesabınız zaten kurulu</h2>
-      <p>{message} Kurulumu yeniden yapmanız gerekmez.</p>
-      <div className={`arx-setup-existing-actions${hasActiveProject ? "" : " single"}`}>
-        <a href="/hesabim">Hesabımı aç</a>
-        {hasActiveProject ? <a href="/dijital-proje-merkezi">Aktif projeye devam et</a> : null}
+      <h2>Hesabınız hazır</h2>
+      <p>{message}</p>
+      <div className="arx-setup-existing-actions single">
+        <a href={returnTo}>Çalışma Alanına Git <span aria-hidden="true">→</span></a>
       </div>
-      {hasActiveProject ? <small className="arx-setup-active-project">{project.name} · {project.id}</small> : null}
     </div>;
   }
 
