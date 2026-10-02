@@ -375,7 +375,9 @@ export function SimpleProjectCenter() {
                 <button type="button" onClick={() => { void loadAccountProjects(); }}>Tekrar dene</button>
               </div> : null}
               {projectsState === "ready" && accountProjects.length === 0 ? <p className="arx-center-projects-state">Hesabınıza kayıtlı başka proje bulunmuyor.</p> : null}
-              {projectsState === "ready" ? accountProjects.map((item) => {
+              {projectsState === "ready" ? [...accountProjects]
+                .sort((left, right) => Number(right.id === project.id) - Number(left.id === project.id))
+                .map((item) => {
                 const active = item.id === project.id;
                 return <article key={item.id} className={active ? "is-active" : undefined}>
                   <div>
