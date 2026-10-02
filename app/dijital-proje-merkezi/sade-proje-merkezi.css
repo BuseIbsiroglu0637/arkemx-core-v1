@@ -73,6 +73,9 @@
 .arx-center-advanced {
   min-width: 0; overflow: hidden; border: 1px solid #dfe6e9; border-radius: 9px; background: #fff;
 }
+.arx-center-advanced {
+  scroll-margin-top:18px;
+}
 .arx-center-advanced > summary {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   min-height: 66px; padding: 17px 20px; cursor: pointer; list-style: none;
