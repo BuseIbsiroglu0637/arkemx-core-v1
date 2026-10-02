@@ -2097,9 +2097,9 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     <header className="geo-studio-top"><div><span>ARKEM / GEO·BIM WORKSPACE · V111 GIS + 3B</span><b>Parsel, Kot & Arazi Stüdyosu</b></div><div><span className="geo-status live">ORTAK KATMAN MOTORU</span><small>2B + 3B · WGS84 / yerel ENU</small></div></header>
     {simple && <>
       <nav className="arx-geo-quick-nav" aria-label="Arazi parsel temel işlemleri">
-        {([["locate","Parsel bul"],["import","Dosya yükle"],["zoning","İmar bilgileri"],["design","Yapı yerleşimi"]] as const).map(([id,label]) =>
+        {([["locate","01","Parsel bul"],["import","02","Dosya yükle"],["zoning","03","İmar bilgileri"],["design","04","Yapı yerleşimi"]] as const).map(([id,no,label]) =>
           <button key={id} type="button" className={activeStage === id ? "active" : ""} aria-current={activeStage === id ? "step" : undefined}
-            onClick={() => openFocusedStage(id)}>{label}</button>
+            onClick={() => openFocusedStage(id)}><span>{no}</span><b>{label}</b></button>
         )}
         <details className="arx-geo-extra" ref={extraToolsRef}>
           <summary>Diğer araçlar ▾</summary>
