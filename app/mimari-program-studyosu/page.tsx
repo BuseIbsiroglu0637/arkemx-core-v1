@@ -18,7 +18,7 @@ export default function ArchitecturalProgramPage() {
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-architecture-back" aria-label="Sayfa bağlantıları">
-          <Link href="/arsa-fizibilite-studyosu#geo-studyo"><ArrowLeft size={16} aria-hidden="true" /> Önceki adıma dön</Link>
+          <Link href="/arsa-fizibilite-studyosu?stage=design#geo-studyo"><ArrowLeft size={16} aria-hidden="true" /> Yapı Yerleşimine Dön</Link>
           <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
           <Link href="/araclar">Tüm araçlar</Link>
         </nav>
@@ -26,7 +26,7 @@ export default function ArchitecturalProgramPage() {
       <div className="arx-architecture-intro">
         <span>TASARIM / MİMARİ</span>
         <h1>Mimari program</h1>
-        <p>Hedef alanı, katları ve mahal listesini düzenleyin. Ardından kavramsal plan şemasını inceleyin.</p>
+        <p>Arazi ve yapı yerleşiminden devralınan verilerle mahal programını kurun, plan şemasını geliştirin ve mimari ön kontrolleri tamamlayın.</p>
       </div>
       <section id="mimari-motor" aria-label="Mimari program çalışma alanı">
         <ArchitecturalProgramStudio simple />
