@@ -538,6 +538,8 @@ const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(nul
 
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
+  const projectRef = useRef<ProjectKernelState>(project);
+  projectRef.current = project;
   const [hydrated, setHydrated] = useState(false);
   const skipNextPersistenceRef = useRef(false);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
@@ -677,43 +679,70 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   })), []);
   const patchModule = useCallback((key: string, moduleValue: unknown) => {
     if (!hydrated) return;
-    setProject((current) => {
-      const mergedValue = mergeModuleValue(current.modules[key], moduleValue);
-      if (JSON.stringify(current.modules[key]) === JSON.stringify(mergedValue)) return current;
-      const timestamp = new Date().toISOString();
-      const action = current.modules[key] ? "update" : "create";
-      const storedValue = stampProjectModule(mergedValue, {
-        projectId: current.id,
-        projectRevision: current.revision,
-        sourceModule: key,
-        recordedAt: timestamp,
-        action: action === "create" ? "created" : "updated",
-      });
-      const event: ProjectKernelEvent = { id: `${key}-${Date.now().toString(36)}`, module: key, action, revision: current.revision, timestamp };
-      const nextModules = { ...current.modules, [key]: storedValue };
-      const automatic = current.experience.autoHandoff
-        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [])
-        : { modules: nextModules, applied: [] as string[], synchronizedAt: "" };
-      const stampedModules = stampHandoffModules(automatic.modules, automatic.applied, {
-        projectId: current.id,
-        projectRevision: current.revision,
-        recordedAt: timestamp,
-      });
-      const handoffEvents: ProjectKernelEvent[] = automatic.applied.map((handoffId) => ({
-        id: `${handoffId}-${Date.now().toString(36)}`,
-        module: handoffId,
-        action: "handoff",
-        revision: current.revision,
-        timestamp,
-      }));
-      return {
-        ...current,
-        updatedAt: timestamp,
-        experience: automatic.applied.length ? { ...current.experience, lastSynchronizedAt: automatic.synchronizedAt } : current.experience,
-        modules: stampedModules,
-        events: [...current.events, event, ...handoffEvents].slice(-80),
-      };
+    const current = projectRef.current;
+    const mergedValue = mergeModuleValue(current.modules[key], moduleValue);
+    if (JSON.stringify(current.modules[key]) === JSON.stringify(mergedValue)) return;
+
+    const timestamp = new Date().toISOString();
+    const action = current.modules[key] ? "update" : "create";
+    const storedValue = stampProjectModule(mergedValue, {
+      projectId: current.id,
+      projectRevision: current.revision,
+      sourceModule: key,
+      recordedAt: timestamp,
+      action: action === "create" ? "created" : "updated",
     });
+    const event: ProjectKernelEvent = { id: `${key}-${Date.now().toString(36)}`, module: key, action, revision: current.revision, timestamp };
+    const nextModules = { ...current.modules, [key]: storedValue };
+    const automatic = current.experience.autoHandoff
+      ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [])
+      : { modules: nextModules, applied: [] as string[], synchronizedAt: "" };
+    const stampedModules = stampHandoffModules(automatic.modules, automatic.applied, {
+      projectId: current.id,
+      projectRevision: current.revision,
+      recordedAt: timestamp,
+    });
+    const handoffEvents: ProjectKernelEvent[] = automatic.applied.map((handoffId) => ({
+      id: `${handoffId}-${Date.now().toString(36)}`,
+      module: handoffId,
+      action: "handoff",
+      revision: current.revision,
+      timestamp,
+    }));
+    const nextProject: ProjectKernelState = {
+      ...current,
+      updatedAt: timestamp,
+      experience: automatic.applied.length ? { ...current.experience, lastSynchronizedAt: automatic.synchronizedAt } : current.experience,
+      modules: stampedModules,
+      events: [...current.events, event, ...handoffEvents].slice(-80),
+    };
+
+    // Completion/decision writes must reach device storage before a navigation
+    // can unmount the source screen. This prevents a green completion gate from
+    // being visible while the Project Workspace still reads the previous state.
+    try {
+      const result = saveProjectToStorage(window.localStorage, nextProject);
+      try {
+        window.sessionStorage.setItem(SESSION_RECOVERY_KEY, JSON.stringify(result.payload));
+      } catch {
+        // Same-tab recovery is best-effort when session storage is unavailable.
+      }
+      projectRef.current = result.payload;
+      skipNextPersistenceRef.current = true;
+      setProject(result.payload);
+      setPersistence({
+        state: result.reconciled ? "recovered" : "device-saved",
+        integrity: "verified",
+        lastSavedAt: result.savedAt,
+        backupAvailable: result.backupAvailable,
+        cloud: "not-configured",
+      });
+    } catch {
+      // Keep the in-memory change even when browser storage is unavailable.
+      // The normal persistence effect will retry and expose the unavailable state.
+      projectRef.current = nextProject;
+      setProject(nextProject);
+    }
   }, [hydrated]);
   const applyHandoff = useCallback((handoffId: string) => {
     const preview = synchronizeModules(project.modules, [handoffId]);
