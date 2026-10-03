@@ -200,6 +200,96 @@ function splitIntoRows(items: ProgramSpaceInstance[], rowCount: number) {
     });
   return rows.filter((row) => row.items.length);
 }
+function baseProgramName(name: string) {
+  return name.replace(/ \d+$/, "");
+}
+
+function requiredAdjacencyLayout(
+  items: ProgramSpaceInstance[],
+  relationships: unknown[],
+  roomWidthBays: number,
+  roomHeightBays: number,
+  bayArea: number,
+) {
+  const requiredPairs = relationships
+    .map((value) => asRecord(value))
+    .filter((relation) => asString(relation.priority) === "Zorunlu")
+    .map((relation) => [asString(relation.from), asString(relation.to)] as const)
+    .filter(([from, to]) => from && to);
+
+  if (requiredPairs.length < 2 || items.length < 3) return null;
+
+  const availableNames = new Set(items.map((item) => baseProgramName(item.name)));
+  const degree = new Map<string, number>();
+  requiredPairs.forEach(([from, to]) => {
+    if (!availableNames.has(from) || !availableNames.has(to)) return;
+    degree.set(from, (degree.get(from) ?? 0) + 1);
+    degree.set(to, (degree.get(to) ?? 0) + 1);
+  });
+
+  const hubName = [...degree.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!hubName) return null;
+
+  const hubItems = items.filter((item) => baseProgramName(item.name) === hubName);
+  if (hubItems.length !== 1) return null;
+  const hub = hubItems[0];
+
+  const satelliteNames = new Set<string>();
+  requiredPairs.forEach(([from, to]) => {
+    if (from === hubName && availableNames.has(to)) satelliteNames.add(to);
+    if (to === hubName && availableNames.has(from)) satelliteNames.add(from);
+  });
+
+  const satellites = items.filter((item) => satelliteNames.has(baseProgramName(item.name)));
+  if (satellites.length < 2) return null;
+
+  const clusterIds = new Set([hub.key, ...satellites.map((item) => item.key)]);
+  const leftovers = items.filter((item) => !clusterIds.has(item.key));
+  if (leftovers.length) return null;
+
+  const roomCapacityArea = roomWidthBays * roomHeightBays * bayArea;
+  const clusterArea = items.reduce((sum, item) => sum + item.unitArea, 0);
+  if (clusterArea > roomCapacityArea * 1.005) return null;
+
+  const hubWidth = hub.unitArea / Math.max(roomHeightBays * bayArea, .01);
+  const satelliteStripWidth = roomWidthBays - hubWidth;
+  if (hubWidth < .25 || satelliteStripWidth < .25) return null;
+
+  const satelliteTotalHeight = satellites.reduce((sum, item) => (
+    sum + item.unitArea / Math.max(satelliteStripWidth * bayArea, .01)
+  ), 0);
+  if (satelliteTotalHeight > roomHeightBays * 1.005) return null;
+
+  const placements = [{
+    instance: hub,
+    x: 0,
+    y: 0,
+    widthBays: hubWidth,
+    heightBays: roomHeightBays,
+    role: "hub" as const,
+  }];
+
+  let yCursor = 0;
+  satellites
+    .sort((a, b) => b.unitArea - a.unitArea || a.order - b.order)
+    .forEach((instance) => {
+      const height = instance.unitArea / Math.max(satelliteStripWidth * bayArea, .01);
+      placements.push({
+        instance,
+        x: hubWidth,
+        y: yCursor,
+        widthBays: satelliteStripWidth,
+        heightBays: height,
+        role: "satellite" as const,
+      });
+      yCursor += height;
+    });
+
+  return { hubName, placements };
+}
+
 
 /**
  * Generates a conceptual, area-aware plan from the Architectural Program.
@@ -235,49 +325,79 @@ export function buildProgramPlanElements(
     const levelSpanY = profile?.depth ? profile.depth / safeBaysY : safeSpanY;
     const bayArea = levelSpanX * levelSpanY;
     const floorArea = safeBaysX * safeBaysY * bayArea;
-    const desiredRows = Math.max(1, Math.min(safeBaysY, Math.round(Math.sqrt(Math.max(bucket.items.length, 1) * safeBaysY / Math.max(roomWidthBays, 1)))));
-    const rows = splitIntoRows(bucket.items, desiredRows);
-    let yCursor = 0;
+    const adjacencyLayout = requiredAdjacencyLayout(
+      bucket.items,
+      relationships,
+      roomWidthBays,
+      safeBaysY,
+      bayArea,
+    );
 
-    rows.forEach((row, rowIndex) => {
-      const remainingRows = Math.max(1, rows.length - rowIndex);
-      const availableHeight = Math.max(.2, safeBaysY - yCursor);
-      const exactHeight = row.area > 0 ? row.area / Math.max(roomWidthBays * bayArea, .01) : availableHeight / remainingRows;
-      const rowHeight = Math.max(.2, Math.min(availableHeight / remainingRows * 1.35, exactHeight));
-      let xCursor = 0;
-      row.items
-        .sort((a, b) => a.order - b.order)
-        .forEach((instance, itemIndex) => {
-          const remainingWidth = Math.max(.15, roomWidthBays - xCursor);
-          const isLast = itemIndex === row.items.length - 1;
-          const exactWidth = instance.unitArea > 0 ? instance.unitArea / Math.max(rowHeight * bayArea, .01) : remainingWidth;
-          const width = Math.max(.15, Math.min(remainingWidth, isLast ? remainingWidth : exactWidth));
-          const exactRoomHeight = instance.unitArea > 0 ? instance.unitArea / Math.max(width * bayArea, .01) : rowHeight;
-          const height = Math.max(.15, Math.min(rowHeight, exactRoomHeight));
-          elements.push({
-            id: instance.key,
-            type: "space",
-            level,
-            x: Number(xCursor.toFixed(4)),
-            y: Number(yCursor.toFixed(4)),
-            widthBays: Number(width.toFixed(4)),
-            heightBays: Number(height.toFixed(4)),
-            orientation: "x",
-            label: instance.name,
-            load: instance.liveLoad,
-            fire: "Projede belirlenecek",
-            section: "—",
-            provenance: "program",
-            sourceSpaceId: instance.sourceSpaceId,
-            sourceSpaceInstance: instance.sourceInstance,
-            sourceSpaceCode: instance.code,
-            sourceZone: instance.zone,
-            sourceUnitArea: instance.unitArea,
+    const pushProgramSpace = (
+      instance: ProgramSpaceInstance,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+    ) => {
+      elements.push({
+        id: instance.key,
+        type: "space",
+        level,
+        x: Number(x.toFixed(4)),
+        y: Number(y.toFixed(4)),
+        widthBays: Number(width.toFixed(4)),
+        heightBays: Number(height.toFixed(4)),
+        orientation: "x",
+        label: instance.name,
+        load: instance.liveLoad,
+        fire: "Projede belirlenecek",
+        section: "—",
+        provenance: "program",
+        sourceSpaceId: instance.sourceSpaceId,
+        sourceSpaceInstance: instance.sourceInstance,
+        sourceSpaceCode: instance.code,
+        sourceZone: instance.zone,
+        sourceUnitArea: instance.unitArea,
+      });
+    };
+
+    if (adjacencyLayout) {
+      adjacencyLayout.placements.forEach((placement) => {
+        pushProgramSpace(
+          placement.instance,
+          placement.x,
+          placement.y,
+          placement.widthBays,
+          placement.heightBays,
+        );
+      });
+    } else {
+      const desiredRows = Math.max(1, Math.min(safeBaysY, Math.round(Math.sqrt(Math.max(bucket.items.length, 1) * safeBaysY / Math.max(roomWidthBays, 1)))));
+      const rows = splitIntoRows(bucket.items, desiredRows);
+      let yCursor = 0;
+
+      rows.forEach((row, rowIndex) => {
+        const remainingRows = Math.max(1, rows.length - rowIndex);
+        const availableHeight = Math.max(.2, safeBaysY - yCursor);
+        const exactHeight = row.area > 0 ? row.area / Math.max(roomWidthBays * bayArea, .01) : availableHeight / remainingRows;
+        const rowHeight = Math.max(.2, Math.min(availableHeight / remainingRows * 1.35, exactHeight));
+        let xCursor = 0;
+        row.items
+          .sort((a, b) => a.order - b.order)
+          .forEach((instance, itemIndex) => {
+            const remainingWidth = Math.max(.15, roomWidthBays - xCursor);
+            const isLast = itemIndex === row.items.length - 1;
+            const exactWidth = instance.unitArea > 0 ? instance.unitArea / Math.max(rowHeight * bayArea, .01) : remainingWidth;
+            const width = Math.max(.15, Math.min(remainingWidth, isLast ? remainingWidth : exactWidth));
+            const exactRoomHeight = instance.unitArea > 0 ? instance.unitArea / Math.max(width * bayArea, .01) : rowHeight;
+            const height = Math.max(.15, Math.min(rowHeight, exactRoomHeight));
+            pushProgramSpace(instance, xCursor, yCursor, width, height);
+            xCursor += width;
           });
-          xCursor += width;
-        });
-      yCursor += rowHeight;
-    });
+        yCursor += rowHeight;
+      });
+    }
 
     const coreWidth = coreStripBays;
     const coreTargetArea = Math.min(
