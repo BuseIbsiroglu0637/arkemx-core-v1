@@ -877,6 +877,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Aktif kat · Mahal / çekirdek</span><b>{metrics.rooms} / {metrics.cores}</b></div>
             <div><span>Tüm proje · Mahal</span><b className={programLinkPass ? "good" : "watch"}>{allPlanSpaces.length} / {upstreamSpaceCount}</b></div>
             <div><span>Çekirdek sürekliliği</span><b className={coreContinuityPass ? "good" : "watch"}>{floorStats.filter((floor) => floor.cores > 0).length} / {floorCount} kat</b></div>
+            <div><span>Alan temsili</span><b className={areaRepresentationPass ? "good" : "watch"}>{areaRepresentation.filter((item) => item.pass).length} / {upstreamSpaceCount}</b></div>
+            <div><span>Zorunlu komşuluk</span><b className={requiredAdjacencyPass ? "good" : "watch"}>{requiredAdjacency.satisfied} / {requiredAdjacency.total}</b></div>
             <div><span>Program bağlantısı</span><b className={programLinkPass ? "good" : "watch"}>{programLinkPass ? "Güncel" : "Eşleştirilmeli"}</b></div>
             <div><span>Kontrol kapısı</span><b className={planGatePass ? "good" : "watch"}>{planGatePass ? "Geçti" : "Açık"}</b></div>
             {!programFootprintPass && programFootprintFeasible ? <button type="button" onClick={applyProgramFootprintSuggestion}>Plan tabanını programa uyarla</button> : null}
@@ -888,14 +890,18 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Planda bağlı</span><b>{linkedProgramSpaces.length} mahal</b></div>
             <div><span>Bağlantısız / manuel</span><b>{manualOrUnlinkedSpaces.length}</b></div>
             {floorStats.map((floor) => <div key={floor.level}><span>K{floor.level}</span><b>{floor.rooms} mahal · {floor.cores} çekirdek</b></div>)}
-            {(!programLinkPass || !coreContinuityPass || !floorCoveragePass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi güncel Mimari Programla bağlı.</small>}
+            <div><span>Alan temsili</span><b>{areaRepresentation.filter((item) => item.pass).length}/{upstreamSpaceCount} mahal</b></div>
+            <div><span>Zorunlu komşuluk</span><b>{requiredAdjacency.satisfied}/{requiredAdjacency.total}</b></div>
+            {requiredAdjacency.items.filter((item) => !item.satisfied).map((item) => <div className="cad-program-relation-risk" key={item.id}><span>{item.from} ↔ {item.to}</span><b>Çözülmedi</b></div>)}
+            {(!programLinkPass || !coreContinuityPass || !floorCoveragePass || !areaRepresentationPass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi ve alan temsili güncel Mimari Programla bağlı.</small>}
+            {!requiredAdjacencyPass ? <p className="cad-program-adjacency-note">Zorunlu komşuluk aynı katta fiziksel temas gerektirir. Mevcut plaka/kat kapasitesi buna izin vermiyorsa Mimari Program veya kat/plaka kararı yeniden ele alınmalıdır.</p> : null}
             <Link className="cad-program-edit-link" href="/mimari-program-studyosu">Mimari Programı Düzenle →</Link>
           </section>
           <section className="cad-properties">
             <strong>SEÇİLİ NESNE</strong>
             {selected && (selected.type === "space" || selected.type === "core" || selected.type === "opening") ? <>
               <div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.type === "space" ? "Mimari mahal" : selected.type === "core" ? "Düşey sirkülasyon" : "Döşeme boşluğu"}</small></span></div>
-              {selected.type === "space" && expectedProgramIds.has(selected.id) ? <div className="cad-program-source-field"><span>Program mahali</span><b>{selected.label}</b><small>{selected.sourceSpaceCode ? `${selected.sourceSpaceCode} · ` : ""}{typeof selected.sourceUnitArea === "number" ? `${selected.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · ` : ""}Ad / alan değişikliği Mimari Programdan yapılır.</small></div> : <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>}
+              {selected.type === "space" && expectedProgramIds.has(selected.id) ? <div className="cad-program-source-field"><span>Program mahali</span><b>{selected.label}</b><small>{selected.sourceSpaceCode ? `${selected.sourceSpaceCode} · ` : ""}{typeof selected.sourceUnitArea === "number" ? `Hedef ${selected.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · ` : ""}Plan ${(((selected.widthBays ?? 1) * spanX * (selected.heightBays ?? 1) * spanY)).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m². Ad / hedef alan değişikliği Mimari Programdan yapılır.</small></div> : <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>}
               <button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili mimari nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button>
             </> : <p>Plan üzerinde bir mahal, çekirdek veya boşluk seçin. Taşıyıcı özellikler bu aşamada düzenlenmez.</p>}
           </section>
