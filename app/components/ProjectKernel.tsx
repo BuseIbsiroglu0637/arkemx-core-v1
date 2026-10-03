@@ -136,6 +136,54 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
   };
 }
 
+
+export function deriveProjectJourneyNextAction(thread: ProjectThread) {
+  const journeyState = deriveProjectJourneyState(thread);
+  if (journeyState.allComplete) {
+    return {
+      label: "Teslim kontrollerini gözden geçir",
+      route: "/dijital-proje-merkezi#arx-project-controls",
+    };
+  }
+
+  const currentStep = PROJECT_JOURNEY[journeyState.currentIndex];
+  const node = (id: string) => thread.nodes.find((item) => item.id === id);
+
+  if (currentStep.short === "Arazi") {
+    return { label: thread.nextAction.label, route: thread.nextAction.route };
+  }
+
+  if (currentStep.short === "Mimari") {
+    const architectureReady = Boolean(node("architectural-program")?.milestoneComplete);
+    const planReady = Boolean(node("plan-editor")?.milestoneComplete);
+    if (!architectureReady) return { label: currentStep.label, route: currentStep.href };
+    if (!planReady) return { label: "Plan ve aksı tamamla", route: "/plan-ve-aks" };
+  }
+
+  if (currentStep.short === "Sistem") {
+    return { label: currentStep.label, route: currentStep.href };
+  }
+
+  if (currentStep.short === "Koordinasyon") {
+    const structuralNode = node("structural-concept");
+    const coordinationNode = node("engineering-coordination");
+    if (!structuralNode?.milestoneComplete) {
+      return {
+        label: "Taşıyıcı ön tasarımı tamamla",
+        route: structuralNode?.route || "/tasiyici-on-tasarim",
+      };
+    }
+    if (!coordinationNode?.milestoneComplete) {
+      return {
+        label: "Mühendislik koordinasyonunu tamamla",
+        route: coordinationNode?.route || "/muhendislik-koordinasyon",
+      };
+    }
+  }
+
+  return { label: journeyState.nextStep.label, route: journeyState.nextStep.href };
+}
+
 const createDefaultProject = (): ProjectKernelState => ({
   schema: "ARKEM-PROJECT/1.0",
   id: "ARK-26-0001",
