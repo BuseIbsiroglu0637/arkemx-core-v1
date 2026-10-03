@@ -1048,14 +1048,16 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
     ? { short: "Plan & Aks", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
       ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
-      : regularNextJourneyStep;
+      : normalizedModule.includes("SYSTEM")
+        ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
+        : regularNextJourneyStep;
   const regularPreviousJourneyStep = PROJECT_JOURNEY[Math.max(0, activeJourneyIndex - 1)];
   const previousJourneyStep = normalizedModule.includes("PLAN")
     ? { short: "Mimari", href: "/mimari-program-studyosu" }
     : normalizedModule.includes("STRUCTURAL CONCEPT")
-      ? { short: "Plan", href: "/plan-ve-aks" }
+      ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
       : normalizedModule.includes("SYSTEM")
-        ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
+        ? { short: "Plan & Aks", href: "/plan-ve-aks" }
         : activeJourneyIndex === 1
           ? { short: "Brief", href: "/proje-baslat" }
           : activeJourneyIndex > 0
@@ -1069,11 +1071,14 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   const planElementCount = Array.isArray(planModule.elements) ? planModule.elements.length : 0;
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
+  const systemMilestoneReady = deriveProjectJourneyState(thread).systemDecisionReady;
   const canAdvanceFromCurrentModule = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
     ? architectureMilestoneReady
     : normalizedModule.includes("PLAN")
       ? architectureMilestoneReady && planMilestoneReady
-      : true;
+      : normalizedModule.includes("SYSTEM")
+        ? systemMilestoneReady
+        : true;
   const structureSystemLabels: Record<string, string> = {
     undecided: "Karar bekleniyor",
     concrete: "Betonarme",
