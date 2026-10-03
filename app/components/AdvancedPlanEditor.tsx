@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
-import { expandProgramSpaces, buildProgramPlanElements } from "../lib/plan-program";
+import { expandProgramSpaces, buildProgramPlanElements, evaluateRequiredAdjacency } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
@@ -26,6 +26,8 @@ type PlanElement = {
   sourceSpaceCode?: string;
   sourceZone?: string;
   sourceUnitArea?: number;
+  widthBays?: number;
+  heightBays?: number;
 };
 
 const toolMeta: Record<Tool, { code: string; label: string; hint: string }> = {
@@ -125,11 +127,15 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const openings = visible.filter((element) => element.type === "opening");
     const loads = visible.filter((element) => element.type === "load");
     const wallLength = walls.reduce((sum, wall) => sum + (wall.orientation === "x" ? spanX : spanY), 0);
-    const openingArea = openings.length * spanX * spanY;
-    const coreArea = cores.length * spanX * spanY;
+    const openingArea = openings.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
+    const coreArea = cores.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
     const loadArea = loads.length * spanX * spanY;
     const totalLiveLoad = loads.reduce((sum, load) => sum + load.load * spanX * spanY, 0);
-    const massPoints = [...rooms, ...loads].map((element) => ({ x: (element.x + .5) * spanX, y: (element.y + .5) * spanY, weight: element.type === "load" ? Math.max(element.load, 1) : 1 }));
+    const massPoints = [...rooms, ...loads].map((element) => ({
+      x: (element.x + (element.widthBays ?? 1) / 2) * spanX,
+      y: (element.y + (element.heightBays ?? 1) / 2) * spanY,
+      weight: element.type === "load" ? Math.max(element.load, 1) : Math.max((element.widthBays ?? 1) * (element.heightBays ?? 1), .25),
+    }));
     const massWeight = massPoints.reduce((sum, point) => sum + point.weight, 0);
     const massCenter = massPoints.length ? {
       x: massPoints.reduce((sum, point) => sum + point.x * point.weight, 0) / massWeight,
@@ -159,7 +165,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const manualMassPointCount = massPointCount - conceptualMassPointCount;
     const manualRigidityPointCount = rigidityPointCount - conceptualRigidityPointCount;
     const outOfGridMassPointCount = [...rooms, ...loads].filter((element) =>
-      element.x < 0 || element.y < 0 || element.x > baysX - 1 || element.y > baysY - 1
+      element.x < 0 || element.y < 0 || element.x + (element.widthBays ?? 1) > baysX + .001 || element.y + (element.heightBays ?? 1) > baysY + .001
     ).length;
     const outOfGridRigidityPointCount = [...columns, ...walls].filter((element) => {
       const maxX = element.type === "wall" && element.orientation === "x" ? baysX - 1 : baysX;
