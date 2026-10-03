@@ -870,7 +870,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           <div><dt>Program brüt ihtiyacı</dt><dd>{programGrossDemand > 0 ? `${programGrossDemand.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "—"}</dd></div>
           <div><dt>Kat</dt><dd>{floorCount || "—"}</dd></div>
           <div><dt>Mahal</dt><dd>{upstreamSpaceCount || "—"}</dd></div>
-          <div><dt>Plaka</dt><dd>{thread.canonical.architecture.plateWidth > 0 && thread.canonical.architecture.plateDepth > 0 ? `${thread.canonical.architecture.plateWidth.toFixed(1)} × ${thread.canonical.architecture.plateDepth.toFixed(1)} m` : "—"}</dd></div>
+          <div><dt>Kat plakaları</dt><dd>{recommendedFloorPlates.length ? recommendedFloorPlates.map((item) => `K${item.level} ${item.grossArea.toFixed(0)} m²`).join(" · ") : "—"}</dd></div>
         </dl>
       </section>
       <div className="cad-plan-flow" aria-label="Plan ve aks çalışma akışı">
