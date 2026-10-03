@@ -171,9 +171,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const architectureSpaces = Array.isArray(architecture.spaces) ? architecture.spaces : [];
   const architectureTargetGross = number(architectureInput.targetGross);
   const architectureProgramGross = number(architectureResult.grossDemand);
+  const architectureRequirementsConfirmed = architectureInput.programRequirementsConfirmed === true;
   const architectureJourneyReady = architectureTargetGross > 0
     && architectureProgramGross > 0
     && architectureSpaces.length > 0
+    && architectureRequirementsConfirmed
     && Math.abs(architectureProgramGross - architectureTargetGross) / architectureTargetGross <= .1;
   const plan = record(modules["plan-editor"]);
   const planMetrics = record(plan.metrics);
