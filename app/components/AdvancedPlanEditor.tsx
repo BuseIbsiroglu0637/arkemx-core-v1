@@ -108,16 +108,34 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (!hydrated || transferApplied.current) return;
     transferApplied.current = true;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; elements: PlanElement[] }> | undefined;
+    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; floorPlates: ProgramFloorPlate[]; elements: PlanElement[] }> | undefined;
     if (saved) {
-      if (typeof saved.level === "number") setLevel(saved.level);
-      if (typeof saved.floorCount === "number") setFloorCount(saved.floorCount);
-      if (typeof saved.baysX === "number") setBaysX(saved.baysX);
-      if (typeof saved.baysY === "number") setBaysY(saved.baysY);
+      const savedFloorCount = typeof saved.floorCount === "number" ? Math.max(1, Math.min(30, saved.floorCount)) : Math.max(1, thread.canonical.architecture.floors || 1);
+      const savedBaysX = typeof saved.baysX === "number" ? Math.max(2, Math.min(16, saved.baysX)) : baysX;
+      const savedBaysY = typeof saved.baysY === "number" ? Math.max(2, Math.min(16, saved.baysY)) : baysY;
+      if (typeof saved.level === "number") setLevel(Math.max(1, Math.min(savedFloorCount, saved.level)));
+      setFloorCount(savedFloorCount);
+      setBaysX(savedBaysX);
+      setBaysY(savedBaysY);
       if (typeof saved.spanX === "number") setSpanX(saved.spanX);
       if (typeof saved.spanY === "number") setSpanY(saved.spanY);
+      if (Array.isArray(saved.floorPlates) && saved.floorPlates.length) {
+        setFloorPlates(saved.floorPlates);
+      } else if (recommendedFloorPlates.length === savedFloorCount) {
+        setFloorPlates(recommendedFloorPlates);
+      } else {
+        const fallbackSpanX = typeof saved.spanX === "number" ? saved.spanX : spanX;
+        const fallbackSpanY = typeof saved.spanY === "number" ? saved.spanY : spanY;
+        setFloorPlates(Array.from({ length: savedFloorCount }, (_, index) => ({
+          level: index + 1,
+          netArea: 0,
+          grossArea: savedBaysX * fallbackSpanX * savedBaysY * fallbackSpanY,
+          width: savedBaysX * fallbackSpanX,
+          depth: savedBaysY * fallbackSpanY,
+        })));
+      }
       if (Array.isArray(saved.elements)) setElements(saved.elements);
-      setStatus("Kayıtlı plan ve nesneler otomatik açıldı");
+      setStatus("Kayıtlı plan ve kat plakaları otomatik açıldı");
       setModelHydrated(true);
       return;
     }
@@ -126,28 +144,36 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const depth = source.architecture.plateDepth || source.structure.depth;
     const nextBaysX = source.structure.baysX || Math.max(2, Math.round(width / 5));
     const nextBaysY = source.structure.baysY || Math.max(2, Math.round(depth / 5));
-    if (source.architecture.floors > 0) setFloorCount(Math.max(1, Math.min(30, source.architecture.floors)));
+    const sourceFloorCount = source.architecture.floors > 0 ? Math.max(1, Math.min(30, source.architecture.floors)) : floorCount;
+    if (source.architecture.floors > 0) setFloorCount(sourceFloorCount);
     if (nextBaysX > 0) setBaysX(Math.max(2, Math.min(16, nextBaysX)));
     if (nextBaysY > 0) setBaysY(Math.max(2, Math.min(16, nextBaysY)));
     if (width > 0 && nextBaysX > 0) setSpanX(Math.max(2, Math.min(12, width / nextBaysX)));
     if (depth > 0 && nextBaysY > 0) setSpanY(Math.max(2, Math.min(12, depth / nextBaysY)));
-    setStatus(source.architecture.grossArea > 0 ? "Mimari plaka, kat ve ölçüler otomatik aktarıldı" : "Yeni proje şeması hazır");
+    if (recommendedFloorPlates.length === sourceFloorCount) setFloorPlates(recommendedFloorPlates);
+    else if (width > 0 && depth > 0) setFloorPlates(Array.from({ length: sourceFloorCount }, (_, index) => ({ level: index + 1, netArea: 0, grossArea: width * depth, width, depth })));
+    setStatus(source.architecture.grossArea > 0 ? "Mimari programdan kat bazlı plaka hedefleri aktarıldı" : "Yeni proje şeması hazır");
     setModelHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, project.modules, thread.canonical]);
+  }, [baysX, baysY, floorCount, hydrated, project.modules, recommendedFloorPlates, spanX, spanY, thread.canonical]);
 
   const visible = useMemo(() => elements.filter((element) => element.level === level), [elements, level]);
+  const activeFloorPlate = floorPlates.find((item) => item.level === level);
+  const activeSpanX = activeFloorPlate?.width && baysX > 0 ? activeFloorPlate.width / baysX : spanX;
+  const activeSpanY = activeFloorPlate?.depth && baysY > 0 ? activeFloorPlate.depth / baysY : spanY;
+  const setActiveSpanX = (next: number) => setFloorPlates((current) => current.map((item) => item.level === level ? { ...item, width: baysX * next, grossArea: baysX * next * item.depth } : item));
+  const setActiveSpanY = (next: number) => setFloorPlates((current) => current.map((item) => item.level === level ? { ...item, depth: baysY * next, grossArea: item.width * baysY * next } : item));
   const selected = elements.find((element) => element.id === selectedId) ?? null;
   const drawingWidth = VIEWBOX.width - VIEWBOX.padX * 2;
   const drawingHeight = VIEWBOX.height - VIEWBOX.padY * 2;
-  const totalWidth = baysX * spanX;
-  const totalDepth = baysY * spanY;
+  const totalWidth = activeFloorPlate?.width ?? baysX * activeSpanX;
+  const totalDepth = activeFloorPlate?.depth ?? baysY * activeSpanY;
   const scale = Math.min(drawingWidth / totalWidth, drawingHeight / totalDepth);
   const originX = (VIEWBOX.width - totalWidth * scale) / 2;
   const originY = (VIEWBOX.height - totalDepth * scale) / 2;
-  const cellW = spanX * scale;
-  const cellH = spanY * scale;
+  const cellW = activeSpanX * scale;
+  const cellH = activeSpanY * scale;
 
   const metrics = useMemo(() => {
     const floorArea = totalWidth * totalDepth;
@@ -155,17 +181,17 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const walls = visible.filter((element) => element.type === "wall");
     const rooms = visible.filter((element) => element.type === "space");
     const cores = visible.filter((element) => element.type === "core");
-    const roomArea = rooms.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
+    const roomArea = rooms.reduce((sum, element) => sum + (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY, 0);
     const openings = visible.filter((element) => element.type === "opening");
     const loads = visible.filter((element) => element.type === "load");
-    const wallLength = walls.reduce((sum, wall) => sum + (wall.orientation === "x" ? spanX : spanY), 0);
-    const openingArea = openings.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
-    const coreArea = cores.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
-    const loadArea = loads.length * spanX * spanY;
-    const totalLiveLoad = loads.reduce((sum, load) => sum + load.load * spanX * spanY, 0);
+    const wallLength = walls.reduce((sum, wall) => sum + (wall.orientation === "x" ? activeSpanX : activeSpanY), 0);
+    const openingArea = openings.reduce((sum, element) => sum + (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY, 0);
+    const coreArea = cores.reduce((sum, element) => sum + (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY, 0);
+    const loadArea = loads.length * activeSpanX * activeSpanY;
+    const totalLiveLoad = loads.reduce((sum, load) => sum + load.load * activeSpanX * activeSpanY, 0);
     const massPoints = [...rooms, ...loads].map((element) => ({
-      x: (element.x + (element.widthBays ?? 1) / 2) * spanX,
-      y: (element.y + (element.heightBays ?? 1) / 2) * spanY,
+      x: (element.x + (element.widthBays ?? 1) / 2) * activeSpanX,
+      y: (element.y + (element.heightBays ?? 1) / 2) * activeSpanY,
       weight: element.type === "load" ? Math.max(element.load, 1) : Math.max((element.widthBays ?? 1) * (element.heightBays ?? 1), .25),
     }));
     const massWeight = massPoints.reduce((sum, point) => sum + point.weight, 0);
@@ -174,10 +200,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       y: massPoints.reduce((sum, point) => sum + point.y * point.weight, 0) / massWeight,
     } : { x: totalWidth / 2, y: totalDepth / 2 };
     const rigidityPoints = [
-      ...columns.map((element) => ({ x: element.x * spanX, y: element.y * spanY, weight: 1 })),
+      ...columns.map((element) => ({ x: element.x * activeSpanX, y: element.y * activeSpanY, weight: 1 })),
       ...walls.map((element) => ({
-        x: (element.x + (element.orientation === "x" ? .5 : 0)) * spanX,
-        y: (element.y + (element.orientation === "y" ? .5 : 0)) * spanY,
+        x: (element.x + (element.orientation === "x" ? .5 : 0)) * activeSpanX,
+        y: (element.y + (element.orientation === "y" ? .5 : 0)) * activeSpanY,
         weight: 4,
       })),
     ];
@@ -248,7 +274,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     && allPlanSpaces.length === upstreamSpaceCount
     && programMetadataPass;
   const areaRepresentation = linkedProgramSpaces.map((element) => {
-    const geometricArea = (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY;
+    const geometricArea = (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY;
     const targetArea = Math.max(element.sourceUnitArea ?? 0, .01);
     const ratio = Math.abs(geometricArea - targetArea) / targetArea;
     return { id: element.id, geometricArea, targetArea, ratio, pass: ratio <= .03 };
@@ -433,8 +459,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const alignConceptualRigidityToMass = () => {
     if (!canAlignConceptualRigidityToMass) return;
 
-    const targetGridX = spanX > 0 ? metrics.massCenter.x / spanX : baysX / 2;
-    const targetGridY = spanY > 0 ? metrics.massCenter.y / spanY : baysY / 2;
+    const targetGridX = spanX > 0 ? metrics.massCenter.x / activeSpanX : baysX / 2;
+    const targetGridY = spanY > 0 ? metrics.massCenter.y / activeSpanY : baysY / 2;
     const xBracket = nearestBracket(targetGridX, baysX);
     const yBracket = nearestBracket(targetGridY, baysY);
     const nodes = [
@@ -697,7 +723,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     }];
     visible.filter(showElement).forEach((element) => {
       const x = element.x * spanX;
-      const y = element.y * spanY;
+      const y = element.y * activeSpanY;
       const layer = element.type === "column" ? "KOLON" : element.type === "wall" ? "PERDE" : element.type === "space" ? "MAHAL" : element.type === "core" ? "CEKIRDEK" : element.type === "opening" ? "BOSLUK" : "YAZI";
       if (element.type === "column") {
         const size = Math.max(.35, Math.min(spanX, spanY) * .08);
@@ -710,7 +736,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       } else {
         const inset = Math.min(spanX, spanY) * .05;
         const elementWidth = (element.widthBays ?? 1) * spanX;
-        const elementHeight = (element.heightBays ?? 1) * spanY;
+        const elementHeight = (element.heightBays ?? 1) * activeSpanY;
         polylines.push({ layer, points: [{ x: x + inset, y: y + inset, label: element.label }, { x: x + elementWidth - inset, y: y + inset }, { x: x + elementWidth - inset, y: y + elementHeight - inset }, { x: x + inset, y: y + elementHeight - inset }] });
       }
     });
@@ -878,7 +904,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
               const centerX = x + elementWidth / 2;
               const centerY = y + elementHeight / 2;
               const sourceArea = typeof element.sourceUnitArea === "number" ? element.sourceUnitArea : 0;
-              const geometricArea = (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY;
+              const geometricArea = (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY;
               const compactRoom = element.type === "space" && (elementWidth < 105 || elementHeight < 58);
               const labelLines = compactRoom ? [element.sourceSpaceCode || element.label] : splitPlanLabel(element.label);
               const subLabel = element.type === "load" || view === "loads"
@@ -948,7 +974,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <strong>SEÇİLİ NESNE</strong>
             {selected && (selected.type === "space" || selected.type === "core" || selected.type === "opening") ? <>
               <div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.type === "space" ? "Mimari mahal" : selected.type === "core" ? "Düşey sirkülasyon" : "Döşeme boşluğu"}</small></span></div>
-              {selected.type === "space" && expectedProgramIds.has(selected.id) ? <div className="cad-program-source-field"><span>Program mahali</span><b>{selected.label}</b><small>{selected.sourceSpaceCode ? `${selected.sourceSpaceCode} · ` : ""}{typeof selected.sourceUnitArea === "number" ? `Hedef ${selected.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · ` : ""}Plan ${(((selected.widthBays ?? 1) * spanX * (selected.heightBays ?? 1) * spanY)).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m². Ad / hedef alan değişikliği Mimari Programdan yapılır.</small></div> : <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>}
+              {selected.type === "space" && expectedProgramIds.has(selected.id) ? <div className="cad-program-source-field"><span>Program mahali</span><b>{selected.label}</b><small>{selected.sourceSpaceCode ? `${selected.sourceSpaceCode} · ` : ""}{typeof selected.sourceUnitArea === "number" ? `Hedef ${selected.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · ` : ""}Plan ${(((selected.widthBays ?? 1) * activeSpanX * (selected.heightBays ?? 1) * activeSpanY)).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m². Ad / hedef alan değişikliği Mimari Programdan yapılır.</small></div> : <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>}
               <button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili mimari nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button>
             </> : <p>Plan üzerinde bir mahal, çekirdek veya boşluk seçin. Taşıyıcı özellikler bu aşamada düzenlenmez.</p>}
           </section>
