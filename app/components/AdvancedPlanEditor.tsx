@@ -603,7 +603,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       setStatus("Mimari Programda geri getirilecek mahal bulunamadı");
       return;
     }
-    const confirmed = window.confirm("Mimari Program kaynak kabul edilerek plandaki mahal ve çekirdek yerleşimi yeniden oluşturulacak. Mevcut manuel mahal/çekirdek yerleşimleri değiştirilecek. Devam edilsin mi?");
+    const confirmed = window.confirm("Mimari Program kaynak kabul edilerek mahal, çekirdek ve kat plaka yerleşimi yeniden oluşturulacak. Zorunlu komşuluklar mümkünse merkez mahalin farklı kenarlarında fiziksel temasla çözülecek. Mevcut manuel mahal/çekirdek yerleşimleri değiştirilecek. Devam edilsin mi?");
     if (!confirmed) return;
     const platesForBuild = recommendedFloorPlates.length === floorCount ? recommendedFloorPlates : floorPlates;
     if (platesForBuild.length === floorCount) setFloorPlates(platesForBuild);
@@ -619,7 +619,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       platesForBuild,
     ) as PlanElement[];
     const retained = elements.filter((element) => element.type !== "space" && element.type !== "core");
-    commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal, ${floorCount} kat çekirdeği ve kat bazlı plaka dağılımı yeniden oluşturuldu`);
+    commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal ve ${floorCount} kat yeniden kuruldu · zorunlu komşuluklar fiziksel temas önceliğiyle yerleştirildi`);
     setSelectedId(null);
     setLevel(1);
   };
@@ -1010,6 +1010,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             {floorStats.map((floor) => <div key={floor.level}><span>K{floor.level}</span><b>{floor.rooms} mahal · {floor.cores} çekirdek</b></div>)}
             <div><span>Alan temsili</span><b>{areaRepresentation.filter((item) => item.pass).length}/{upstreamSpaceCount} mahal</b></div>
             <div><span>Zorunlu komşuluk</span><b>{requiredAdjacency.satisfied}/{requiredAdjacency.total}</b></div>
+            {requiredAdjacency.total > 0 ? <p className="cad-program-adjacency-strategy">Otomatik yerleşim, birden fazla zorunlu ilişkisi olan ana mahali merkez kabul eder ve bağlı mahalleri doğrudan temas edecek şekilde yerleştirmeyi dener.</p> : null}
             {requiredAdjacency.items.filter((item) => !item.satisfied).map((item) => <div className="cad-program-relation-risk" key={item.id}><span>{item.from} ↔ {item.to}</span><b>{requiredAdjacencyCapacityConflicts.some((conflict) => conflict.id === item.id) ? "Mevcut katta alan olarak mümkün değil" : "Aynı katta temas etmiyor"}</b></div>)}
             {(!programLinkPass || !coreContinuityPass || !floorCoveragePass || !areaRepresentationPass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi ve alan temsili güncel Mimari Programla bağlı.</small>}
             {!requiredAdjacencyPass ? <p className="cad-program-adjacency-note">{requiredAdjacencyCapacityConflicts.length ? `${requiredAdjacencyCapacityConflicts.length} zorunlu ilişki mevcut kat brüt alanından daha büyük birleşik mahal alanı istiyor. Kat/plaka veya program kararı yeniden ele alınmalı.` : "Zorunlu komşuluk aynı katta fiziksel temas gerektirir. Yerleşimi düzenleyin veya Mimari Program kararını yeniden ele alın."}</p> : null}
