@@ -47,6 +47,19 @@ function createId(type: string, level: number, x: number, y: number) {
   return `${type}-${level}-${x}-${y}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function splitPlanLabel(label: string) {
+  if (label.length <= 18) return [label];
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return [label.slice(0, 18), label.slice(18, 36)];
+  let first = "";
+  let second = "";
+  words.forEach((word) => {
+    if ((first + " " + word).trim().length <= Math.ceil(label.length / 2) || !first) first = (first + " " + word).trim();
+    else second = (second + " " + word).trim();
+  });
+  return second ? [first, second] : [first];
+}
+
 export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }: { compactKernel?: boolean; issueFocus?: "taks" | "kmkr" | "program-area" | false } = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const transferApplied = useRef(false);
@@ -853,7 +866,21 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
               const centerY = y + elementHeight / 2;
               const sourceArea = typeof element.sourceUnitArea === "number" ? element.sourceUnitArea : 0;
               const geometricArea = (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY;
-              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={Math.max(8, elementWidth - 6)} height={Math.max(8, elementHeight - 6)} fill={fill}/><text x={centerX} y={centerY - 4} textAnchor="middle">{element.label}</text><text className="sub" x={centerX} y={centerY + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type === "space" && expectedProgramIds.has(element.id) ? [element.sourceSpaceCode, sourceArea > 0 ? `${sourceArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "", sourceArea > 0 ? `plan ${geometricArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : ""].filter(Boolean).join(" · ") : element.type.toUpperCase()}</text></g>;
+              const compactRoom = element.type === "space" && (elementWidth < 105 || elementHeight < 58);
+              const labelLines = compactRoom ? [element.sourceSpaceCode || element.label] : splitPlanLabel(element.label);
+              const subLabel = element.type === "load" || view === "loads"
+                ? `${element.load.toFixed(1)} kN/m²`
+                : element.type === "space" && expectedProgramIds.has(element.id)
+                  ? compactRoom
+                    ? (sourceArea > 0 ? `${sourceArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "")
+                    : [element.sourceSpaceCode, sourceArea > 0 ? `hedef ${sourceArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : "", sourceArea > 0 ? `plan ${geometricArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : ""].filter(Boolean).join(" · ")
+                  : element.type.toUpperCase();
+              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}>
+                <title>{element.label}{sourceArea > 0 ? ` · hedef ${sourceArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · plan ${geometricArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m²` : ""}</title>
+                <rect x={x + 3} y={y + 3} width={Math.max(8, elementWidth - 6)} height={Math.max(8, elementHeight - 6)} fill={fill}/>
+                <text x={centerX} y={centerY - (labelLines.length > 1 ? 10 : 4)} textAnchor="middle" fontSize={compactRoom ? 8 : 10}>{labelLines.map((line, index) => <tspan key={index} x={centerX} dy={index === 0 ? 0 : 11}>{line}</tspan>)}</text>
+                <text className="sub" x={centerX} y={centerY + (labelLines.length > 1 ? 17 : 11)} textAnchor="middle" fontSize={compactRoom ? 7 : 8}>{subLabel}</text>
+              </g>;
             })}
             {view === "coordination" && metrics.eccentricityEvaluable && <g className="cad-centers"><line x1={originX + metrics.massCenter.x * scale} y1={originY} x2={originX + metrics.massCenter.x * scale} y2={originY + totalDepth * scale}/><line x1={originX} y1={originY + metrics.massCenter.y * scale} x2={originX + totalWidth * scale} y2={originY + metrics.massCenter.y * scale}/><circle className="mass" cx={originX + metrics.massCenter.x * scale} cy={originY + metrics.massCenter.y * scale} r="8"/><circle className="rigidity" cx={originX + metrics.rigidityCenter.x * scale} cy={originY + metrics.rigidityCenter.y * scale} r="8"/><text x={originX + metrics.massCenter.x * scale + 12} y={originY + metrics.massCenter.y * scale - 12}>KM</text><text x={originX + metrics.rigidityCenter.x * scale + 12} y={originY + metrics.rigidityCenter.y * scale + 19}>KR</text></g>}
             <text x={originX} y={VIEWBOX.height - 20} fill="#71858d" fontSize="9">K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m · Aks {baysX}×{baysY} · Ölçek ekran uyarlamalı</text>
