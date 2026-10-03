@@ -101,7 +101,16 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
       );
     }
     if (step.short === "Sistem") {
-      return systemDecisionReady;
+      const systemNode = thread.nodes.find((node) => node.id === "system-comparison");
+      return Boolean(systemDecisionReady && systemNode?.milestoneComplete);
+    }
+    if (step.short === "Koordinasyon") {
+      const structuralNode = thread.nodes.find((node) => node.id === "structural-concept");
+      const coordinationNode = thread.nodes.find((node) => node.id === "engineering-coordination");
+      return Boolean(
+        structuralNode?.milestoneComplete
+        && coordinationNode?.milestoneComplete
+      );
     }
     return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
   });
