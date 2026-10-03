@@ -1344,3 +1344,125 @@ html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .c
     min-height:480px;
   }
 }
+
+
+/* V07 / compact project kernel restyled as application chrome */
+.arx-plan-page .project-kernel-compact {
+  min-height:62px;
+  display:grid;
+  grid-template-columns:minmax(230px,1fr) auto auto;
+  align-items:center;
+  gap:18px;
+  margin-bottom:14px;
+  padding:10px 14px;
+  border:1px solid var(--plan-border);
+  border-radius:10px;
+  background:var(--plan-surface);
+  color:var(--plan-text);
+}
+.arx-plan-page .project-kernel-compact-main {
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.arx-plan-page .project-kernel-compact-code {
+  flex:0 0 auto;
+  color:var(--plan-accent);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.07em;
+}
+.arx-plan-page .project-kernel-compact-name {
+  overflow:hidden;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--plan-text);
+  font-size:12px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.arx-plan-page .project-kernel-compact-name-input {
+  min-width:170px;
+  min-height:34px;
+  border:1px solid var(--plan-border-strong);
+  border-radius:5px;
+  background:var(--plan-surface);
+  color:var(--plan-text);
+  font-size:11px;
+}
+.arx-plan-page .project-kernel-compact-meta {
+  display:flex;
+  align-items:center;
+  gap:0;
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .project-kernel-compact-meta span {
+  padding:0 10px;
+  border-left:1px solid var(--plan-border);
+}
+.arx-plan-page .project-kernel-compact-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+}
+.arx-plan-page .project-kernel-compact-actions a,
+.arx-plan-page .project-kernel-compact-actions button {
+  min-height:36px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 10px;
+  border:1px solid var(--plan-border);
+  border-radius:6px;
+  background:var(--plan-surface);
+  color:var(--plan-text);
+  font-size:9px;
+  font-weight:750;
+  cursor:pointer;
+}
+.arx-plan-page .project-kernel-compact-actions a:hover,
+.arx-plan-page .project-kernel-compact-actions button:hover {
+  border-color:var(--plan-border-strong);
+  background:var(--plan-surface-2);
+}
+.arx-plan-page .project-kernel-compact-actions .is-primary {
+  border-color:var(--plan-blue);
+  background:var(--plan-blue);
+  color:#fff;
+}
+html[data-theme="dark"] .arx-plan-page .project-kernel-compact,
+html[data-theme="dark"] .arx-plan-page .project-kernel-compact-actions a,
+html[data-theme="dark"] .arx-plan-page .project-kernel-compact-actions button {
+  border-color:var(--plan-border);
+  background:var(--plan-surface);
+  color:var(--plan-text);
+}
+html[data-theme="dark"] .arx-plan-page .project-kernel-compact-actions .is-primary {
+  border-color:#315f70;
+  background:#173f50;
+  color:#fff;
+}
+
+@media(max-width:1180px) {
+  .arx-plan-page .project-kernel-compact {
+    grid-template-columns:1fr auto;
+  }
+  .arx-plan-page .project-kernel-compact-meta {
+    display:none;
+  }
+}
+@media(max-width:760px) {
+  .arx-plan-page .project-kernel-compact {
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .arx-plan-page .project-kernel-compact-actions {
+    justify-content:flex-start;
+    flex-wrap:wrap;
+  }
+}
