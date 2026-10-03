@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
-import { expandProgramSpaces, buildProgramPlanElements, evaluateRequiredAdjacency } from "../lib/plan-program";
+import { expandProgramSpaces, buildProgramPlanElements, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
@@ -73,6 +73,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const [baysY, setBaysY] = useState(5);
   const [spanX, setSpanX] = useState(4.5);
   const [spanY, setSpanY] = useState(4.2);
+  const [floorPlates, setFloorPlates] = useState<ProgramFloorPlate[]>([]);
   const [orientation, setOrientation] = useState<"x" | "y">("x");
   const [elements, setElements] = useState<PlanElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -85,6 +86,23 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const isKmKrFocus = issueFocus === "kmkr";
   const isProgramAreaFocus = issueFocus === "program-area";
   const isPlanGeometryFocus = isTaksFocus || isProgramAreaFocus;
+  const architectureModule = project.modules["architectural-program"] as {
+    input?: { programRequirementsConfirmed?: boolean; netRatio?: number; aspect?: number };
+    spaces?: Array<{ id?: string; code?: string; name?: string; zone?: string; count?: number; unitArea?: number; liveLoad?: number }>;
+    relationships?: Array<{ id?: string; from?: string; to?: string; priority?: string; confirmed?: boolean }>;
+    result?: { liveLoad?: number; grossDemand?: number };
+    journeyComplete?: boolean;
+  } | undefined;
+  const upstreamSpaces = Array.isArray(architectureModule?.spaces) ? architectureModule.spaces : [];
+  const upstreamRelationships = Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [];
+  const recommendedFloorPlates = useMemo(() => deriveProgramFloorPlates(
+    upstreamSpaces,
+    upstreamRelationships,
+    Math.max(1, thread.canonical.architecture.floors || floorCount),
+    Number(architectureModule?.input?.netRatio) || 78,
+    Number(architectureModule?.input?.aspect) || (thread.canonical.architecture.plateDepth > 0 ? thread.canonical.architecture.plateWidth / thread.canonical.architecture.plateDepth : 1.55),
+    Number(architectureModule?.result?.liveLoad) || 3.5,
+  ), [architectureModule?.input?.aspect, architectureModule?.input?.netRatio, architectureModule?.result?.liveLoad, floorCount, thread.canonical.architecture.floors, thread.canonical.architecture.plateDepth, thread.canonical.architecture.plateWidth, upstreamRelationships, upstreamSpaces]);
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -209,14 +227,6 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     : 1;
   const suggestedProgramSpanX = Math.max(2, Math.min(15, spanX * programFootprintScale));
   const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
-  const architectureModule = project.modules["architectural-program"] as {
-    input?: { programRequirementsConfirmed?: boolean };
-    spaces?: Array<{ id?: string; code?: string; name?: string; zone?: string; count?: number; unitArea?: number; liveLoad?: number }>;
-    relationships?: Array<{ id?: string; from?: string; to?: string; priority?: string; confirmed?: boolean }>;
-    result?: { liveLoad?: number };
-    journeyComplete?: boolean;
-  } | undefined;
-  const upstreamSpaces = Array.isArray(architectureModule?.spaces) ? architectureModule.spaces : [];
   const programInstances = useMemo(() => expandProgramSpaces(upstreamSpaces, Number(architectureModule?.result?.liveLoad) || 3.5), [architectureModule?.result?.liveLoad, upstreamSpaces]);
   const upstreamSpaceCount = programInstances.length;
   const expectedProgramIds = useMemo(() => new Set(programInstances.map((space) => space.key)), [programInstances]);
