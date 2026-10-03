@@ -1621,3 +1621,22 @@ html[data-theme="dark"] .arx-plan-page .cad-plan-simple-tools > button > i {
     grid-column:1;
   }
 }
+
+
+/* V07 / keep theme switch icon-only on Plan & Aks */
+body:has(.arx-plan-page) .arkem-theme-control button {
+  width:38px;
+  min-width:38px;
+  height:38px;
+  min-height:38px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  font-size:0;
+  line-height:1;
+}
+body:has(.arx-plan-page) .arkem-theme-control button > span {
+  display:block;
+  font-size:15px;
+  line-height:1;
+}
