@@ -210,6 +210,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const suggestedProgramSpanX = Math.max(2, Math.min(15, spanX * programFootprintScale));
   const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
   const architectureModule = project.modules["architectural-program"] as {
+    input?: { programRequirementsConfirmed?: boolean };
     spaces?: Array<{ id?: string; code?: string; name?: string; zone?: string; count?: number; unitArea?: number; liveLoad?: number }>;
     relationships?: Array<{ id?: string; from?: string; to?: string; priority?: string; confirmed?: boolean }>;
     result?: { liveLoad?: number };
@@ -267,13 +268,15 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   });
   const floorCoveragePass = floorStats.every((floor) => floor.rooms > 0);
   const coreContinuityPass = floorStats.every((floor) => floor.cores > 0);
-  const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
+  const requirementsConfirmed = architectureModule?.input?.programRequirementsConfirmed === true;
+  const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0 && requirementsConfirmed;
   const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass;
   const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
   const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
   const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass && requiredAdjacencyPass;
   const missingPlanGateItems = [
-    !upstreamReady ? "Mimari veri devri" : "",
+    !requirementsConfirmed ? "Gerçek ihtiyaç programı onayı" : "",
+    !upstreamReady && requirementsConfirmed ? "Mimari veri devri" : "",
     !programLinkPass ? `Mahal programı eşleşmesi (${linkedProgramSpaces.length}/${upstreamSpaceCount})` : "",
     linkedProgramSpaces.length === upstreamSpaceCount && !programMetadataPass ? "Mahal ad / alan güncellemesi" : "",
     manualOrUnlinkedSpaces.length ? `${manualOrUnlinkedSpaces.length} bağlantısız mahal` : "",
