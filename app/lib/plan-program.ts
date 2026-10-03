@@ -18,6 +18,14 @@ export type ProgramRelationship = {
   confirmed?: boolean;
 };
 
+export type ProgramFloorPlate = {
+  level: number;
+  netArea: number;
+  grossArea: number;
+  width: number;
+  depth: number;
+};
+
 export type ProgramPlanElementSeed = {
   id: string;
   type: "space" | "core";
@@ -83,7 +91,6 @@ export function expandProgramSpaces(spaces: unknown[], fallbackLiveLoad = 3.5): 
 function distributeToFloors(
   instances: ProgramSpaceInstance[],
   floors: number,
-  floorRoomCapacity: number,
   relationships: unknown[],
 ) {
   const buckets = Array.from({ length: floors }, () => ({
@@ -97,6 +104,7 @@ function distributeToFloors(
     .map((relation) => [asString(relation.from), asString(relation.to)] as const)
     .filter(([from, to]) => from && to);
 
+  const baseName = (name: string) => name.replace(/ \d+$/, "");
   const parent = new Map<string, string>();
   const find = (name: string): string => {
     const current = parent.get(name) ?? name;
@@ -119,45 +127,61 @@ function distributeToFloors(
   const grouped = new Map<string, ProgramSpaceInstance[]>();
   const singles: ProgramSpaceInstance[] = [];
   instances.forEach((instance) => {
-    if (!parent.has(instance.name.replace(/ \d+$/, ""))) {
+    const name = baseName(instance.name);
+    if (!parent.has(name)) {
       singles.push(instance);
       return;
     }
-    const baseName = instance.name.replace(/ \d+$/, "");
-    const root = find(baseName);
+    const root = find(name);
     const group = grouped.get(root) ?? [];
     group.push(instance);
     grouped.set(root, group);
   });
 
   const packages: ProgramSpaceInstance[][] = [
-    ...[...grouped.values()].map((group) => {
-      const area = group.reduce((sum, item) => sum + item.unitArea, 0);
-      return area <= floorRoomCapacity * 1.02 ? group : [];
-    }).filter((group) => group.length),
-    ...[...grouped.values()].flatMap((group) => {
-      const area = group.reduce((sum, item) => sum + item.unitArea, 0);
-      return area > floorRoomCapacity * 1.02 ? group.map((item) => [item]) : [];
-    }),
+    ...[...grouped.values()],
     ...singles.map((item) => [item]),
   ].sort((a, b) => b.reduce((sum, item) => sum + item.unitArea, 0) - a.reduce((sum, item) => sum + item.unitArea, 0));
 
   packages.forEach((pack) => {
     const packageArea = pack.reduce((sum, item) => sum + item.unitArea, 0);
-    const candidates = buckets
-      .map((bucket, index) => ({ bucket, index }))
-      .filter(({ bucket }) => bucket.netArea + packageArea <= floorRoomCapacity * 1.02)
-      .sort((a, b) => a.bucket.netArea - b.bucket.netArea || a.bucket.items.length - b.bucket.items.length || a.index - b.index);
-    const fallback = buckets
+    const target = buckets
       .map((bucket, index) => ({ bucket, index }))
       .sort((a, b) => a.bucket.netArea - b.bucket.netArea || a.bucket.items.length - b.bucket.items.length || a.index - b.index)[0];
-    const target = candidates[0] ?? fallback;
     if (!target) return;
     target.bucket.items.push(...pack);
     target.bucket.netArea += packageArea;
   });
 
   return buckets;
+}
+
+export function deriveProgramFloorPlates(
+  spaces: unknown[],
+  relationships: unknown[],
+  floors: number,
+  netRatioPercent: number,
+  aspect: number,
+  fallbackLiveLoad = 3.5,
+): ProgramFloorPlate[] {
+  const safeFloors = Math.max(1, Math.min(30, Math.round(floors)));
+  const ratio = Math.max(.4, Math.min(.95, netRatioPercent / 100));
+  const safeAspect = Math.max(.55, Math.min(2.5, aspect || 1.55));
+  const instances = expandProgramSpaces(spaces, fallbackLiveLoad);
+  const buckets = distributeToFloors(instances, safeFloors, relationships);
+
+  return buckets.map((bucket, index) => {
+    const grossArea = bucket.netArea / ratio;
+    const depth = Math.sqrt(Math.max(grossArea, 1) / safeAspect);
+    const width = depth * safeAspect;
+    return {
+      level: index + 1,
+      netArea: Number(bucket.netArea.toFixed(2)),
+      grossArea: Number(grossArea.toFixed(2)),
+      width: Number(width.toFixed(3)),
+      depth: Number(depth.toFixed(3)),
+    };
+  });
 }
 
 function splitIntoRows(items: ProgramSpaceInstance[], rowCount: number) {
@@ -191,23 +215,26 @@ export function buildProgramPlanElements(
   spanX = 5,
   spanY = 5,
   relationships: unknown[] = [],
+  floorPlates: ProgramFloorPlate[] = [],
 ): ProgramPlanElementSeed[] {
   const safeBaysX = Math.max(2, Math.min(16, Math.round(baysX)));
   const safeBaysY = Math.max(2, Math.min(16, Math.round(baysY)));
   const safeFloors = Math.max(1, Math.min(30, Math.round(floors)));
   const safeSpanX = Math.max(.1, spanX);
   const safeSpanY = Math.max(.1, spanY);
-  const bayArea = safeSpanX * safeSpanY;
-  const floorArea = safeBaysX * safeBaysY * bayArea;
   const coreStripBays = Math.max(.45, Math.min(1, safeBaysX * .15));
   const roomWidthBays = Math.max(1, safeBaysX - coreStripBays);
-  const roomCapacity = roomWidthBays * safeBaysY * bayArea;
   const instances = expandProgramSpaces(spaces, fallbackLiveLoad);
-  const floorBuckets = distributeToFloors(instances, safeFloors, roomCapacity, relationships);
+  const floorBuckets = distributeToFloors(instances, safeFloors, relationships);
 
   const elements: ProgramPlanElementSeed[] = [];
   floorBuckets.forEach((bucket, floorIndex) => {
     const level = floorIndex + 1;
+    const profile = floorPlates.find((item) => item.level === level);
+    const levelSpanX = profile?.width ? profile.width / safeBaysX : safeSpanX;
+    const levelSpanY = profile?.depth ? profile.depth / safeBaysY : safeSpanY;
+    const bayArea = levelSpanX * levelSpanY;
+    const floorArea = safeBaysX * safeBaysY * bayArea;
     const desiredRows = Math.max(1, Math.min(safeBaysY, Math.round(Math.sqrt(Math.max(bucket.items.length, 1) * safeBaysY / Math.max(roomWidthBays, 1)))));
     const rows = splitIntoRows(bucket.items, desiredRows);
     let yCursor = 0;
