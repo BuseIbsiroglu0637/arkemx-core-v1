@@ -410,6 +410,12 @@ test("workflow milestone writes are persisted before cross-page navigation", () 
   assert.match(plan, /onClick=\{persistPlanSnapshot\}/);
   assert.match(system, /journeyComplete: decisionReady/);
   assert.match(system, /journeyComplete: true/);
+
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  assert.match(graph, /const planJourneyReady = architectureJourneyReady/);
+  assert.match(graph, /moduleData\.journeyComplete === true \|\| planJourneyReady/);
+  assert.match(graph, /const comparisonJourneyReady = Boolean/);
+  assert.match(graph, /moduleData\.journeyComplete === true \|\| comparisonJourneyReady/);
 });
 
 
