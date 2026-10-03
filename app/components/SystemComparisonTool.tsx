@@ -113,6 +113,23 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     });
   }, [area, assumptionsConfirmed, decisionReady, fireRating, floors, hydrated, manualOverride, patchModule, ranking, repetition, shortlist, sourceSnapshot, sourceStale, span, transferReady, transport, usage, weights]);
 
+  const confirmAssumptions = () => {
+    if (!projectInputsCurrent || shortlist.length === 0) return;
+    patchModule("system-comparison", {
+      input: { usage, floors, span, area, repetition, transport, fireRating },
+      weights,
+      ranking,
+      shortlist,
+      sourceSnapshot,
+      sourceKey: mcdaSourceKey(sourceSnapshot),
+      sourceStatus: "current",
+      assumptionsConfirmed: true,
+      journeyComplete: true,
+      status: "mcda-assumptions-confirmed",
+    });
+    setAssumptionsConfirmed(true);
+  };
+
   const updateWeight = (id: CriterionId, value: number) => {
     invalidateDecision();
     setWeights((current) => ({ ...current, [id]: value }));
@@ -228,7 +245,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
           <span>Taşıma <b>{transport} km</b></span>
           <span>Kısa liste <b>{shortlist.length} sistem</b></span>
         </div>
-        {!decisionReady ? <button type="button" disabled={!projectInputsCurrent || shortlist.length === 0} onClick={() => setAssumptionsConfirmed(true)}>Varsayımları, ağırlıkları ve kısa listeyi doğrula</button> : <span className="arx-mcda-confirmed-mark">✓ Doğrulandı</span>}
+        {!decisionReady ? <button type="button" disabled={!projectInputsCurrent || shortlist.length === 0} onClick={confirmAssumptions}>Varsayımları, ağırlıkları ve kısa listeyi doğrula</button> : <span className="arx-mcda-confirmed-mark">✓ Doğrulandı</span>}
         {!projectInputsCurrent ? <small>Önce MCDA girdilerini güncel proje verisiyle eşleştirin.</small> : shortlist.length === 0 ? <small>Devam etmek için en az bir sistemi kısa listeye alın.</small> : null}
       </section>
       <div className="arx-system-grid">
