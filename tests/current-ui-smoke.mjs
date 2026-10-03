@@ -398,6 +398,21 @@ test("TAKS plan correction preserves saved geometry before writes and uses the f
 });
 
 
+test("workflow milestone writes are persisted before cross-page navigation", () => {
+  const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
+  const plan = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  const system = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+
+  assert.match(kernel, /saveProjectToStorage\(window\.localStorage, nextProject\)/);
+  assert.match(kernel, /projectRef\.current = result\.payload/);
+  assert.match(kernel, /skipNextPersistenceRef\.current = true/);
+  assert.match(plan, /journeyComplete: planGatePass/);
+  assert.match(plan, /onClick=\{persistPlanSnapshot\}/);
+  assert.match(system, /journeyComplete: decisionReady/);
+  assert.match(system, /journeyComplete: true/);
+});
+
+
 test("project centre next action follows the first incomplete guided journey step", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
