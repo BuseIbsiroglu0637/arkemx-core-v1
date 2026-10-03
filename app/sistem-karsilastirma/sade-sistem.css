@@ -73,3 +73,158 @@
   .arx-system-weights { padding-inline: 14px; }
   .arx-system-shortlist { padding-inline: 14px; }
 }
+
+
+/* V08 / MCDA varsayım ve ağırlık karar kapısı */
+.arx-mcda-decision-gate {
+  display:grid;
+  grid-template-columns:minmax(0,1.4fr) minmax(320px,.8fr) auto;
+  gap:14px 18px;
+  align-items:center;
+  margin:14px 0 16px;
+  padding:16px 18px;
+  border:1px solid #e2c2b0;
+  border-left:4px solid #c9703e;
+  border-radius:10px;
+  background:#fff8f3;
+}
+.arx-mcda-decision-gate > div:first-child {
+  display:grid;
+  gap:4px;
+}
+.arx-mcda-decision-gate > div:first-child > span {
+  color:#b56339;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.09em;
+}
+.arx-mcda-decision-gate > div:first-child > b {
+  color:#203c49;
+  font-size:14px;
+}
+.arx-mcda-decision-gate > div:first-child > p {
+  max-width:760px;
+  margin:0;
+  color:#6d7f87;
+  font-size:11px;
+  line-height:1.5;
+}
+.arx-mcda-assumption-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.arx-mcda-assumption-summary > span {
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 9px;
+  border:1px solid #ead8ce;
+  border-radius:6px;
+  background:#fff;
+  color:#687c85;
+  font-size:10px;
+}
+.arx-mcda-assumption-summary b {
+  color:#233f4c;
+  font-variant-numeric:tabular-nums;
+}
+.arx-mcda-decision-gate > button {
+  min-height:42px;
+  max-width:230px;
+  padding:9px 13px;
+  border:1px solid #a85e35;
+  border-radius:7px;
+  background:#a85e35;
+  color:#fff;
+  font:750 11px/1.35 var(--font-inter), Arial, sans-serif;
+  cursor:pointer;
+}
+.arx-mcda-decision-gate > button:disabled {
+  border-color:#d6dcdf;
+  background:#e8edef;
+  color:#8a989e;
+  cursor:not-allowed;
+}
+.arx-mcda-decision-gate > small {
+  grid-column:1/-1;
+  color:#9a5d3d;
+  font-size:10px;
+}
+.arx-mcda-decision-gate.is-confirmed {
+  border-color:#b9d8c8;
+  border-left-color:#4c8d6d;
+  background:#f2faf6;
+}
+.arx-mcda-decision-gate.is-confirmed > div:first-child > span,
+.arx-mcda-decision-gate.is-confirmed > div:first-child > b {
+  color:#315f4b;
+}
+.arx-mcda-confirmed-mark {
+  justify-self:end;
+  padding:9px 11px;
+  border:1px solid #acd0bd;
+  border-radius:7px;
+  background:#fff;
+  color:#377258;
+  font-size:11px;
+  font-weight:800;
+}
+.arx-system-next-disabled {
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  padding:10px 14px;
+  border:1px solid #d7dfe2;
+  border-radius:6px;
+  background:#edf1f2;
+  color:#829097;
+  font:700 11px var(--font-inter), Arial, sans-serif;
+  cursor:not-allowed;
+}
+
+html[data-theme="dark"] .arx-mcda-decision-gate {
+  border-color:#573727;
+  border-left-color:#d17a47;
+  background:#17100c;
+}
+html[data-theme="dark"] .arx-mcda-decision-gate > div:first-child > b { color:#f0e7e2; }
+html[data-theme="dark"] .arx-mcda-decision-gate > div:first-child > p { color:#ad9e96; }
+html[data-theme="dark"] .arx-mcda-assumption-summary > span {
+  border-color:#39302b;
+  background:#101010;
+  color:#a8b3b7;
+}
+html[data-theme="dark"] .arx-mcda-assumption-summary b { color:#edf3f5; }
+html[data-theme="dark"] .arx-mcda-decision-gate > button:disabled {
+  border-color:#33393b;
+  background:#202426;
+  color:#717d82;
+}
+html[data-theme="dark"] .arx-mcda-decision-gate.is-confirmed {
+  border-color:#2f4a3d;
+  border-left-color:#4c8d6d;
+  background:#0c1712;
+}
+html[data-theme="dark"] .arx-mcda-decision-gate.is-confirmed > div:first-child > span,
+html[data-theme="dark"] .arx-mcda-decision-gate.is-confirmed > div:first-child > b { color:#dcece3; }
+html[data-theme="dark"] .arx-mcda-confirmed-mark {
+  border-color:#355c49;
+  background:#102019;
+  color:#83c3a4;
+}
+html[data-theme="dark"] .arx-system-next-disabled {
+  border-color:#343a3d;
+  background:#17191a;
+  color:#6f7b80;
+}
+
+@media (max-width:1080px) {
+  .arx-mcda-decision-gate { grid-template-columns:1fr; }
+  .arx-mcda-decision-gate > button,
+  .arx-mcda-confirmed-mark { justify-self:start; }
+}
+@media (max-width:640px) {
+  .arx-mcda-decision-gate { padding:14px; }
+  .arx-mcda-assumption-summary { grid-template-columns:1fr; }
+}
