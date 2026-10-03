@@ -337,7 +337,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
       const generatedElements = existingElements.length
         ? existingElements
-        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5));
+        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY);
       modules["plan-editor"] = {
         ...target,
         level: Math.min(numeric(target.level, 1), floors),
