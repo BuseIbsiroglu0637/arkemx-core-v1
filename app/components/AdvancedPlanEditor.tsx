@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { expandProgramSpaces, buildProgramPlanElements, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
@@ -556,7 +556,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     setView("coordination");
   };
 
-  useEffect(() => {
+  const persistPlanSnapshot = useCallback(() => {
     if (!hydrated || !modelHydrated) return;
     patchModule("plan-editor", {
       level,
@@ -572,6 +572,13 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       status: planGatePass ? "Mimari plan ve aks kontrol kapısı tamamlandı" : "Mimari plan ve aks koordinasyonu sürüyor",
     });
   }, [baysX, baysY, elements, floorCount, floorPlates, hydrated, level, metrics, modelHydrated, patchModule, planGatePass, spanX, spanY]);
+
+  // Plan tamamlanma durumu ekrana yansımadan önce proje çekirdeğine yazılır.
+  // Böylece kullanıcı yeşil kapıyı görür görmez başka sayfaya geçse bile
+  // son mahal/aks yerleşimi ve journeyComplete kaydı kaybolmaz.
+  useLayoutEffect(() => {
+    persistPlanSnapshot();
+  }, [persistPlanSnapshot]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -1052,7 +1059,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     </div>
     {!issueFocus ? <section className="cad-plan-completion" data-state={planGatePass ? "pass" : "review"}>
       <div><span>04 / MİMARİ TAMAMLAMA KAPISI</span><b>{planGatePass ? "Plan ve aks çalışması tamamlandı" : "Plan ve aks çalışması henüz tamamlanmadı"}</b><small>{planGatePass ? "Mimari adımı kapanabilir. Sıradaki ana proje adımı Sistem seçimidir." : `Bekleyen: ${missingPlanGateItems.join(" · ") || "Kontroller güncelleniyor"}`}</small></div>
-      {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
+      {planGatePass ? <Link href="/sistem-karsilastirma" onClick={persistPlanSnapshot}>Sistem ve Yöntemi Seç <i>→</i></Link> : null}
     </section> : null}
   </section>;
 }
