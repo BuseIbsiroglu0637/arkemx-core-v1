@@ -228,3 +228,544 @@ html[data-theme="dark"] .arx-system-next-disabled {
   .arx-mcda-decision-gate { padding:14px; }
   .arx-mcda-assumption-summary { grid-template-columns:1fr; }
 }
+
+
+/* V08 / Sistem seçimi — okunabilir çalışma alanı ve tam tema geçişi */
+.arx-system-page {
+  --sys-bg:#f4f7f8;
+  --sys-surface:#ffffff;
+  --sys-surface-2:#f8fafb;
+  --sys-border:#d8e2e6;
+  --sys-border-strong:#c3d1d6;
+  --sys-text:#17313e;
+  --sys-muted:#647983;
+  --sys-subtle:#82949c;
+  --sys-blue:#244f61;
+  --sys-blue-soft:#eef5f7;
+  --sys-orange:#c66f3d;
+  --sys-orange-soft:#fff5ee;
+  --sys-green:#3f8063;
+  --sys-green-soft:#f0f8f4;
+  background:var(--sys-bg);
+}
+.arx-system-page .arx-workspace-shell {
+  width:min(1640px,calc(100% - 48px));
+}
+.arx-system-page .arx-simple-head {
+  min-height:72px;
+}
+.arx-system-page .arx-simple-brand {
+  font-size:22px;
+}
+.arx-system-page .arx-workspace-nav a {
+  font-size:12px;
+}
+.arx-system-page .arx-workspace-intro {
+  padding:28px 0 22px;
+}
+.arx-system-page .arx-workspace-intro > span {
+  margin-bottom:7px;
+  color:#69828d;
+  font-size:10px;
+}
+.arx-system-page .arx-workspace-intro h1 {
+  margin-bottom:8px;
+  font-size:clamp(30px,3vw,42px);
+  color:var(--sys-text);
+}
+.arx-system-page .arx-workspace-intro p {
+  max-width:850px;
+  color:var(--sys-muted);
+  font-size:14px;
+}
+.arx-system-page .arx-system-tool {
+  color:var(--sys-text);
+}
+.arx-system-page .arx-system-project-strip {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px 24px;
+  margin-bottom:12px;
+  padding:13px 16px;
+  border:1px solid var(--sys-border);
+  border-radius:9px;
+  background:var(--sys-surface);
+}
+.arx-system-page .arx-system-project-strip > div {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px 12px;
+  min-width:0;
+}
+.arx-system-page .arx-system-project-strip > div:first-child span {
+  color:var(--sys-orange);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.08em;
+}
+.arx-system-page .arx-system-project-strip > div:first-child b {
+  color:var(--sys-text);
+  font-size:14px;
+}
+.arx-system-page .arx-system-project-strip > div:last-child span {
+  padding:5px 8px;
+  border-radius:999px;
+  background:var(--sys-surface-2);
+  color:var(--sys-muted);
+  font-size:10px;
+  font-weight:650;
+}
+.arx-system-page .arx-mcda-source-status {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:12px;
+  padding:14px 16px;
+  border:1px solid var(--sys-border);
+  border-left:4px solid var(--sys-green);
+  border-radius:9px;
+  background:var(--sys-green-soft);
+}
+.arx-system-page .arx-mcda-source-status > div {
+  display:grid;
+  gap:3px;
+}
+.arx-system-page .arx-mcda-source-status span {
+  color:var(--sys-green);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.08em;
+}
+.arx-system-page .arx-mcda-source-status b {
+  color:var(--sys-text);
+  font-size:13px;
+}
+.arx-system-page .arx-mcda-source-status p {
+  margin:2px 0 0;
+  color:var(--sys-muted);
+  font-size:11px;
+  line-height:1.5;
+}
+.arx-system-page .arx-mcda-source-status button {
+  flex:0 0 auto;
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid var(--sys-border-strong);
+  border-radius:6px;
+  background:var(--sys-surface);
+  color:var(--sys-blue);
+  font:750 10px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+.arx-system-page .arx-mcda-source-status.is-stale,
+.arx-system-page .arx-mcda-source-status.is-override {
+  border-left-color:var(--sys-orange);
+  background:var(--sys-orange-soft);
+}
+.arx-system-page .arx-mcda-source-status.is-stale span,
+.arx-system-page .arx-mcda-source-status.is-override span {
+  color:var(--sys-orange);
+}
+
+.arx-system-page .arx-mcda-decision-gate {
+  grid-template-columns:minmax(0,1.3fr) minmax(390px,.9fr) auto;
+  margin:0 0 16px;
+  padding:18px 20px;
+}
+.arx-system-page .arx-mcda-decision-gate > div:first-child > span {
+  font-size:10px;
+}
+.arx-system-page .arx-mcda-decision-gate > div:first-child > b {
+  font-size:15px;
+  line-height:1.35;
+}
+.arx-system-page .arx-mcda-decision-gate > div:first-child > p {
+  font-size:11px;
+}
+.arx-system-page .arx-mcda-assumption-summary > span {
+  min-height:36px;
+  align-items:center;
+  font-size:10px;
+}
+.arx-system-page .arx-mcda-assumption-summary b {
+  font-size:11px;
+}
+.arx-system-page .arx-mcda-confirmed-mark {
+  white-space:nowrap;
+}
+
+.arx-system-page .arx-system-grid {
+  grid-template-columns:minmax(330px,370px) minmax(0,1fr);
+  gap:18px;
+}
+.arx-system-page .arx-system-panel {
+  border-color:var(--sys-border);
+  border-radius:10px;
+  background:var(--sys-surface);
+  box-shadow:0 1px 0 rgba(28,56,67,.02);
+}
+.arx-system-page .arx-system-grid > .arx-system-panel:first-child {
+  position:sticky;
+  top:18px;
+}
+.arx-system-page .arx-system-panel-head {
+  padding:17px 18px 14px;
+  border-color:var(--sys-border);
+}
+.arx-system-page .arx-system-panel-head h2 {
+  color:var(--sys-text);
+  font-size:16px;
+}
+.arx-system-page .arx-system-panel-head p {
+  max-width:760px;
+  color:var(--sys-muted);
+  font-size:11px;
+}
+.arx-system-page .arx-system-panel-head button,
+.arx-system-page .arx-system-exports button {
+  min-height:34px;
+  border-color:var(--sys-border-strong);
+  background:var(--sys-surface);
+  color:var(--sys-blue);
+  font-size:10px;
+}
+.arx-system-page .arx-system-fields {
+  gap:11px 12px;
+  padding:16px 18px 18px;
+}
+.arx-system-page .arx-system-fields label {
+  gap:6px;
+  color:#4a6571;
+  font-size:10px;
+}
+.arx-system-page .arx-system-fields input,
+.arx-system-page .arx-system-fields select {
+  min-height:40px;
+  border-color:var(--sys-border-strong);
+  background:var(--sys-surface);
+  color:var(--sys-text);
+  font-size:13px;
+}
+.arx-system-page .arx-system-detail {
+  border-color:var(--sys-border);
+}
+.arx-system-page .arx-system-detail summary {
+  padding:13px 18px;
+  color:#365968;
+  font-size:11px;
+}
+.arx-system-page .arx-system-detail[open] summary {
+  border-color:var(--sys-border);
+  background:var(--sys-surface-2);
+}
+.arx-system-page .arx-system-weights {
+  gap:11px;
+  padding:13px 18px 17px;
+}
+.arx-system-page .arx-system-weights label {
+  grid-template-columns:minmax(0,1fr) 96px 22px;
+  gap:9px;
+}
+.arx-system-page .arx-system-weights label span {
+  font-size:10px;
+}
+.arx-system-page .arx-system-weights label small {
+  color:var(--sys-subtle);
+  font-size:8.5px;
+}
+.arx-system-page .arx-system-weights label strong {
+  font-size:11px;
+}
+
+.arx-system-page .arx-system-result {
+  grid-template-columns:minmax(260px,1fr) minmax(150px,190px) 120px;
+  gap:18px;
+  padding:16px 18px;
+  border-color:var(--sys-border);
+}
+.arx-system-page .arx-system-result-name h3 {
+  color:var(--sys-text);
+  font-size:15px;
+}
+.arx-system-page .arx-system-result-name p {
+  color:var(--sys-muted);
+  font-size:11px;
+}
+.arx-system-page .arx-system-result-name small {
+  margin-top:6px;
+  font-size:9.5px;
+}
+.arx-system-page .arx-system-score strong {
+  color:var(--sys-text);
+  font-size:22px;
+}
+.arx-system-page .arx-system-score small {
+  color:var(--sys-muted);
+  font-size:9px;
+}
+.arx-system-page .arx-system-result > button {
+  width:120px;
+  min-height:36px;
+  border-color:var(--sys-border-strong);
+  background:var(--sys-surface);
+  color:var(--sys-blue);
+  font-size:9.5px;
+}
+.arx-system-page .arx-system-result.is-selected {
+  background:linear-gradient(90deg,rgba(198,111,61,.055),transparent 34%);
+}
+.arx-system-page .arx-system-result.is-selected > button {
+  background:var(--sys-orange-soft);
+  border-color:#dfb79f;
+  color:#98552f;
+}
+.arx-system-page .arx-system-table-wrap {
+  padding:8px 18px 18px;
+}
+.arx-system-page .arx-system-table {
+  font-size:10px;
+}
+.arx-system-page .arx-system-table th,
+.arx-system-page .arx-system-table td {
+  padding:9px 8px;
+  border-color:var(--sys-border);
+}
+.arx-system-page .arx-system-sensitivity {
+  padding:15px 18px 18px;
+}
+.arx-system-page .arx-system-sensitivity p {
+  color:var(--sys-muted);
+  font-size:10.5px;
+}
+.arx-system-page .arx-system-shortlist {
+  margin-top:18px;
+  padding:17px 18px;
+}
+.arx-system-page .arx-system-shortlist h2 {
+  color:var(--sys-text);
+  font-size:14px;
+}
+.arx-system-page .arx-system-tags span {
+  padding:7px 10px;
+  background:var(--sys-blue-soft);
+  color:var(--sys-blue);
+  font-size:10px;
+}
+.arx-system-page .arx-system-shortlist > a {
+  min-height:42px;
+  padding:10px 15px;
+  background:var(--sys-blue);
+  font-size:11px;
+}
+.arx-system-page .arx-system-note {
+  margin-top:12px;
+  color:var(--sys-muted);
+  font-size:10px;
+}
+
+/* Bu çalışma alanında tema kontrolü diğer mühendislik ekranları gibi kompakt ve sağ üsttedir. */
+body:has(.arx-system-page) .arkem-theme-control {
+  top:18px;
+  right:18px;
+  bottom:auto;
+  left:auto;
+  display:block;
+  min-width:0;
+  padding:4px;
+  border-radius:9px;
+}
+body:has(.arx-system-page) .arkem-theme-control-label {
+  display:none;
+}
+body:has(.arx-system-page) .arkem-theme-control-options {
+  display:flex;
+  gap:4px;
+}
+body:has(.arx-system-page) .arkem-theme-control button {
+  width:38px;
+  height:38px;
+  min-height:38px;
+  padding:0;
+  font-size:0;
+}
+body:has(.arx-system-page) .arkem-theme-control button svg {
+  width:16px;
+  height:16px;
+}
+
+/* Gerçek koyu tema: beyaz kart bırakma. */
+html[data-theme="dark"] .arx-system-page {
+  --sys-bg:#000;
+  --sys-surface:#090909;
+  --sys-surface-2:#0e0e0e;
+  --sys-border:#2b2b2b;
+  --sys-border-strong:#3a3a3a;
+  --sys-text:#f3f6f7;
+  --sys-muted:#a6b2b7;
+  --sys-subtle:#7e8e95;
+  --sys-blue:#67a8be;
+  --sys-blue-soft:#0c1c23;
+  --sys-orange:#dd814d;
+  --sys-orange-soft:#1a100b;
+  --sys-green:#70b493;
+  --sys-green-soft:#0b1711;
+  background:#000 !important;
+  color:var(--sys-text);
+}
+html[data-theme="dark"] .arx-system-page .arx-simple-head {
+  border-color:#242424;
+}
+html[data-theme="dark"] .arx-system-page .arx-simple-brand,
+html[data-theme="dark"] .arx-system-page .arx-workspace-intro h1 {
+  color:#fff;
+}
+html[data-theme="dark"] .arx-system-page .arx-workspace-nav a,
+html[data-theme="dark"] .arx-system-page .arx-workspace-intro p {
+  color:#a4b2b8;
+}
+html[data-theme="dark"] .arx-system-page .arx-workspace-intro > span {
+  color:#77939f;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-project-strip,
+html[data-theme="dark"] .arx-system-page .arx-system-panel {
+  border-color:var(--sys-border);
+  background:var(--sys-surface);
+  color:var(--sys-text);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-project-strip > div:last-child span {
+  background:#111;
+  color:#9ba9ae;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status {
+  border-color:#264637;
+  border-left-color:var(--sys-green);
+  background:var(--sys-green-soft);
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-stale,
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-override {
+  border-color:#543522;
+  border-left-color:var(--sys-orange);
+  background:var(--sys-orange-soft);
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status b {
+  color:#eef4f1;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status button,
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head button,
+html[data-theme="dark"] .arx-system-page .arx-system-exports button,
+html[data-theme="dark"] .arx-system-page .arx-system-result > button {
+  border-color:var(--sys-border-strong);
+  background:#101010;
+  color:#d7e5ea;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head,
+html[data-theme="dark"] .arx-system-page .arx-system-detail,
+html[data-theme="dark"] .arx-system-page .arx-system-result,
+html[data-theme="dark"] .arx-system-page .arx-system-table th,
+html[data-theme="dark"] .arx-system-page .arx-system-table td {
+  border-color:var(--sys-border);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head h2,
+html[data-theme="dark"] .arx-system-page .arx-system-result-name h3,
+html[data-theme="dark"] .arx-system-page .arx-system-score strong,
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist h2 {
+  color:#f4f7f8;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head p,
+html[data-theme="dark"] .arx-system-page .arx-system-result-name p,
+html[data-theme="dark"] .arx-system-page .arx-system-score small,
+html[data-theme="dark"] .arx-system-page .arx-system-sensitivity p,
+html[data-theme="dark"] .arx-system-page .arx-system-note {
+  color:var(--sys-muted);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-fields label {
+  color:#9fb0b7;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-fields input,
+html[data-theme="dark"] .arx-system-page .arx-system-fields select {
+  border-color:var(--sys-border-strong);
+  background:#0d0d0d;
+  color:#f2f5f6;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-detail[open] summary {
+  border-color:var(--sys-border);
+  background:#101010;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-detail summary {
+  color:#bfd0d7;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-weights > button {
+  border-color:#3a3a3a;
+  background:#111;
+  color:#cad7dc;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result.is-selected {
+  background:linear-gradient(90deg,rgba(221,129,77,.09),transparent 35%);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result.is-selected > button {
+  border-color:#65412d;
+  background:#1b110c;
+  color:#e8a47c;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score-track {
+  background:#22292b;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-table th {
+  color:#a8c0ca;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-tags span {
+  background:#0d2028;
+  color:#9cc7d7;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist > a {
+  background:#19465a;
+  color:#fff;
+}
+html[data-theme="dark"] body:has(.arx-system-page) .arkem-theme-control {
+  border-color:#353535;
+  background:rgba(7,7,7,.96);
+}
+
+@media (max-width:1180px) {
+  .arx-system-page .arx-system-grid {
+    grid-template-columns:1fr;
+  }
+  .arx-system-page .arx-system-grid > .arx-system-panel:first-child {
+    position:static;
+  }
+  .arx-system-page .arx-mcda-decision-gate {
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width:760px) {
+  .arx-system-page .arx-workspace-shell {
+    width:calc(100% - 28px);
+  }
+  .arx-system-page .arx-system-project-strip {
+    grid-template-columns:1fr;
+  }
+  .arx-system-page .arx-mcda-source-status {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .arx-system-page .arx-system-result {
+    grid-template-columns:1fr;
+  }
+  .arx-system-page .arx-system-result > button {
+    width:auto;
+    justify-self:start;
+  }
+  .arx-system-page .arx-system-fields {
+    grid-template-columns:1fr;
+  }
+  .arx-system-page .arx-system-fields label:first-child {
+    grid-column:auto;
+  }
+  body:has(.arx-system-page) .arkem-theme-control {
+    top:10px;
+    right:10px;
+  }
+}
