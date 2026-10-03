@@ -607,7 +607,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (nextFloorCount > 0) { const safeFloorCount = Math.max(1, Math.min(30, nextFloorCount)); setFloorCount(safeFloorCount); setLevel((current) => Math.min(current, safeFloorCount)); }
     if (Array.isArray(saved?.elements) && saved.elements.length) setElements(saved.elements);
     else setElements((current) => current.filter((element) => element.x <= nextBaysX && element.y <= nextBaysY));
-    setStatus(Array.isArray(saved?.elements) && saved.elements.length ? "Mimari programdan üretilen plan nesneleri otomatik açıldı" : targetWidth > 0 || targetDepth > 0 ? "Mimari program / parsel geometrisi aks modeline aktarıldı" : "Aktarılacak mimari program veya parsel kütlesi bulunamadı");
+    setStatus(Array.isArray(saved?.elements) && saved.elements.length ? "Mevcut plan korundu; Mimari Program bağlantısı güncellendi" : targetWidth > 0 || targetDepth > 0 ? "Mimari program / parsel geometrisi aks modeline aktarıldı" : "Aktarılacak mimari program veya parsel kütlesi bulunamadı");
   }, [baysX, baysY, project.modules, thread.canonical]);
 
   useEffect(() => {
@@ -849,6 +849,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Bağlantısız / manuel</span><b>{manualOrUnlinkedSpaces.length}</b></div>
             {floorStats.map((floor) => <div key={floor.level}><span>K{floor.level}</span><b>{floor.rooms} mahal · {floor.cores} çekirdek</b></div>)}
             {(!programLinkPass || !coreContinuityPass || !floorCoveragePass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi güncel Mimari Programla bağlı.</small>}
+            <Link className="cad-program-edit-link" href="/mimari-program-studyosu">Mimari Programı Düzenle →</Link>
           </section>
           <section className="cad-properties">
             <strong>SEÇİLİ NESNE</strong>
