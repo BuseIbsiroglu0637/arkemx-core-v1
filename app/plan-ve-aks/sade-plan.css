@@ -1795,3 +1795,69 @@ html[data-theme="dark"] .arx-plan-page .cad-program-adjacency-note {
   background:#17100c;
   color:#d5a185 !important;
 }
+
+
+/* V07 / kat bazlı plaka dağılımı */
+.arx-plan-page .cad-floor-plate-summary {
+  display:grid;
+  gap:0;
+  padding:18px 16px;
+  border-bottom:1px solid var(--plan-border);
+  background:var(--plan-surface-2);
+}
+.arx-plan-page .cad-floor-plate-summary > strong {
+  margin-bottom:6px;
+  color:var(--plan-muted);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.arx-plan-page .cad-floor-plate-summary > p {
+  margin:0 0 10px;
+  color:var(--plan-muted);
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-plan-page .cad-floor-plate-summary > div {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-bottom:1px solid var(--plan-border);
+}
+.arx-plan-page .cad-floor-plate-summary > div span {
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-floor-plate-summary > div b {
+  color:var(--plan-text);
+  font-size:9px;
+  text-align:right;
+}
+.arx-plan-page .cad-floor-plate-summary > button {
+  width:100%;
+  min-height:40px;
+  margin-top:12px;
+  border:1px solid var(--plan-blue);
+  border-radius:7px;
+  background:var(--plan-blue);
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.arx-plan-page .cad-floor-plate-summary > small {
+  margin-top:10px;
+  color:var(--plan-success);
+  font-size:9px;
+  line-height:1.4;
+}
+html[data-theme="dark"] .arx-plan-page .cad-floor-plate-summary {
+  border-color:var(--plan-border);
+  background:#0d0d0d;
+}
+html[data-theme="dark"] .arx-plan-page .cad-floor-plate-summary > button {
+  border-color:#315f70;
+  background:#173f50;
+}
