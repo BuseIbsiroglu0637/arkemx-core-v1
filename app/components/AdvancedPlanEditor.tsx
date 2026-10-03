@@ -660,7 +660,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.0", units: "m", floorCount, baysX, baysY, spanX, spanY, elements, metrics }, null, 2), "application/json");
   const exportCsv = () => {
     const content = issueFocus
-      ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
+      ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
       : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${spanX.toFixed(3)},m\ngrid_y,${baysY},${spanY.toFixed(3)},m`;
     downloadTextFile("arkem-plan-on-metraj.csv", content, "text/csv;charset=utf-8");
   };
@@ -881,6 +881,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Programdan hedef</span><b>{programFootprintTarget > 0 ? `${programFootprintTarget.toFixed(1)} m²` : "—"}</b></div>
             <div><span>TAKS azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "Bilgi yok"}</b></div>
             <div><span>Aktif kat · Mahal / çekirdek</span><b>{metrics.rooms} / {metrics.cores}</b></div>
+            <div><span>Aktif kat · Net mahal alanı</span><b>{metrics.roomArea.toFixed(1)} m²</b></div>
             <div><span>Tüm proje · Mahal</span><b className={programLinkPass ? "good" : "watch"}>{allPlanSpaces.length} / {upstreamSpaceCount}</b></div>
             <div><span>Çekirdek sürekliliği</span><b className={coreContinuityPass ? "good" : "watch"}>{floorStats.filter((floor) => floor.cores > 0).length} / {floorCount} kat</b></div>
             <div><span>Alan temsili</span><b className={areaRepresentationPass ? "good" : "watch"}>{areaRepresentation.filter((item) => item.pass).length} / {upstreamSpaceCount}</b></div>
@@ -889,7 +890,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Kontrol kapısı</span><b className={planGatePass ? "good" : "watch"}>{planGatePass ? "Geçti" : "Açık"}</b></div>
             {!programFootprintPass && programFootprintFeasible ? <button type="button" onClick={applyProgramFootprintSuggestion}>Plan tabanını programa uyarla</button> : null}
           </section>
-          <section className="cad-program-link" data-state={programLinkPass && coreContinuityPass ? "pass" : "review"}>
+          <section className="cad-program-link" data-state={programLinkPass && coreContinuityPass && areaRepresentationPass && requiredAdjacencyPass ? "pass" : "review"}>
             <strong>MİMARİ PROGRAM BAĞLANTISI</strong>
             <p>Mimari Programdaki mahal listesi kaynak kayıttır. Plan üzerinde mahal silinirse veya program sonradan değiştirilirse burada fark görünür.</p>
             <div><span>Kaynak program</span><b>{upstreamSpaceCount} mahal</b></div>
@@ -898,9 +899,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             {floorStats.map((floor) => <div key={floor.level}><span>K{floor.level}</span><b>{floor.rooms} mahal · {floor.cores} çekirdek</b></div>)}
             <div><span>Alan temsili</span><b>{areaRepresentation.filter((item) => item.pass).length}/{upstreamSpaceCount} mahal</b></div>
             <div><span>Zorunlu komşuluk</span><b>{requiredAdjacency.satisfied}/{requiredAdjacency.total}</b></div>
-            {requiredAdjacency.items.filter((item) => !item.satisfied).map((item) => <div className="cad-program-relation-risk" key={item.id}><span>{item.from} ↔ {item.to}</span><b>Çözülmedi</b></div>)}
+            {requiredAdjacency.items.filter((item) => !item.satisfied).map((item) => <div className="cad-program-relation-risk" key={item.id}><span>{item.from} ↔ {item.to}</span><b>{requiredAdjacencyCapacityConflicts.some((conflict) => conflict.id === item.id) ? "Mevcut katta alan olarak mümkün değil" : "Aynı katta temas etmiyor"}</b></div>)}
             {(!programLinkPass || !coreContinuityPass || !floorCoveragePass || !areaRepresentationPass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi ve alan temsili güncel Mimari Programla bağlı.</small>}
-            {!requiredAdjacencyPass ? <p className="cad-program-adjacency-note">Zorunlu komşuluk aynı katta fiziksel temas gerektirir. Mevcut plaka/kat kapasitesi buna izin vermiyorsa Mimari Program veya kat/plaka kararı yeniden ele alınmalıdır.</p> : null}
+            {!requiredAdjacencyPass ? <p className="cad-program-adjacency-note">{requiredAdjacencyCapacityConflicts.length ? `${requiredAdjacencyCapacityConflicts.length} zorunlu ilişki mevcut kat brüt alanından daha büyük birleşik mahal alanı istiyor. Kat/plaka veya program kararı yeniden ele alınmalı.` : "Zorunlu komşuluk aynı katta fiziksel temas gerektirir. Yerleşimi düzenleyin veya Mimari Program kararını yeniden ele alın."}</p> : null}
             <Link className="cad-program-edit-link" href="/mimari-program-studyosu">Mimari Programı Düzenle →</Link>
           </section>
           <section className="cad-properties">
