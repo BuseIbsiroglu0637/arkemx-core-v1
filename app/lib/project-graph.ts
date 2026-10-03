@@ -236,14 +236,16 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     Object.keys(comparisonInput).length
     || (Array.isArray(comparison.ranking) && comparison.ranking.length)
   );
+  const comparisonAssumptionsConfirmed = comparison.assumptionsConfirmed === true;
   const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
   // Arazi/Yapı Yerleşimi taşıyıcı sistem kararı üretmez. Yapısal sistem
   // yalnız yapı sistemi karşılaştırması veya taşıyıcı ön tasarım kaynaklarından gelir.
-  const system = structuralSystemLabel(text(structureInput.system) || (mcdaSourceCurrent ? text(comparisonWinner.name) : ""));
+  const mcdaDecisionUsable = Boolean(mcdaSourceCurrent && comparisonAssumptionsConfirmed);
+  const system = structuralSystemLabel(text(structureInput.system) || (mcdaDecisionUsable ? text(comparisonWinner.name) : ""));
   const modeledSystemId = structuralSystemId(text(structureInput.system));
-  const recommendedSystemId = mcdaSourceCurrent
+  const recommendedSystemId = mcdaDecisionUsable
     ? structuralSystemId(text(comparisonWinner.id) || text(comparisonWinner.name))
     : "";
   const systemMismatch = Boolean(modeledSystemId && recommendedSystemId && modeledSystemId !== recommendedSystemId);
@@ -306,8 +308,8 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       reinforcementTonnage: number(structureQuantities.reinforcementTonnage),
       openingRatio: number(planMetrics.openingRatio),
       eccentricityRatio: number(planMetrics.eccentricityRatio),
-      recommendedSystem: mcdaSourceCurrent ? text(comparisonWinner.name) : "",
-      recommendationScore: mcdaSourceCurrent ? number(comparisonWinner.score) : 0,
+      recommendedSystem: mcdaDecisionUsable ? text(comparisonWinner.name) : "",
+      recommendationScore: mcdaDecisionUsable ? number(comparisonWinner.score) : 0,
     },
     coordination: {
       clearHeight: number(coordinationResult.clearHeight),
@@ -433,8 +435,18 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     title: "MCDA girdileri güncel proje verisiyle eşleşmiyor",
     evidence: `MCDA: ${number(comparisonInput.area).toFixed(1)} m² · ${number(comparisonInput.floors)} kat / güncel proje: ${currentMcdaSource.area.toFixed(1)} m² · ${currentMcdaSource.floors} kat`,
     action: "Güncel proje verisini MCDA girdilerine aktarın ve sistem sıralamasını yeniden hesaplayın.",
-    route: "/yapi-sistemi-karsilastirma/mcda",
+    route: "/sistem-karsilastirma",
     routeLabel: "MCDA verisini güncelle",
+  });
+  if (comparisonHasResult && mcdaSourceCurrent && !comparisonAssumptionsConfirmed) push({
+    id: "SYS-039",
+    severity: "review",
+    discipline: "Yapı mühendisliği",
+    title: "MCDA varsayımları henüz proje kararı olarak doğrulanmadı",
+    evidence: `Yangın ${number(comparisonInput.fireRating, 90)} dk · tekrar %${number(comparisonInput.repetition, 70)} · taşıma ${number(comparisonInput.transport, 180)} km · kriter ağırlıkları taslak`,
+    action: "Yangın, tekrar, lojistik ve kriter ağırlıklarını gözden geçirip MCDA karar kapısını onaylayın.",
+    route: "/sistem-karsilastirma",
+    routeLabel: "Varsayımları doğrula",
   });
 
   if (number(plan.floorCount) > 0 && number(structureInput.floors) > 0 && number(plan.floorCount) !== number(structureInput.floors)) push({ id: "STR-031", severity: "critical", discipline: "Mimari + Statik", title: "Kat adedi modeller arasında farklı", evidence: `${number(plan.floorCount)} kat plan / ${number(structureInput.floors)} kat taşıyıcı model`, action: "Plan verisini taşıyıcı ön tasarıma yeniden aktarın.", route: "/tasarim-calismalari/model-senkronizasyonu", routeLabel: "Modelleri senkronize et" });
@@ -561,7 +573,16 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       title: "MCDA proje verisi senkronu",
       summary: `Güncel kaynak: ${currentMcdaSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · ${currentMcdaSource.floors} kat · ${currentMcdaSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık`,
       routeLabel: "Görüntüle",
-      route: "/yapi-sistemi-karsilastirma/mcda",
+      route: "/sistem-karsilastirma",
+    });
+  }
+  if (comparisonHasResult && mcdaDecisionUsable && !issues.some((issue) => issue.id === "SYS-039")) {
+    completedControls.push({
+      code: "SYS-039",
+      title: "MCDA proje varsayımları",
+      summary: "Yangın, tekrar, lojistik, kriter ağırlıkları ve kısa liste kullanıcı tarafından doğrulandı",
+      routeLabel: "Görüntüle",
+      route: "/sistem-karsilastirma",
     });
   }
 
