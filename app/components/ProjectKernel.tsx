@@ -14,6 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
+import { buildProgramPlanElements } from "../lib/plan-program";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -222,52 +223,6 @@ function structuralSystem(value: string) {
   return ["light", "hybrid", "steel", "precast", "concrete"].includes(normalized) ? normalized : "";
 }
 
-function programPlanElements(spaces: unknown[], baysX: number, baysY: number, floors: number, liveLoad: number) {
-  const cellsPerFloor = Math.max(1, baysX * baysY);
-  const maximumCells = Math.min(cellsPerFloor * Math.max(1, floors), 160);
-  const expanded: UnknownRecord[] = [];
-  spaces.forEach((value) => {
-    const space = record(value);
-    const count = Math.max(1, Math.min(24, numeric(space.count, 1)));
-    for (let index = 0; index < count && expanded.length < maximumCells; index += 1) expanded.push(space);
-  });
-  const elements = expanded.map((space, index) => {
-    const level = Math.floor(index / cellsPerFloor) + 1;
-    const cell = index % cellsPerFloor;
-    return {
-      id: `program-${stringValue(space.id, "space")}-${index + 1}`,
-      type: "space",
-      level,
-      x: cell % baysX,
-      y: Math.floor(cell / baysX),
-      orientation: "x",
-      label: stringValue(space.name, "Mahal"),
-      load: numeric(space.liveLoad, liveLoad),
-      fire: "Projede belirlenecek",
-      section: "—",
-      sourceSpaceId: stringValue(space.id),
-      sourceZone: stringValue(space.zone),
-    };
-  });
-  for (let level = 1; level <= Math.max(1, floors); level += 1) {
-    elements.push({
-      id: `program-core-${level}`,
-      type: "core",
-      level,
-      x: Math.max(0, Math.floor(baysX / 2) - 1),
-      y: Math.max(0, Math.floor(baysY / 2) - 1),
-      orientation: "x",
-      label: "Merdiven / asansör çekirdeği",
-      load: liveLoad,
-      fire: "REI 120",
-      section: "—",
-      sourceSpaceId: "vertical-core",
-      sourceZone: "Sirkülasyon",
-    });
-  }
-  return elements;
-}
-
 const HANDOFF_IDS = ["H-01", "H-02", "H-03", "H-04", "H-05", "H-06"] as const;
 const SOURCE_HANDOFFS: Record<string, string[]> = {
   "geo-parcel": ["H-01"],
@@ -382,7 +337,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
       const generatedElements = existingElements.length
         ? existingElements
-        : programPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5));
+        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5));
       modules["plan-editor"] = {
         ...target,
         level: Math.min(numeric(target.level, 1), floors),
