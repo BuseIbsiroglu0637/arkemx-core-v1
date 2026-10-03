@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
@@ -44,7 +45,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const handoffSeen = useRef("");
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [tool, setTool] = useState<Tool>("select");
-  const [view, setView] = useState<View>(issueFocus === "kmkr" ? "coordination" : "structural");
+  const [view, setView] = useState<View>(issueFocus === "kmkr" ? "coordination" : "architectural");
   const [level, setLevel] = useState(1);
   const [floorCount, setFloorCount] = useState(4);
   const [baysX, setBaysX] = useState(6);
@@ -183,6 +184,22 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     : 1;
   const suggestedProgramSpanX = Math.max(2, Math.min(15, spanX * programFootprintScale));
   const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
+  const architectureModule = project.modules["architectural-program"] as { spaces?: Array<{ count?: number }>; journeyComplete?: boolean } | undefined;
+  const upstreamSpaceCount = Array.isArray(architectureModule?.spaces)
+    ? architectureModule.spaces.reduce((sum, space) => sum + Math.max(1, Number(space?.count) || 1), 0)
+    : 0;
+  const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
+  const planPlacementReady = metrics.rooms > 0 && metrics.cores > 0;
+  const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
+  const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
+  const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass;
+  const missingPlanGateItems = [
+    !upstreamReady ? "Mimari veri devri" : "",
+    !planPlacementReady ? "Mahal / çekirdek yerleşimi" : "",
+    !axisReady ? "Aks geometrisi" : "",
+    !programFootprintPass ? "Program / plan alan uyumu" : "",
+    !siteFootprintPass ? "TAKS taban sınırı" : "",
+  ].filter(Boolean);
 
   const applyFootprintSuggestion = () => {
     if (!(allowedFootprint > 0) || !(metrics.floorArea > 0) || footprintPass) return;
@@ -391,8 +408,19 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
   useEffect(() => {
     if (!hydrated || !modelHydrated) return;
-    patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, elements, metrics, status: "concept-plan" });
-  }, [baysX, baysY, elements, floorCount, hydrated, level, metrics, modelHydrated, patchModule, spanX, spanY]);
+    patchModule("plan-editor", {
+      level,
+      floorCount,
+      baysX,
+      baysY,
+      spanX,
+      spanY,
+      elements,
+      metrics,
+      journeyComplete: planGatePass,
+      status: planGatePass ? "Mimari plan ve aks kontrol kapısı tamamlandı" : "Mimari plan ve aks koordinasyonu sürüyor",
+    });
+  }, [baysX, baysY, elements, floorCount, hydrated, level, metrics, modelHydrated, patchModule, planGatePass, spanX, spanY]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -623,6 +651,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   };
 
   const showElement = (element: PlanElement) => {
+    if (!issueFocus && (element.type === "column" || element.type === "wall" || element.type === "load")) return false;
     if (element.type === "column") return layers.columns;
     if (element.type === "wall") return layers.walls;
     if (element.type === "space" || element.type === "core") return layers.spaces;
@@ -630,6 +659,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     return layers.loads;
   };
 
+  const mainPlanTools: Tool[] = ["select", "space", "core", "opening", "erase"];
   const kmkrTools: Tool[] = ["select", "column", "wall", "space", "load", "erase"];
 
   return <section className={`advanced-plan-editor cad-plan-editor${issueFocus ? " cad-issue-focus" : ""}`} data-testid="advanced-plan-editor">
