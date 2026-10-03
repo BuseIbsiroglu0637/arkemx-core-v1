@@ -347,8 +347,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
   const applyFootprintSuggestion = () => {
     if (!(allowedFootprint > 0) || !(metrics.floorArea > 0) || footprintPass) return;
-    setSpanX(Number(suggestedSpanX.toFixed(3)));
-    setSpanY(Number(suggestedSpanY.toFixed(3)));
+    setActiveSpanX(Number(suggestedSpanX.toFixed(3)));
+    setActiveSpanY(Number(suggestedSpanY.toFixed(3)));
     setStatus(`Plan taban alanı TAKS sınırına göre küçültüldü · hedef ≤ ${allowedFootprint.toFixed(1)} m²`);
   };
 
@@ -867,7 +867,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           <small>Bu ekranda tekrar veri aktarımı yapmanız gerekmez. Plan ve aks çalışması aynı proje kaydını kullanır.</small>
         </div>
         <dl>
-          <div><dt>Program brütü</dt><dd>{programGrossTarget > 0 ? `${programGrossTarget.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "—"}</dd></div>
+          <div><dt>Program brüt ihtiyacı</dt><dd>{programGrossDemand > 0 ? `${programGrossDemand.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "—"}</dd></div>
           <div><dt>Kat</dt><dd>{floorCount || "—"}</dd></div>
           <div><dt>Mahal</dt><dd>{upstreamSpaceCount || "—"}</dd></div>
           <div><dt>Plaka</dt><dd>{thread.canonical.architecture.plateWidth > 0 && thread.canonical.architecture.plateDepth > 0 ? `${thread.canonical.architecture.plateWidth.toFixed(1)} × ${thread.canonical.architecture.plateDepth.toFixed(1)} m` : "—"}</dd></div>
