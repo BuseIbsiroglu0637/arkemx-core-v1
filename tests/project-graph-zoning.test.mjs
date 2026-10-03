@@ -3,6 +3,7 @@ import test from "node:test";
 import { deriveProjectThread, PROJECT_MODULES } from "../app/lib/project-graph.ts";
 import { createZoningProvenance, DEFAULT_ZONING } from "../app/lib/zoning.ts";
 import { buildMcdaProjectSnapshot, mcdaSourceKey, mcdaUsageFromProject } from "../app/lib/mcda-source.ts";
+import { buildProgramPlanElements, deriveProgramFloorPlates } from "../app/lib/plan-program.ts";
 
 function geoModule(zoningProvenance = {}) {
   return {
@@ -212,6 +213,126 @@ test("resolved structural system advances beyond the system decision gate", () =
   assert.equal(thread.nodes.find(node => node.id === "quick-site-scenario")?.active, true);
   assert.notEqual(thread.nextAction.label, "Hızlı yerleşim");
   assert.notEqual(thread.nextAction.label, "Sistemi ve yöntemi seç");
+});
+
+
+test("completed Plan & Aks is re-derived from saved model data when the legacy journey flag is missing", () => {
+  const spaces = [{
+    id: "S-01",
+    code: "U-01",
+    name: "Üretim alanı",
+    zone: "Üretim",
+    count: 1,
+    unitArea: 80,
+    liveLoad: 5,
+  }];
+  const floorPlates = deriveProgramFloorPlates(spaces, [], 1, 80, 1.25, 5);
+  const baysX = 5;
+  const baysY = 4;
+  const spanX = floorPlates[0].width / baysX;
+  const spanY = floorPlates[0].depth / baysY;
+  const elements = buildProgramPlanElements(spaces, baysX, baysY, 1, 5, spanX, spanY, [], floorPlates);
+
+  const geo = geoModule({
+    authoritative: false,
+    verification: "user-declared",
+    plan,
+    conditions,
+    source: {
+      type: "Kullanıcı beyanı",
+      date: "2026-10-03",
+      note: "Test kaynağı",
+    },
+  });
+  geo.metrics.allowedFootprint = 150;
+  geo.metrics.allowedGross = 200;
+
+  const thread = deriveProjectThread({
+    "decision-assistant": { status: "Brief tamamlandı" },
+    "geo-parcel": geo,
+    "architectural-program": {
+      input: {
+        use: "industrial",
+        targetGross: 100,
+        floors: 1,
+        floorHeight: 4,
+        netRatio: 80,
+        aspect: 1.25,
+        programRequirementsConfirmed: true,
+      },
+      spaces,
+      relationships: [],
+      result: { grossDemand: 100, liveLoad: 5 },
+    },
+    "plan-editor": {
+      floorCount: 1,
+      baysX,
+      baysY,
+      spanX,
+      spanY,
+      floorPlates,
+      elements,
+      metrics: { floorArea: 100 },
+    },
+  });
+
+  assert.equal(thread.nodes.find(node => node.id === "architectural-program")?.milestoneComplete, true);
+  assert.equal(thread.nodes.find(node => node.id === "plan-editor")?.milestoneComplete, true);
+});
+
+
+test("completed System decision is re-derived from the saved MCDA record when the legacy journey flag is missing", () => {
+  const geo = geoModule({
+    authoritative: false,
+    verification: "user-declared",
+    plan,
+    conditions,
+    source: {
+      type: "Kullanıcı beyanı",
+      date: "2026-10-03",
+      note: "Test kaynağı",
+    },
+  });
+  const sourceSnapshot = buildMcdaProjectSnapshot({
+    use: "industrial",
+    floors: 1,
+    grossArea: 100,
+    spanX: 5,
+    spanY: 4,
+  });
+  assert.ok(sourceSnapshot);
+
+  const thread = deriveProjectThread({
+    "decision-assistant": { status: "Brief tamamlandı" },
+    "geo-parcel": geo,
+    "architectural-program": {
+      input: {
+        use: "industrial",
+        targetGross: 100,
+        floors: 1,
+        floorHeight: 4,
+        programRequirementsConfirmed: true,
+      },
+      spaces: [{ id: "S-01", count: 1, unitArea: 80 }],
+      result: { grossDemand: 100 },
+    },
+    "plan-editor": {
+      floorCount: 1,
+      baysX: 2,
+      baysY: 2,
+      spanX: 5,
+      spanY: 4,
+    },
+    "system-comparison": {
+      input: { usage: "industrial", floors: 1, area: 100, span: 5 },
+      sourceSnapshot,
+      assumptionsConfirmed: true,
+      shortlist: ["steel"],
+      ranking: [{ id: "steel", name: "Yapısal Çelik", score: 82 }],
+    },
+  });
+
+  assert.equal(thread.nodes.find(node => node.id === "system-comparison")?.milestoneComplete, true);
 });
 
 
