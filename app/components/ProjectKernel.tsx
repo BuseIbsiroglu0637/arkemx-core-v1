@@ -14,7 +14,7 @@ import {
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
-import { buildProgramPlanElements } from "../lib/plan-program";
+import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -330,15 +330,20 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const targetGross = numeric(architectureInput.targetGross) || numeric(architectureResult.grossDemand) || thread.canonical.architecture.grossArea;
       const floors = numeric(architectureInput.floors) || thread.canonical.architecture.floors || 1;
       const aspect = Math.max(.5, numeric(architectureInput.aspect, 1.45));
-      const floorArea = targetGross / Math.max(1, floors);
-      const plateDepth = numeric(schemePlate.depth) || numeric(architectureResult.plateDepth) || Math.sqrt(Math.max(floorArea, 1) / aspect);
-      const plateWidth = numeric(schemePlate.width) || numeric(architectureResult.plateWidth) || plateDepth * aspect;
+      const netRatio = numeric(architectureInput.netRatio, 78);
+      const floorPlates = deriveProgramFloorPlates(spaces, relationships, floors, netRatio, aspect, numeric(architectureResult.liveLoad, 3.5));
+      const largestPlate = floorPlates.reduce((best, item) => item.grossArea > best.grossArea ? item : best, floorPlates[0] ?? { level: 1, netArea: 0, grossArea: targetGross / Math.max(1, floors), width: 0, depth: 0 });
+      const fallbackFloorArea = targetGross / Math.max(1, floors);
+      const fallbackDepth = numeric(schemePlate.depth) || numeric(architectureResult.plateDepth) || Math.sqrt(Math.max(fallbackFloorArea, 1) / aspect);
+      const fallbackWidth = numeric(schemePlate.width) || numeric(architectureResult.plateWidth) || fallbackDepth * aspect;
+      const plateWidth = largestPlate.width || fallbackWidth;
+      const plateDepth = largestPlate.depth || fallbackDepth;
       const baysX = Math.max(2, Math.min(16, Math.round(plateWidth / 5)));
       const baysY = Math.max(2, Math.min(16, Math.round(plateDepth / 5)));
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
       const generatedElements = existingElements.length
         ? existingElements
-        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY, relationships);
+        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY, relationships, floorPlates);
       modules["plan-editor"] = {
         ...target,
         level: Math.min(numeric(target.level, 1), floors),
@@ -347,6 +352,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
         baysY,
         spanX: Number((plateWidth / baysX).toFixed(3)),
         spanY: Number((plateDepth / baysY).toFixed(3)),
+        floorPlates,
         elements: generatedElements,
         programContext: {
           spaces,
@@ -368,7 +374,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
             usage: projectUse(stringValue(architectureInput.use)),
             floors,
             area: targetGross,
-            span: Math.max(plateWidth / baysX, plateDepth / baysY),
+            span: Math.max(...floorPlates.map((item) => Math.max(item.width / baysX, item.depth / baysY)), plateWidth / baysX, plateDepth / baysY),
           },
           upstream: { source: "architectural-program", synchronizedAt },
           status: "Mimari geometri sistem karşılaştırmasına bağlandı",
