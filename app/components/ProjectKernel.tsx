@@ -327,7 +327,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const relationships = Array.isArray(architecture.relationships) ? architecture.relationships : [];
       if (numeric(schemePlate.width) <= 0 && numeric(architectureResult.plateWidth) <= 0 && numeric(architectureResult.grossDemand) <= 0 && !spaces.length) return;
       const target = record(modules["plan-editor"]);
-      const targetGross = numeric(architectureInput.targetGross) || numeric(architectureResult.grossDemand) || thread.canonical.architecture.grossArea;
+      const targetGross = numeric(architectureResult.grossDemand) || numeric(architectureInput.targetGross) || thread.canonical.architecture.grossArea;
       const floors = numeric(architectureInput.floors) || thread.canonical.architecture.floors || 1;
       const aspect = Math.max(.5, numeric(architectureInput.aspect, 1.45));
       const netRatio = numeric(architectureInput.netRatio, 78);
