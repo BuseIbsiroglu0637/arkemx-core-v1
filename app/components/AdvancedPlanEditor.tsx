@@ -249,10 +249,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const floorCoveragePass = floorStats.every((floor) => floor.rooms > 0);
   const coreContinuityPass = floorStats.every((floor) => floor.cores > 0);
   const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
-  const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass && requiredAdjacencyPass;
+  const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass;
   const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
   const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
-  const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass;
+  const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass && requiredAdjacencyPass;
   const missingPlanGateItems = [
     !upstreamReady ? "Mimari veri devri" : "",
     !programLinkPass ? `Mahal programı eşleşmesi (${linkedProgramSpaces.length}/${upstreamSpaceCount})` : "",
@@ -554,7 +554,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       : tool === "wall"
         ? Math.max(0, Math.min(orientation === "y" ? baysY - 1 : baysY, Math.round(rawY)))
         : Math.max(0, Math.min(baysY - 1, Math.floor(rawY)));
-    const candidates = visible.filter((element) => {
+    const candidates = visible.filter(showElement).filter((element) => {
       const width = element.widthBays ?? 1;
       const height = element.heightBays ?? 1;
       return rawX >= element.x && rawX <= element.x + width && rawY >= element.y && rawY <= element.y + height;
