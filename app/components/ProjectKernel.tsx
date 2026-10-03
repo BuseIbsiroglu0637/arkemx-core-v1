@@ -728,7 +728,6 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
         // Same-tab recovery is best-effort when session storage is unavailable.
       }
       projectRef.current = result.payload;
-      skipNextPersistenceRef.current = true;
       setProject(result.payload);
       setPersistence({
         state: result.reconciled ? "recovered" : "device-saved",
