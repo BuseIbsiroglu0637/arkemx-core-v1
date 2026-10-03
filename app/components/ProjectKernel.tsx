@@ -1116,7 +1116,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
       <div className="project-kernel-compact-actions">
         {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← {previousJourneyStep.short}</Link> : null}
         <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
-        <button onClick={exportProject}>JSON indir</button>
+        <button onClick={exportProject}>Proje yedeği</button>
         {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
       </div>
     </div>;
