@@ -556,13 +556,18 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
 
   const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.0", units: "m", floorCount, baysX, baysY, spanX, spanY, elements, metrics }, null, 2), "application/json");
-  const exportCsv = () => downloadTextFile("arkem-plan-metraj.csv", `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`, "text/csv;charset=utf-8");
+  const exportCsv = () => {
+    const content = issueFocus
+      ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
+      : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${spanX.toFixed(3)},m\ngrid_y,${baysY},${spanY.toFixed(3)},m`;
+    downloadTextFile("arkem-plan-on-metraj.csv", content, "text/csv;charset=utf-8");
+  };
   const buildPlanPolylines = () => {
     const polylines: DxfPolyline[] = [{
       layer: "ON_YAPI",
       points: [{ x: 0, y: 0 }, { x: totalWidth, y: 0 }, { x: totalWidth, y: totalDepth }, { x: 0, y: totalDepth }],
     }];
-    visible.forEach((element) => {
+    visible.filter(showElement).forEach((element) => {
       const x = element.x * spanX;
       const y = element.y * spanY;
       const layer = element.type === "column" ? "KOLON" : element.type === "wall" ? "PERDE" : element.type === "space" ? "MAHAL" : element.type === "core" ? "CEKIRDEK" : element.type === "opening" ? "BOSLUK" : "YAZI";
@@ -593,10 +598,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
         projectName: project.name,
         projectCode: project.id,
         module: "ARC / PARAMETRIK PLAN",
-        drawingTitle: `K${level} MIMARI VE TASIYICI KURGU PLANI`,
+        drawingTitle: issueFocus ? `K${level} MIMARI VE TASIYICI KURGU PLANI` : `K${level} MIMARI PLAN VE AKS KOORDINASYONU`,
         drawingNo: `ARC-${String(level).padStart(3, "0")}`,
         revision: project.revision,
-        status: "KAVRAMSAL BIM SEMASI",
+        status: issueFocus ? "KAVRAMSAL BIM SEMASI" : "KAVRAMSAL MIMARI PLAN",
         coordinateSystem: project.coordinateReference,
         scale: "MODEL 1:1",
         preparedBy: "ARKEMX",
@@ -616,7 +621,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       projectName: project.name,
       projectCode: project.id,
       module: "ARKEMX / PARAMETRIK PLAN",
-      drawingTitle: `K${level} Mimari ve Taşıyıcı Kurgu Planı`,
+      drawingTitle: issueFocus ? `K${level} Mimari ve Taşıyıcı Kurgu Planı` : `K${level} Mimari Plan ve Aks Koordinasyonu`,
       drawingSubtitle: `${baysX} × ${baysY} aks / ${visible.length} nesne / ${view} görünümü`,
       revision: project.revision,
       status: "Kavramsal BIM şeması",
