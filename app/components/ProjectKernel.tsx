@@ -324,6 +324,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const architecturalScheme = record(architecture.architecturalScheme);
       const schemePlate = record(architecturalScheme.plate);
       const spaces = Array.isArray(architecture.spaces) ? architecture.spaces : [];
+      const relationships = Array.isArray(architecture.relationships) ? architecture.relationships : [];
       if (numeric(schemePlate.width) <= 0 && numeric(architectureResult.plateWidth) <= 0 && numeric(architectureResult.grossDemand) <= 0 && !spaces.length) return;
       const target = record(modules["plan-editor"]);
       const targetGross = numeric(architectureInput.targetGross) || numeric(architectureResult.grossDemand) || thread.canonical.architecture.grossArea;
@@ -337,7 +338,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
       const generatedElements = existingElements.length
         ? existingElements
-        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY);
+        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY, relationships);
       modules["plan-editor"] = {
         ...target,
         level: Math.min(numeric(target.level, 1), floors),
