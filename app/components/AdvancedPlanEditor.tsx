@@ -198,12 +198,23 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const programInstances = useMemo(() => expandProgramSpaces(upstreamSpaces, Number(architectureModule?.result?.liveLoad) || 3.5), [architectureModule?.result?.liveLoad, upstreamSpaces]);
   const upstreamSpaceCount = programInstances.length;
   const expectedProgramIds = useMemo(() => new Set(programInstances.map((space) => space.key)), [programInstances]);
+  const expectedProgramById = useMemo(() => new Map(programInstances.map((space) => [space.key, space])), [programInstances]);
   const allPlanSpaces = elements.filter((element) => element.type === "space");
   const linkedProgramSpaces = allPlanSpaces.filter((element) => expectedProgramIds.has(element.id));
   const manualOrUnlinkedSpaces = allPlanSpaces.filter((element) => !expectedProgramIds.has(element.id));
+  const programMetadataPass = linkedProgramSpaces.every((element) => {
+    const expected = expectedProgramById.get(element.id);
+    if (!expected) return false;
+    return element.label === expected.name
+      && element.sourceSpaceId === expected.sourceSpaceId
+      && element.sourceSpaceInstance === expected.sourceInstance
+      && element.sourceSpaceCode === expected.code
+      && Math.abs((element.sourceUnitArea ?? -1) - expected.unitArea) < .01;
+  });
   const programLinkPass = upstreamSpaceCount > 0
     && linkedProgramSpaces.length === upstreamSpaceCount
-    && allPlanSpaces.length === upstreamSpaceCount;
+    && allPlanSpaces.length === upstreamSpaceCount
+    && programMetadataPass;
   const floorStats = Array.from({ length: floorCount }, (_, index) => {
     const floorLevel = index + 1;
     const floorElements = elements.filter((element) => element.level === floorLevel);
@@ -224,6 +235,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const missingPlanGateItems = [
     !upstreamReady ? "Mimari veri devri" : "",
     !programLinkPass ? `Mahal programı eşleşmesi (${linkedProgramSpaces.length}/${upstreamSpaceCount})` : "",
+    linkedProgramSpaces.length === upstreamSpaceCount && !programMetadataPass ? "Mahal ad / alan güncellemesi" : "",
     manualOrUnlinkedSpaces.length ? `${manualOrUnlinkedSpaces.length} bağlantısız mahal` : "",
     !floorCoveragePass ? "Tüm katların planlanması" : "",
     !coreContinuityPass ? "Çekirdek sürekliliği" : "",
@@ -476,6 +488,26 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     setFuture((current) => current.slice(1));
     setElements(next);
     setStatus("İşlem yeniden uygulandı");
+  };
+
+  const rebuildFromArchitecturalProgram = () => {
+    if (!upstreamSpaces.length) {
+      setStatus("Mimari Programda geri getirilecek mahal bulunamadı");
+      return;
+    }
+    const confirmed = window.confirm("Mimari Program kaynak kabul edilerek plandaki mahal ve çekirdek yerleşimi yeniden oluşturulacak. Mevcut manuel mahal/çekirdek yerleşimleri değiştirilecek. Devam edilsin mi?");
+    if (!confirmed) return;
+    const generated = buildProgramPlanElements(
+      upstreamSpaces,
+      baysX,
+      baysY,
+      floorCount,
+      Number(architectureModule?.result?.liveLoad) || 3.5,
+    ) as PlanElement[];
+    const retained = elements.filter((element) => element.type !== "space" && element.type !== "core");
+    commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal ve ${floorCount} kat çekirdeği yeniden oluşturuldu`);
+    setSelectedId(null);
+    setLevel(1);
   };
 
   const placeElement = (event: React.MouseEvent<SVGSVGElement>) => {
