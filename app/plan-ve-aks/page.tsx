@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdvancedPlanEditor } from "../components/AdvancedPlanEditor";
 import "../sade-arac-paneli.css";
 import "../sade-muhendislik-araclari.css";
+import "./sade-plan.css";
 
 export const metadata: Metadata = {
   title: "Plan ve Aks | ARKEMX",
@@ -26,7 +27,7 @@ export default function PlanAndGridPage() {
       <div className="arx-workspace-intro">
         <span>TASARIM / PLAN</span>
         <h1>Plan ve aks</h1>
-        <p>Mimari programdaki verilerle aksları ve plan nesnelerini düzenleyin. Çalışmanız aynı proje kaydında saklanır.</p>
+        <p>Mimari programdan devralınan mahal, plaka ve kat verilerini plan ve aks düzenine bağlayın. Bu çalışma tamamlandığında Mimari adımı kapanır ve Sistem seçimine geçilir.</p>
       </div>
       <section className="arx-workspace-editor" aria-label="Plan ve aks çalışma alanı">
         <AdvancedPlanEditor compactKernel />
