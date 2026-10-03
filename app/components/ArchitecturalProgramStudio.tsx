@@ -109,6 +109,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   const [status, setStatus] = useState("Mimari program çalışma alanı hazır");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [grossDraft, setGrossDraft] = useState<string | null>(null);
+  const [programRequirementsConfirmed, setProgramRequirementsConfirmed] = useState(false);
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -128,6 +129,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       if (typeof input.targetTravel === "number") setTargetTravel(input.targetTravel);
       if (typeof input.stairs === "number") setStairs(input.stairs);
       if (typeof input.elevators === "number") setElevators(input.elevators);
+      if (typeof input.programRequirementsConfirmed === "boolean") setProgramRequirementsConfirmed(input.programRequirementsConfirmed);
       if (input.coreStrategy === "central" || input.coreStrategy === "split" || input.coreStrategy === "perimeter") setCoreStrategy(input.coreStrategy);
       if (input.siteContext && typeof input.siteContext === "object") setSiteContext(input.siteContext as SiteContext);
       if (saved.spaces?.length) setSpaces(saved.spaces);
@@ -204,10 +206,11 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   useEffect(() => {
     // Hydrate the stored brief before publishing editable defaults into the shared project.
     if (!hydrated || !transferReady) return;
-    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
-  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
+    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext, programRequirementsConfirmed }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
+  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, programRequirementsConfirmed, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
 
   const loadTemplate = () => {
+    setProgramRequirementsConfirmed(false);
     setSpaces(templates[use].spaces.map((space) => ({ ...space })));
     setRelationships(templates[use].relationships.map((relationship) => ({ ...relationship })));
     setNetRatio(templates[use].netRatio);
@@ -227,8 +230,14 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     setSiteContext({ ...upstreamContext, massingModel: geo.massingModel ?? upstreamContext.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : typeof upstreamContext.selectedMassingId === "string" ? upstreamContext.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : typeof upstreamContext.parcelReference === "string" ? upstreamContext.parcelReference : undefined });
     setStatus(geo.massingModel ? "V112 yapı zarfı, seçili kütle, kat ve kullanım verisi aktarıldı" : "Parsel ve proje zincirindeki alan, kat, kullanım verisi aktarıldı");
   };
-  const updateSpace = (id: string, patch: Partial<Space>) => setSpaces((current) => current.map((space) => space.id === id ? { ...space, ...patch } : space));
-  const addSpace = () => setSpaces((current) => [...current, { id: `USR-${Date.now().toString(36)}`, code: `A-${String(current.length + 1).padStart(3, "0")}`, name: "Yeni mahal", zone: "Tanımsız", count: 1, unitArea: 25, density: 10, daylight: true, accessible: true }]);
+  const updateSpace = (id: string, patch: Partial<Space>) => {
+    setProgramRequirementsConfirmed(false);
+    setSpaces((current) => current.map((space) => space.id === id ? { ...space, ...patch } : space));
+  };
+  const addSpace = () => {
+    setProgramRequirementsConfirmed(false);
+    setSpaces((current) => [...current, { id: `USR-${Date.now().toString(36)}`, code: `A-${String(current.length + 1).padStart(3, "0")}`, name: "Yeni mahal", zone: "Tanımsız", count: 1, unitArea: 25, density: 10, daylight: true, accessible: true }]);
+  };
   const exportJson = () => downloadTextFile("arkem-mimari-sema.json", JSON.stringify({ schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", units: "SI", selectedStrategy, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext }, spaces, relationships, result, architecturalScheme, checks }, null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-mahal-listesi.csv", ["code,name,zone,count,unit_area_m2,total_area_m2,occupancy_density_m2_person,daylight,accessible", ...spaces.map((space) => `${space.code},${space.name},${space.zone},${space.count},${space.unitArea.toFixed(2)},${(space.count * space.unitArea).toFixed(2)},${space.density.toFixed(2)},${space.daylight},${space.accessible}`)].join("\n"), "text/csv;charset=utf-8");
 
@@ -276,8 +285,22 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     && programTargetFootprint > 0
     && allowedFootprint > 0
     && programTargetFootprint <= allowedFootprint + .01;
+  const currentTemplate = templates[use];
+  const templateRatios = spaces.map((space) => {
+    const source = currentTemplate.spaces.find((item) => item.id === space.id);
+    return source && source.unitArea > 0 ? space.unitArea / source.unitArea : null;
+  }).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const templateScaleMean = templateRatios.length ? templateRatios.reduce((sum, value) => sum + value, 0) / templateRatios.length : 1;
+  const uniformlyScaledTemplate = templateRatios.length === spaces.length
+    && spaces.length === currentTemplate.spaces.length
+    && templateRatios.every((value) => Math.abs(value - templateScaleMean) <= .015)
+    && Math.abs(templateScaleMean - 1) > .015;
+  const criticalIndustrialNames = ["Üretim holü", "Hammadde deposu", "Sevkiyat alanı"];
+  const criticalIndustrialSpaces = use === "industrial" ? spaces.filter((space) => criticalIndustrialNames.includes(space.name)) : [];
+  const criticalIndustrialNet = criticalIndustrialSpaces.reduce((sum, space) => sum + space.count * space.unitArea, 0);
 
   const applyCurrentUseTemplate = () => {
+    setProgramRequirementsConfirmed(false);
     setSpaces(templates[use].spaces.map((space) => ({ ...space })));
     setRelationships(templates[use].relationships.map((relationship) => ({ ...relationship })));
     setNetRatio(templates[use].netRatio);
@@ -287,6 +310,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   };
 
   const applyTargetGrossSuggestion = () => {
+    setProgramRequirementsConfirmed(false);
     if (!(result.netArea > 0) || programTargetPass) return;
     setSpaces((current) => current.map((space) => ({
       ...space,
@@ -296,6 +320,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   };
 
   const applyKaksSuggestion = () => {
+    setProgramRequirementsConfirmed(false);
     if (!(allowedGross > 0) || !(programGross > 0) || grossPass) return;
     setSpaces((current) => current.map((space) => ({
       ...space,
@@ -307,6 +332,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   };
 
   const applyPlanCoordinationSuggestion = () => {
+    setProgramRequirementsConfirmed(false);
     if (!(planGross > 0) || !(programGross > 0) || planSyncPass || programUseMismatch) return;
     setSpaces((current) => current.map((space) => ({
       ...space,
@@ -490,26 +516,26 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
 
   <div className="arx-architect-stage-strip" aria-label="Mimari çalışma akışı">
     <div className="done"><i>✓</i><span><b>Proje verisi</b><small>Devralındı</small></span></div>
-    <div className={programTargetPass ? "done" : "current"}><i>{programTargetPass ? "✓" : "2"}</i><span><b>Mahal programı</b><small>{programTargetPass ? "Alan kapısı geçti" : "Şu an buradasın"}</small></span></div>
-    <div className={programTargetPass ? "current" : ""}><i>3</i><span><b>Plan & aks</b><small>{programTargetPass ? "Sıradaki çalışma" : "Alan uyumu bekleniyor"}</small></span></div>
+    <div className={programTargetPass && programRequirementsConfirmed ? "done" : "current"}><i>{programTargetPass && programRequirementsConfirmed ? "✓" : "2"}</i><span><b>Mahal programı</b><small>{programTargetPass ? (programRequirementsConfirmed ? "Alan + ihtiyaç kapısı geçti" : "İhtiyaç onayı bekleniyor") : "Şu an buradasın"}</small></span></div>
+    <div className={programTargetPass && programRequirementsConfirmed ? "current" : ""}><i>3</i><span><b>Plan & aks</b><small>{programTargetPass && programRequirementsConfirmed ? "Sıradaki çalışma" : "Program kararı bekleniyor"}</small></span></div>
     <div><i>4</i><span><b>Mimari kontroller</b><small>Karar kapısı</small></span></div>
   </div>
 
   <div className="arx-architect-fields">
     <label>Yapı kullanımı
-      <select value={use} onChange={(event) => setUse(event.target.value as ProgramUse)}>{Object.entries(templates).map(([key, template]) => <option value={key} key={key}>{template.label}</option>)}</select>
+      <select value={use} onChange={(event) => { setProgramRequirementsConfirmed(false); setUse(event.target.value as ProgramUse); }}>{Object.entries(templates).map(([key, template]) => <option value={key} key={key}>{template.label}</option>)}</select>
     </label>
     <label>Hedef brüt alan (m²)
       <input type="number" min="100" max="200000" step="50" value={grossDraft ?? targetGross}
         onChange={(event) => {
           const value = event.target.value;
           setGrossDraft(value);
-          if (value !== "" && Number.isFinite(Number(value))) setTargetGross(clamp(Number(value), 100, 200000));
+          if (value !== "" && Number.isFinite(Number(value))) { setProgramRequirementsConfirmed(false); setTargetGross(clamp(Number(value), 100, 200000)); }
         }}
         onBlur={() => { if (grossDraft !== null) { if (grossDraft !== "") setTargetGross(clamp(Number(grossDraft), 100, 200000)); setGrossDraft(null); } }} />
     </label>
     <label>Kat adedi
-      <input type="number" min="1" max="30" value={floors} onChange={(event) => setFloors(clamp(Number(event.target.value), 1, 30))}/>
+      <input type="number" min="1" max="30" value={floors} onChange={(event) => { setProgramRequirementsConfirmed(false); setFloors(clamp(Number(event.target.value), 1, 30)); }}/>
     </label>
     <label>Çekirdek yerleşimi
       <select value={coreStrategy} onChange={(event) => setCoreStrategy(event.target.value as ArchitecturalCoreStrategy)}>
@@ -517,16 +543,33 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       </select>
     </label>
   </div>
-  <div className="arx-architect-program-gate" data-state={programTargetPass ? "pass" : "review"}>
+  <div className="arx-architect-program-gate" data-state={programTargetPass && programRequirementsConfirmed ? "pass" : "review"}>
     <div>
-      <span>02 / MAHAL PROGRAMI ALAN KAPISI</span>
-      <b>{programTargetPass ? "Program hedef brüt alanla uyumlu" : `Program hedef alanla uyumlu değil · ${Math.abs(programTargetDelta).toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² ${programTargetDelta > 0 ? "azaltılmalı" : "artırılmalı"}`}</b>
+      <span>02 / MAHAL PROGRAMI KARAR KAPISI</span>
+      <b>{!programTargetPass ? `Program hedef alanla uyumlu değil · ${Math.abs(programTargetDelta).toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² ${programTargetDelta > 0 ? "azaltılmalı" : "artırılmalı"}` : programRequirementsConfirmed ? "Alan ve gerçek ihtiyaç programı onaylandı" : "Alan uyumlu; gerçek ihtiyaç onayı bekleniyor"}</b>
       <small>Hedef {targetGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² · Program {programGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² · tolerans ±%10</small>
     </div>
-    {programTargetPass
-      ? <Link href="/plan-ve-aks">Plan & Aksa Geç <i>→</i></Link>
-      : <button type="button" onClick={applyTargetGrossSuggestion}>Dağılımı hedefe ölçekle</button>}
+    {!programTargetPass
+      ? <button type="button" onClick={applyTargetGrossSuggestion}>Dağılımı hedefe ölçekle</button>
+      : programRequirementsConfirmed
+        ? <Link href="/plan-ve-aks">Plan & Aksa Geç <i>→</i></Link>
+        : null}
   </div>
+  <section className="arx-program-requirement-review" data-state={programRequirementsConfirmed ? "pass" : "review"}>
+    <div>
+      <span>GERÇEK PROJE İHTİYACI</span>
+      <b>{programRequirementsConfirmed ? "Mahal alanları ve kritik ilişkiler kullanıcı tarafından onaylandı" : uniformlyScaledTemplate ? "Mevcut mahal alanları kullanım şablonunun hedef brüte oransal ölçeklenmiş taslağıdır" : "Mahal alanları gerçek proje ihtiyacı olarak henüz onaylanmadı"}</b>
+      <p>{uniformlyScaledTemplate ? "Bu değerler otomatik matematiksel ölçeklemeden gelir; işveren/operasyon ihtiyacı olarak kendiliğinden doğrulanmış sayılmaz." : "Plan & Aks'a geçmeden önce adet, birim alan ve zorunlu ilişkileri gerçek ihtiyaç olarak gözden geçirin."}</p>
+    </div>
+    {use === "industrial" && criticalIndustrialSpaces.length ? <div className="arx-program-critical-set">
+      {criticalIndustrialSpaces.map((space) => <article key={space.id}><span>{space.name}</span><b>{(space.count * space.unitArea).toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m²</b></article>)}
+      <article className="total"><span>Kritik üretim + lojistik neti</span><b>{criticalIndustrialNet.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m²</b></article>
+    </div> : null}
+    <div className="arx-program-requirement-actions">
+      <button type="button" onClick={() => setView("schedule")}>Mahal listesini gözden geçir</button>
+      <button type="button" className="primary" disabled={!programTargetPass} onClick={() => { setProgramRequirementsConfirmed(true); setStatus("Mahal alanları ve kritik ilişkiler gerçek proje ihtiyacı olarak onaylandı"); }}>İhtiyaç programını onayla</button>
+    </div>
+  </section>
   <div className="arx-architect-actions">
     <button type="button" onClick={() => { if (window.confirm("Kullanım şablonu mevcut mahal listesini değiştirecek. Devam edilsin mi?")) loadTemplate(); }}>Seçili kullanım şablonunu uygula</button>
     <button type="button" className={showAdvanced ? "arx-advanced-active" : ""} aria-expanded={showAdvanced} onClick={() => {
@@ -555,8 +598,8 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     <div className="arx-architect-space-total"><small>Toplam</small><b>{(space.count * space.unitArea).toLocaleString("tr-TR")} m²</b></div>
     <button type="button" className="arx-architect-remove" aria-label={space.name + " mahalini sil"} onClick={() => { if (window.confirm(space.name + " mahalini silmek istediğinize emin misiniz?")) setSpaces((current) => current.filter((item) => item.id !== space.id)); }}>Sil</button>
   </article>)}
-</div>}<div className="architect-table"><div className="head"><span>KOD / MAHAL</span><span>ZON</span><span>ADET</span><span>BİRİM m²</span><span>TOPLAM</span><span>m²/KİŞİ</span><span>ÖZELLİK</span><span></span></div>{spaces.map((space) => <article key={space.id}><div><b>{space.code}</b><input aria-label={`${space.code} mahal adı`} value={space.name} onChange={(event) => updateSpace(space.id, { name: event.target.value })}/></div><input aria-label={`${space.code} zonu`} value={space.zone} onChange={(event) => updateSpace(space.id, { zone: event.target.value })}/><input aria-label={`${space.code} adedi`} type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/><input aria-label={`${space.code} alanı`} type="number" min="2" max="50000" step="1" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><strong>{(space.count * space.unitArea).toFixed(0)}</strong><input aria-label={`${space.code} kişi yoğunluğu`} type="number" min=".5" max="100" step=".5" value={space.density} onChange={(event) => updateSpace(space.id, { density: clamp(Number(event.target.value), .5, 100) })}/><div className="architect-flags"><button className={space.daylight ? "active" : ""} onClick={() => updateSpace(space.id, { daylight: !space.daylight })}>G</button><button className={space.accessible ? "active" : ""} onClick={() => updateSpace(space.id, { accessible: !space.accessible })}>E</button></div><button className="remove" onClick={() => setSpaces((current) => current.filter((item) => item.id !== space.id))}>×</button></article>)}</div><footer><span>G · günışığı önceliği</span><span>E · erişilebilir rota hedefi</span><b>Toplam net · {result.netArea.toFixed(1)} m²</b></footer></section>}
-        {view === "zoning" && <section className="architect-zoning"><div className="zone-board"><header><span>ZON DAĞILIMI</span><b>Program alanının işlevsel kümeleri</b></header><div>{zones.map((zone, index) => { const zoneArea = spaces.filter((space) => space.zone === zone).reduce((sum, space) => sum + space.count * space.unitArea, 0); return <article key={zone} style={{ "--zone-size": `${Math.max(18, zoneArea / Math.max(result.netArea, 1) * 100)}%` } as React.CSSProperties}><span>0{index + 1}</span><b>{zone}</b><strong>{zoneArea.toFixed(0)} m²</strong><small>%{(zoneArea / Math.max(result.netArea, 1) * 100).toFixed(1)} net alan</small></article>; })}</div></div><div className="adjacency-board"><header><span>KOMŞULUK / ARAYÜZ KAYDI</span><b>%{result.adjacencyScore.toFixed(0)} kararlandı</b></header>{relationships.map((relationship) => <button key={relationship.id} className={relationship.confirmed ? "confirmed" : ""} onClick={() => setRelationships((current) => current.map((item) => item.id === relationship.id ? { ...item, confirmed: !item.confirmed } : item))}><i>{relationship.confirmed ? "✓" : "?"}</i><span><b>{relationship.from}</b><small>↔ {relationship.to}</small></span><strong>{relationship.priority}</strong></button>)}<p>Komşuluk kaydı fiziksel mesafe hesabı değildir; plan editöründeki yerleşim kararı için doğrulanacak tasarım gereksinimidir.</p></div></section>}
+</div>}<div className="architect-table"><div className="head"><span>KOD / MAHAL</span><span>ZON</span><span>ADET</span><span>BİRİM m²</span><span>TOPLAM</span><span>m²/KİŞİ</span><span>ÖZELLİK</span><span></span></div>{spaces.map((space) => <article key={space.id}><div><b>{space.code}</b><input aria-label={`${space.code} mahal adı`} value={space.name} onChange={(event) => updateSpace(space.id, { name: event.target.value })}/></div><input aria-label={`${space.code} zonu`} value={space.zone} onChange={(event) => updateSpace(space.id, { zone: event.target.value })}/><input aria-label={`${space.code} adedi`} type="number" min="1" max="500" value={space.count} onChange={(event) => updateSpace(space.id, { count: clamp(Number(event.target.value), 1, 500) })}/><input aria-label={`${space.code} alanı`} type="number" min="2" max="50000" step="1" value={space.unitArea} onChange={(event) => updateSpace(space.id, { unitArea: clamp(Number(event.target.value), 2, 50000) })}/><strong>{(space.count * space.unitArea).toFixed(0)}</strong><input aria-label={`${space.code} kişi yoğunluğu`} type="number" min=".5" max="100" step=".5" value={space.density} onChange={(event) => updateSpace(space.id, { density: clamp(Number(event.target.value), .5, 100) })}/><div className="architect-flags"><button className={space.daylight ? "active" : ""} onClick={() => updateSpace(space.id, { daylight: !space.daylight })}>G</button><button className={space.accessible ? "active" : ""} onClick={() => updateSpace(space.id, { accessible: !space.accessible })}>E</button></div><button className="remove" onClick={() => { setProgramRequirementsConfirmed(false); setSpaces((current) => current.filter((item) => item.id !== space.id)); }}>×</button></article>)}</div><footer><span>G · günışığı önceliği</span><span>E · erişilebilir rota hedefi</span><b>Toplam net · {result.netArea.toFixed(1)} m²</b></footer></section>}
+        {view === "zoning" && <section className="architect-zoning"><div className="zone-board"><header><span>ZON DAĞILIMI</span><b>Program alanının işlevsel kümeleri</b></header><div>{zones.map((zone, index) => { const zoneArea = spaces.filter((space) => space.zone === zone).reduce((sum, space) => sum + space.count * space.unitArea, 0); return <article key={zone} style={{ "--zone-size": `${Math.max(18, zoneArea / Math.max(result.netArea, 1) * 100)}%` } as React.CSSProperties}><span>0{index + 1}</span><b>{zone}</b><strong>{zoneArea.toFixed(0)} m²</strong><small>%{(zoneArea / Math.max(result.netArea, 1) * 100).toFixed(1)} net alan</small></article>; })}</div></div><div className="adjacency-board"><header><span>KOMŞULUK / ARAYÜZ KAYDI</span><b>%{result.adjacencyScore.toFixed(0)} kararlandı</b></header>{relationships.map((relationship) => <button key={relationship.id} className={relationship.confirmed ? "confirmed" : ""} onClick={() => { setProgramRequirementsConfirmed(false); setRelationships((current) => current.map((item) => item.id === relationship.id ? { ...item, confirmed: !item.confirmed } : item)); }}><i>{relationship.confirmed ? "✓" : "?"}</i><span><b>{relationship.from}</b><small>↔ {relationship.to}</small></span><strong>{relationship.priority}</strong></button>)}<p>Komşuluk kaydı fiziksel mesafe hesabı değildir; plan editöründeki yerleşim kararı için doğrulanacak tasarım gereksinimidir.</p></div></section>}
         {view === "scheme" && <section className="v113-scheme-engine">{!programTargetPass && <div className="arx-architect-draft-warning" role="alert"><b>TASLAK ŞEMA · ALAN KOORDİNASYONU BEKLİYOR</b><span>Program brütü hedef alanla henüz uyumlu değil. Bu şema yalnız yerleşim fikrini gösterir; Plan & Aks aktarımı için önce mahal programı alan kapısını tamamlayın.</span></div>}<header><div><span>V113 / MEKÂNSAL ŞEMA MOTORU</span><b>Program → konum → ilişki → dolaşım → kontrol</b></div><strong>{checks.filter((check) => check.state === "pass").length}/{checks.length} kontrol geçti</strong></header><div className="v113-scheme-layout"><div className="v113-plan-panel"><div className="v113-plan-heading"><span>KAVRAMSAL PLAN ŞEMASI</span><b>{architecturalScheme.plate.width.toFixed(1)} × {architecturalScheme.plate.depth.toFixed(1)} m · {architecturalScheme.plate.floors} kat</b><small>Kuzey ↑ · Mahal türü düğümleri</small></div><div className="v113-plan-board" style={{ "--scheme-aspect": architecturalScheme.plate.aspect } as React.CSSProperties} aria-label="Kavramsal mimari plan şeması">{architecturalScheme.nodes.map((node) => <article key={node.id} className={node.daylightRequired ? "daylight" : "interior"} title={`${node.name} · ${node.totalArea.toFixed(0)} m²`} style={{ left: `${node.position.x}%`, top: `${node.position.y}%`, width: `${node.visual.width}%`, minHeight: `${node.visual.height}%` }}><span>{node.code}</span><b>{node.name}</b><small>{node.zone} · {node.totalArea.toFixed(0)} m²</small></article>)}{architecturalScheme.cores.map((core) => <i className="v113-core-node" key={core.id} style={{ left: `${core.position.x}%`, top: `${core.position.y}%` }} title={`${core.label} · ${core.area.toFixed(0)} m²`}>{core.id.replace("CORE-", "Ç")}</i>)}{architecturalScheme.exits.map((exit) => <i className="v113-exit-node" key={exit.id} style={{ left: `${exit.x}%`, top: `${exit.y}%` }} title={exit.label}>Ç</i>)}<div className="v113-circulation-spine" data-strategy={coreStrategy}></div></div><footer><span><i className="daylight"></i>Günışığı isteyen mahal</span><span><i className="interior"></i>İç zon</span><span><i className="core"></i>Çekirdek</span><span><i className="exit"></i>Çıkış</span></footer></div><aside className="v113-scheme-inspector"><span>Çekirdek yerleşimi</span><div className="v113-core-options">{(["central", "split", "perimeter"] as ArchitecturalCoreStrategy[]).map((strategy) => <button key={strategy} className={coreStrategy === strategy ? "active" : ""} onClick={() => setCoreStrategy(strategy)}>{strategy === "central" ? "Merkezi" : strategy === "split" ? "Ayrık" : "Çeper"}<small>{strategy === "central" ? "tek çekirdek" : strategy === "split" ? "iki kaçış odağı" : "servis kenarında"}</small></button>)}</div><dl className="v113-scheme-metrics"><div><dt>Günışığı kapasitesi</dt><dd>%{architecturalScheme.daylight.coverage.toFixed(0)}</dd></div><div><dt>Komşuluk gerçekleşmesi</dt><dd>%{architecturalScheme.relationships.score.toFixed(0)}</dd></div><div><dt>Ortalama kaçış yolu</dt><dd>{architecturalScheme.circulation.averageTravelDistance.toFixed(1)} m</dd></div><div><dt>Çekirdek payı</dt><dd>%{architecturalScheme.core.ratio.toFixed(1)}</dd></div></dl><div className="v113-relation-list"><b>Mesafe tabanlı ilişkiler</b>{architecturalScheme.relationships.items.map((relationship) => <p key={relationship.id} data-state={relationship.satisfied ? "pass" : relationship.confirmed ? "review" : "risk"}><i>{relationship.satisfied ? "✓" : "!"}</i><span>{relationship.from}<small>↔ {relationship.to}</small></span><strong>{relationship.distance.toFixed(1)} m</strong></p>)}</div></aside></div><footer className="v113-scheme-note"><b>Mesleki sınır</b><p>{architecturalScheme.limitations[0]}</p></footer></section>}
         {view === "matrix" && <section className="architect-matrix-view"><header><span>V83 / MİMARİ KARAR MATRİSİ</span><b>Üç plaka stratejisini aynı program üzerinde karşılaştırın</b><p>Seçim, avan tasarım başlangıç parametrelerini değiştirir; nihai mimari çözüm değildir.</p></header><div className="architect-strategies">{strategyOptions.map((strategy) => <article className={selectedStrategy === strategy.id ? "active" : ""} key={strategy.id}><span>{strategy.id.toLocaleUpperCase("tr-TR")}</span><b>{strategy.label}</b><p>{strategy.note}</p><dl><div><dt>Plaka oranı</dt><dd>{strategy.aspect.toFixed(2)}</dd></div><div><dt>Net / brüt</dt><dd>%{strategy.netRatio}</dd></div><div><dt>Güney WWR</dt><dd>%{strategy.wwr.south}</dd></div></dl><button onClick={() => applyStrategy(strategy)}>{selectedStrategy === strategy.id ? "Uygulandı ✓" : "Senaryoyu uygula"}</button></article>)}</div><div className="architect-adjacency-matrix" style={{ "--matrix-count": matrixSpaces.length } as React.CSSProperties}><div className="corner">İLİŞKİ</div>{matrixSpaces.map((space) => <b key={`head-${space.id}`}>{space.code}</b>)}{matrixSpaces.flatMap((row) => [<strong key={`row-${row.id}`}>{row.code}<small>{row.name}</small></strong>, ...matrixSpaces.map((column) => { const relation = matrixRelation(row.name, column.name); return <button key={`${row.id}-${column.id}`} className={relation?.confirmed ? "confirmed" : relation ? "required" : ""} title={row.id === column.id ? row.name : `${row.name} ↔ ${column.name}`}>{row.id === column.id ? "—" : relation?.priority === "Zorunlu" ? "Z" : relation ? "T" : "·"}</button>; })])}</div><footer><span><i>Z</i>Zorunlu</span><span><i>T</i>Tercih</span><span><i>✓</i>Kararlandı</span><b>Matris ilk 8 mahal türünü gösterir.</b></footer></section>}
         {view === "envelope" && <section className="architect-envelope"><div className="envelope-diagram"><header><span>CEPHE / KABUK ÖN MODELİ</span><b>{result.plateWidth.toFixed(1)} × {result.plateDepth.toFixed(1)} × {(floors * floorHeight).toFixed(1)} m</b></header><div className="envelope-massing"><i className="north" style={{ opacity: .25 + wwr.north / 100 }}></i><i className="east" style={{ opacity: .25 + wwr.east / 100 }}></i><i className="south" style={{ opacity: .25 + wwr.south / 100 }}></i><span>N ↑</span><b>{floors}<small>KAT</small></b></div><div className="envelope-metrics"><p><span>Cephe alanı</span><b>{result.facadeArea.toFixed(0)} m²</b></p><p><span>Cam alanı</span><b>{result.glazingArea.toFixed(0)} m²</b></p><p><span>A/V göstergesi</span><b>{result.compactness.toFixed(3)}</b></p><p><span>Güneş maruziyet endeksi</span><b>{result.solarIndex.toFixed(0)}</b></p></div></div><aside><span>YÖNE GÖRE SAYDAMLIK</span>{Object.entries({ north: "Kuzey", east: "Doğu", south: "Güney", west: "Batı" }).map(([key, label]) => <label key={key}><div><b>{label}</b><small>WWR / cephe alanı</small></div><input type="range" min="5" max="80" value={wwr[key as keyof typeof wwr]} onChange={(event) => setWwr((current) => ({ ...current, [key]: Number(event.target.value) }))}/><strong>%{wwr[key as keyof typeof wwr]}</strong></label>)}<label><div><b>Güney gölgeleme</b><small>Geometri tanımlanmadan ön katsayı</small></div><input type="range" min="0" max="90" value={southShading} onChange={(event) => setSouthShading(Number(event.target.value))}/><strong>%{southShading}</strong></label><p>Enerji, günışığı ve ısıl konfor sonucu için iklim dosyası, gerçek cephe geometrisi, malzeme ve kullanım programı gerekir.</p></aside></section>}
