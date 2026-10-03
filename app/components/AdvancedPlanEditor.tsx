@@ -745,6 +745,43 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           </svg>
           <div className="cad-statusbar"><span>X: — m · Y: — m · SNAP: AKS</span><span>{visible.length} nesne · K{level}/{floorCount}</span><span>ARKEM-PLAN/1.0</span></div>
         </main>
+        {!issueFocus ? <aside className="cad-plan-simple-inspector">
+          <section>
+            <strong>AKTİF KAT</strong>
+            <div className="cad-floor-tabs">{Array.from({ length: floorCount }, (_, index) => <button key={index + 1} className={level === index + 1 ? "active" : ""} onClick={() => { setLevel(index + 1); setSelectedId(null); }}>K{index + 1}</button>)}</div>
+            <p>{floorCount} kat Mimari Programdan devralındı. Kat sayısı burada değiştirilmez.</p>
+          </section>
+          <section>
+            <strong>AKS DÜZENİ</strong>
+            <div className="cad-input-grid">
+              <label>X aks sayısı<input type="number" min="2" max="16" value={baysX} onChange={(event) => setBaysX(Math.max(2, Math.min(16, Number(event.target.value))))}/></label>
+              <label>Y aks sayısı<input type="number" min="2" max="16" value={baysY} onChange={(event) => setBaysY(Math.max(2, Math.min(16, Number(event.target.value))))}/></label>
+              <label>X açıklığı<input type="number" min="2" max="15" step=".1" value={spanX} onChange={(event) => setSpanX(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label>
+              <label>Y açıklığı<input type="number" min="2" max="15" step=".1" value={spanY} onChange={(event) => setSpanY(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label>
+            </div>
+          </section>
+          <section className="cad-plan-control">
+            <strong>MİMARİ KONTROL</strong>
+            <div><span>Plan tabanı</span><b>{metrics.floorArea.toFixed(1)} m²</b></div>
+            <div><span>Programdan hedef</span><b>{programFootprintTarget > 0 ? `${programFootprintTarget.toFixed(1)} m²` : "—"}</b></div>
+            <div><span>TAKS azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "Bilgi yok"}</b></div>
+            <div><span>Mahal / çekirdek</span><b>{metrics.rooms} / {metrics.cores}</b></div>
+            <div><span>Kontrol kapısı</span><b className={planGatePass ? "good" : "watch"}>{planGatePass ? "Geçti" : "Açık"}</b></div>
+            {!programFootprintPass && programFootprintFeasible ? <button type="button" onClick={applyProgramFootprintSuggestion}>Plan tabanını programa uyarla</button> : null}
+          </section>
+          <section className="cad-properties">
+            <strong>SEÇİLİ NESNE</strong>
+            {selected && (selected.type === "space" || selected.type === "core" || selected.type === "opening") ? <>
+              <div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.type === "space" ? "Mimari mahal" : selected.type === "core" ? "Düşey sirkülasyon" : "Döşeme boşluğu"}</small></span></div>
+              <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>
+              <button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili mimari nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button>
+            </> : <p>Plan üzerinde bir mahal, çekirdek veya boşluk seçin. Taşıyıcı özellikler bu aşamada düzenlenmez.</p>}
+          </section>
+          <details className="cad-plan-exports">
+            <summary>Teknik çıktılar</summary>
+            <div className="cad-export"><button onClick={exportPdf}>PDF<span>Kavramsal plan paftası</span></button><button onClick={exportDxf}>CAD<span>Katmanlı DXF</span></button><button onClick={exportJson}>JSON<span>Plan modeli</span></button><button onClick={exportCsv}>CSV<span>Ön metraj</span></button></div>
+          </details>
+        </aside> : null}
         <aside className="cad-inspector">
           {isKmKrFocus ? <>
             <section><strong>AKTİF KAT</strong><div className="cad-floor-tabs">{Array.from({ length: floorCount }, (_, index) => <button key={index + 1} className={level === index + 1 ? "active" : ""} onClick={() => { setLevel(index + 1); setSelectedId(null); setView("coordination"); }}>K{index + 1}</button>)}</div><p className="cad-issue-scope-note">BIM-052 / BIM-053 yalnız aktif kattaki KM/KR kaynak yeterliliği ve kavramsal merkez göstergesini düzenler; aks geometrisi ve kat adedi bu ekranda değiştirilmez.</p></section>
