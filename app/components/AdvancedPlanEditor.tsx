@@ -177,8 +177,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const programFootprintPass = programFootprintTarget > 0
     && Math.abs(metrics.floorArea - programFootprintTarget) / programFootprintTarget <= .01;
   const programFootprintFeasible = programFootprintTarget > 0
-    && allowedFootprint > 0
-    && programFootprintTarget <= allowedFootprint + .01;
+    && (allowedFootprint <= 0 || programFootprintTarget <= allowedFootprint + .01);
   const programFootprintScale = programFootprintTarget > 0 && metrics.floorArea > 0
     ? Math.sqrt(programFootprintTarget / metrics.floorArea)
     : 1;
@@ -744,7 +743,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             {view === "coordination" && metrics.eccentricityEvaluable && <g className="cad-centers"><line x1={originX + metrics.massCenter.x * scale} y1={originY} x2={originX + metrics.massCenter.x * scale} y2={originY + totalDepth * scale}/><line x1={originX} y1={originY + metrics.massCenter.y * scale} x2={originX + totalWidth * scale} y2={originY + metrics.massCenter.y * scale}/><circle className="mass" cx={originX + metrics.massCenter.x * scale} cy={originY + metrics.massCenter.y * scale} r="8"/><circle className="rigidity" cx={originX + metrics.rigidityCenter.x * scale} cy={originY + metrics.rigidityCenter.y * scale} r="8"/><text x={originX + metrics.massCenter.x * scale + 12} y={originY + metrics.massCenter.y * scale - 12}>KM</text><text x={originX + metrics.rigidityCenter.x * scale + 12} y={originY + metrics.rigidityCenter.y * scale + 19}>KR</text></g>}
             <text x={originX} y={VIEWBOX.height - 20} fill="#71858d" fontSize="9">K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m · Aks {baysX}×{baysY} · Ölçek ekran uyarlamalı</text>
           </svg>
-          <div className="cad-statusbar"><span>X: — m · Y: — m · SNAP: AKS</span><span>{visible.length} nesne · K{level}/{floorCount}</span><span>ARKEM-PLAN/1.0</span></div>
+          <div className="cad-statusbar"><span>SNAP: AKS / HÜCRE</span><span>{visible.filter(showElement).length} mimari nesne · K{level}/{floorCount}</span><span>ARKEM-PLAN/1.0</span></div>
         </main>
         {!issueFocus ? <aside className="cad-plan-simple-inspector">
           <section>
