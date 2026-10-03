@@ -1045,9 +1045,9 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   }, [activeJourneyIndex]);
   const regularNextJourneyStep = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
   const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
-    ? { short: "Plan", href: "/plan-ve-aks" }
+    ? { short: "Plan & Aks", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
-      ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
+      ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
       : regularNextJourneyStep;
   const regularPreviousJourneyStep = PROJECT_JOURNEY[Math.max(0, activeJourneyIndex - 1)];
   const previousJourneyStep = normalizedModule.includes("PLAN")
@@ -1067,6 +1067,13 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   const planModule = record(project.modules["plan-editor"]);
   const spaceCount = Array.isArray(architectureModule.spaces) ? architectureModule.spaces.reduce((sum, value) => sum + Math.max(1, numeric(record(value).count, 1)), 0) : 0;
   const planElementCount = Array.isArray(planModule.elements) ? planModule.elements.length : 0;
+  const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
+  const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
+  const canAdvanceFromCurrentModule = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
+    ? architectureMilestoneReady
+    : normalizedModule.includes("PLAN")
+      ? architectureMilestoneReady && planMilestoneReady
+      : true;
   const structureSystemLabels: Record<string, string> = {
     undecided: "Karar bekleniyor",
     concrete: "Betonarme",
@@ -1110,7 +1117,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
         {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← {previousJourneyStep.short}</Link> : null}
         <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
         <button onClick={exportProject}>JSON indir</button>
-        {activeJourneyIndex < PROJECT_JOURNEY.length - 1 ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
+        {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
       </div>
     </div>;
   }
@@ -1141,7 +1148,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
       <span><small>ÖNERİLEN ALAN</small><b>{thread.canonical.site.proposedGross > 0 ? `${thread.canonical.site.proposedGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "Sıradaki adımda oluşacak"}</b></span>
       <span><small>MİMARİ / PLAN</small><b>{spaceCount || planElementCount ? `${spaceCount} mahal · ${planElementCount} plan nesnesi` : "Program ve plan bekleniyor"}</b></span>
       <span><small>TAŞIYICI SİSTEM</small><b>{structureSystem ? structureSystemLabels[structureSystem] ?? structureSystem : "Sonraki adımda seçilecek"}</b></span>
-      {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && <Link className="project-next-step" href={nextJourneyStep.href} onClick={() => synchronizeProject()}><small>{project.experience.autoHandoff ? "VERİLER AKTARILDI VE KAYDEDİLDİ" : "VERİLER KAYDEDİLDİ"}</small><b>{nextJourneyStep.short} adımına geç</b><i>→</i></Link>}
+      {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule && <Link className="project-next-step" href={nextJourneyStep.href} onClick={() => synchronizeProject()}><small>{project.experience.autoHandoff ? "VERİLER AKTARILDI VE KAYDEDİLDİ" : "VERİLER KAYDEDİLDİ"}</small><b>{nextJourneyStep.short} adımına geç</b><i>→</i></Link>}
     </aside>
   </nav></>;
 }
