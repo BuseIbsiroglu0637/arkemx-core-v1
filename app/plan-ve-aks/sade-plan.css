@@ -731,3 +731,29 @@ html[data-theme="dark"] .cad-plan-completion[data-state="pass"] b { color:#e5f0e
     justify-content:space-between;
   }
 }
+
+
+.cad-plan-history {
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+.cad-plan-history button {
+  min-height:34px;
+  border:1px solid #cbd8dc;
+  border-radius:5px;
+  background:#fff;
+  color:#496470;
+  font-size:8px;
+  font-weight:750;
+  cursor:pointer;
+}
+.cad-plan-history button:disabled {
+  opacity:.42;
+  cursor:not-allowed;
+}
+html[data-theme="dark"] .cad-plan-history button {
+  border-color:#383838;
+  background:#111;
+  color:#bdc9cd;
+}
