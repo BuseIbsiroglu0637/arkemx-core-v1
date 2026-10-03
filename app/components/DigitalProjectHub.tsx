@@ -6,7 +6,7 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 import { downloadTextFile } from "../lib/engineering";
 import { createDeliveryReadiness, createWorkingDeliveryManifest } from "../lib/delivery-readiness";
 import { ProjectCoreRegistry } from "./ProjectCoreRegistry";
-import { deriveProjectJourneyState, PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { deriveProjectJourneyNextAction, deriveProjectJourneyState, PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type View = "control" | "journey" | "graph" | "federated" | "rules" | "history";
 const stages = ["Tanım", "Arsa", "Tasarım", "Koordinasyon", "Teslim"] as const;
@@ -56,10 +56,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
   const completedJourney = journeyState.completed;
   const currentJourneyIndex = journeyState.currentIndex;
   const systemDecisionReady = journeyState.systemDecisionReady;
-  const journeyNextAction = {
-    label: journeyState.nextStep.label,
-    route: journeyState.nextStep.href,
-  };
+  const journeyNextAction = deriveProjectJourneyNextAction(thread);
 
   const synchronize = () => {
     const count = synchronizeProject();
