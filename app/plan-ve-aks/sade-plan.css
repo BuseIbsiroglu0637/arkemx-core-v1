@@ -1746,3 +1746,19 @@ html[data-theme="dark"] .arx-plan-page .cad-program-link > button:focus-visible 
   background:#c66e3d;
   color:#fff;
 }
+
+
+.arx-plan-page .cad-program-edit-link {
+  margin-top:8px;
+  color:var(--plan-blue);
+  font-size:9px;
+  font-weight:800;
+  text-decoration:none;
+}
+.arx-plan-page .cad-program-edit-link:hover,
+.arx-plan-page .cad-program-edit-link:focus-visible {
+  text-decoration:underline;
+}
+html[data-theme="dark"] .arx-plan-page .cad-program-edit-link {
+  color:#8fc0d1;
+}
