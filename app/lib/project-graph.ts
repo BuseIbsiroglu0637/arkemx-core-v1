@@ -168,6 +168,13 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const architecture = record(modules["architectural-program"]);
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
+  const architectureSpaces = Array.isArray(architecture.spaces) ? architecture.spaces : [];
+  const architectureTargetGross = number(architectureInput.targetGross);
+  const architectureProgramGross = number(architectureResult.grossDemand);
+  const architectureJourneyReady = architectureTargetGross > 0
+    && architectureProgramGross > 0
+    && architectureSpaces.length > 0
+    && Math.abs(architectureProgramGross - architectureTargetGross) / architectureTargetGross <= .1;
   const plan = record(modules["plan-editor"]);
   const planMetrics = record(plan.metrics);
   // Legacy plan snapshots lack explicit provenance flags. Only entered mass
@@ -587,7 +594,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     const status = text(moduleData.status, active ? "Kayıt var" : "Başlatılmadı");
     const milestoneComplete = definition.id === "quick-site-scenario"
       ? quickSiteScenarioReady
-      : moduleData.journeyComplete === true;
+      : definition.id === "architectural-program"
+        ? architectureJourneyReady
+        : moduleData.journeyComplete === true;
     const readiness = definition.id === "geo-parcel" && active
       ? !parcelReadyForNextStage
         ? 35
