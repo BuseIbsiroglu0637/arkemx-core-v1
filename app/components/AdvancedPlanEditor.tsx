@@ -124,6 +124,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const walls = visible.filter((element) => element.type === "wall");
     const rooms = visible.filter((element) => element.type === "space");
     const cores = visible.filter((element) => element.type === "core");
+    const roomArea = rooms.reduce((sum, element) => sum + (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY, 0);
     const openings = visible.filter((element) => element.type === "opening");
     const loads = visible.filter((element) => element.type === "load");
     const wallLength = walls.reduce((sum, wall) => sum + (wall.orientation === "x" ? spanX : spanY), 0);
@@ -172,7 +173,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       const maxY = element.type === "wall" && element.orientation === "y" ? baysY - 1 : baysY;
       return element.x < 0 || element.y < 0 || element.x > maxX || element.y > maxY;
     }).length;
-    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, outOfGridMassPointCount, outOfGridRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
+    return { floorArea, roomArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, outOfGridMassPointCount, outOfGridRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
   }, [baysX, baysY, spanX, spanY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
@@ -236,6 +237,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [],
   );
   const requiredAdjacencyPass = requiredAdjacency.pass;
+  const sourceAreaByName = new Map(upstreamSpaces.map((space) => [String(space.name ?? ""), Number(space.unitArea) || 0]));
+  const requiredAdjacencyCapacityConflicts = requiredAdjacency.items.filter((item) => {
+    const combined = (sourceAreaByName.get(item.from) ?? 0) + (sourceAreaByName.get(item.to) ?? 0);
+    return combined > metrics.floorArea + .01;
+  });
   const floorStats = Array.from({ length: floorCount }, (_, index) => {
     const floorLevel = index + 1;
     const floorElements = elements.filter((element) => element.level === floorLevel);
@@ -655,7 +661,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const exportCsv = () => {
     const content = issueFocus
       ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
-      : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${spanX.toFixed(3)},m\ngrid_y,${baysY},${spanY.toFixed(3)},m`;
+      : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${spanX.toFixed(3)},m\ngrid_y,${baysY},${spanY.toFixed(3)},m`;
     downloadTextFile("arkem-plan-on-metraj.csv", content, "text/csv;charset=utf-8");
   };
   const buildPlanPolylines = () => {
