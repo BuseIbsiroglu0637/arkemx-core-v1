@@ -1063,3 +1063,163 @@ html[data-theme="dark"] .arx-architect-simple .v113-scheme-engine textarea {
   background:#101010 !important;
   color:#eef3f5 !important;
 }
+
+
+/* V07 / gerçek ihtiyaç programı karar kapısı */
+.arx-program-requirement-review {
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(420px,.9fr);
+  gap:16px 22px;
+  margin:12px 0 4px;
+  padding:16px 18px;
+  border:1px solid #e2c2b0;
+  border-left:4px solid #c9703e;
+  border-radius:9px;
+  background:#fff8f3;
+}
+.arx-program-requirement-review > div:first-child {
+  display:grid;
+  gap:4px;
+}
+.arx-program-requirement-review > div:first-child > span {
+  color:#b56339;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.arx-program-requirement-review > div:first-child > b {
+  color:#183747;
+  font-size:13px;
+}
+.arx-program-requirement-review > div:first-child > p {
+  max-width:760px;
+  margin:0;
+  color:#6f8189;
+  font-size:10px;
+  line-height:1.5;
+}
+.arx-program-critical-set {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.arx-program-critical-set article {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid #ead7cd;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-program-critical-set article span {
+  overflow:hidden;
+  color:#647981;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.arx-program-critical-set article b {
+  color:#173847;
+  font-size:10px;
+}
+.arx-program-critical-set article.total {
+  grid-column:1/-1;
+  border-color:#d6b49f;
+  background:#fff4ec;
+}
+.arx-program-critical-set article.total span,
+.arx-program-critical-set article.total b {
+  color:#a75b34;
+  font-weight:800;
+}
+.arx-program-requirement-actions {
+  grid-column:1/-1;
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  padding-top:2px;
+}
+.arx-program-requirement-actions button {
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid #cbd8dc;
+  border-radius:6px;
+  background:#fff;
+  color:#264b5b;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.arx-program-requirement-actions button.primary {
+  border-color:#24566a;
+  background:#24566a;
+  color:#fff;
+}
+.arx-program-requirement-actions button:disabled {
+  opacity:.45;
+  cursor:not-allowed;
+}
+.arx-program-requirement-review[data-state="pass"] {
+  border-color:#b9d8c8;
+  border-left-color:#4c8d6d;
+  background:#f2faf6;
+}
+.arx-program-requirement-review[data-state="pass"] > div:first-child > b {
+  color:#315f4b;
+}
+
+html[data-theme="dark"] .arx-program-requirement-review {
+  border-color:#563727;
+  border-left-color:#d17a47;
+  background:#17100c;
+}
+html[data-theme="dark"] .arx-program-requirement-review > div:first-child > b {
+  color:#f1e6df;
+}
+html[data-theme="dark"] .arx-program-requirement-review > div:first-child > p {
+  color:#ac9a90;
+}
+html[data-theme="dark"] .arx-program-critical-set article {
+  border-color:#39302b;
+  background:#111;
+}
+html[data-theme="dark"] .arx-program-critical-set article span {
+  color:#a9b2b6;
+}
+html[data-theme="dark"] .arx-program-critical-set article b {
+  color:#edf3f5;
+}
+html[data-theme="dark"] .arx-program-critical-set article.total {
+  border-color:#60402f;
+  background:#1a110c;
+}
+html[data-theme="dark"] .arx-program-requirement-actions button {
+  border-color:#3a4144;
+  background:#111;
+  color:#dce5e8;
+}
+html[data-theme="dark"] .arx-program-requirement-actions button.primary {
+  border-color:#315f70;
+  background:#173f50;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-program-requirement-review[data-state="pass"] {
+  border-color:#2f4a3d;
+  border-left-color:#4c8d6d;
+  background:#0c1712;
+}
+html[data-theme="dark"] .arx-program-requirement-review[data-state="pass"] > div:first-child > b {
+  color:#e4f0ea;
+}
+
+@media(max-width:900px) {
+  .arx-program-requirement-review {
+    grid-template-columns:1fr;
+  }
+  .arx-program-requirement-actions {
+    grid-column:1;
+  }
+}
