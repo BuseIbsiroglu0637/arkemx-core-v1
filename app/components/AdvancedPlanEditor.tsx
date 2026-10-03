@@ -479,8 +479,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const alignConceptualRigidityToMass = () => {
     if (!canAlignConceptualRigidityToMass) return;
 
-    const targetGridX = spanX > 0 ? metrics.massCenter.x / activeSpanX : baysX / 2;
-    const targetGridY = spanY > 0 ? metrics.massCenter.y / activeSpanY : baysY / 2;
+    const targetGridX = activeSpanX > 0 ? metrics.massCenter.x / activeSpanX : baysX / 2;
+    const targetGridY = activeSpanY > 0 ? metrics.massCenter.y / activeSpanY : baysY / 2;
     const xBracket = nearestBracket(targetGridX, baysX);
     const yBracket = nearestBracket(targetGridY, baysY);
     const nodes = [
@@ -559,12 +559,13 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       baysY,
       spanX,
       spanY,
+      floorPlates,
       elements,
       metrics,
       journeyComplete: planGatePass,
       status: planGatePass ? "Mimari plan ve aks kontrol kapısı tamamlandı" : "Mimari plan ve aks koordinasyonu sürüyor",
     });
-  }, [baysX, baysY, elements, floorCount, hydrated, level, metrics, modelHydrated, patchModule, planGatePass, spanX, spanY]);
+  }, [baysX, baysY, elements, floorCount, floorPlates, hydrated, level, metrics, modelHydrated, patchModule, planGatePass, spanX, spanY]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -598,18 +599,21 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     }
     const confirmed = window.confirm("Mimari Program kaynak kabul edilerek plandaki mahal ve çekirdek yerleşimi yeniden oluşturulacak. Mevcut manuel mahal/çekirdek yerleşimleri değiştirilecek. Devam edilsin mi?");
     if (!confirmed) return;
+    const platesForBuild = recommendedFloorPlates.length === floorCount ? recommendedFloorPlates : floorPlates;
+    if (platesForBuild.length === floorCount) setFloorPlates(platesForBuild);
     const generated = buildProgramPlanElements(
       upstreamSpaces,
       baysX,
       baysY,
       floorCount,
       Number(architectureModule?.result?.liveLoad) || 3.5,
-      spanX,
-      spanY,
-      Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [],
+      activeSpanX,
+      activeSpanY,
+      upstreamRelationships,
+      platesForBuild,
     ) as PlanElement[];
     const retained = elements.filter((element) => element.type !== "space" && element.type !== "core");
-    commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal ve ${floorCount} kat çekirdeği yeniden oluşturuldu`);
+    commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal, ${floorCount} kat çekirdeği ve kat bazlı plaka dağılımı yeniden oluşturuldu`);
     setSelectedId(null);
     setLevel(1);
   };
@@ -704,7 +708,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
   const importUpstream = useCallback(() => {
     const source = thread.canonical;
-    const saved = project.modules["plan-editor"] as Partial<{ floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; elements: PlanElement[] }> | undefined;
+    const saved = project.modules["plan-editor"] as Partial<{ floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; floorPlates: ProgramFloorPlate[]; elements: PlanElement[] }> | undefined;
     const targetWidth = source.architecture.plateWidth || source.structure.width;
     const targetDepth = source.architecture.plateDepth || source.structure.depth;
     const nextBaysX = typeof saved?.baysX === "number" ? saved.baysX : targetWidth > 0 ? Math.max(1, Math.min(12, Math.round(targetWidth / 5))) : baysX;
@@ -715,10 +719,12 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (typeof saved?.spanY === "number") setSpanY(saved.spanY); else if (targetDepth > 0) setSpanY(Number((targetDepth / nextBaysY).toFixed(3)));
     const nextFloorCount = typeof saved?.floorCount === "number" ? saved.floorCount : source.architecture.floors;
     if (nextFloorCount > 0) { const safeFloorCount = Math.max(1, Math.min(30, nextFloorCount)); setFloorCount(safeFloorCount); setLevel((current) => Math.min(current, safeFloorCount)); }
+    if (recommendedFloorPlates.length === nextFloorCount) setFloorPlates(recommendedFloorPlates);
+    else if (Array.isArray(saved?.floorPlates) && saved.floorPlates.length) setFloorPlates(saved.floorPlates);
     if (Array.isArray(saved?.elements) && saved.elements.length) setElements(saved.elements);
     else setElements((current) => current.filter((element) => element.x <= nextBaysX && element.y <= nextBaysY));
     setStatus(Array.isArray(saved?.elements) && saved.elements.length ? "Mevcut plan korundu; Mimari Program bağlantısı güncellendi" : targetWidth > 0 || targetDepth > 0 ? "Mimari program / parsel geometrisi aks modeline aktarıldı" : "Aktarılacak mimari program veya parsel kütlesi bulunamadı");
-  }, [baysX, baysY, project.modules, thread.canonical]);
+  }, [baysX, baysY, project.modules, recommendedFloorPlates, thread.canonical]);
 
   useEffect(() => {
     if (!hydrated || !project.experience.autoHandoff) return;
@@ -729,11 +735,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     importUpstream();
   }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
 
-  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.0", units: "m", floorCount, baysX, baysY, spanX, spanY, elements, metrics }, null, 2), "application/json");
+  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.1", units: "m", floorCount, baysX, baysY, floorPlates, activeFloor: { level, spanX: activeSpanX, spanY: activeSpanY }, elements, metrics }, null, 2), "application/json");
   const exportCsv = () => {
     const content = issueFocus
       ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
-      : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${spanX.toFixed(3)},m\ngrid_y,${baysY},${spanY.toFixed(3)},m`;
+      : `type,count,quantity,unit\nfloor_area,1,${metrics.floorArea.toFixed(2)},m2\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\ngrid_x,${baysX},${activeSpanX.toFixed(3)},m\ngrid_y,${baysY},${activeSpanY.toFixed(3)},m`;
     downloadTextFile("arkem-plan-on-metraj.csv", content, "text/csv;charset=utf-8");
   };
   const buildPlanPolylines = () => {
@@ -742,20 +748,20 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       points: [{ x: 0, y: 0 }, { x: totalWidth, y: 0 }, { x: totalWidth, y: totalDepth }, { x: 0, y: totalDepth }],
     }];
     visible.filter(showElement).forEach((element) => {
-      const x = element.x * spanX;
+      const x = element.x * activeSpanX;
       const y = element.y * activeSpanY;
       const layer = element.type === "column" ? "KOLON" : element.type === "wall" ? "PERDE" : element.type === "space" ? "MAHAL" : element.type === "core" ? "CEKIRDEK" : element.type === "opening" ? "BOSLUK" : "YAZI";
       if (element.type === "column") {
-        const size = Math.max(.35, Math.min(spanX, spanY) * .08);
+        const size = Math.max(.35, Math.min(activeSpanX, activeSpanY) * .08);
         polylines.push({ layer, points: [{ x: x - size / 2, y: y - size / 2 }, { x: x + size / 2, y: y - size / 2 }, { x: x + size / 2, y: y + size / 2 }, { x: x - size / 2, y: y + size / 2 }] });
       } else if (element.type === "wall") {
         const thickness = .25;
         polylines.push({ layer, points: element.orientation === "x"
-          ? [{ x, y: y - thickness / 2 }, { x: x + spanX, y: y - thickness / 2 }, { x: x + spanX, y: y + thickness / 2 }, { x, y: y + thickness / 2 }]
-          : [{ x: x - thickness / 2, y }, { x: x + thickness / 2, y }, { x: x + thickness / 2, y: y + spanY }, { x: x - thickness / 2, y: y + spanY }] });
+          ? [{ x, y: y - thickness / 2 }, { x: x + activeSpanX, y: y - thickness / 2 }, { x: x + activeSpanX, y: y + thickness / 2 }, { x, y: y + thickness / 2 }]
+          : [{ x: x - thickness / 2, y }, { x: x + thickness / 2, y }, { x: x + thickness / 2, y: y + activeSpanY }, { x: x - thickness / 2, y: y + activeSpanY }] });
       } else {
         const inset = Math.min(spanX, spanY) * .05;
-        const elementWidth = (element.widthBays ?? 1) * spanX;
+        const elementWidth = (element.widthBays ?? 1) * activeSpanX;
         const elementHeight = (element.heightBays ?? 1) * activeSpanY;
         polylines.push({ layer, points: [{ x: x + inset, y: y + inset, label: element.label }, { x: x + elementWidth - inset, y: y + inset }, { x: x + elementWidth - inset, y: y + elementHeight - inset }, { x: x + inset, y: y + elementHeight - inset }] });
       }
@@ -812,7 +818,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       metrics: [
         ["Kat alanı", `${metrics.floorArea.toFixed(1)} m²`],
         ["Aks düzeni", `${baysX} × ${baysY}`],
-        ["Aks açıklığı", `${spanX.toFixed(2)} × ${spanY.toFixed(2)} m`],
+        ["Aks açıklığı", `${activeSpanX.toFixed(2)} × ${activeSpanY.toFixed(2)} m`],
         ["Kolon / perde", `${metrics.columns} / ${metrics.walls}`],
         ["Perde uzunluğu", `${metrics.wallLength.toFixed(1)} m`],
         ["Boşluk oranı", `%${metrics.openingRatio.toFixed(1)}`],
