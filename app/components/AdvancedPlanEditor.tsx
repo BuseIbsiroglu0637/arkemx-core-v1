@@ -807,7 +807,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
               if (element.type === "column") return <g className={`cad-element column${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x - 6} y={y - 6} width="12" height="12"/><text x={x + 9} y={y - 8}>{element.label}</text></g>;
               if (element.type === "wall") return <g className={`cad-element wall${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><line x1={x} y1={y} x2={x + (element.orientation === "x" ? cellW : 0)} y2={y + (element.orientation === "y" ? cellH : 0)}/></g>;
               const fill = element.type === "core" ? "url(#core-hatch)" : element.type === "opening" ? "url(#opening-hatch)" : element.type === "load" ? "rgba(185,102,54,.22)" : view === "loads" ? `rgba(45,126,157,${Math.min(.56, .12 + element.load / 20)})` : "rgba(107,161,180,.11)";
-              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={cellW - 6} height={cellH - 6} fill={fill}/><text x={x + cellW / 2} y={y + cellH / 2 - 3} textAnchor="middle">{element.label}</text><text className="sub" x={x + cellW / 2} y={y + cellH / 2 + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type.toUpperCase()}</text></g>;
+              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={cellW - 6} height={cellH - 6} fill={fill}/><text x={x + cellW / 2} y={y + cellH / 2 - 3} textAnchor="middle">{element.label}</text><text className="sub" x={x + cellW / 2} y={y + cellH / 2 + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type === "space" && expectedProgramIds.has(element.id) ? [element.sourceSpaceCode, typeof element.sourceUnitArea === "number" ? `${element.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m²` : ""].filter(Boolean).join(" · ") : element.type.toUpperCase()}</text></g>;
             })}
             {view === "coordination" && metrics.eccentricityEvaluable && <g className="cad-centers"><line x1={originX + metrics.massCenter.x * scale} y1={originY} x2={originX + metrics.massCenter.x * scale} y2={originY + totalDepth * scale}/><line x1={originX} y1={originY + metrics.massCenter.y * scale} x2={originX + totalWidth * scale} y2={originY + metrics.massCenter.y * scale}/><circle className="mass" cx={originX + metrics.massCenter.x * scale} cy={originY + metrics.massCenter.y * scale} r="8"/><circle className="rigidity" cx={originX + metrics.rigidityCenter.x * scale} cy={originY + metrics.rigidityCenter.y * scale} r="8"/><text x={originX + metrics.massCenter.x * scale + 12} y={originY + metrics.massCenter.y * scale - 12}>KM</text><text x={originX + metrics.rigidityCenter.x * scale + 12} y={originY + metrics.rigidityCenter.y * scale + 19}>KR</text></g>}
             <text x={originX} y={VIEWBOX.height - 20} fill="#71858d" fontSize="9">K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m · Aks {baysX}×{baysY} · Ölçek ekran uyarlamalı</text>
@@ -834,15 +834,27 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
             <div><span>Plan tabanı</span><b>{metrics.floorArea.toFixed(1)} m²</b></div>
             <div><span>Programdan hedef</span><b>{programFootprintTarget > 0 ? `${programFootprintTarget.toFixed(1)} m²` : "—"}</b></div>
             <div><span>TAKS azami taban</span><b>{allowedFootprint > 0 ? `${allowedFootprint.toFixed(1)} m²` : "Bilgi yok"}</b></div>
-            <div><span>Mahal / çekirdek</span><b>{metrics.rooms} / {metrics.cores}</b></div>
+            <div><span>Aktif kat · Mahal / çekirdek</span><b>{metrics.rooms} / {metrics.cores}</b></div>
+            <div><span>Tüm proje · Mahal</span><b className={programLinkPass ? "good" : "watch"}>{allPlanSpaces.length} / {upstreamSpaceCount}</b></div>
+            <div><span>Çekirdek sürekliliği</span><b className={coreContinuityPass ? "good" : "watch"}>{floorStats.filter((floor) => floor.cores > 0).length} / {floorCount} kat</b></div>
+            <div><span>Program bağlantısı</span><b className={programLinkPass ? "good" : "watch"}>{programLinkPass ? "Güncel" : "Eşleştirilmeli"}</b></div>
             <div><span>Kontrol kapısı</span><b className={planGatePass ? "good" : "watch"}>{planGatePass ? "Geçti" : "Açık"}</b></div>
             {!programFootprintPass && programFootprintFeasible ? <button type="button" onClick={applyProgramFootprintSuggestion}>Plan tabanını programa uyarla</button> : null}
+          </section>
+          <section className="cad-program-link" data-state={programLinkPass && coreContinuityPass ? "pass" : "review"}>
+            <strong>MİMARİ PROGRAM BAĞLANTISI</strong>
+            <p>Mimari Programdaki mahal listesi kaynak kayıttır. Plan üzerinde mahal silinirse veya program sonradan değiştirilirse burada fark görünür.</p>
+            <div><span>Kaynak program</span><b>{upstreamSpaceCount} mahal</b></div>
+            <div><span>Planda bağlı</span><b>{linkedProgramSpaces.length} mahal</b></div>
+            <div><span>Bağlantısız / manuel</span><b>{manualOrUnlinkedSpaces.length}</b></div>
+            {floorStats.map((floor) => <div key={floor.level}><span>K{floor.level}</span><b>{floor.rooms} mahal · {floor.cores} çekirdek</b></div>)}
+            {(!programLinkPass || !coreContinuityPass || !floorCoveragePass) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mimari Programdan Yeniden Kur</button> : <small>Plan mahal listesi güncel Mimari Programla bağlı.</small>}
           </section>
           <section className="cad-properties">
             <strong>SEÇİLİ NESNE</strong>
             {selected && (selected.type === "space" || selected.type === "core" || selected.type === "opening") ? <>
               <div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.type === "space" ? "Mimari mahal" : selected.type === "core" ? "Düşey sirkülasyon" : "Döşeme boşluğu"}</small></span></div>
-              <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>
+              {selected.type === "space" && expectedProgramIds.has(selected.id) ? <div className="cad-program-source-field"><span>Program mahali</span><b>{selected.label}</b><small>{selected.sourceSpaceCode ? `${selected.sourceSpaceCode} · ` : ""}{typeof selected.sourceUnitArea === "number" ? `${selected.sourceUnitArea.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} m² · ` : ""}Ad / alan değişikliği Mimari Programdan yapılır.</small></div> : <label>Etiket<input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })}/></label>}
               <button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili mimari nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button>
             </> : <p>Plan üzerinde bir mahal, çekirdek veya boşluk seçin. Taşıyıcı özellikler bu aşamada düzenlenmez.</p>}
           </section>
