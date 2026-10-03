@@ -418,18 +418,23 @@ test("workflow milestone writes are persisted before cross-page navigation", () 
 });
 
 
-test("project centre next action follows the first incomplete guided journey step", () => {
+test("project centre next action follows the first incomplete guided journey step and its real substage", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
   const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
 
   assert.match(kernel, /export function deriveProjectJourneyState/);
+  assert.match(kernel, /export function deriveProjectJourneyNextAction/);
   assert.match(kernel, /firstIncompleteIndex/);
   assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
+  assert.match(kernel, /Taşıyıcı ön tasarımı tamamla/);
+  assert.match(kernel, /Mühendislik koordinasyonunu tamamla/);
   assert.match(center, /deriveProjectJourneyState\(thread\)/);
+  assert.match(center, /deriveProjectJourneyNextAction\(thread\)/);
   assert.match(center, /journeyNextAction\.label/);
   assert.match(center, /journeyNextAction\.route/);
   assert.match(hub, /deriveProjectJourneyState\(thread\)/);
+  assert.match(hub, /deriveProjectJourneyNextAction\(thread\)/);
   assert.match(hub, /journeyNextAction\.label/);
   assert.match(hub, /journeyNextAction\.route/);
   assert.doesNotMatch(center, /thread\.nextAction\.(label|route)/);
