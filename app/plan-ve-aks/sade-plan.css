@@ -1861,3 +1861,20 @@ html[data-theme="dark"] .arx-plan-page .cad-floor-plate-summary > button {
   border-color:#315f70;
   background:#173f50;
 }
+
+
+.arx-plan-page .cad-program-adjacency-strategy {
+  margin:8px 0 2px !important;
+  padding:9px 10px;
+  border:1px solid var(--plan-border);
+  border-radius:6px;
+  background:var(--plan-surface);
+  color:var(--plan-muted) !important;
+  font-size:8px !important;
+  line-height:1.5 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-program-adjacency-strategy {
+  background:#0f0f0f;
+  border-color:#303638;
+  color:#aab5b9 !important;
+}
