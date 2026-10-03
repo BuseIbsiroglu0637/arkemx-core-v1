@@ -1762,3 +1762,36 @@ html[data-theme="dark"] .arx-plan-page .cad-program-link > button:focus-visible 
 html[data-theme="dark"] .arx-plan-page .cad-program-edit-link {
   color:#8fc0d1;
 }
+
+
+/* V07 / program area + adjacency control */
+.arx-plan-page .cad-program-relation-risk {
+  align-items:flex-start !important;
+  padding:9px 0 !important;
+}
+.arx-plan-page .cad-program-relation-risk span {
+  color:var(--plan-text) !important;
+  font-weight:750;
+}
+.arx-plan-page .cad-program-relation-risk b {
+  max-width:145px;
+  color:#b65f38 !important;
+  font-size:8px !important;
+  line-height:1.35;
+}
+.arx-plan-page .cad-program-adjacency-note {
+  margin:10px 0 0 !important;
+  padding:10px 11px;
+  border:1px solid #e0bba8;
+  border-left:3px solid var(--plan-accent);
+  border-radius:6px;
+  background:var(--plan-accent-soft);
+  color:#8c583e !important;
+  font-size:8px !important;
+  line-height:1.5 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-program-adjacency-note {
+  border-color:#5a382a;
+  background:#17100c;
+  color:#d5a185 !important;
+}
