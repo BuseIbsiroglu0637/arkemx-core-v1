@@ -1640,3 +1640,109 @@ body:has(.arx-plan-page) .arkem-theme-control button > span {
   font-size:15px;
   line-height:1;
 }
+
+
+/* V07 / architectural-program reconciliation */
+.arx-plan-page .cad-program-link {
+  display:grid;
+  gap:0;
+  padding:18px 16px;
+  border-bottom:1px solid var(--plan-border);
+  background:var(--plan-surface-2);
+}
+.arx-plan-page .cad-program-link > strong {
+  margin-bottom:8px;
+  color:var(--plan-muted);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.arx-plan-page .cad-program-link > p {
+  margin:0 0 10px;
+  color:var(--plan-muted);
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-plan-page .cad-program-link > div {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-bottom:1px solid var(--plan-border);
+}
+.arx-plan-page .cad-program-link > div span {
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-program-link > div b {
+  color:var(--plan-text);
+  font-size:9px;
+  text-align:right;
+}
+.arx-plan-page .cad-program-link > button {
+  width:100%;
+  min-height:40px;
+  margin-top:12px;
+  border:1px solid var(--plan-accent);
+  border-radius:7px;
+  background:var(--plan-accent-soft);
+  color:var(--plan-accent);
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.arx-plan-page .cad-program-link > button:hover,
+.arx-plan-page .cad-program-link > button:focus-visible {
+  background:var(--plan-accent);
+  color:#fff;
+}
+.arx-plan-page .cad-program-link > small {
+  margin-top:10px;
+  color:var(--plan-success);
+  font-size:9px;
+  line-height:1.4;
+}
+.arx-plan-page .cad-program-link[data-state="pass"] {
+  background:var(--plan-success-soft);
+}
+.arx-plan-page .cad-program-source-field {
+  display:grid;
+  gap:4px;
+  margin:8px 0 10px;
+  padding:10px 11px;
+  border:1px solid var(--plan-border);
+  border-left:3px solid var(--plan-success);
+  border-radius:6px;
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-program-source-field > span {
+  color:var(--plan-muted);
+  font-size:8px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.arx-plan-page .cad-program-source-field > b {
+  color:var(--plan-text);
+  font-size:10px;
+}
+.arx-plan-page .cad-program-source-field > small {
+  color:var(--plan-muted);
+  font-size:8px;
+  line-height:1.45;
+}
+
+html[data-theme="dark"] .arx-plan-page .cad-program-link,
+html[data-theme="dark"] .arx-plan-page .cad-program-source-field {
+  border-color:var(--plan-border);
+}
+html[data-theme="dark"] .arx-plan-page .cad-program-link > button {
+  border-color:#65402e;
+  background:#17100c;
+  color:#e18a55;
+}
+html[data-theme="dark"] .arx-plan-page .cad-program-link > button:hover,
+html[data-theme="dark"] .arx-plan-page .cad-program-link > button:focus-visible {
+  background:#c66e3d;
+  color:#fff;
+}
