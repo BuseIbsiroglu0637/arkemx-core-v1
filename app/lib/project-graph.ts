@@ -1,4 +1,5 @@
 import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source.ts";
+import { deriveProgramFloorPlates, evaluateRequiredAdjacency, expandProgramSpaces } from "./plan-program.ts";
 
 export type ProjectModuleKey =
   | "decision-assistant"
@@ -185,6 +186,89 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     .filter((value) => value > 0);
   const planTotalPlateArea = planFloorPlateAreas.reduce((sum, value) => sum + value, 0);
   const planMaxFootprint = planFloorPlateAreas.length ? Math.max(...planFloorPlateAreas) : 0;
+  const planElements = Array.isArray(plan.elements) ? plan.elements.map(record) : [];
+  const planFloorCount = Math.max(0, Math.round(number(plan.floorCount)));
+  const planBaysX = Math.max(0, Math.round(number(plan.baysX)));
+  const planBaysY = Math.max(0, Math.round(number(plan.baysY)));
+  const architectureRelationships = Array.isArray(architecture.relationships) ? architecture.relationships : [];
+  const programInstances = expandProgramSpaces(architectureSpaces, number(architectureResult.liveLoad, 3.5));
+  const expectedProgramIds = new Set(programInstances.map((space) => space.key));
+  const expectedProgramById = new Map(programInstances.map((space) => [space.key, space]));
+  const planSpaces = planElements.filter((element) => text(element.type) === "space");
+  const linkedProgramSpaces = planSpaces.filter((element) => expectedProgramIds.has(text(element.id)));
+  const programMetadataPass = linkedProgramSpaces.every((element) => {
+    const expected = expectedProgramById.get(text(element.id));
+    if (!expected) return false;
+    return text(element.label) === expected.name
+      && text(element.sourceSpaceId) === expected.sourceSpaceId
+      && number(element.sourceSpaceInstance) === expected.sourceInstance
+      && text(element.sourceSpaceCode) === expected.code
+      && Math.abs(number(element.sourceUnitArea, -1) - expected.unitArea) < .01;
+  });
+  const programLinkPass = programInstances.length > 0
+    && linkedProgramSpaces.length === programInstances.length
+    && planSpaces.length === programInstances.length
+    && programMetadataPass;
+  const planAreaRepresentationPass = linkedProgramSpaces.length === programInstances.length
+    && linkedProgramSpaces.every((element) => {
+      const plate = planFloorPlates.find((item) => number(item.level) === number(element.level));
+      if (!plate || planBaysX <= 0 || planBaysY <= 0) return false;
+      const elementSpanX = number(plate.width) / planBaysX;
+      const elementSpanY = number(plate.depth) / planBaysY;
+      const geometricArea = number(element.widthBays, 1) * elementSpanX * number(element.heightBays, 1) * elementSpanY;
+      const targetArea = Math.max(number(element.sourceUnitArea), .01);
+      return Math.abs(geometricArea - targetArea) / targetArea <= .03;
+    });
+  const requiredAdjacencyPass = evaluateRequiredAdjacency(
+    linkedProgramSpaces.map((element) => ({
+      level: number(element.level),
+      x: number(element.x),
+      y: number(element.y),
+      widthBays: number(element.widthBays, 1),
+      heightBays: number(element.heightBays, 1),
+      sourceSpaceId: text(element.sourceSpaceId),
+    })),
+    architectureSpaces,
+    architectureRelationships,
+  ).pass;
+  const recommendedPlanFloorPlates = deriveProgramFloorPlates(
+    architectureSpaces,
+    architectureRelationships,
+    Math.max(1, planFloorCount || number(architectureInput.floors, 1)),
+    number(architectureInput.netRatio, 78),
+    number(architectureInput.aspect, 1.55),
+    number(architectureResult.liveLoad, 3.5),
+  );
+  const planFloorCoveragePass = planFloorCount > 0 && Array.from({ length: planFloorCount }, (_, index) => index + 1)
+    .every((level) => planElements.some((element) => text(element.type) === "space" && number(element.level) === level));
+  const planCoreContinuityPass = planFloorCount > 0 && Array.from({ length: planFloorCount }, (_, index) => index + 1)
+    .every((level) => planElements.some((element) => text(element.type) === "core" && number(element.level) === level));
+  const planAxisReady = planBaysX >= 2
+    && planBaysY >= 2
+    && planFloorPlates.length === planFloorCount
+    && planFloorPlates.every((plate) => number(plate.width) / planBaysX >= 2 && number(plate.depth) / planBaysY >= 2);
+  const planFloorDistributionPass = recommendedPlanFloorPlates.length === planFloorCount
+    && recommendedPlanFloorPlates.every((target) => {
+      const actual = planFloorPlates.find((plate) => number(plate.level) === target.level);
+      if (!actual || target.grossArea <= 0) return false;
+      return Math.abs(number(actual.width) * number(actual.depth) - target.grossArea) / target.grossArea <= .03;
+    });
+  const planProgramAreaPass = architectureProgramGross > 0
+    && Math.abs(planFloorPlates.reduce((sum, plate) => sum + number(plate.width) * number(plate.depth), 0) - architectureProgramGross) / architectureProgramGross <= .03;
+  const allowedFootprint = number(geoMetrics.allowedFootprint);
+  const planSiteFootprintPass = allowedFootprint <= 0
+    || planFloorPlates.every((plate) => number(plate.width) * number(plate.depth) <= allowedFootprint + .01);
+  const planJourneyReady = architectureJourneyReady
+    && planFloorCount > 0
+    && programLinkPass
+    && planAreaRepresentationPass
+    && planFloorCoveragePass
+    && planCoreContinuityPass
+    && planAxisReady
+    && planFloorDistributionPass
+    && planProgramAreaPass
+    && planSiteFootprintPass
+    && requiredAdjacencyPass;
   // Legacy plan snapshots lack explicit provenance flags. Only entered mass
   // zones AND placed columns/walls can support a conceptual KM-KR estimate.
   // A fallback to the geometric plate centre is never evidence of rigidity.
@@ -243,6 +327,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     || (Array.isArray(comparison.ranking) && comparison.ranking.length)
   );
   const comparisonAssumptionsConfirmed = comparison.assumptionsConfirmed === true;
+  const comparisonJourneyReady = Boolean(
+    comparisonAssumptionsConfirmed
+    && mcdaSourceCurrent
+    && Array.isArray(comparison.shortlist)
+    && comparison.shortlist.length > 0
+  );
   const footprint = planMaxFootprint || number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
@@ -625,7 +715,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       ? quickSiteScenarioReady
       : definition.id === "architectural-program"
         ? architectureJourneyReady
-        : moduleData.journeyComplete === true;
+        : definition.id === "plan-editor"
+          ? moduleData.journeyComplete === true || planJourneyReady
+          : definition.id === "system-comparison"
+            ? moduleData.journeyComplete === true || comparisonJourneyReady
+            : moduleData.journeyComplete === true;
     const readiness = definition.id === "geo-parcel" && active
       ? !parcelReadyForNextStage
         ? 35
