@@ -1878,3 +1878,126 @@ html[data-theme="dark"] .arx-plan-page .cad-program-adjacency-strategy {
   border-color:#303638;
   color:#aab5b9 !important;
 }
+
+
+/* V08 / shared ARKEMX chrome alignment + compact inspector */
+body:has(.arx-plan-page) .arkem-theme-control {
+  top:18px !important;
+  right:18px !important;
+  bottom:auto !important;
+  left:auto !important;
+  display:block !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+body:has(.arx-plan-page) .arkem-theme-control-label {
+  display:none !important;
+}
+body:has(.arx-plan-page) .arkem-theme-control-options {
+  display:flex !important;
+  grid-template-columns:none !important;
+  gap:6px !important;
+}
+body:has(.arx-plan-page) .arkem-theme-control button {
+  width:38px !important;
+  min-width:38px !important;
+  height:38px !important;
+  min-height:38px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:1px solid #ccd8dd !important;
+  border-radius:7px !important;
+  background:#fff !important;
+  color:#5e7883 !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  box-shadow:none !important;
+}
+body:has(.arx-plan-page) .arkem-theme-control button > span {
+  display:block !important;
+  font-size:16px !important;
+  line-height:1 !important;
+}
+body:has(.arx-plan-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#244f61 !important;
+  background:#244f61 !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] body:has(.arx-plan-page) .arkem-theme-control button {
+  border-color:#343a3d !important;
+  background:#0c0c0c !important;
+  color:#b8c5ca !important;
+}
+html[data-theme="dark"] body:has(.arx-plan-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#c9703e !important;
+  background:#c9703e !important;
+  color:#fff !important;
+}
+
+/* Right rail should be a compact inspector, not a page-height column. */
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-grid {
+  align-items:start;
+}
+.arx-plan-page .cad-plan-simple-tools,
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas {
+  align-self:stretch;
+}
+.arx-plan-page .cad-plan-simple-inspector {
+  align-self:start;
+  max-height:min(720px, calc(100vh - 116px));
+  overflow-y:auto;
+  overflow-x:hidden;
+  border-bottom:1px solid var(--plan-border);
+  scrollbar-width:thin;
+  scrollbar-color:var(--plan-border-strong) transparent;
+}
+.arx-plan-page .cad-plan-simple-inspector::-webkit-scrollbar {
+  width:7px;
+}
+.arx-plan-page .cad-plan-simple-inspector::-webkit-scrollbar-track {
+  background:transparent;
+}
+.arx-plan-page .cad-plan-simple-inspector::-webkit-scrollbar-thumb {
+  border:2px solid transparent;
+  border-radius:999px;
+  background:var(--plan-border-strong);
+  background-clip:padding-box;
+}
+.arx-plan-page .cad-plan-simple-inspector section,
+.arx-plan-page .cad-plan-exports,
+.arx-plan-page .cad-program-link,
+.arx-plan-page .cad-floor-plate-summary {
+  padding:14px 14px;
+}
+.arx-plan-page .cad-plan-simple-inspector section > strong,
+.arx-plan-page .cad-program-link > strong,
+.arx-plan-page .cad-floor-plate-summary > strong {
+  margin-bottom:7px;
+}
+.arx-plan-page .cad-plan-simple-inspector section > p,
+.arx-plan-page .cad-program-link > p,
+.arx-plan-page .cad-floor-plate-summary > p {
+  margin-bottom:10px;
+}
+.arx-plan-page .cad-plan-control > div {
+  padding:8px 0;
+}
+@media(max-width:1080px) {
+  .arx-plan-page .cad-plan-simple-inspector {
+    max-height:none;
+    overflow:visible;
+  }
+}
+@media(max-width:760px) {
+  body:has(.arx-plan-page) .arkem-theme-control {
+    top:10px !important;
+    right:10px !important;
+    bottom:auto !important;
+  }
+}
