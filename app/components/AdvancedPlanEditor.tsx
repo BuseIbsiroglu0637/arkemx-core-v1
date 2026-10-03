@@ -528,6 +528,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       Number(architectureModule?.result?.liveLoad) || 3.5,
       spanX,
       spanY,
+      Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [],
     ) as PlanElement[];
     const retained = elements.filter((element) => element.type !== "space" && element.type !== "core");
     commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal ve ${floorCount} kat çekirdeği yeniden oluşturuldu`);
@@ -553,7 +554,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       : tool === "wall"
         ? Math.max(0, Math.min(orientation === "y" ? baysY - 1 : baysY, Math.round(rawY)))
         : Math.max(0, Math.min(baysY - 1, Math.floor(rawY)));
-    const candidates = visible.filter((element) => element.x === x && element.y === y);
+    const candidates = visible.filter((element) => {
+      const width = element.widthBays ?? 1;
+      const height = element.heightBays ?? 1;
+      return rawX >= element.x && rawX <= element.x + width && rawY >= element.y && rawY <= element.y + height;
+    });
     if (tool === "select") {
       setSelectedId(candidates[candidates.length - 1]?.id ?? null);
       setStatus(candidates.length ? "Nesne seçildi" : "Bu noktada düzenlenebilir nesne yok");
@@ -577,6 +582,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       load: type === "load" ? 5 : 3.5,
       fire: type === "core" ? "REI 120" : "R 60",
       section: type === "column" ? "50×50 cm" : type === "wall" ? "25 cm" : "—",
+      widthBays: type === "column" || type === "wall" ? undefined : 1,
+      heightBays: type === "column" || type === "wall" ? undefined : 1,
       provenance: "manual",
     };
     commit([...elements, element], `${toolMeta[type].label} K${level} planına eklendi`);
@@ -670,7 +677,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           : [{ x: x - thickness / 2, y }, { x: x + thickness / 2, y }, { x: x + thickness / 2, y: y + spanY }, { x: x - thickness / 2, y: y + spanY }] });
       } else {
         const inset = Math.min(spanX, spanY) * .05;
-        polylines.push({ layer, points: [{ x: x + inset, y: y + inset, label: element.label }, { x: x + spanX - inset, y: y + inset }, { x: x + spanX - inset, y: y + spanY - inset }, { x: x + inset, y: y + spanY - inset }] });
+        const elementWidth = (element.widthBays ?? 1) * spanX;
+        const elementHeight = (element.heightBays ?? 1) * spanY;
+        polylines.push({ layer, points: [{ x: x + inset, y: y + inset, label: element.label }, { x: x + elementWidth - inset, y: y + inset }, { x: x + elementWidth - inset, y: y + elementHeight - inset }, { x: x + inset, y: y + elementHeight - inset }] });
       }
     });
     return polylines;
