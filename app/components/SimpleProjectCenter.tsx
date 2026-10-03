@@ -8,7 +8,7 @@ import {
   MoreHorizontal, ShieldAlert, Trash2, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
-import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_JOURNEY, deriveProjectJourneyNextAction, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
 type CenterAccountProject = {
@@ -52,16 +52,7 @@ export function SimpleProjectCenter() {
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
-  const currentJourneyStep = PROJECT_JOURNEY[journeyState.currentIndex];
-  const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
-  const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
-  const journeyNextAction = journeyState.allComplete
-    ? { label: "Teslim kontrollerini gözden geçir", route: "#arx-project-controls" }
-    : currentJourneyStep.short === "Arazi"
-      ? { label: thread.nextAction.label, route: thread.nextAction.route }
-      : currentJourneyStep.short === "Mimari" && architectureMilestoneReady && !planMilestoneReady
-        ? { label: "Plan ve aksı tamamla", route: "/plan-ve-aks" }
-        : { label: journeyState.nextStep.label, route: journeyState.nextStep.href };
+  const journeyNextAction = deriveProjectJourneyNextAction(thread);
   const storageLabel = persistence.state === "loading"
     ? "Çalışma kaydı kontrol ediliyor"
     : persistence.state === "unavailable"
