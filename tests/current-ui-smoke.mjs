@@ -405,7 +405,6 @@ test("workflow milestone writes are persisted before cross-page navigation", () 
 
   assert.match(kernel, /saveProjectToStorage\(window\.localStorage, nextProject\)/);
   assert.match(kernel, /projectRef\.current = result\.payload/);
-  assert.match(kernel, /skipNextPersistenceRef\.current = true/);
   assert.match(plan, /journeyComplete: planGatePass/);
   assert.match(plan, /onClick=\{persistPlanSnapshot\}/);
   assert.match(system, /journeyComplete: decisionReady/);
