@@ -238,7 +238,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     setProgramRequirementsConfirmed(false);
     setSpaces((current) => [...current, { id: `USR-${Date.now().toString(36)}`, code: `A-${String(current.length + 1).padStart(3, "0")}`, name: "Yeni mahal", zone: "Tanımsız", count: 1, unitArea: 25, density: 10, daylight: true, accessible: true }]);
   };
-  const exportJson = () => downloadTextFile("arkem-mimari-sema.json", JSON.stringify({ schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", units: "SI", selectedStrategy, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext }, spaces, relationships, result, architecturalScheme, checks }, null, 2), "application/json");
+  const exportJson = () => downloadTextFile("arkem-mimari-sema.json", JSON.stringify({ schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", units: "SI", selectedStrategy, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext, programRequirementsConfirmed }, spaces, relationships, result, architecturalScheme, checks }, null, 2), "application/json");
   const exportCsv = () => downloadTextFile("arkem-mahal-listesi.csv", ["code,name,zone,count,unit_area_m2,total_area_m2,occupancy_density_m2_person,daylight,accessible", ...spaces.map((space) => `${space.code},${space.name},${space.zone},${space.count},${space.unitArea.toFixed(2)},${(space.count * space.unitArea).toFixed(2)},${space.density.toFixed(2)},${space.daylight},${space.accessible}`)].join("\n"), "text/csv;charset=utf-8");
 
   const zones = Array.from(new Set(spaces.map((space) => space.zone)));
@@ -316,7 +316,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       ...space,
       unitArea: Number(Math.max(2, space.unitArea * targetProgramScale).toFixed(2)),
     })));
-    setStatus(`Mahal alanları mevcut dağılım korunarak ${targetGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² hedef brüte ölçeklendi`);
+    setStatus(`Taslak mahal alanları mevcut dağılım korunarak ${targetGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² hedef brüte ölçeklendi; gerçek ihtiyaç onayı gerekir`);
   };
 
   const applyKaksSuggestion = () => {
@@ -550,7 +550,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       <small>Hedef {targetGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² · Program {programGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m² · tolerans ±%10</small>
     </div>
     {!programTargetPass
-      ? <button type="button" onClick={applyTargetGrossSuggestion}>Dağılımı hedefe ölçekle</button>
+      ? <button type="button" onClick={applyTargetGrossSuggestion}>Taslak dağılımı hedefe ölçekle</button>
       : programRequirementsConfirmed
         ? <Link href="/plan-ve-aks">Plan & Aksa Geç <i>→</i></Link>
         : null}
