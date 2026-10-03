@@ -179,6 +179,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     && Math.abs(architectureProgramGross - architectureTargetGross) / architectureTargetGross <= .1;
   const plan = record(modules["plan-editor"]);
   const planMetrics = record(plan.metrics);
+  const planFloorPlates = Array.isArray(plan.floorPlates) ? plan.floorPlates.map(record) : [];
+  const planFloorPlateAreas = planFloorPlates
+    .map((plate) => number(plate.grossArea) || (number(plate.width) * number(plate.depth)))
+    .filter((value) => value > 0);
+  const planTotalPlateArea = planFloorPlateAreas.reduce((sum, value) => sum + value, 0);
+  const planMaxFootprint = planFloorPlateAreas.length ? Math.max(...planFloorPlateAreas) : 0;
   // Legacy plan snapshots lack explicit provenance flags. Only entered mass
   // zones AND placed columns/walls can support a conceptual KM-KR estimate.
   // A fallback to the geometric plate centre is never evidence of rigidity.
@@ -210,7 +216,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 
   const planWidth = number(plan.baysX) * number(plan.spanX);
   const planDepth = number(plan.baysY) * number(plan.spanY);
-  const planGross = number(planMetrics.floorArea) * number(plan.floorCount);
+  const planGross = planTotalPlateArea || number(planMetrics.floorArea) * number(plan.floorCount);
   const geoGross = number(geoMetrics.gross);
   const architectureGross = number(architectureResult.grossDemand) || number(architectureInput.targetGross);
   const structuralGross = number(structureGeometry.totalArea);
@@ -237,7 +243,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     || (Array.isArray(comparison.ranking) && comparison.ranking.length)
   );
   const comparisonAssumptionsConfirmed = comparison.assumptionsConfirmed === true;
-  const footprint = number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
+  const footprint = planMaxFootprint || number(planMetrics.floorArea) || number(geoMetrics.footprint) || number(structureGeometry.floorArea);
   const width = planWidth || number(geo.buildingWidth) || number(structureInput.width) || number(architectureResult.plateWidth);
   const depth = planDepth || number(geo.buildingDepth) || number(structureInput.depth) || number(architectureResult.plateDepth);
   // Arazi/Yapı Yerleşimi taşıyıcı sistem kararı üretmez. Yapısal sistem
@@ -472,7 +478,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     });
   }
 
-  const planFootprint = number(planMetrics.floorArea);
+  const planFootprint = planMaxFootprint || number(planMetrics.floorArea);
   if (
     planFootprint > 0
     && canonical.site.allowedFootprint > 0
