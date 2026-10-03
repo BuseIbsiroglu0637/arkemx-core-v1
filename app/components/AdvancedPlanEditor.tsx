@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
+import { expandProgramSpaces, buildProgramPlanElements } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
@@ -19,7 +20,12 @@ type PlanElement = {
   load: number;
   fire: string;
   section: string;
-  provenance?: "manual" | "conceptual-seed";
+  provenance?: "manual" | "conceptual-seed" | "program";
+  sourceSpaceId?: string;
+  sourceSpaceInstance?: number;
+  sourceSpaceCode?: string;
+  sourceZone?: string;
+  sourceUnitArea?: number;
 };
 
 const toolMeta: Record<Tool, { code: string; label: string; hint: string }> = {
@@ -183,18 +189,44 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     : 1;
   const suggestedProgramSpanX = Math.max(2, Math.min(15, spanX * programFootprintScale));
   const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
-  const architectureModule = project.modules["architectural-program"] as { spaces?: Array<{ count?: number }>; journeyComplete?: boolean } | undefined;
-  const upstreamSpaceCount = Array.isArray(architectureModule?.spaces)
-    ? architectureModule.spaces.reduce((sum, space) => sum + Math.max(1, Number(space?.count) || 1), 0)
-    : 0;
+  const architectureModule = project.modules["architectural-program"] as {
+    spaces?: Array<{ id?: string; code?: string; name?: string; zone?: string; count?: number; unitArea?: number; liveLoad?: number }>;
+    result?: { liveLoad?: number };
+    journeyComplete?: boolean;
+  } | undefined;
+  const upstreamSpaces = Array.isArray(architectureModule?.spaces) ? architectureModule.spaces : [];
+  const programInstances = useMemo(() => expandProgramSpaces(upstreamSpaces, Number(architectureModule?.result?.liveLoad) || 3.5), [architectureModule?.result?.liveLoad, upstreamSpaces]);
+  const upstreamSpaceCount = programInstances.length;
+  const expectedProgramIds = useMemo(() => new Set(programInstances.map((space) => space.key)), [programInstances]);
+  const allPlanSpaces = elements.filter((element) => element.type === "space");
+  const linkedProgramSpaces = allPlanSpaces.filter((element) => expectedProgramIds.has(element.id));
+  const manualOrUnlinkedSpaces = allPlanSpaces.filter((element) => !expectedProgramIds.has(element.id));
+  const programLinkPass = upstreamSpaceCount > 0
+    && linkedProgramSpaces.length === upstreamSpaceCount
+    && allPlanSpaces.length === upstreamSpaceCount;
+  const floorStats = Array.from({ length: floorCount }, (_, index) => {
+    const floorLevel = index + 1;
+    const floorElements = elements.filter((element) => element.level === floorLevel);
+    return {
+      level: floorLevel,
+      rooms: floorElements.filter((element) => element.type === "space").length,
+      linkedRooms: floorElements.filter((element) => element.type === "space" && expectedProgramIds.has(element.id)).length,
+      cores: floorElements.filter((element) => element.type === "core").length,
+    };
+  });
+  const floorCoveragePass = floorStats.every((floor) => floor.rooms > 0);
+  const coreContinuityPass = floorStats.every((floor) => floor.cores > 0);
   const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
-  const planPlacementReady = metrics.rooms > 0 && metrics.cores > 0;
+  const planPlacementReady = programLinkPass && floorCoveragePass && coreContinuityPass;
   const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
   const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
   const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass;
   const missingPlanGateItems = [
     !upstreamReady ? "Mimari veri devri" : "",
-    !planPlacementReady ? "Mahal / çekirdek yerleşimi" : "",
+    !programLinkPass ? `Mahal programı eşleşmesi (${linkedProgramSpaces.length}/${upstreamSpaceCount})` : "",
+    manualOrUnlinkedSpaces.length ? `${manualOrUnlinkedSpaces.length} bağlantısız mahal` : "",
+    !floorCoveragePass ? "Tüm katların planlanması" : "",
+    !coreContinuityPass ? "Çekirdek sürekliliği" : "",
     !axisReady ? "Aks geometrisi" : "",
     !programFootprintPass ? "Program / plan alan uyumu" : "",
     !siteFootprintPass ? "TAKS taban sınırı" : "",
