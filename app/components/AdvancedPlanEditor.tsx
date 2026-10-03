@@ -231,7 +231,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       return element.x < 0 || element.y < 0 || element.x > maxX || element.y > maxY;
     }).length;
     return { floorArea, roomArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, massPointCount, rigidityPointCount, conceptualMassPointCount, conceptualRigidityPointCount, manualMassPointCount, manualRigidityPointCount, outOfGridMassPointCount, outOfGridRigidityPointCount, eccentricityEvaluable, eccentricity, eccentricityRatio };
-  }, [baysX, baysY, spanX, spanY, totalDepth, totalWidth, visible]);
+  }, [activeSpanX, activeSpanY, baysX, baysY, totalDepth, totalWidth, visible]);
 
   const allowedFootprint = thread.canonical.site.allowedFootprint;
   const footprintOverage = allowedFootprint > 0 ? Math.max(0, metrics.floorArea - allowedFootprint) : 0;
@@ -239,20 +239,29 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const footprintScale = allowedFootprint > 0 && metrics.floorArea > 0
     ? Math.sqrt((allowedFootprint * .995) / metrics.floorArea)
     : 1;
-  const suggestedSpanX = Math.max(2, Math.min(15, spanX * footprintScale));
-  const suggestedSpanY = Math.max(2, Math.min(15, spanY * footprintScale));
+  const suggestedSpanX = Math.max(2, Math.min(15, activeSpanX * footprintScale));
+  const suggestedSpanY = Math.max(2, Math.min(15, activeSpanY * footprintScale));
 
   const programGrossTarget = thread.canonical.architecture.grossArea;
-  const programFootprintTarget = floorCount > 0 && programGrossTarget > 0 ? programGrossTarget / floorCount : 0;
+  const programGrossDemand = Number(architectureModule?.result?.grossDemand) || programGrossTarget;
+  const recommendedActiveFloor = recommendedFloorPlates.find((item) => item.level === level);
+  const programFootprintTarget = recommendedActiveFloor?.grossArea ?? (floorCount > 0 && programGrossDemand > 0 ? programGrossDemand / floorCount : 0);
   const programFootprintPass = programFootprintTarget > 0
-    && Math.abs(metrics.floorArea - programFootprintTarget) / programFootprintTarget <= .01;
+    && Math.abs(metrics.floorArea - programFootprintTarget) / programFootprintTarget <= .03;
   const programFootprintFeasible = programFootprintTarget > 0
     && (allowedFootprint <= 0 || programFootprintTarget <= allowedFootprint + .01);
-  const programFootprintScale = programFootprintTarget > 0 && metrics.floorArea > 0
-    ? Math.sqrt(programFootprintTarget / metrics.floorArea)
-    : 1;
-  const suggestedProgramSpanX = Math.max(2, Math.min(15, spanX * programFootprintScale));
-  const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
+  const suggestedProgramSpanX = recommendedActiveFloor?.width && baysX > 0 ? recommendedActiveFloor.width / baysX : activeSpanX;
+  const suggestedProgramSpanY = recommendedActiveFloor?.depth && baysY > 0 ? recommendedActiveFloor.depth / baysY : activeSpanY;
+  const floorPlateDistributionPass = recommendedFloorPlates.length === floorCount
+    && recommendedFloorPlates.every((target) => {
+      const actual = floorPlates.find((item) => item.level === target.level);
+      if (!actual || target.grossArea <= 0) return false;
+      return Math.abs(actual.width * actual.depth - target.grossArea) / target.grossArea <= .03;
+    });
+  const totalPlateArea = floorPlates.reduce((sum, item) => sum + item.width * item.depth, 0);
+  const totalProgramAreaPass = programGrossDemand > 0
+    && Math.abs(totalPlateArea - programGrossDemand) / programGrossDemand <= .03;
+  const allSiteFootprintsPass = allowedFootprint <= 0 || floorPlates.every((item) => item.width * item.depth <= allowedFootprint + .01);
   const programInstances = useMemo(() => expandProgramSpaces(upstreamSpaces, Number(architectureModule?.result?.liveLoad) || 3.5), [architectureModule?.result?.liveLoad, upstreamSpaces]);
   const upstreamSpaceCount = programInstances.length;
   const expectedProgramIds = useMemo(() => new Set(programInstances.map((space) => space.key)), [programInstances]);
@@ -274,7 +283,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     && allPlanSpaces.length === upstreamSpaceCount
     && programMetadataPass;
   const areaRepresentation = linkedProgramSpaces.map((element) => {
-    const geometricArea = (element.widthBays ?? 1) * activeSpanX * (element.heightBays ?? 1) * activeSpanY;
+    const elementPlate = floorPlates.find((item) => item.level === element.level);
+    const elementSpanX = elementPlate?.width && baysX > 0 ? elementPlate.width / baysX : activeSpanX;
+    const elementSpanY = elementPlate?.depth && baysY > 0 ? elementPlate.depth / baysY : activeSpanY;
+    const geometricArea = (element.widthBays ?? 1) * elementSpanX * (element.heightBays ?? 1) * elementSpanY;
     const targetArea = Math.max(element.sourceUnitArea ?? 0, .01);
     const ratio = Math.abs(geometricArea - targetArea) / targetArea;
     return { id: element.id, geometricArea, targetArea, ratio, pass: ratio <= .03 };
@@ -288,9 +300,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   );
   const requiredAdjacencyPass = requiredAdjacency.pass;
   const sourceAreaByName = new Map(upstreamSpaces.map((space) => [String(space.name ?? ""), Number(space.unitArea) || 0]));
+  const maxFloorPlateArea = floorPlates.reduce((max, item) => Math.max(max, item.width * item.depth), metrics.floorArea);
   const requiredAdjacencyCapacityConflicts = requiredAdjacency.items.filter((item) => {
     const combined = (sourceAreaByName.get(item.from) ?? 0) + (sourceAreaByName.get(item.to) ?? 0);
-    return combined > metrics.floorArea + .01;
+    return combined > maxFloorPlateArea + .01;
   });
   const floorStats = Array.from({ length: floorCount }, (_, index) => {
     const floorLevel = index + 1;
@@ -307,9 +320,9 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const requirementsConfirmed = architectureModule?.input?.programRequirementsConfirmed === true;
   const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0 && requirementsConfirmed;
   const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass;
-  const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
-  const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
-  const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass && requiredAdjacencyPass;
+  const axisReady = baysX >= 2 && baysY >= 2 && floorPlates.every((item) => item.width / baysX >= 2 && item.depth / baysY >= 2);
+  const siteFootprintPass = allSiteFootprintsPass;
+  const planGatePass = upstreamReady && planPlacementReady && axisReady && floorPlateDistributionPass && totalProgramAreaPass && siteFootprintPass && requiredAdjacencyPass;
   const missingPlanGateItems = [
     !requirementsConfirmed ? "Gerçek ihtiyaç programı onayı" : "",
     !upstreamReady && requirementsConfirmed ? "Mimari veri devri" : "",
@@ -321,7 +334,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     !coreContinuityPass ? "Çekirdek sürekliliği" : "",
     !requiredAdjacencyPass ? `Zorunlu komşuluklar (${requiredAdjacency.satisfied}/${requiredAdjacency.total})` : "",
     !axisReady ? "Aks geometrisi" : "",
-    !programFootprintPass ? "Program / plan alan uyumu" : "",
+    !floorPlateDistributionPass ? "Kat bazlı plaka dağılımı" : "",
+    !totalProgramAreaPass ? "Toplam program / plan alan uyumu" : "",
     !siteFootprintPass ? "TAKS taban sınırı" : "",
   ].filter(Boolean);
 
@@ -334,9 +348,15 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
   const applyProgramFootprintSuggestion = () => {
     if (!programFootprintFeasible || programFootprintPass || !(metrics.floorArea > 0)) return;
-    setSpanX(Number(suggestedProgramSpanX.toFixed(3)));
-    setSpanY(Number(suggestedProgramSpanY.toFixed(3)));
-    setStatus(`Plan tabanı mimari program brütüne göre koordine edildi · hedef ≈ ${programFootprintTarget.toFixed(1)} m²`);
+    setActiveSpanX(Number(suggestedProgramSpanX.toFixed(3)));
+    setActiveSpanY(Number(suggestedProgramSpanY.toFixed(3)));
+    setStatus(`K${level} plaka alanı program dağılımına göre koordine edildi · hedef ≈ ${programFootprintTarget.toFixed(1)} m²`);
+  };
+
+  const applyRecommendedFloorPlates = () => {
+    if (recommendedFloorPlates.length !== floorCount) return;
+    setFloorPlates(recommendedFloorPlates);
+    setStatus(`Kat plakaları programa göre dağıtıldı · ${recommendedFloorPlates.map((item) => `K${item.level} ${item.grossArea.toFixed(0)} m²`).join(" · ")}`);
   };
 
   const conceptualMassCells = () => {
