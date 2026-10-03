@@ -799,7 +799,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
           </>}
         </aside>
       </div>
-      <footer className="cad-editor-foot"><b>Model statüsü · Konsept</b><p>Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir. Kesitler, yükler ve düzensizlikler yetkili proje müelliflerince doğrulanmalıdır.</p></footer>
+      <footer className="cad-editor-foot"><b>{issueFocus ? "Model statüsü · Konsept" : "Plan & Aks statüsü · Mimari koordinasyon"}</b><p>{issueFocus ? "Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir." : "Bu çalışma mimari mahal, çekirdek, boşluk ve aks koordinasyonu içindir. Taşıyıcı sistem, kesit, yük ve KM/KR kararları sonraki mühendislik aşamalarında doğrulanır."}</p></footer>
     </div>
+    {!issueFocus ? <section className="cad-plan-completion" data-state={planGatePass ? "pass" : "review"}>
+      <div><span>04 / MİMARİ TAMAMLAMA KAPISI</span><b>{planGatePass ? "Plan ve aks çalışması tamamlandı" : "Plan ve aks çalışması henüz tamamlanmadı"}</b><small>{planGatePass ? "Mimari adımı kapanabilir. Sıradaki ana proje adımı Sistem seçimidir." : `Bekleyen: ${missingPlanGateItems.join(" · ") || "Kontroller güncelleniyor"}`}</small></div>
+      {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
+    </section> : null}
   </section>;
 }
