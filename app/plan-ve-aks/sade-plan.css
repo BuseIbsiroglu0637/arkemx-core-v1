@@ -757,3 +757,590 @@ html[data-theme="dark"] .cad-plan-history button {
   background:#111;
   color:#bdc9cd;
 }
+
+
+/* V07 / desktop workspace overhaul — larger, calmer, theme-consistent */
+.arx-plan-page {
+  --plan-bg:#f3f6f7;
+  --plan-surface:#ffffff;
+  --plan-surface-2:#f8fafb;
+  --plan-canvas:#eef2f3;
+  --plan-canvas-paper:#fbfcfc;
+  --plan-border:#d6e0e3;
+  --plan-border-strong:#bdccd1;
+  --plan-text:#123041;
+  --plan-muted:#687f89;
+  --plan-accent:#c9703e;
+  --plan-accent-soft:#fff6f0;
+  --plan-blue:#214f60;
+  --plan-success:#3f8061;
+  --plan-success-soft:#eef8f2;
+  background:var(--plan-bg);
+  color:var(--plan-text);
+}
+html[data-theme="dark"] .arx-plan-page {
+  --plan-bg:#000;
+  --plan-surface:#090909;
+  --plan-surface-2:#0f0f0f;
+  --plan-canvas:#07090a;
+  --plan-canvas-paper:#0a1114;
+  --plan-border:#2d2d2d;
+  --plan-border-strong:#3a474c;
+  --plan-text:#edf3f5;
+  --plan-muted:#91a2a9;
+  --plan-accent:#d77b47;
+  --plan-accent-soft:#1a100b;
+  --plan-blue:#173f50;
+  --plan-success:#68b68e;
+  --plan-success-soft:#0c1712;
+}
+
+.arx-plan-page .arx-workspace-shell {
+  width:calc(100% - 40px) !important;
+  max-width:2100px;
+  margin:0 auto;
+}
+.arx-plan-page .arx-simple-head {
+  min-height:72px;
+  padding:16px 0;
+  border-bottom:1px solid var(--plan-border);
+}
+.arx-plan-page .arx-simple-brand {
+  font-size:22px;
+}
+.arx-plan-page .arx-workspace-nav {
+  gap:8px 12px;
+}
+.arx-plan-page .arx-workspace-nav a {
+  min-height:38px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 10px;
+  border-radius:6px;
+  color:var(--plan-muted);
+  font-size:11px;
+  font-weight:700;
+}
+.arx-plan-page .arx-workspace-nav a:hover,
+.arx-plan-page .arx-workspace-nav a:focus-visible {
+  background:var(--plan-surface-2);
+  color:var(--plan-text);
+}
+
+.arx-plan-page .arx-workspace-intro {
+  max-width:980px;
+  padding:34px 0 26px;
+}
+.arx-plan-page .arx-workspace-intro > span {
+  color:var(--plan-accent);
+  font-size:10px;
+  letter-spacing:.13em;
+}
+.arx-plan-page .arx-workspace-intro h1 {
+  margin-top:8px;
+  color:var(--plan-text);
+  font-size:clamp(38px,3.4vw,58px);
+  line-height:1.02;
+  letter-spacing:-.045em;
+}
+.arx-plan-page .arx-workspace-intro p {
+  max-width:850px;
+  margin-top:12px;
+  color:var(--plan-muted);
+  font-size:15px;
+  line-height:1.65;
+}
+
+/* Theme control belongs to the page chrome, not the bottom-left corner. */
+body:has(.arx-plan-page) .arkem-theme-control {
+  left:auto;
+  right:22px;
+  top:18px;
+  bottom:auto;
+  min-width:0;
+  padding:4px;
+  border-color:var(--plan-border);
+  border-radius:9px;
+  background:color-mix(in srgb, var(--plan-surface) 94%, transparent);
+  box-shadow:0 8px 24px rgba(12,32,42,.10);
+}
+body:has(.arx-plan-page) .arkem-theme-control-label {
+  display:none;
+}
+body:has(.arx-plan-page) .arkem-theme-control-options {
+  display:flex;
+  gap:3px;
+}
+body:has(.arx-plan-page) .arkem-theme-control button {
+  min-width:46px;
+  min-height:34px;
+  padding:6px 9px;
+  border-radius:6px;
+  font-size:9px;
+}
+html[data-theme="dark"] body:has(.arx-plan-page) .arkem-theme-control {
+  border-color:#343434;
+  background:rgba(10,10,10,.94);
+}
+
+/* Project data + progress read as one cockpit header. */
+.arx-plan-page .cad-plan-handoff {
+  grid-template-columns:minmax(0,1.1fr) minmax(520px,.9fr);
+  gap:24px;
+  margin-bottom:12px;
+  padding:18px 20px;
+  border:1px solid var(--plan-border);
+  border-left:4px solid var(--plan-success);
+  border-radius:10px;
+  background:var(--plan-success-soft);
+  box-shadow:none;
+}
+.arx-plan-page .cad-plan-handoff > div > span {
+  color:var(--plan-accent);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-handoff > div > b {
+  color:var(--plan-text);
+  font-size:15px;
+}
+.arx-plan-page .cad-plan-handoff > div > small {
+  max-width:720px;
+  color:var(--plan-muted);
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-handoff dl {
+  border-color:var(--plan-border);
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-plan-handoff dl > div {
+  padding:12px 14px;
+  border-color:var(--plan-border);
+}
+.arx-plan-page .cad-plan-handoff dt {
+  color:var(--plan-muted);
+  font-size:8px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.arx-plan-page .cad-plan-handoff dd {
+  color:var(--plan-text);
+  font-size:12px;
+}
+
+.arx-plan-page .cad-plan-flow {
+  margin-bottom:16px;
+  border-color:var(--plan-border);
+  border-radius:10px;
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-plan-flow > div {
+  min-height:72px;
+  padding:13px 16px;
+  border-color:var(--plan-border);
+}
+.arx-plan-page .cad-plan-flow i {
+  flex-basis:32px;
+  height:32px;
+  border-color:var(--plan-border-strong);
+  color:var(--plan-muted);
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-flow b {
+  color:var(--plan-text);
+  font-size:12px;
+}
+.arx-plan-page .cad-plan-flow small {
+  color:var(--plan-muted);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-flow .current {
+  background:var(--plan-accent-soft);
+  box-shadow:inset 0 -3px 0 var(--plan-accent);
+}
+.arx-plan-page .cad-plan-flow .current i {
+  border-color:var(--plan-accent);
+  background:var(--plan-accent);
+}
+
+/* Main editor frame */
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-app {
+  border:1px solid var(--plan-border);
+  border-radius:12px;
+  background:var(--plan-surface);
+  box-shadow:0 18px 48px rgba(20,48,60,.10);
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-app {
+  box-shadow:0 22px 60px rgba(0,0,0,.38);
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-topbar {
+  min-height:64px;
+  padding:12px 18px;
+  border-color:var(--plan-border);
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-project-id {
+  gap:14px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-project-id span {
+  color:var(--plan-accent);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-project-id b {
+  color:var(--plan-text);
+  font-size:13px;
+}
+
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-grid {
+  grid-template-columns:250px minmax(620px,1fr) 330px;
+  min-height:760px;
+}
+
+/* Left tool rail */
+.arx-plan-page .cad-plan-simple-tools {
+  padding:20px 16px;
+  border-color:var(--plan-border);
+  background:var(--plan-surface-2);
+}
+.arx-plan-page .cad-plan-simple-tools > strong,
+.arx-plan-page .cad-plan-simple-inspector section > strong {
+  margin-bottom:10px;
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-simple-tools > p,
+.arx-plan-page .cad-plan-simple-inspector section > p {
+  margin-bottom:16px;
+  color:var(--plan-muted);
+  font-size:10px;
+  line-height:1.55;
+}
+.arx-plan-page .cad-plan-simple-tools > button {
+  min-height:56px;
+  margin-bottom:7px;
+  padding:9px 10px;
+  border:1px solid transparent;
+  border-radius:8px;
+  color:var(--plan-text);
+}
+.arx-plan-page .cad-plan-simple-tools > button:hover,
+.arx-plan-page .cad-plan-simple-tools > button:focus-visible {
+  border-color:var(--plan-border-strong);
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-plan-simple-tools > button.active {
+  border-color:var(--plan-blue);
+  background:var(--plan-blue);
+  color:#fff;
+}
+.arx-plan-page .cad-plan-simple-tools > button i {
+  flex-basis:34px;
+  height:34px;
+  border-color:var(--plan-border-strong);
+  border-radius:5px;
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-simple-tools > button b {
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-simple-tools > button small {
+  margin-top:2px;
+  color:var(--plan-muted);
+  font-size:9px;
+  line-height:1.35;
+}
+.arx-plan-page .cad-plan-simple-tools > button.active small {
+  color:#c9d9df;
+}
+.arx-plan-page .cad-plan-history {
+  gap:7px;
+  margin-top:14px;
+}
+.arx-plan-page .cad-plan-history button {
+  min-height:38px;
+  border-color:var(--plan-border);
+  background:var(--plan-surface);
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-tool-boundary {
+  margin-top:16px;
+  padding:12px;
+  border-color:var(--plan-border);
+  border-left-color:var(--plan-accent);
+  border-radius:7px;
+  background:var(--plan-surface);
+}
+.arx-plan-page .cad-plan-tool-boundary b {
+  color:var(--plan-accent);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-tool-boundary span {
+  color:var(--plan-muted);
+  font-size:9px;
+}
+
+/* Canvas is the visual priority. */
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas {
+  min-height:760px;
+  border-color:var(--plan-border);
+  background:var(--plan-canvas);
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas-toolbar {
+  min-height:66px;
+  padding:12px 18px;
+  border-color:var(--plan-border);
+  background:var(--plan-surface-2);
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas-toolbar b {
+  color:var(--plan-text);
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas-toolbar small {
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg {
+  width:100%;
+  min-height:640px;
+  max-height:720px;
+  background:var(--plan-canvas-paper);
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-statusbar {
+  min-height:38px;
+  padding:8px 14px;
+  background:#123746;
+  color:#c6d5da;
+  font-size:9px;
+}
+
+/* Right inspector */
+.arx-plan-page .cad-plan-simple-inspector {
+  border-color:var(--plan-border);
+  background:var(--plan-surface-2);
+}
+.arx-plan-page .cad-plan-simple-inspector section,
+.arx-plan-page .cad-plan-exports {
+  padding:18px 16px;
+  border-color:var(--plan-border);
+}
+.arx-plan-page .cad-plan-simple-inspector .cad-floor-tabs {
+  gap:6px;
+}
+.arx-plan-page .cad-plan-simple-inspector .cad-floor-tabs button {
+  min-width:40px;
+  height:38px;
+  border-color:var(--plan-border-strong);
+  background:var(--plan-surface);
+  color:var(--plan-text);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-simple-inspector .cad-input-grid {
+  gap:10px;
+}
+.arx-plan-page .cad-plan-simple-inspector .cad-input-grid label,
+.arx-plan-page .cad-plan-simple-inspector .cad-properties label {
+  gap:6px;
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-simple-inspector input {
+  min-height:42px;
+  border-color:var(--plan-border-strong);
+  background:var(--plan-surface);
+  color:var(--plan-text);
+  font-size:11px;
+}
+.arx-plan-page .cad-plan-control > div {
+  padding:10px 0;
+  border-color:var(--plan-border);
+}
+.arx-plan-page .cad-plan-control > div span {
+  color:var(--plan-muted);
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-control > div b {
+  color:var(--plan-text);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-control > button {
+  min-height:42px;
+  border-radius:7px;
+  background:var(--plan-blue);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-exports summary {
+  color:var(--plan-text);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-exports .cad-export {
+  gap:8px;
+}
+.arx-plan-page .cad-plan-exports .cad-export button {
+  min-height:58px;
+  border-color:var(--plan-border);
+  background:var(--plan-surface);
+  color:var(--plan-text);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-exports .cad-export button span {
+  color:var(--plan-muted);
+  font-size:8px;
+}
+
+/* Footer + decision gate */
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-foot {
+  grid-template-columns:190px 1fr;
+  gap:24px;
+  padding:14px 18px;
+  border-color:var(--plan-border);
+  background:#123746;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-foot b {
+  font-size:8px;
+}
+.arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-foot p {
+  font-size:9px;
+}
+.arx-plan-page .cad-plan-completion {
+  margin-top:16px;
+  padding:18px 20px;
+  border-color:var(--plan-border);
+  border-left-color:var(--plan-accent);
+  border-radius:10px;
+  background:var(--plan-accent-soft);
+}
+.arx-plan-page .cad-plan-completion[data-state="pass"] {
+  border-color:var(--plan-border);
+  border-left-color:var(--plan-success);
+  background:var(--plan-success-soft);
+}
+.arx-plan-page .cad-plan-completion b {
+  color:var(--plan-text);
+  font-size:14px;
+}
+.arx-plan-page .cad-plan-completion small {
+  color:var(--plan-muted);
+  font-size:10px;
+}
+.arx-plan-page .cad-plan-completion > a {
+  min-height:44px;
+  padding:10px 16px;
+  border-radius:7px;
+  background:var(--plan-blue);
+  font-size:10px;
+}
+
+/* Dark mode: eliminate remaining white legacy islands. */
+html[data-theme="dark"] .arx-plan-page .arx-simple-head,
+html[data-theme="dark"] .arx-plan-page .cad-plan-handoff,
+html[data-theme="dark"] .arx-plan-page .cad-plan-flow,
+html[data-theme="dark"] .arx-plan-page .cad-plan-simple-tools,
+html[data-theme="dark"] .arx-plan-page .cad-plan-simple-inspector,
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-topbar {
+  border-color:var(--plan-border) !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-handoff dl,
+html[data-theme="dark"] .arx-plan-page .cad-plan-simple-inspector input,
+html[data-theme="dark"] .arx-plan-page .cad-plan-simple-inspector .cad-floor-tabs button,
+html[data-theme="dark"] .arx-plan-page .cad-plan-exports .cad-export button,
+html[data-theme="dark"] .arx-plan-page .cad-plan-history button,
+html[data-theme="dark"] .arx-plan-page .cad-plan-tool-boundary {
+  background:var(--plan-surface) !important;
+  color:var(--plan-text) !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg {
+  background:var(--plan-canvas-paper) !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg > rect:nth-of-type(2) {
+  fill:#0d161a !important;
+  stroke:#718c97 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg > g:not(.cad-centers) > circle {
+  fill:#101416 !important;
+  stroke:var(--plan-accent) !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg > g:not(.cad-centers) > text {
+  fill:#dce6e9 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-element.cell.space rect {
+  fill:rgba(56,112,133,.28) !important;
+  stroke:#52788a !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-element.cell.core rect {
+  stroke:#9aaeb6 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-element text {
+  fill:#edf3f5 !important;
+}
+html[data-theme="dark"] .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-element text.sub {
+  fill:#9caeb5 !important;
+}
+
+/* Medium screens retain the three-part mental model without crushing the canvas. */
+@media(max-width:1400px) {
+  .arx-plan-page .arx-workspace-shell {
+    width:calc(100% - 28px) !important;
+  }
+  .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-grid {
+    grid-template-columns:220px minmax(560px,1fr) 290px;
+  }
+  .arx-plan-page .cad-plan-handoff {
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:1080px) {
+  .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-grid {
+    grid-template-columns:210px minmax(0,1fr);
+  }
+  .arx-plan-page .cad-plan-simple-inspector {
+    grid-column:1/-1;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    border-left:0;
+    border-top:1px solid var(--plan-border);
+  }
+}
+@media(max-width:760px) {
+  body:has(.arx-plan-page) .arkem-theme-control {
+    top:auto;
+    right:10px;
+    bottom:10px;
+  }
+  .arx-plan-page .arx-workspace-shell {
+    width:calc(100% - 20px) !important;
+  }
+  .arx-plan-page .arx-workspace-intro h1 {
+    font-size:36px;
+  }
+  .arx-plan-page .cad-plan-handoff dl,
+  .arx-plan-page .cad-plan-flow {
+    grid-template-columns:1fr 1fr;
+  }
+  .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-editor-grid {
+    grid-template-columns:1fr;
+  }
+  .arx-plan-page .cad-plan-simple-tools {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    border-right:0;
+    border-bottom:1px solid var(--plan-border);
+  }
+  .arx-plan-page .cad-plan-simple-tools > strong,
+  .arx-plan-page .cad-plan-simple-tools > p,
+  .arx-plan-page .cad-plan-history,
+  .arx-plan-page .cad-plan-tool-boundary {
+    grid-column:1/-1;
+  }
+  .arx-plan-page .cad-plan-simple-tools > button {
+    margin:0;
+  }
+  .arx-plan-page .cad-plan-simple-inspector {
+    grid-template-columns:1fr;
+  }
+  .arx-plan-page .cad-plan-editor:not(.cad-issue-focus) .cad-canvas svg {
+    min-height:480px;
+  }
+}
