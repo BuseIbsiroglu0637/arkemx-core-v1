@@ -197,6 +197,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const suggestedProgramSpanY = Math.max(2, Math.min(15, spanY * programFootprintScale));
   const architectureModule = project.modules["architectural-program"] as {
     spaces?: Array<{ id?: string; code?: string; name?: string; zone?: string; count?: number; unitArea?: number; liveLoad?: number }>;
+    relationships?: Array<{ id?: string; from?: string; to?: string; priority?: string; confirmed?: boolean }>;
     result?: { liveLoad?: number };
     journeyComplete?: boolean;
   } | undefined;
@@ -221,6 +222,20 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     && linkedProgramSpaces.length === upstreamSpaceCount
     && allPlanSpaces.length === upstreamSpaceCount
     && programMetadataPass;
+  const areaRepresentation = linkedProgramSpaces.map((element) => {
+    const geometricArea = (element.widthBays ?? 1) * spanX * (element.heightBays ?? 1) * spanY;
+    const targetArea = Math.max(element.sourceUnitArea ?? 0, .01);
+    const ratio = Math.abs(geometricArea - targetArea) / targetArea;
+    return { id: element.id, geometricArea, targetArea, ratio, pass: ratio <= .03 };
+  });
+  const areaRepresentationPass = linkedProgramSpaces.length === upstreamSpaceCount
+    && areaRepresentation.every((item) => item.pass);
+  const requiredAdjacency = evaluateRequiredAdjacency(
+    linkedProgramSpaces,
+    upstreamSpaces,
+    Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [],
+  );
+  const requiredAdjacencyPass = requiredAdjacency.pass;
   const floorStats = Array.from({ length: floorCount }, (_, index) => {
     const floorLevel = index + 1;
     const floorElements = elements.filter((element) => element.level === floorLevel);
@@ -234,7 +249,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const floorCoveragePass = floorStats.every((floor) => floor.rooms > 0);
   const coreContinuityPass = floorStats.every((floor) => floor.cores > 0);
   const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
-  const planPlacementReady = programLinkPass && floorCoveragePass && coreContinuityPass;
+  const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass && requiredAdjacencyPass;
   const axisReady = baysX >= 2 && baysY >= 2 && spanX >= 2 && spanY >= 2;
   const siteFootprintPass = allowedFootprint <= 0 || metrics.floorArea <= allowedFootprint + .01;
   const planGatePass = upstreamReady && planPlacementReady && axisReady && programFootprintPass && siteFootprintPass;
@@ -243,8 +258,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     !programLinkPass ? `Mahal programı eşleşmesi (${linkedProgramSpaces.length}/${upstreamSpaceCount})` : "",
     linkedProgramSpaces.length === upstreamSpaceCount && !programMetadataPass ? "Mahal ad / alan güncellemesi" : "",
     manualOrUnlinkedSpaces.length ? `${manualOrUnlinkedSpaces.length} bağlantısız mahal` : "",
+    !areaRepresentationPass ? "Mahal alanlarının geometrik temsili" : "",
     !floorCoveragePass ? "Tüm katların planlanması" : "",
     !coreContinuityPass ? "Çekirdek sürekliliği" : "",
+    !requiredAdjacencyPass ? `Zorunlu komşuluklar (${requiredAdjacency.satisfied}/${requiredAdjacency.total})` : "",
     !axisReady ? "Aks geometrisi" : "",
     !programFootprintPass ? "Program / plan alan uyumu" : "",
     !siteFootprintPass ? "TAKS taban sınırı" : "",
@@ -509,6 +526,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       baysY,
       floorCount,
       Number(architectureModule?.result?.liveLoad) || 3.5,
+      spanX,
+      spanY,
     ) as PlanElement[];
     const retained = elements.filter((element) => element.type !== "space" && element.type !== "core");
     commit([...retained, ...generated], `Mimari Programdan ${upstreamSpaceCount} mahal ve ${floorCount} kat çekirdeği yeniden oluşturuldu`);
