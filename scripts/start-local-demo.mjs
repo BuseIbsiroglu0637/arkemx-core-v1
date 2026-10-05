@@ -35,7 +35,7 @@ console.log("GitHub Codespaces veya yayinlanmis site gerekmiyor.");
 console.log(process.env.ARKEMX_REMOTE_D1_DATABASE_ID
   ? "Hesap/taslak surekliligi: paylasilan uzak D1 etkin."
   : "Hesap/taslak surekliligi: yerel D1 + taslak indir/yukle yedegi.");
-if (landBrowser) console.log("Arsa arastirmasi: Hepsiemlak tarayici denemesi etkin (ilk sayfa, 24 ilan karti). ");
+if (landBrowser) console.log(`Arsa arastirmasi: ${process.env.ARKEMX_LAND_BROWSER_SOURCE === "hepsiemlak" ? "Hepsiemlak" : "Emlakjet"} tarayici denemesi etkin (ilk sayfa, 24 ilan karti).`);
 console.log("Kapatmak icin bu pencerede Ctrl+C kullanin.\n");
 
 const localConfig = path.join(projectRoot, "vite.local.config.mjs");

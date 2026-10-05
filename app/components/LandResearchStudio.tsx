@@ -25,6 +25,7 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
   const [connection, setConnection] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [sourceStatus, setSourceStatus] = useState<LandSourceStatus[]>([]);
   const [browserMode, setBrowserMode] = useState(false);
+  const [browserProvider, setBrowserProvider] = useState("Tarayıcı araştırması");
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState("");
   const controller = useRef<AbortController | null>(null), sequence = useRef(0);
   const parsed = parseLandCriteria(criteria);
@@ -38,7 +39,7 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
     const abort = new AbortController();
     fetch("/api/land-candidates", { cache: "no-store", signal: abort.signal }).then(async response => {
       if (!response.ok) throw Error();
-      const data = object(await response.json()); setConnection(data.ready === true ? "ready" : "missing"); setBrowserMode(data.mode === "local-browser");
+      const data = object(await response.json()); setConnection(data.ready === true ? "ready" : "missing"); setBrowserMode(data.mode === "local-browser"); setBrowserProvider(typeof data.provider === "string" ? data.provider : "Tarayıcı araştırması");
     }).catch(() => { if (!abort.signal.aborted) setConnection("error"); });
     return () => { abort.abort(); controller.current?.abort(); sequence.current++; };
   }, []);
@@ -107,7 +108,7 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
       <small>Arsa bütçesi toplam yatırım bütçesinden ayrıdır. Kapalı alan ihtiyacı, gerekli arsa alanıyla aynı değildir.</small>
       <fieldset><legend>İncelemede doğrulanacak ihtiyaçlar</legend>{LAND_NEEDS.map(need => <label key={need}><input type="checkbox" checked={criteria.needs.includes(need)} onChange={() => change("needs", criteria.needs.includes(need) ? criteria.needs.filter(n => n !== need) : [...criteria.needs, need])} />{need}</label>)}</fieldset>
       {!parsed ? <p className="land-watch">İl ve alan/bütçe aralıklarını kontrol edin.</p> : null}
-      {browserMode ? <p className="land-source-note">Hepsiemlak tarayıcı denemesi: yalnız satın alma, ilk sayfada en fazla 24 ilan kartı. Sonuçlar istenen toplam fiyata göre sıralanır.</p> : null}
+      {browserMode ? <p className="land-source-note">{browserProvider}: yalnız satın alma, ilk sayfada en fazla 24 ilan kartı. Sonuçlar istenen toplam fiyata göre sıralanır.</p> : null}
       <button type="submit" disabled={!parsed || busy || connection !== "ready" || (browserMode && criteria.tenure !== "sale")}>{busy ? "Agent kaynakları araştırıyor…" : "Adayları getir"}</button>
       <button type="button" disabled={!parsed || busy} onClick={() => { persist(); setNotice("Arama kriterleri projeye kaydedildi."); }}>Kriterleri kaydet</button>
     </form><div className="land-results">

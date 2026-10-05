@@ -44,7 +44,7 @@ test('rent requests never launch the browser', async () => {
 });
 test('local middleware requires demo session and same origin; preserves source-blocked status', async () => {
   let handler,calls=0;
-  landBrowserLocalPlugin({search:async()=>{calls++;throw new LandBrowserError('source-blocked','Hepsiemlak erişim engeli');}}).configureServer({config:{server:{host:'127.0.0.1'}},middlewares:{use(fn){handler=fn;}}});
+  landBrowserLocalPlugin({sourceName:"Hepsiemlak",search:async()=>{calls++;throw new LandBrowserError('source-blocked','Hepsiemlak erişim engeli');}}).configureServer({config:{server:{host:'127.0.0.1'}},middlewares:{use(fn){handler=fn;}}});
   const server=createServer((req,res)=>handler(req,res,()=>{res.statusCode=404;res.end();})); await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const root='http://127.0.0.1:'+server.address().port;
   try {

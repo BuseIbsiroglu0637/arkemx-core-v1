@@ -1,6 +1,6 @@
-# Hepsiemlak tarayıcı araştırması — başlangıç sürümü
+# Arsa tarayıcı araştırması — başlangıç sürümü
 
-Bu sürüm ARKEMX yerel demo/Codespaces geliştirme sunucusunda, normal Chromium ile Hepsiemlak arama formunu kullanır. ChatGPT'nin tarayıcısına veya OpenAI API anahtarına ihtiyaç duymaz. Üretim Cloudflare dağıtımında etkinleşmez; mevcut sunucu agent/feed bağlantısı korunur.
+Bu sürüm ARKEMX yerel demo/Codespaces geliştirme sunucusunda, normal Chromium ile Emlakjet arama formunu kullanır. ChatGPT'nin tarayıcısına veya OpenAI API anahtarına ihtiyaç duymaz. Üretim Cloudflare dağıtımında etkinleşmez; mevcut sunucu agent/feed bağlantısı korunur.
 
 ## Açılış
 
@@ -19,10 +19,10 @@ Normal demo için `npm run demo:local` kullanın. Tarayıcı denemesi yalnız `d
 
 ## Kapsam
 
-- Yalnız satın alma; yalnız Hepsiemlak; ilk sayfada en fazla 24 ilan kartı.
+- Yalnız satın alma; varsayılan kaynak Emlakjet; ilk sayfada en fazla 24 ilan kartı.
 - İl/ilçe sayfası açılır; fiyat ve alan filtreleri site formuna girilir. Okunan kartlar konum/alan/bütçeye göre ayrıca kontrol edilir.
 - İstenen toplam fiyata göre artan sıralama. Eksik veya olağan dışı fiyat en sona bırakılır ve doğrulama ister.
-- İlan kategorisi bir beyan olarak korunur. Tarla/bahçe üretim alanı sayılmaz; kullanım uyuşmazlığı kartta gösterilir ve mevcut incelemeye alma kapısı bunu engeller.
+- Kullanım bilgisi varsa bir ilan beyanı olarak korunur. Emlakjet kartında açık kategori bulunmadığı için yalnız belirgin başlık beyanları alınır; diğerlerinde kullanım eksik gösterilir. Tarla/bahçe üretim alanı sayılmaz; kullanım uyuşmazlığı kartta gösterilir ve mevcut incelemeye alma kapısı bunu engeller.
 - Karttaki başlık, URL, alan, fiyat ve konum okunur. Ayrıntılı açıklama, fotoğraf, iletişim bilgisi ve altyapı doğrulaması bu sürüme dahil değildir.
 - Kısa liste mevcut proje kaydında tutulur. Aday seçimi resmî parsel/imar verisini otomatik değiştirmez.
 - Kaynakta toplam sonuç sayısı ile gerçekten okunan kart sayısı ayrı gösterilir. İlk sayfada aday bulunmaması bütün kaynağın tarandığı anlamına gelmez.
@@ -30,6 +30,16 @@ Normal demo için `npm run demo:local` kullanın. Tarayıcı denemesi yalnız `d
 ## Hata durumları
 
 İnsan doğrulaması veya otomatik erişim engeli `source-blocked` olarak döner ve araştırma durur. Codespaces denemesinde görülen Cloudflare “Bir dakika lütfen…” başlığı ve doğrulama alanı da bu kapsamdadır. Bu durumda tarayıcı kurulumu tamamlanmış olsa bile ilanlara erişim yoktur; filtre veya kriter değiştirerek sonuç alındığı varsayılmaz. CAPTCHA çözülmez, stealth/proxy kullanılmaz ve döngüsel tekrar yapılmaz. Bu durum boş sonuç değildir. Eksik Chromium `browser-unavailable`; okunamayan düzen `layout-changed`; bağlantı/zaman aşımı `unavailable` olarak gösterilir. Yalnız açık boş sonuç veya başarıyla okunan kartların kriter dışı kalması tamamlanmış boş arama sayılır.
+
+## Emlakjet erişim denemesi
+
+2026-10-05 tarihinde ChatGPT bulut tarayıcısında Kastamonu/Merkez, satılık arsa ve en az 1.000 m² filtresi 80 sonuç gösterdi. Düşük fiyat sıralaması, maksimum alan ve fiyat alanları da çalıştı. Bu gözlem Codespaces Playwright erişimini kanıtlamaz. Codespaces için tek, sınırlı arama:
+
+```bash
+npm run probe:land
+```
+
+Komut yalnız Emlakjet'i dener; JSON içinde kaynak durumu, okunan kartlar ve arama kriterleri bulunur. İlk sayfadan en fazla 24 kart okur, kişisel iletişim bilgisi toplamaz. Erişim engelinde başarısız çıkış kodu ve `blocked` durumu verir. İnsan doğrulamasını aşmaya çalışmaz. Hepsiemlak adaptörü kodda korunur; varsayılan demoda tekrar denenmez. `ARKEMX_LAND_BROWSER_SOURCE=hepsiemlak` yalnız o kaynağı açıkça seçmek içindir.
 
 ## Doğrulama
 

@@ -1,8 +1,9 @@
 import { searchHepsiemlak, LandBrowserError } from './hepsiemlak-browser.mjs';
+import { searchEmlakjet } from './emlakjet-browser.mjs';
 import { parseLandCriteria } from '../../app/lib/land-research.ts';
 
 // This middleware is installed only by the opt-in localhost demo config.
-export function landBrowserLocalPlugin({ search = searchHepsiemlak } = {}) {
+export function landBrowserLocalPlugin({ sourceName = process.env.ARKEMX_LAND_BROWSER_SOURCE === 'hepsiemlak' ? 'Hepsiemlak' : 'Emlakjet', search = sourceName === 'Hepsiemlak' ? searchHepsiemlak : searchEmlakjet } = {}) {
   let busy = false, day = '', searches = 0;
   return { name: 'arkemx-local-land-browser', apply: 'serve', enforce: 'pre',
     configureServer(server) {
@@ -11,7 +12,7 @@ export function landBrowserLocalPlugin({ search = searchHepsiemlak } = {}) {
         if (req.url?.split('?')[0] !== '/api/land-candidates') return next();
         const json = (status, body) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); res.end(JSON.stringify(body)); };
         if (!/(?:^|;\s*)arkemx_prototype_session=1(?:;|$)/.test(req.headers.cookie || '')) return json(401, { error: 'Arsa araştırması için demo oturumunu açın.' });
-        if (req.method === 'GET') return json(200, { ready: true, provider: 'Hepsiemlak · tarayıcı araştırması', mode: 'local-browser' });
+        if (req.method === 'GET') return json(200, { ready: true, provider: `${sourceName} · tarayıcı araştırması`, mode: 'local-browser' });
         if (req.method !== 'POST') return json(405, { error: 'Geçersiz işlem.' });
         try {
           const origin = new URL(req.headers.origin || '');
@@ -36,7 +37,7 @@ export function landBrowserLocalPlugin({ search = searchHepsiemlak } = {}) {
         catch (error) {
           const known = error instanceof LandBrowserError;
           return json(502, { code: known ? error.code : 'unavailable', error: known ? error.message : 'Tarayıcı araştırması tamamlanamadı.',
-            sources: [{ name: 'Hepsiemlak', status: known && error.code === 'source-blocked' ? 'blocked' : 'failed', readCount: 0, totalCount: null }] });
+            sources: [{ name: sourceName, status: known && error.code === 'source-blocked' ? 'blocked' : 'failed', readCount: 0, totalCount: null }] });
         } finally { busy = false; res.off('close', disconnected); }
       });
     },
