@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseHepsiemlakCard, searchPageUrl, isHepsiemlakListing, classifySourcePage, searchHepsiemlak, LandBrowserError } from '../scripts/lib/hepsiemlak-browser.mjs';
 import { assessLandCandidate, readLandResearch, readLandSourceStatus } from '../app/lib/land-research.ts';
 import { landBrowserLocalPlugin } from '../scripts/lib/land-browser-local-plugin.mjs';
-import { createServer } from 'node:http';
+import { createServer, request } from 'node:http';
 const criteria = { province:'Kastamonu', district:'', tenure:'sale', minArea:3000, maxArea:0, maxPrice:10000000, use:'industrial', needs:['Tır erişimi'] };
 const url = 'https://www.hepsiemlak.com/kastamonu-ihsangazi-dagyolu-yeni-satilik/tarla/151988-78';
 // A small synthetic card fixture with the observed page structure; not a live listing.
@@ -69,5 +69,29 @@ test('detail middleware uses session/origin guards and returns explicit Emlakjet
     assert.equal((await fetch(root+'/api/land-candidate-detail',{headers})).status,405);
     const response=await fetch(root+'/api/land-candidate-detail',{method:'POST',headers,body});
     assert.equal(response.status,502); const data=await response.json(); assert.equal(data.code,'source-blocked');assert.equal(data.sources[0].name,'Emlakjet');assert.equal(data.sources[0].status,'blocked');assert.equal(calls,1);
+  } finally {await new Promise(resolve=>server.close(resolve));}
+});
+
+
+test('zoning middleware accepts the original Codespaces host before the worker rewrite; auth and origin checks remain enforced', async () => {
+  let handler,calls=0;
+  landBrowserLocalPlugin({zoning:async(input,{signal})=>{calls++;assert.equal(input.block,'143');assert.ok(signal);return {schema:'ARKEM-OFFICIAL-ZONING/1.0',status:'not-found',identity:input};}}).configureServer({config:{server:{host:'127.0.0.1'}},middlewares:{use(fn){handler=fn;}}});
+  const server=createServer((req,res)=>handler(req,res,()=>{res.statusCode=404;res.end();}));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const root='http://127.0.0.1:'+server.address().port;
+  const body=JSON.stringify({province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',neighborhoodId:'123',block:'143',parcelNo:'11'});
+  const headers={'content-type':'application/json',cookie:'arkemx_prototype_session=1',host:'arkemx-demo-5173.app.github.dev',origin:'https://arkemx-demo-5173.app.github.dev'};
+  const send=options=>new Promise((resolve,reject)=>{
+    const req=request(root+'/api/zoning-conditions',{method:options.method||'GET',headers:options.headers},res=>{
+      let data='';res.setEncoding('utf8');res.on('data',chunk=>data+=chunk);res.on('end',()=>resolve({status:res.statusCode,json:async()=>JSON.parse(data)}));
+    });req.on('error',reject);req.end(options.body);
+  });
+  try {
+    assert.equal((await send({method:'POST',headers:{...headers,cookie:''},body})).status,401);
+    assert.equal((await send({method:'POST',headers:{...headers,origin:'https://evil.test'},body})).status,403);
+    assert.equal((await send({method:'POST',headers:{...headers,'x-forwarded-host':'evil.test',origin:'https://evil.test'},body})).status,403);
+    assert.equal((await send({headers})).status,405);
+    assert.equal((await send({method:'POST',headers,body:'{}'})).status,400);
+    assert.equal((await send({method:'POST',headers,body:' '.repeat(2001)})).status,413);
+    const response=await send({method:'POST',headers,body});assert.equal(response.status,200);assert.equal((await response.json()).status,'not-found');assert.equal(calls,1);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });

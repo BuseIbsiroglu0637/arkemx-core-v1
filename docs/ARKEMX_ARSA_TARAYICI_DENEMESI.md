@@ -71,3 +71,6 @@ Resmî idari seçim ve ada/parsel tamamlandığında `/api/zoning-conditions` ot
 TAKS, emsal ve yükseklik yalnız `Deger` tipli alanlardan; ön/yan mesafeler ve nizam varsa kaynaktan aktarılır. Arka çekme mesafesi ve plan notları çıkarılmaz. Boş form veya değişmemiş otomatik ilan aktarımı güncellenebilir; manuel/sourced/reviewed çalışma korunur ve kaynak değerleri ayrıca gösterilir. Sonuç parsel kimliğiyle 24 saat yerel olarak saklanır; yeniden sorgulama düğmesi erişimi tekrar dener. Başka il veya kullanım türü desteklenmiş sayılmaz. Kaynakta kayıt yokluğu “imarsız parsel” değildir. Hata ve erişim kısıtı boş başarı değildir.
 
 `npm run test:zoning-source` sentetik servis yanıtlarıyla kaynak eşleştirmesi ve hata senaryolarını doğrular. Canlı Kuzyaka 143/11 sorgusu bu ortamda zaman aşımı nedeniyle doğrulanamadı; sayısal sonuç veya ülke genelinde kapsama iddiası yoktur.
+
+
+Codespaces `demo:land` çalışmasında `/api/zoning-conditions` aynı yerel middleware üzerinden sunulur. Origin kontrolü worker adres dönüşümünden önce gerçek Host üzerinden yapılır; demo oturumu, aynı kaynak, 2 KB gövde, iptal ve günlük 60 sorgu sınırı korunur. Worker tarafından görülen localhost adresi Codespaces origin'iyle karşılaştırılmaz. Güvensiz forwarded-host başlığı kabul edilen kaynakları genişletmez.
