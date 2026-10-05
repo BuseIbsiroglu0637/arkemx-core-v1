@@ -1,0 +1,52 @@
+/* ARKEM WEB V5.0 — project intake hierarchy and public-data polish */
+.project-intake-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.project-intake-section + .project-intake-section {
+  margin-top: 12px;
+  padding-top: 30px;
+  border-top: 1px solid #c8d1d6;
+}
+
+.project-intake-section > legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 18px;
+  padding: 0;
+  color: #17384a;
+  font: 750 12px/1.4 var(--font-manrope), Arial, sans-serif;
+  letter-spacing: .08em;
+}
+
+.project-intake-section > legend span {
+  color: var(--copper);
+  font-size: 10px;
+}
+
+.project-intake-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+@media (max-width: 560px) {
+  .project-intake-section + .project-intake-section {
+    margin-top: 6px;
+    padding-top: 26px;
+  }
+
+  .project-intake-section-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+  }
+
+  .project-intake-section-grid .form-wide {
+    grid-column: auto;
+  }
+}

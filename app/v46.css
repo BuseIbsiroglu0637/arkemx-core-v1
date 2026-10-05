@@ -1,0 +1,237 @@
+/* V48 — shared header and hero-rail geometry.
+   The header is intentionally borderless. Hero journeys use separated,
+   compact steps instead of long ruler-like dividers. */
+
+.site-nav{
+  position:relative!important;
+  height:96px!important;
+  min-height:96px!important;
+  border-bottom:0!important;
+}
+
+.site-nav::after,
+.site-nav.nav-light::after{
+  content:none!important;
+  display:none!important;
+}
+
+.site-nav > .brand{
+  position:relative;
+  z-index:5;
+  display:flex;
+  height:100%;
+  flex:0 0 238px;
+  align-items:center;
+  padding-right:26px;
+}
+
+.site-nav .official-logo{
+  display:block;
+  width:218px!important;
+  max-width:218px!important;
+  height:auto!important;
+  max-height:72px!important;
+  overflow:visible!important;
+}
+
+.site-nav .official-logo img{
+  position:static!important;
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+}
+
+/* Project start and contact journeys are discrete steps, not a continuous
+   horizontal rule. This also prevents old inherited borders from reappearing. */
+.project-start-hero-flow{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:min(100%,1040px)!important;
+  max-width:1040px!important;
+  margin-top:34px!important;
+  border:0!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  overflow:visible!important;
+}
+
+.project-start-hero-flow span{
+  position:relative;
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr)!important;
+  gap:10px!important;
+  min-height:54px!important;
+  padding:10px 13px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background:rgba(3,22,34,.52)!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.08);
+}
+
+.project-start-hero-flow span:last-child{
+  border-right:1px solid rgba(255,255,255,.14)!important;
+}
+
+.project-start-hero-flow small{
+  display:none!important;
+}
+
+.contact-hero-v27 .premium-hero-trust{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:9px!important;
+  width:min(100%,850px)!important;
+  max-width:850px!important;
+  margin-top:28px!important;
+  border:0!important;
+  background:transparent!important;
+}
+
+.contact-hero-v27 .premium-hero-trust span{
+  display:flex!important;
+  min-height:54px!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:11px 14px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background:rgba(3,22,34,.52)!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.08);
+}
+
+.thread-hero-strip,
+.architecture-hero-strip,
+.coordination-hero-strip,
+.geo-hero-flow,
+.os-hero-strip,
+.design-studio-index,
+.digital-hero-index,
+.media-hero-index,
+.model-library-index,
+.technical-hero-index,
+.arkem-x-signal{
+  position:relative!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:calc(100% - 160px)!important;
+  max-width:1320px!important;
+  min-width:0!important;
+  margin:30px auto 0!important;
+  transform:none!important;
+  flex-wrap:nowrap!important;
+  overflow-x:hidden!important;
+  box-sizing:border-box!important;
+}
+
+.thread-hero-strip > span,
+.architecture-hero-strip > span,
+.coordination-hero-strip > span,
+.geo-hero-flow > span,
+.os-hero-strip > span,
+.design-studio-index > span,
+.digital-hero-index > span,
+.media-hero-index > span,
+.model-library-index > span,
+.technical-hero-index > span,
+.arkem-x-signal > span{
+  flex:1 1 0!important;
+  width:0!important;
+  max-width:none!important;
+  min-width:0!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+@media(max-width:1180px){
+  .site-nav{
+    height:88px!important;
+    min-height:88px!important;
+  }
+  .site-nav > .brand{
+    flex-basis:205px;
+  }
+  .site-nav .official-logo{
+    width:190px!important;
+    max-width:190px!important;
+    max-height:64px!important;
+  }
+}
+
+@media(max-width:900px){
+  .site-nav > .brand{
+    flex-basis:auto;
+    padding-right:0;
+  }
+  .site-nav .official-logo{
+    width:185px!important;
+    max-width:185px!important;
+  }
+  .thread-hero-strip,
+  .architecture-hero-strip,
+  .coordination-hero-strip,
+  .geo-hero-flow,
+  .os-hero-strip,
+  .design-studio-index,
+  .digital-hero-index,
+  .media-hero-index,
+  .model-library-index,
+  .technical-hero-index,
+  .arkem-x-signal{
+    width:calc(100% - 36px)!important;
+    max-width:720px!important;
+    overflow-x:auto!important;
+  }
+  .thread-hero-strip > span,
+  .architecture-hero-strip > span,
+  .coordination-hero-strip > span,
+  .geo-hero-flow > span,
+  .os-hero-strip > span,
+  .design-studio-index > span,
+  .digital-hero-index > span,
+  .media-hero-index > span,
+  .model-library-index > span,
+  .technical-hero-index > span,
+  .arkem-x-signal > span{
+    flex:0 0 145px!important;
+    width:145px!important;
+  }
+  .project-start-hero-flow{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    overflow:visible!important;
+  }
+  .contact-hero-v27 .premium-hero-trust{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+@media(max-width:560px){
+  .site-nav{
+    height:78px!important;
+    min-height:78px!important;
+  }
+  .site-nav .official-logo{
+    width:164px!important;
+    max-width:164px!important;
+    max-height:56px!important;
+  }
+  .project-start-hero-flow{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    margin-top:26px!important;
+  }
+  .project-start-hero-flow span{
+    min-height:50px!important;
+    padding:9px 11px!important;
+  }
+  .contact-hero-v27 .premium-hero-trust{
+    grid-template-columns:1fr!important;
+    gap:7px!important;
+    margin-top:22px!important;
+  }
+  .contact-hero-v27 .premium-hero-trust span{
+    min-height:48px!important;
+    padding:9px 11px!important;
+  }
+}

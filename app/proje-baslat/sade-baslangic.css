@@ -1,0 +1,894 @@
+/* Simple new-project screen. Only this route is affected. */
+.arx-start-page { min-height: 100vh; padding-bottom: 72px; }
+.arx-start-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #546e79;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 0;
+}
+.arx-start-back:hover, .arx-start-back:focus-visible { color: #bd7244; }
+.arx-start-intro { padding: 41px 0 30px; }
+.arx-start-intro > span {
+  display: block;
+  margin-bottom: 10px;
+  color: #789098;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.arx-start-intro h1 {
+  margin: 0 0 10px;
+  color: #1d2b36;
+  font-size: clamp(28px, 4vw, 37px);
+  font-weight: 675;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+}
+.arx-start-intro p { max-width: 650px; margin: 0; color: #647681; font-size: 14px; line-height: 1.6; }
+.arx-start-page .project-start-studio {
+  width: 100%;
+  border: 1px solid #e0e6e9;
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: none;
+  background: #fff;
+}
+.arx-start-page .start-resume-banner { margin: 0; }
+.arx-start-page .project-start-head {
+  display: block;
+  padding: 15px 24px;
+  background: #fff;
+  border: 0;
+  color: #1d2b36;
+}
+.arx-start-page .project-start-head > div:first-child,
+.arx-start-page .project-start-head > p { display: none; }
+.arx-start-page .start-mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.arx-start-page .start-mode-switch > span {
+  flex: 1;
+  min-width: 125px;
+  padding: 8px 0;
+  color: #647681;
+  font-size: 11px;
+  font-weight: 750;
+}
+.arx-start-page .start-mode-switch button {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border-radius: 7px;
+  background: #f0f3f4;
+  border: 1px solid #dce5e7;
+  color: #34505b;
+  text-align: center;
+}
+.arx-start-page .start-mode-switch button b { font-size: 12px; }
+.arx-start-page .start-mode-switch button small { display: none; }
+.arx-start-page .start-mode-switch button.active {
+  background: #244756;
+  border-color: #244756;
+  color: #fff;
+}
+.arx-start-page .project-start-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 0 14px;
+  border-block: 1px solid #e6ecee;
+  background: #f9fafb;
+  overflow-x: auto;
+}
+.arx-start-page .project-start-steps button {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 65px;
+  gap: 9px;
+  padding: 13px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #627884;
+  box-shadow: none;
+}
+.arx-start-page .project-start-steps button.active {
+  color: #173f53;
+  border-bottom-color: #bd7244;
+  background: #fff;
+  box-shadow: none;
+}
+.arx-start-page .project-start-steps button i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border: 1px solid #d4e0e4;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 750;
+  font-style: normal;
+}
+.arx-start-page .project-start-steps button span { min-width: 0; }
+.arx-start-page .project-start-steps button b { display: block; font-size: 12px; white-space: normal; }
+.arx-start-page .project-start-steps button small { display: none; }
+.arx-start-page .project-start-workspace {
+  display: block;
+  background: #fff;
+}
+.arx-start-page .project-start-workspace > aside { display: none; }
+.arx-start-page .project-start-form {
+  max-width: 850px;
+  min-height: 300px;
+  margin: 0 auto;
+  padding: clamp(22px, 4vw, 42px);
+  background: #fff;
+}
+.arx-start-page .project-start-foot {
+  padding: 20px clamp(22px, 4vw, 42px);
+  background: #f9fafb;
+  border-top: 1px solid #e9eff0;
+  color: #647681;
+}
+.arx-start-page .project-start-foot b { font-size: 11px; }
+.arx-start-page .project-start-foot p { max-width: 800px; font-size: 12px; line-height: 1.6; }
+@media(max-width: 700px) {
+  .arx-start-page .project-start-head { padding: 14px; }
+  .arx-start-page .start-mode-switch { flex-wrap: wrap; }
+  .arx-start-page .start-mode-switch > span { flex-basis: 100%; }
+  .arx-start-page .start-mode-switch button { flex: 1; }
+  .arx-start-page .project-start-steps { grid-template-columns: repeat(5, minmax(78px, 1fr)); padding: 0 4px; }
+  .arx-start-page .project-start-steps button { padding: 10px 8px; min-height: 62px; gap: 5px; }
+  .arx-start-page .project-start-steps button i { display: none; }
+}
+
+
+.arx-start-page .start-draft-transfer {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:9px;
+}
+.arx-start-page .start-draft-transfer button,
+.arx-start-page .start-draft-transfer label {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:6px 9px;
+  border:1px solid #d4dfe3;
+  border-radius:5px;
+  background:#fff;
+  color:#3f606d;
+  font-size:9px;
+  font-weight:750;
+  cursor:pointer;
+}
+.arx-start-page .start-draft-transfer input { display:none; }
+.arx-start-page .start-draft-state > em {
+  display:block;
+  margin-top:7px;
+  color:#6e818a;
+  font-size:9px;
+  font-style:normal;
+  line-height:1.4;
+}
+
+
+.arx-start-page .start-active-project {
+  display:grid;
+  gap:10px;
+  padding:clamp(24px,4vw,42px);
+  border:1px solid #e0e6e9;
+  border-radius:11px;
+  background:#fff;
+}
+.arx-start-page .start-active-project > span {
+  color:#a65d36;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.arx-start-page .start-active-project h2 {
+  margin:0;
+  color:#1d2b36;
+  font-size:clamp(24px,4vw,34px);
+}
+.arx-start-page .start-active-project p,
+.arx-start-page .start-active-project small {
+  margin:0;
+  color:#6b7e87;
+}
+.arx-start-page .start-active-project strong {
+  margin-top:8px;
+  color:#284957;
+  font-size:14px;
+}
+.arx-start-page .start-active-project small {
+  max-width:760px;
+  font-size:12px;
+  line-height:1.6;
+}
+.arx-start-page .start-active-project > div {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.arx-start-page .start-active-project > div > button {
+  min-height:42px;
+  padding:10px 14px;
+  border:1px solid #cfdbdf;
+  border-radius:6px;
+  background:#fff;
+  color:#34545f;
+  font-weight:750;
+  cursor:pointer;
+}
+
+
+/* V04 / project-start flow polish */
+.arx-start-page .arx-simple-head {
+  padding-right:82px;
+}
+
+.arx-start-page .project-start-steps button.locked {
+  cursor:not-allowed;
+  opacity:.48;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit {
+  border-color:#cddce2;
+  background:#edf5f7;
+  color:#294d5c;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit > div > span {
+  color:#527582;
+}
+
+.arx-start-page .start-resume-banner.is-brief-edit > a {
+  color:#294d5c;
+}
+
+.arx-start-page .start-resume-banner.is-new-project {
+  border-color:#ead2bf;
+  background:#fff6ef;
+  color:#7f4c2d;
+}
+
+.arx-start-page .start-resume-banner.is-new-project > div > span {
+  color:#a45e35;
+}
+
+.arx-start-page .start-resume-banner.is-new-project > a {
+  color:#8d4d29;
+}
+
+/* Compact theme control — consistent with account/workspace screens. */
+body:has(.arx-start-page) .arkem-theme-control {
+  top:20px;
+  right:20px;
+  bottom:auto;
+  left:auto;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+
+body:has(.arx-start-page) .arkem-theme-control-label {
+  display:none;
+}
+
+body:has(.arx-start-page) .arkem-theme-control-options {
+  display:flex;
+  gap:4px;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button {
+  width:34px;
+  min-height:34px;
+  padding:0;
+  border:1px solid #d7e1e4;
+  border-radius:7px;
+  background:#fff;
+  color:#526d78;
+  font-size:0;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button span {
+  font-size:14px;
+}
+
+body:has(.arx-start-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#244756;
+  background:#244756;
+  color:#fff;
+}
+
+/* Dark mode for route-specific light overrides. */
+html[data-theme="dark"] .arx-start-page {
+  background:#000;
+}
+
+html[data-theme="dark"] .arx-start-page .arx-start-back {
+  color:#c3d0d5;
+}
+
+html[data-theme="dark"] .arx-start-page .arx-start-back:hover,
+html[data-theme="dark"] .arx-start-page .arx-start-back:focus-visible {
+  color:#e19a6c;
+}
+
+html[data-theme="dark"] .arx-start-intro h1 {
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-intro p {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-studio,
+html[data-theme="dark"] .arx-start-page .project-start-head,
+html[data-theme="dark"] .arx-start-page .project-start-workspace,
+html[data-theme="dark"] .arx-start-page .project-start-form {
+  border-color:#2d2d2d;
+  background:#090909;
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch > span {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch button {
+  border-color:#343434;
+  background:#111;
+  color:#d5e0e4;
+}
+
+html[data-theme="dark"] .arx-start-page .start-mode-switch button.active {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps {
+  border-color:#2a2a2a;
+  background:#0d0d0d;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button {
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button.active {
+  border-bottom-color:#d07b49;
+  background:#111;
+  color:#f5f7f8;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button i {
+  border-color:#3b3b3b;
+  color:#c4d0d4;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-foot {
+  border-color:#292929;
+  background:#0d0d0d;
+  color:#aebbc1;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit {
+  border-color:#304d58;
+  background:#0d181d;
+  color:#d8e8ee;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit > div > span,
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-brief-edit > a {
+  color:#9fc1cd;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project {
+  border-color:#5b3b2a;
+  background:#170f0a;
+  color:#ecc2a4;
+}
+
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project > div > span,
+html[data-theme="dark"] .arx-start-page .start-resume-banner.is-new-project > a {
+  color:#df9a6e;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control {
+  background:transparent;
+  box-shadow:none;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control button {
+  border-color:#333;
+  background:#0b0b0b;
+  color:#cbd4d8;
+}
+
+html[data-theme="dark"] body:has(.arx-start-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+@media(max-width:700px) {
+  .arx-start-page .arx-simple-head {
+    padding-right:76px;
+  }
+
+  body:has(.arx-start-page) .arkem-theme-control {
+    top:15px;
+    right:14px;
+  }
+}
+
+
+/* Form controls — one guided flow, optional technical details in context. */
+.arx-start-page .start-fieldset {
+  display:grid;
+  gap:22px;
+}
+
+.arx-start-page .start-fieldset > label,
+.arx-start-page .start-number-grid label,
+.arx-start-page .start-decision-grid label,
+.arx-start-page .start-technical-details label {
+  display:grid;
+  gap:7px;
+  color:#4c6874;
+  font-size:11px;
+  font-weight:700;
+}
+
+.arx-start-page .start-fieldset input,
+.arx-start-page .start-fieldset select,
+.arx-start-page .start-technical-details input {
+  width:100%;
+  min-height:44px;
+  padding:9px 11px;
+  border:1px solid #cad7dc;
+  border-radius:6px;
+  background:#fff;
+  color:#233f4b;
+  font:600 13px var(--font-inter),Arial,sans-serif;
+}
+
+.arx-start-page .start-fieldset input:focus,
+.arx-start-page .start-fieldset select:focus,
+.arx-start-page .start-technical-details input:focus {
+  outline:2px solid rgba(185,102,54,.28);
+  outline-offset:1px;
+  border-color:#b96636;
+}
+
+.arx-start-page .start-fieldset fieldset {
+  display:grid;
+  gap:9px;
+  margin:0;
+  padding:0;
+  border:0;
+}
+
+.arx-start-page .start-fieldset legend {
+  margin-bottom:8px;
+  color:#4c6874;
+  font-size:11px;
+  font-weight:750;
+}
+
+.arx-start-page .start-fieldset fieldset > button {
+  min-height:48px;
+  border:1px solid #d5e0e4;
+  border-radius:7px;
+  background:#fff;
+  color:#355460;
+  cursor:pointer;
+}
+
+.arx-start-page .start-fieldset fieldset > button:hover,
+.arx-start-page .start-fieldset fieldset > button:focus-visible {
+  border-color:#9fb3ba;
+  background:#f8fafb;
+}
+
+.arx-start-page .start-fieldset fieldset > button.selected {
+  border-color:#bd7244;
+  background:#fff7f1;
+  color:#74452b;
+  box-shadow:inset 3px 0 0 #bd7244;
+}
+
+.arx-start-page .start-fieldset fieldset > button i {
+  border-color:#cad9de;
+  background:#fff;
+  color:#5c7480;
+}
+
+.arx-start-page .start-fieldset fieldset > button.selected i {
+  border-color:#bd7244;
+  background:#bd7244;
+  color:#fff;
+}
+
+.arx-start-page .start-fieldset fieldset > button small {
+  color:#7d9098;
+}
+
+.arx-start-page .start-number-grid,
+.arx-start-page .start-decision-grid {
+  gap:12px;
+}
+
+.arx-start-page .start-technical-details {
+  overflow:hidden;
+  border:1px solid #dce5e8;
+  border-radius:8px;
+  background:#f8fafb;
+}
+
+.arx-start-page .start-technical-details > summary {
+  padding:12px 14px;
+  color:#4e6975;
+  font-size:10px;
+  font-weight:750;
+  cursor:pointer;
+}
+
+.arx-start-page .start-technical-details[open] > summary {
+  border-bottom:1px solid #e1e8ea;
+}
+
+.arx-start-page .start-technical-details > label,
+.arx-start-page .start-technical-details > p {
+  margin:0;
+  padding:12px 14px;
+}
+
+.arx-start-page .start-technical-details > p {
+  padding-top:0;
+  color:#71848c;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.arx-start-page .start-live-metric,
+.arx-start-page .start-info-card {
+  border:1px solid #dce5e8;
+  border-radius:8px;
+  background:#f8fafb;
+}
+
+.arx-start-page .start-live-metric {
+  padding:14px;
+}
+
+.arx-start-page .start-live-metric > span {
+  color:#6e838c;
+}
+
+.arx-start-page .start-live-metric > b {
+  color:#294955;
+}
+
+.arx-start-page .start-live-metric > small,
+.arx-start-page .start-info-card p,
+.arx-start-page .start-boundary {
+  color:#71848c;
+}
+
+.arx-start-page .start-validation {
+  margin:8px 0 0;
+  color:#a45239;
+  font-size:10px;
+  font-weight:700;
+}
+
+.arx-start-page .project-start-actions {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:26px;
+}
+
+.arx-start-page .project-start-actions > button {
+  min-height:40px;
+  padding:9px 14px;
+  border:1px solid #cad6da;
+  border-radius:6px;
+  background:#fff;
+  color:#49636e;
+  font:750 10px var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+}
+
+.arx-start-page .project-start-actions > button.primary {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+.arx-start-page .project-start-actions > button:hover:not(:disabled) {
+  border-color:#8fa8b2;
+}
+
+.arx-start-page .project-start-actions > button.primary:hover:not(:disabled) {
+  border-color:#9b522d;
+  background:#9b522d;
+}
+
+.arx-start-page .project-start-actions > button:disabled {
+  border-color:#d8e0e3;
+  background:#edf1f2;
+  color:#9aa8ae;
+  cursor:not-allowed;
+  opacity:1;
+}
+
+/* True dark form pass */
+html[data-theme="dark"] .arx-start-page .project-start-studio,
+html[data-theme="dark"] .arx-start-page .project-start-workspace,
+html[data-theme="dark"] .arx-start-page .project-start-form {
+  background:#080808;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset > label,
+html[data-theme="dark"] .arx-start-page .start-number-grid label,
+html[data-theme="dark"] .arx-start-page .start-decision-grid label,
+html[data-theme="dark"] .arx-start-page .start-technical-details label,
+html[data-theme="dark"] .arx-start-page .start-fieldset legend {
+  color:#c0ccd1;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset input,
+html[data-theme="dark"] .arx-start-page .start-fieldset select,
+html[data-theme="dark"] .arx-start-page .start-technical-details input {
+  border-color:#383838;
+  background:#111;
+  color:#f2f5f6;
+  caret-color:#fff;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset input::placeholder {
+  color:#78868c;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset input:focus,
+html[data-theme="dark"] .arx-start-page .start-fieldset select:focus,
+html[data-theme="dark"] .arx-start-page .start-technical-details input:focus {
+  border-color:#c67647;
+  outline-color:rgba(198,118,71,.34);
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button {
+  border-color:#353535;
+  background:#101010;
+  color:#dce4e7;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button:hover,
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button:focus-visible {
+  border-color:#555;
+  background:#151515;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button.selected {
+  border-color:#c67647;
+  background:#1a100b;
+  color:#f1c4a8;
+  box-shadow:inset 3px 0 0 #c67647;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button i {
+  border-color:#4b4b4b;
+  background:#171717;
+  color:#bec9cd;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button.selected i {
+  border-color:#c67647;
+  background:#c67647;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-start-page .start-fieldset fieldset > button small {
+  color:#a5b2b7;
+}
+
+html[data-theme="dark"] .arx-start-page .start-technical-details,
+html[data-theme="dark"] .arx-start-page .start-live-metric,
+html[data-theme="dark"] .arx-start-page .start-info-card {
+  border-color:#303030;
+  background:#0e0e0e;
+}
+
+html[data-theme="dark"] .arx-start-page .start-technical-details > summary {
+  color:#c5d1d5;
+}
+
+html[data-theme="dark"] .arx-start-page .start-technical-details[open] > summary {
+  border-color:#2c2c2c;
+}
+
+html[data-theme="dark"] .arx-start-page .start-technical-details > p,
+html[data-theme="dark"] .arx-start-page .start-live-metric > small,
+html[data-theme="dark"] .arx-start-page .start-info-card p,
+html[data-theme="dark"] .arx-start-page .start-boundary {
+  color:#9eabb0;
+}
+
+html[data-theme="dark"] .arx-start-page .start-live-metric > span,
+html[data-theme="dark"] .arx-start-page .start-info-card b {
+  color:#b8c5ca;
+}
+
+html[data-theme="dark"] .arx-start-page .start-live-metric > b {
+  color:#f2f5f6;
+}
+
+html[data-theme="dark"] .arx-start-page .start-validation {
+  color:#e18e74;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-actions > button {
+  border-color:#3a3a3a;
+  background:#111;
+  color:#cbd5d9;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-actions > button.primary {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-actions > button:disabled {
+  border-color:#2d2d2d;
+  background:#161616;
+  color:#626f74;
+  opacity:1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button {
+  color:#b5c1c6;
+  opacity:1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button.locked {
+  color:#76858b;
+  opacity:1;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button.locked i {
+  color:#6f7c81;
+  border-color:#313131;
+}
+
+html[data-theme="dark"] .arx-start-page .project-start-steps button.active {
+  color:#f3f6f7;
+}
+
+html[data-theme="dark"] .arx-start-page .start-review,
+html[data-theme="dark"] .arx-start-page .start-review > header,
+html[data-theme="dark"] .arx-start-page .start-review dl,
+html[data-theme="dark"] .arx-start-page .start-review-next,
+html[data-theme="dark"] .arx-start-page .start-roadmap-gates article,
+html[data-theme="dark"] .arx-start-page .start-missing-documents {
+  border-color:#303030;
+  background:#0e0e0e;
+  color:#e4eaed;
+}
+
+html[data-theme="dark"] .arx-start-page .start-review :where(dt,small,p),
+html[data-theme="dark"] .arx-start-page .start-roadmap-gates article small,
+html[data-theme="dark"] .arx-start-page .start-missing-documents {
+  color:#9eabb0;
+}
+
+html[data-theme="dark"] .arx-start-page .start-review :where(dd,b,h4,strong) {
+  color:#f1f5f6;
+}
+
+
+/* Brief summary fallback — never leave the user on an unrelated form. */
+.arx-start-page .start-summary-unavailable {
+  display:grid;
+  gap:10px;
+  padding:clamp(24px,4vw,42px);
+  border:1px solid #e0e6e9;
+  border-radius:11px;
+  background:#fff;
+}
+.arx-start-page .start-summary-unavailable > span {
+  color:#a65d36;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-start-page .start-summary-unavailable h2 {
+  margin:0;
+  color:#1d2b36;
+  font-size:clamp(22px,3vw,31px);
+}
+.arx-start-page .start-summary-unavailable p {
+  max-width:760px;
+  margin:0;
+  color:#6b7e87;
+  font-size:12px;
+  line-height:1.6;
+}
+.arx-start-page .start-summary-unavailable > div {
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:8px;
+}
+.arx-start-page .start-summary-unavailable .button {
+  min-height:39px;
+  display:inline-flex;
+  align-items:center;
+  padding:8px 11px;
+  border:1px solid #d0dbe0;
+  border-radius:6px;
+  background:#fff;
+  color:#365866;
+  font-size:10px;
+  font-weight:750;
+}
+.arx-start-page .start-summary-unavailable .button.navy {
+  border-color:#244756;
+  background:#244756;
+  color:#fff;
+}
+.arx-start-page .start-summary-unavailable .button.copper {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable {
+  border-color:#303030;
+  background:#090909;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable h2 {
+  color:#f4f7f8;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable p {
+  color:#aebbc1;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable .button {
+  border-color:#383838;
+  background:#111;
+  color:#d5e0e4;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable .button.navy {
+  border-color:#315565;
+  background:#163746;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-start-page .start-summary-unavailable .button.copper {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}

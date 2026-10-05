@@ -1,0 +1,209 @@
+.arx-kmkr-page {
+  background:#f4f7f8;
+}
+.arx-kmkr-page .arx-simple-shell {
+  width:min(1280px, calc(100% - 48px));
+}
+.arx-kmkr-page .arx-simple-head {
+  min-height:72px;
+}
+.arx-kmkr-links {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.arx-kmkr-links a {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:#355c6d;
+  font-size:12px;
+  font-weight:700;
+  text-decoration:none;
+}
+.arx-kmkr-intro {
+  margin:24px 0 14px;
+  padding:22px 24px;
+  border:1px solid #dbe5e8;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-kmkr-intro > span {
+  color:#b96636;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-kmkr-intro h1 {
+  margin:7px 0 5px;
+  color:#102c3b;
+  font-size:32px;
+  line-height:1.05;
+}
+.arx-kmkr-intro p {
+  max-width:860px;
+  margin:0;
+  color:#6d8189;
+  font-size:12px;
+  line-height:1.55;
+}
+
+.arx-kmkr-page .cad-issue-focus {
+  margin-bottom:42px;
+}
+.arx-kmkr-page .cad-issue-project-strip {
+  margin-bottom:12px;
+}
+.arx-kmkr-page .cad-kmkr-summary {
+  grid-template-columns:1fr 1fr 1.25fr minmax(240px,300px);
+}
+.arx-kmkr-page .cad-kmkr-summary > div {
+  min-height:76px;
+}
+.arx-kmkr-page .cad-kmkr-summary small {
+  display:block;
+  margin-top:4px;
+  color:#7a8c93;
+  font-size:8px;
+}
+.arx-kmkr-page .cad-kmkr-complete {
+  display:grid;
+  align-content:center;
+  min-height:76px;
+  padding:14px 17px;
+  background:#f3f9f5;
+}
+.arx-kmkr-page .cad-kmkr-complete span {
+  color:#688073;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.07em;
+}
+.arx-kmkr-page .cad-kmkr-complete b {
+  display:block;
+  margin-top:6px;
+  color:#2f6549;
+  font-size:13px;
+}
+.arx-kmkr-page .cad-kmkr-complete.is-warning {
+  background:#fff8f1;
+}
+.arx-kmkr-page .cad-kmkr-complete.is-warning span,
+.arx-kmkr-page .cad-kmkr-complete.is-warning b {
+  color:#a45b37;
+}
+
+.arx-kmkr-page .cad-editor-grid {
+  grid-template-columns:220px minmax(0,1fr) 300px !important;
+}
+.arx-kmkr-page .cad-tools {
+  padding:14px 10px;
+}
+.arx-kmkr-page .cad-tools > strong {
+  margin:10px 7px 7px;
+  font-size:8px;
+}
+.arx-kmkr-page .cad-tools > button {
+  min-height:46px;
+}
+.arx-kmkr-page .cad-tools > button span b {
+  font-size:10px;
+}
+.arx-kmkr-page .cad-tools > button span small {
+  font-size:8px;
+}
+.arx-kmkr-page .cad-kmkr-tool-note {
+  display:block;
+  margin:8px 7px 0;
+  color:#7c8e95;
+  font-size:8px;
+  line-height:1.45;
+}
+.arx-kmkr-page .cad-canvas {
+  min-height:610px;
+}
+.arx-kmkr-page .cad-canvas-toolbar {
+  min-height:54px;
+}
+.arx-kmkr-page .cad-inspector {
+  padding:14px;
+}
+.arx-kmkr-page .cad-inspector section {
+  padding:0 0 14px;
+}
+.arx-kmkr-page .cad-inspector section + section {
+  padding-top:14px;
+  border-top:1px solid #dde6e9;
+}
+.arx-kmkr-page .cad-kmkr-control > div,
+.arx-kmkr-page .cad-kmkr-provenance > div {
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid #e3e9eb;
+}
+.arx-kmkr-page .cad-kmkr-control span,
+.arx-kmkr-page .cad-kmkr-provenance span {
+  color:#73868e;
+  font-size:9px;
+}
+.arx-kmkr-page .cad-kmkr-control b,
+.arx-kmkr-page .cad-kmkr-provenance b {
+  text-align:right;
+  font-size:10px;
+}
+.arx-kmkr-page .cad-kmkr-control small,
+.arx-kmkr-page .cad-kmkr-provenance small {
+  display:block;
+  margin-top:10px;
+  color:#71858d;
+  font-size:8px;
+  line-height:1.5;
+}
+.arx-kmkr-page .cad-kmkr-control .good { color:#3f7459; }
+.arx-kmkr-page .cad-kmkr-control .watch { color:#9c7729; }
+.arx-kmkr-page .cad-kmkr-control .risk { color:#a34f40; }
+
+@media(max-width:1050px) {
+  .arx-kmkr-page .cad-editor-grid {
+    grid-template-columns:190px minmax(0,1fr) !important;
+  }
+  .arx-kmkr-page .cad-inspector {
+    grid-column:1/-1;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+    border-top:1px solid #dde6e9;
+  }
+  .arx-kmkr-page .cad-inspector section,
+  .arx-kmkr-page .cad-inspector section + section {
+    padding:0;
+    border-top:0;
+  }
+}
+@media(max-width:760px) {
+  .arx-kmkr-page .arx-simple-shell {
+    width:calc(100% - 24px);
+  }
+  .arx-kmkr-page .cad-kmkr-summary {
+    grid-template-columns:1fr 1fr;
+  }
+  .arx-kmkr-page .cad-editor-grid {
+    grid-template-columns:1fr !important;
+  }
+  .arx-kmkr-page .cad-tools {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .arx-kmkr-page .cad-tools > strong,
+  .arx-kmkr-page .cad-orientation,
+  .arx-kmkr-page .cad-kmkr-tool-note {
+    grid-column:1/-1;
+  }
+  .arx-kmkr-page .cad-inspector {
+    grid-template-columns:1fr;
+  }
+}

@@ -1,0 +1,231 @@
+/* Focused ARKEMX authentication entry */
+.arx-auth-page {
+  min-height:100dvh;
+  padding:0;
+  background:#f6f8f9;
+}
+body:has(.arx-auth-page) .v4-floating-contact {
+  display:none!important;
+}
+
+.arx-auth-shell {
+  width:min(1080px,calc(100% - 40px));
+  min-height:100dvh;
+  margin:0 auto;
+  display:grid;
+  grid-template-rows:76px 1fr;
+}
+.arx-auth-header {
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid #e2e8ea;
+}
+.arx-auth-header .arx-simple-brand {
+  display:inline-flex;
+  align-items:center;
+}
+
+.arx-auth-card {
+  align-self:center;
+  width:min(100%,440px);
+  margin:clamp(32px,6vh,64px) auto;
+  padding:36px;
+  border:1px solid #dfe6e9;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 18px 48px rgba(24,54,67,.07);
+}
+.arx-auth-card h1 {
+  margin:0;
+  color:#1e3440;
+  font-size:clamp(30px,4vw,39px);
+  line-height:1.12;
+  letter-spacing:-.04em;
+  font-weight:700;
+}
+.arx-auth-card > p {
+  max-width:330px;
+  margin:12px 0 26px;
+  color:#667a84;
+  font-size:14px;
+  line-height:1.6;
+}
+.arx-auth-card form {
+  margin:0;
+}
+.arx-auth-primary {
+  width:100%;
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 15px;
+  border:1px solid #244756;
+  border-radius:8px;
+  background:#244756;
+  color:#fff;
+  font:720 13px/1.2 var(--font-inter),Arial,sans-serif;
+  cursor:pointer;
+  transition:background .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.arx-auth-primary:hover {
+  background:#173642;
+}
+.arx-auth-primary:active {
+  transform:translateY(1px);
+}
+.arx-auth-primary:disabled {
+  opacity:.55;
+  cursor:not-allowed;
+}
+.arx-auth-primary:focus-visible,
+.arx-auth-first a:focus-visible {
+  outline:2px solid #568b98;
+  outline-offset:3px;
+}
+
+.arx-auth-first {
+  margin-top:22px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:18px;
+}
+.arx-auth-first b {
+  color:#2f4d5a;
+  font-size:12px;
+}
+.arx-auth-first a {
+  color:#315f70;
+  font-size:12px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.arx-auth-first a:hover {
+  color:#a55b32;
+}
+.arx-auth-privacy {
+  display:block;
+  margin-top:26px;
+  color:#788a92;
+  font-size:10px;
+  line-height:1.55;
+}
+
+/* Keep the global theme switch available without competing with the login CTA. */
+body:has(.arx-auth-page) .arkem-theme-control {
+  top:20px;
+  right:max(20px,calc((100vw - 1080px)/2));
+  bottom:auto;
+  left:auto;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+body:has(.arx-auth-page) .arkem-theme-control-label {
+  display:none;
+}
+body:has(.arx-auth-page) .arkem-theme-control-options {
+  display:flex;
+  gap:4px;
+}
+body:has(.arx-auth-page) .arkem-theme-control button {
+  width:34px;
+  min-height:34px;
+  padding:0;
+  border:1px solid #d7e1e4;
+  border-radius:7px;
+  background:#fff;
+  color:#526d78;
+  font-size:0;
+  box-shadow:none;
+}
+body:has(.arx-auth-page) .arkem-theme-control button span {
+  font-size:14px;
+}
+body:has(.arx-auth-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#244756;
+  background:#244756;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-auth-page {
+  background:#000!important;
+}
+html[data-theme="dark"] .arx-auth-header {
+  border-color:#252525;
+}
+html[data-theme="dark"] .arx-auth-header .arx-simple-brand {
+  color:#fff;
+}
+html[data-theme="dark"] .arx-auth-card {
+  border-color:#2d2d2d;
+  background:#090909;
+  box-shadow:0 18px 48px rgba(0,0,0,.35);
+}
+html[data-theme="dark"] .arx-auth-card h1 {
+  color:#f7f9fa;
+}
+html[data-theme="dark"] .arx-auth-card > p,
+html[data-theme="dark"] .arx-auth-privacy {
+  color:#aebbc1;
+}
+html[data-theme="dark"] .arx-auth-first b {
+  color:#d8e2e6;
+}
+html[data-theme="dark"] .arx-auth-first a {
+  color:#d08a61;
+}
+html[data-theme="dark"] body:has(.arx-auth-page) .arkem-theme-control {
+  background:transparent;
+  box-shadow:none;
+}
+html[data-theme="dark"] body:has(.arx-auth-page) .arkem-theme-control button {
+  border-color:#333;
+  background:#0b0b0b;
+  color:#cbd4d8;
+}
+html[data-theme="dark"] body:has(.arx-auth-page) .arkem-theme-control button[aria-pressed="true"] {
+  border-color:#b96636;
+  background:#b96636;
+  color:#fff;
+}
+
+@media (max-width:600px) {
+  .arx-auth-shell {
+    width:calc(100% - 28px);
+    grid-template-rows:64px 1fr;
+  }
+  .arx-auth-header {
+    min-height:64px;
+    padding-right:82px;
+  }
+  .arx-auth-card {
+    margin:28px auto;
+    padding:26px 22px;
+  }
+  .arx-auth-card > p {
+    margin-bottom:22px;
+  }
+  .arx-auth-first {
+    align-items:flex-start;
+    flex-direction:column;
+    gap:7px;
+  }
+  body:has(.arx-auth-page) .arkem-theme-control {
+    top:15px;
+    right:14px;
+  }
+}
+
+@media (max-width:380px) {
+  .arx-auth-card {
+    padding:24px 18px;
+  }
+}

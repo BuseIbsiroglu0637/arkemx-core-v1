@@ -1,0 +1,301 @@
+.arx-plan-fix-page {
+  background:#f4f7f8;
+}
+.arx-plan-fix-page .arx-simple-shell {
+  width:min(1240px, calc(100% - 48px));
+}
+.arx-plan-fix-page .arx-simple-head {
+  min-height:72px;
+}
+.arx-plan-fix-links {
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.arx-plan-fix-links a {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:#355c6d;
+  font-size:12px;
+  font-weight:700;
+  text-decoration:none;
+}
+.arx-plan-fix-intro {
+  margin:24px 0 14px;
+  padding:22px 24px;
+  border:1px solid #dbe5e8;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-plan-fix-intro > span {
+  color:#b96636;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.arx-plan-fix-intro h1 {
+  margin:7px 0 5px;
+  color:#102c3b;
+  font-size:32px;
+  line-height:1.05;
+  letter-spacing:-.035em;
+}
+.arx-plan-fix-intro p {
+  max-width:760px;
+  margin:0;
+  color:#6d8189;
+  font-size:12px;
+  line-height:1.55;
+}
+
+.arx-plan-fix-page .cad-issue-focus {
+  margin:0 0 42px !important;
+  color:#173746;
+}
+.arx-plan-fix-page .cad-issue-project-strip {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  min-height:50px;
+  margin-bottom:12px;
+  padding:10px 14px;
+  border:1px solid #dbe5e8;
+  border-radius:5px;
+  background:#fff;
+}
+.arx-plan-fix-page .cad-issue-project-strip > div:first-child {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.arx-plan-fix-page .cad-issue-project-strip > div:first-child span {
+  color:#b96636;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.075em;
+}
+.arx-plan-fix-page .cad-issue-project-strip > div:first-child b {
+  min-width:0;
+  overflow:hidden;
+  color:#173746;
+  font-size:12px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.arx-plan-fix-page .cad-issue-project-strip > div:last-child {
+  display:flex;
+  align-items:center;
+  color:#71858d;
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-issue-project-strip > div:last-child span + span {
+  margin-left:9px;
+  padding-left:9px;
+  border-left:1px solid #d8e1e4;
+}
+
+.arx-plan-fix-page .cad-issue-summary {
+  grid-template-columns:repeat(3,minmax(0,1fr)) minmax(250px,300px);
+  margin-bottom:12px;
+  overflow:hidden;
+  border:1px solid #d7e2e5;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-plan-fix-page .cad-issue-summary > div {
+  display:grid;
+  align-content:center;
+  min-height:76px;
+  padding:14px 17px;
+  border-right:1px solid #e1e8ea;
+}
+.arx-plan-fix-page .cad-issue-summary span {
+  display:block;
+  color:#788b93;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.055em;
+}
+.arx-plan-fix-page .cad-issue-summary b {
+  display:block;
+  margin-top:6px;
+  color:#173746;
+  font-size:17px;
+}
+.arx-plan-fix-page .cad-issue-summary[data-state="review"] > div:nth-child(3) b {
+  color:#a34f40;
+}
+.arx-plan-fix-page .cad-issue-summary[data-state="pass"] > div:nth-child(3) b {
+  color:#3d745b;
+}
+.arx-plan-fix-page .cad-issue-summary button {
+  min-width:0;
+  min-height:76px;
+  padding:12px 18px;
+  border:0;
+  background:#0d3244;
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.4;
+  cursor:pointer;
+}
+
+.arx-plan-fix-page .cad-editor-app {
+  overflow:hidden;
+  border:1px solid #d6e1e4;
+  border-radius:6px;
+  background:#fff;
+}
+.arx-plan-fix-page .cad-topbar {
+  min-height:58px;
+  padding:0 16px;
+}
+.arx-plan-fix-page .cad-project-id span {
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-project-id b {
+  margin-top:3px;
+  font-size:12px;
+}
+.arx-plan-fix-page .cad-top-actions button {
+  min-height:32px;
+  padding:0 10px;
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-editor-grid {
+  grid-template-columns:minmax(0,1fr) 310px !important;
+}
+.arx-plan-fix-page .cad-canvas {
+  min-height:600px;
+}
+.arx-plan-fix-page .cad-canvas-toolbar {
+  min-height:52px;
+  padding:8px 14px;
+}
+.arx-plan-fix-page .cad-canvas-toolbar > span {
+  font-size:8px;
+}
+.arx-plan-fix-page .cad-canvas-toolbar b {
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-canvas-toolbar small {
+  margin-top:2px;
+  font-size:8px;
+}
+.arx-plan-fix-page .cad-inspector {
+  padding:16px;
+  background:#f8fafb;
+}
+.arx-plan-fix-page .cad-inspector section {
+  padding:0 0 16px;
+}
+.arx-plan-fix-page .cad-inspector section + section {
+  padding-top:16px;
+  border-top:1px solid #dde6e9;
+}
+.arx-plan-fix-page .cad-inspector strong {
+  display:block;
+  margin-bottom:10px;
+  color:#6e828a;
+  font-size:9px;
+  letter-spacing:.075em;
+}
+.arx-plan-fix-page .cad-issue-scope-note {
+  margin:0 0 12px;
+  padding:9px 10px;
+  border-left:3px solid #c86f3e;
+  background:#fff8f3;
+  color:#755f54;
+  font-size:9px;
+  line-height:1.45;
+}
+.arx-plan-fix-page .cad-input-grid {
+  gap:10px;
+}
+.arx-plan-fix-page .cad-input-grid label {
+  color:#6f828a;
+  font-size:9px;
+  font-weight:650;
+}
+.arx-plan-fix-page .cad-input-grid input {
+  min-height:38px;
+  margin-top:5px;
+  border-radius:4px;
+  font-size:12px;
+}
+.arx-plan-fix-page .cad-footprint-control > div {
+  padding:10px 0;
+}
+.arx-plan-fix-page .cad-footprint-control span {
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-footprint-control b {
+  font-size:11px;
+}
+.arx-plan-fix-page .cad-footprint-control small {
+  font-size:9px;
+  line-height:1.5;
+}
+.arx-plan-fix-page .cad-editor-foot {
+  padding:12px 16px;
+}
+.arx-plan-fix-page .cad-editor-foot b {
+  min-width:150px;
+  font-size:9px;
+}
+.arx-plan-fix-page .cad-editor-foot p {
+  font-size:8px;
+  line-height:1.5;
+}
+
+@media(max-width:900px) {
+  .arx-plan-fix-page .arx-simple-shell {
+    width:min(100% - 28px, 760px);
+  }
+  .arx-plan-fix-page .cad-issue-summary {
+    grid-template-columns:1fr 1fr;
+  }
+  .arx-plan-fix-page .cad-issue-summary button {
+    grid-column:1/-1;
+    min-height:48px;
+  }
+  .arx-plan-fix-page .cad-editor-grid {
+    grid-template-columns:1fr !important;
+  }
+  .arx-plan-fix-page .cad-inspector {
+    border-top:1px solid #dce5e8;
+  }
+}
+@media(max-width:620px) {
+  .arx-plan-fix-page .arx-simple-shell {
+    width:calc(100% - 20px);
+  }
+  .arx-plan-fix-page .arx-simple-head {
+    align-items:flex-start;
+    gap:12px;
+    padding:14px 0;
+  }
+  .arx-plan-fix-links {
+    gap:9px;
+    justify-content:flex-end;
+  }
+  .arx-plan-fix-links a {
+    font-size:10px;
+  }
+  .arx-plan-fix-page .cad-issue-project-strip {
+    display:grid;
+    gap:7px;
+  }
+  .arx-plan-fix-page .cad-issue-summary {
+    grid-template-columns:1fr;
+  }
+  .arx-plan-fix-page .cad-canvas {
+    min-height:480px;
+  }
+}
