@@ -74,9 +74,23 @@ export async function searchHepsiemlak(rawCriteria, { launchBrowser, signal } = 
     if (!['hepsiemlak.com', 'www.hepsiemlak.com'].includes(new URL(page.url()).hostname)) throw new LandBrowserError('layout-changed', 'Arama beklenen ilan sayfasına ulaşmadı.');
     const rejectCookies = page.getByText('Tümünü Reddet', { exact: true });
     if (await rejectCookies.isVisible()) await rejectCookies.click();
-    if (criteria.maxPrice > 0) await page.getByPlaceholder('En Çok TL', { exact: true }).fill(String(criteria.maxPrice));
-    if (criteria.minArea > 0) await page.getByPlaceholder('En Az m²', { exact: true }).fill(String(criteria.minArea));
-    if (criteria.maxArea > 0) await page.getByPlaceholder('En Çok m²', { exact: true }).fill(String(criteria.maxArea));
+    async function fillFilter(id, placeholder, value, label) {
+      if (value <= 0) return;
+      // Stable IDs observed on the live district page; the wording may vary.
+      const field = page.locator(`input#${id}`).or(page.getByPlaceholder(placeholder));
+      try { await field.fill(String(value), { timeout: 25000 }); }
+      catch (error) {
+        if (signal?.aborted) throw error;
+        await inspectPage(); // A late human-verification page is still a source block.
+        const fields = await page.locator('input').evaluateAll(es => es.slice(0, 20).map(e => ({ id: e.id, placeholder: e.getAttribute('placeholder') })));
+        const diagnostic = { page: new URL(page.url()).pathname, title: await page.title(), fields };
+        console.warn('[ARKEMX land browser] Filter unavailable:', label, JSON.stringify(diagnostic));
+        throw new LandBrowserError('layout-changed', `Hepsiemlak ${label} filtresi 25 saniye içinde kullanılamadı. Arama uygulanmadı; sayfa yüklenmesi veya filtre düzeni kontrol edilmeli.`, error);
+      }
+    }
+    await fillFilter('priceMax', /^\s*En\s+Çok\s+TL\s*$/i, criteria.maxPrice, 'en fazla fiyat');
+    await fillFilter('squareMin', /^\s*En\s+Az\s+m(?:²|2)\s*$/i, criteria.minArea, 'en az brüt alan');
+    await fillFilter('squareMax', /^\s*En\s+Çok\s+m(?:²|2)\s*$/i, criteria.maxArea, 'en fazla brüt alan');
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }),
       page.getByRole('button', { name: 'Ara', exact: true }).click(),
@@ -84,7 +98,8 @@ export async function searchHepsiemlak(rawCriteria, { launchBrowser, signal } = 
     await inspectPage();
     // Wait for the requested filters, not the previous page's advertisements.
     await page.waitForURL(url => (criteria.maxPrice === 0 || url.searchParams.get('p32') === String(criteria.maxPrice))
-      && (criteria.minArea === 0 || url.searchParams.get('p25') === String(criteria.minArea)), { timeout: 12000 });
+      && (criteria.minArea === 0 || url.searchParams.get('p25') === String(criteria.minArea))
+      && (criteria.maxArea === 0 || url.searchParams.get('p26') === String(criteria.maxArea)), { timeout: 12000 });
     await page.waitForFunction(() => document.querySelector('main article') || /0\s+ilan bulundu|ilan bulunamadı|sonuç bulunamadı|captcha|verify you are human|access denied|olağan dışı/i.test(document.body.innerText), null, { timeout: 12000 });
     const text = await inspectPage();
     const raw = await page.getByRole('article').evaluateAll(elements => elements.slice(0, 24).map(element => ({
