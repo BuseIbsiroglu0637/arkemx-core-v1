@@ -40,7 +40,8 @@ export function parseLandCriteria(value: unknown): LandCriteria | null {
   return { province, district, tenure: v.tenure, use: v.use as LandCriteria["use"], minArea: Number(v.minArea), maxArea: Number(v.maxArea), maxPrice: Number(v.maxPrice), needs };
 }
 export function landCriteriaKey(criteria: LandCriteria) {
-  return JSON.stringify({ ...criteria, needs: [...criteria.needs].sort() });
+  return JSON.stringify({ province: criteria.province, district: criteria.district, tenure: criteria.tenure, use: criteria.use,
+    minArea: criteria.minArea, maxArea: criteria.maxArea, maxPrice: criteria.maxPrice, needs: [...criteria.needs].sort() });
 }
 export function safeListingUrl(value: unknown) {
   try {

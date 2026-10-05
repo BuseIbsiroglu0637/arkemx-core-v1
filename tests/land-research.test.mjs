@@ -25,6 +25,9 @@ test('criteria: reject negative/infinite values, reversed areas and search opera
 test('criteria: absent maximum means unbounded; needs are deduplicated',()=>{
  const c=parseLandCriteria({...criteria,maxArea:0,maxPrice:0,needs:['Tır erişimi','Tır erişimi','made-up']});assert.deepEqual(c.needs,['Tır erişimi']);assert.equal(c.maxArea,0);
 });
+test('criteria identity is stable across server normalization and property order',()=>{
+ assert.equal(landCriteriaKey(criteria),landCriteriaKey(parseLandCriteria(criteria)));
+});
 test('candidate: reject unsafe URLs and normalize tracking URLs',()=>{
  for(const url of ['javascript:alert(1)','http://example.com/x','https://user:pass@example.com/x','https://127.0.0.1/x']) assert.equal(safeListingUrl(url),null);
  assert.equal(safeListingUrl(url+'?utm_source=x#top'),url);
