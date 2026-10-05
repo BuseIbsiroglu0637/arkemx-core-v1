@@ -92,5 +92,5 @@ try {
  assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'3000');
  console.log('PASS sizing auto-updates after brief revisions, preserves manual limits and accepts changed assumptions');
  assert.deepEqual(errors,[]);
-}finally{await browser.close();}
+}catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 
