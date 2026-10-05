@@ -26,6 +26,13 @@ await page.route('**/api/land-candidate-detail', route => {
  detailCalls++;
  return route.fulfill({json:{detailVersion:2,zoningDeclaration:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',taks:0.4,kaks:0.8,hmax:7.5,landUse:'Konut İmarlı',sourceUrl:url,retrievedAt:new Date().toISOString(),evidence:'Sentetik açık TAKS/KAKS/Hmax bilgileri',basis:'listing-declaration'},schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
 });
+let officialMode='not-found',officialCalls=0;
+await page.route('**/api/zoning-conditions',route=>{
+ officialCalls++;
+ const identity=route.request().postDataJSON();
+ return route.fulfill({json:{schema:'ARKEM-OFFICIAL-ZONING/1.0',identity,retrievedAt:new Date().toISOString(),status:officialMode,message:officialMode==='found'?'Sentetik resmî servis kaydı okundu; doğrulama bekliyor.':'Bu parsel için kaynakta konut imar kaydı bulunamadı.',
+ ...(officialMode==='found'?{conditions:{taks:.25,kaks:.75,hmax:9.5,frontSetback:5,sideSetback:3,buildingOrder:'Ayrık',landUse:'Konut Alanı'},source:{url:'https://e-imar.kastamonuozelidare.gov.tr/arcgis/rest/services/IDARE_PUBLIC/IMAR_PUBLIC/FeatureServer/1826',authority:'Kastamonu İl Özel İdaresi',planId:'UIP-TEST',planName:'Sentetik uygulama planı',planScale:'1/1000 Uygulama İmar Planı',approvalDate:'2025-01-01',planStatus:'Onaylandi',featureId:42}}:{})}});
+});
 await page.route('**/api/tkgm?*',route=>{
  const path=new URL(route.request().url()).searchParams.get('path');
  const properties=path==='idariYapi/ilListe'?{id:37,text:'Kastamonu'}:path==='idariYapi/ilceListe/37'?{id:1,text:'Merkez'}:{id:2,text:'Kuzyaka Köyü'};
@@ -60,6 +67,21 @@ try {
  await page.getByRole('button',{name:/^03 İmar bilgileri/}).click();
  assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.4');assert.equal(await page.getByPlaceholder('KAKS / emsal girin',{exact:true}).inputValue(),'0.8');assert.equal(await page.getByPlaceholder('Hmax girin',{exact:true}).inputValue(),'7.5');
  console.log('PASS explicit listing zoning fields auto-transfer and differ from land search assumptions');
+ await page.getByLabel('Resmî imar sorgusu').getByText('Bu parsel için kaynakta konut imar kaydı bulunamadı.',{exact:true}).waitFor();
+ assert.ok(officialCalls>0);officialMode='found';
+ await page.getByRole('button',{name:'Resmî imar kaynağını yeniden sorgula',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('input[placeholder="TAKS girin"]')?.value==='0.25');
+ assert.equal(await page.getByPlaceholder('KAKS / emsal girin',{exact:true}).inputValue(),'0.75');
+ assert.equal(await page.getByPlaceholder('Hmax girin',{exact:true}).inputValue(),'9.5');
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.zoning?.sourceType==='Resmî e-İmar servisi',PROJECT_STORAGE_KEY);
+ const official=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'].zoning,PROJECT_STORAGE_KEY);
+ assert.equal(official.verification,'municipal-viewer');assert.equal(official.expertReviewStatus,'not-reviewed');assert.equal(official.planId,'UIP-TEST');assert.equal(official.rearSetback,-1);
+ const callsBeforeReload=officialCalls;await page.reload();
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.zoning?.taks===0.25,PROJECT_STORAGE_KEY);
+ await page.getByRole('button',{name:/^03 İmar bilgileri/}).click();
+ await page.getByPlaceholder('TAKS girin',{exact:true}).waitFor();assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.25');assert.equal(officialCalls,callsBeforeReload);
+ console.log('PASS automatic official zoning query, source-bound transfer and cache survive reload without approved rights');
+
 
 
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye al'}).isDisabled(),true);

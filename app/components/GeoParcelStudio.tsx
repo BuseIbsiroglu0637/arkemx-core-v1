@@ -27,6 +27,8 @@ import {
 import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { assessLandCandidate, object, readLandResearch } from "../lib/land-research";
+import { officialZoningPrefill } from "../lib/official-zoning-prefill";
+import type { OfficialZoningResult } from "../lib/kastamonu-zoning";
 import { listingZoningPrefill } from "../lib/land-zoning-declaration";
 import { landParcelPrefill, type LandParcelIdentity } from "../lib/land-parcel-prefill";
 import { decodeProjectEnvelope, PROJECT_BACKUP_KEY } from "../lib/project-storage";
@@ -62,6 +64,7 @@ type GeoParcelSavedState = {
   dataStatus?: string;
   planning?: Record<string, unknown>;
   zoning?: Partial<ZoningForm>;
+  officialZoningResult?: OfficialZoningResult | null;
   terrain?: Record<string, unknown>;
   frontEdge?: ParcelFrontEdge;
   selectedMassingId?: string;
@@ -474,6 +477,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [dataStatus, setDataStatus] = useState("Kavramsal / doğrulanmamış");
   const [parcelLookup, setParcelLookup] = useState<"idle" | "loading" | "found" | "error">("idle");
   const [zoning, setZoning] = useState<ZoningForm>(DEFAULT_ZONING);
+  const [officialZoningResult, setOfficialZoningResult] = useState<OfficialZoningResult | null>(null);
+  const [officialZoningNotice, setOfficialZoningNotice] = useState("");
+  const [officialZoningLoading, setOfficialZoningLoading] = useState(false);
+  const [officialZoningRefresh, setOfficialZoningRefresh] = useState(0);
+  const officialZoningAttempt = useRef("");
+  const currentZoning = useRef(zoning); currentZoning.current = zoning;
+  const currentOfficialZoning = useRef(officialZoningResult); currentOfficialZoning.current = officialZoningResult;
+
   const zoningNumericReady = [
     zoning.taks,
     zoning.kaks,
@@ -719,6 +730,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (saved.sourceCrs) setSourceCrs(saved.sourceCrs);
       if (saved.dataStatus) setDataStatus(saved.dataStatus);
       if (typeof saved.planning?.parkingPer100 === "number") setParkingPer100(saved.planning.parkingPer100);
+      setOfficialZoningResult(saved.officialZoningResult ?? null);
       if (saved.zoning) {
         const looksLikeLegacyPlaceholder =
           (!saved.zoning.verification || saved.zoning.verification === "user-declared")
@@ -832,6 +844,42 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [parcelHydrated, listingZoning?.sourceUrl, listingZoning?.retrievedAt, listingIdentity?.block, listingIdentity?.parcelNo, province, district, neighborhood, block, parcelNo, parcel, zoning]);
+
+  const officialZoningEligible = parcelHydrated && administrativeSource === "official"
+    && province === "Kastamonu" && /^\d+$/.test(neighborhoodId) && /^\d+$/.test(block) && /^\d+$/.test(parcelNo)
+    && Boolean(district && neighborhood) && (!parcel.length || (officialBoundaryLocked && Boolean(officialBoundaryEvidence)
+      && officialBoundaryEvidence?.identity.province === province && officialBoundaryEvidence.identity.district === district
+      && officialBoundaryEvidence.identity.neighborhood === neighborhood && officialBoundaryEvidence.identity.block === block
+      && officialBoundaryEvidence.identity.parcelNo === parcelNo));
+  useEffect(() => {
+    if (!officialZoningEligible) return;
+    const input = {province,district,neighborhood,neighborhoodId,block,parcelNo};
+    const identityKey = JSON.stringify(input);
+    const key = `${project.id}:${identityKey}:${officialZoningRefresh}`;
+    if (officialZoningAttempt.current === key) return;
+    officialZoningAttempt.current = key;
+    const cached = currentOfficialZoning.current;
+    if (!officialZoningRefresh && cached && JSON.stringify(cached.identity) === identityKey
+      && Date.now() - Date.parse(cached.retrievedAt) >= 0 && Date.now() - Date.parse(cached.retrievedAt) < 86400000) {
+      setOfficialZoningNotice(cached.message); return;
+    }
+    const controller = new AbortController(); let completed = false;
+    setOfficialZoningLoading(true); setOfficialZoningNotice("Parsel için resmî imar kaynağı otomatik sorgulanıyor…");
+    fetch("/api/zoning-conditions",{method:"POST",headers:{"Content-Type":"application/json"},body:identityKey,signal:controller.signal})
+      .then(async response => {
+        const result = await response.json() as OfficialZoningResult & {error?:string};
+        if (!response.ok) throw Error(result.error || "Resmî imar bağlantısı kullanılamıyor.");
+        if (result.schema !== "ARKEM-OFFICIAL-ZONING/1.0" || JSON.stringify(result.identity) !== identityKey
+          || !["found","not-found","ambiguous","unsupported"].includes(result.status)) throw Error("İmar yanıtının parsel kimliği doğrulanamadı.");
+        if (controller.signal.aborted) return;
+        setOfficialZoningResult(result);
+        const next = officialZoningPrefill(currentZoning.current,result,listingZoning);
+        if (next) {setZoning(next);setMaxCoverage(next.taks >= 0 ? next.taks * 100 : -1);setMaxFar(next.kaks);setMaxHeight(next.hmax);}
+        setOfficialZoningNotice(result.message + (result.status === "found" && !next ? " Mevcut imar çalışması korundu; kaynak değerleri aşağıda gösteriliyor." : ""));
+      }).catch(error => {if (!controller.signal.aborted) setOfficialZoningNotice(error instanceof Error ? error.message : "İmar sorgusu tamamlanamadı.");})
+      .finally(() => {completed = true;if (!controller.signal.aborted) setOfficialZoningLoading(false);});
+    return () => {controller.abort();if (!completed) officialZoningAttempt.current = "";};
+  }, [officialZoningEligible, project.id, province, district, neighborhood, neighborhoodId, block, parcelNo, officialZoningRefresh]);
 
   useEffect(() => {
     if (!provinceOptions.length || !province) return;
@@ -1221,6 +1269,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       previewMetrics: parcelRecord.projectEligible ? null : metrics,
       parcelRecord,
       officialBoundaryEvidence,
+      officialZoningResult,
       parcelSourceNetwork: sourceNetwork,
       provenance: createGeoProvenance({ reference: parcelRecord.reference, sourceCrs, dataStatus, administrativeSource, geometryValid: parcelRecord.projectEligible && metrics.geometryValid, vertexCount: parcelRecord.projectEligible ? parcel.length : 0 }),
       zoningProvenance: createZoningProvenance(zoning, parcelRecord.reference),
@@ -1242,7 +1291,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
 
     patchModule("geo-parcel", moduleSnapshot);
-  }, [listingIdentitySource, activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, project.id, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
+  }, [officialZoningResult, listingIdentitySource, activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, project.id, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
 
   useEffect(() => {
     let disposed = false;
@@ -2023,6 +2072,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <small>Değeri yalnız yetkili kaynak farklıysa değiştirin; açık konu kapansın diye imar girdisini yükseltmeyin.</small>
       </div> : null}
 
+      <div className="geo-zoning-source-status" aria-label="Resmî imar sorgusu">
+        <span>OTOMATİK İMAR ARAŞTIRMASI</span>
+        <b>{officialZoningEligible ? "Kastamonu İl Özel İdaresi · konut alanı" : "Parsel konumu doğrulandıktan sonra imar kaynağı sorgulanır"}</b>
+        <small role="status">{officialZoningEligible ? officialZoningNotice : province !== "Kastamonu" ? "Bu sürümde Kastamonu bağlantısı etkin; diğer bölgeler için kaynak bağlantısı bekleniyor." : "Resmî il, ilçe ve mahalle/köy seçimini ve ada/parsel bilgisini tamamlayın. Sorgu TKGM sınırını sunucuda doğrular."}</small>
+        {officialZoningEligible && officialZoningResult?.status === "found" && officialZoningResult.conditions && <p>Kaynak değerleri: TAKS {officialZoningResult.conditions.taks ?? "bilgi yok"} · KAKS {officialZoningResult.conditions.kaks ?? "bilgi yok"} · Hmax {officialZoningResult.conditions.hmax ?? "bilgi yok"} · Plan {officialZoningResult.source?.planId}. Plan notu doğrulaması bekleniyor.</p>}
+        {officialZoningEligible && <button type="button" disabled={officialZoningLoading} onClick={() => setOfficialZoningRefresh(v => v + 1)}>{officialZoningLoading ? "İmar kaynağı sorgulanıyor…" : "Resmî imar kaynağını yeniden sorgula"}</button>}
+      </div>
+
       <div className={`geo-zoning-source-status${zoningFocus ? " geo-zoning-source-focus" : ""}`} data-ready={zoningSourceReady ? "ready" : "missing"} data-reviewed={zoningExpertReviewComplete ? "true" : "false"}>
         <span>İMAR KAYNAĞI</span>
         <b>{zoningExpertReviewComplete
@@ -2061,7 +2118,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             <small>Bu seçimler resmî onay sağlamaz. Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz.</small>
           </label>
           <div className="geo-field-grid">
-            <label>Kaynak türü<select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}><option value="" disabled>Kaynak türünü seçin</option><option>Belediye imar durumu</option><option>e-Plan / plan paftası</option><option>Plan notu / meclis kararı</option><option>Kullanıcı beyanı</option><option>İlan beyanı</option><option>Diğer</option></select></label>
+            <label>Kaynak türü<select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}><option value="" disabled>Kaynak türünü seçin</option><option>Belediye imar durumu</option><option>e-Plan / plan paftası</option><option>Plan notu / meclis kararı</option><option>Kullanıcı beyanı</option><option>İlan beyanı</option><option>Resmî e-İmar servisi</option><option>Diğer</option></select></label>
             <label>Belge / kaynak tarihi<input type="date" value={zoning.sourceDate} onChange={(event) => updateZoning("sourceDate", event.target.value)} /></label>
             <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
             <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>

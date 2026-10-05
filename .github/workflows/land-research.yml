@@ -19,6 +19,7 @@ jobs:
       - run: npm ci
       - run: npm run test:land-research
       - run: npm run test:land-browser
+      - run: npm run test:zoning-source
       - run: node --experimental-strip-types --test tests/project-storage-reconciliation.test.mjs
       - run: npm run typecheck
       - run: npm run build:local

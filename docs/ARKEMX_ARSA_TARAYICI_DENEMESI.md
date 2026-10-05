@@ -62,3 +62,12 @@ Yeni aramada hedef brüt alan ve kat adedi başlangıç briefinden alınır. Ön
 ## Otomatik ilan imar beyanı
 
 Seçilen Emlakjet ilanının özellik satırları ve yalnız kendi açıklama bölümü otomatik okunur. Açık TAKS, KAKS/Emsal, Hmax/Yençok etiketleri bulunan tekil sayısal değerler imar formunun boş alanlarına aktarılır. Yüzde TAKS oran olarak, metre belirtilen Hmax yükseklik olarak saklanır. Çelişen/range değerler, kat sayıları ve etiketsiz yüzdelerden imar değeri türetilmez. İmar Durumu satırı arazi kullanım beyanına aktarılabilir. Kaynak URL ve okuma zamanı kaynak notuna bağlanır; statü kullanıcı beyanı ve uzman incelemesi bekliyor olarak kalır. Kaynaklı, incelemesi yapılmış veya çelişen mevcut imar verisi üzerine yazılmaz. Arsa araştırmasındaki taban/emsal varsayımları bu aktarımda kullanılmaz. Daha önce yalnız kimliği okunmuş adaylar yeni detay sürümünde bir kez yeniden okunur.
+
+
+## Resmî imar kaynağı – Kastamonu başlangıcı
+
+Resmî idari seçim ve ada/parsel tamamlandığında `/api/zoning-conditions` otomatik çağrılır. Oturum ve aynı kaynak kontrolü sunucudadır. Sunucu TKGM v3.1 üzerinden parsel geometrisini yeniden okur; tarayıcıdan geometri veya kaynak URL kabul etmez. Kastamonu İl Özel İdaresi FeatureServer 1826 (Uygulama İmar Planları / Konut Alanı) sorgulanır. Mülga katman 1942 kullanılmaz. Tek imar alanı bütün kadastro sınırını kapsamalıdır; delikli/çok parçalı sınırlar, kesişen alanlar ve eksik kayıtlar açık sonuç verir. Plan 1967 tablosunda kimlik, 1/1000 uygulama planı, Onaylandı durumu ve onay tarihi kontrol edilir. Bu, resmî imar durumu belgesi veya uzman onayı üretmez.
+
+TAKS, emsal ve yükseklik yalnız `Deger` tipli alanlardan; ön/yan mesafeler ve nizam varsa kaynaktan aktarılır. Arka çekme mesafesi ve plan notları çıkarılmaz. Boş form veya değişmemiş otomatik ilan aktarımı güncellenebilir; manuel/sourced/reviewed çalışma korunur ve kaynak değerleri ayrıca gösterilir. Sonuç parsel kimliğiyle 24 saat yerel olarak saklanır; yeniden sorgulama düğmesi erişimi tekrar dener. Başka il veya kullanım türü desteklenmiş sayılmaz. Kaynakta kayıt yokluğu “imarsız parsel” değildir. Hata ve erişim kısıtı boş başarı değildir.
+
+`npm run test:zoning-source` sentetik servis yanıtlarıyla kaynak eşleştirmesi ve hata senaryolarını doğrular. Canlı Kuzyaka 143/11 sorgusu bu ortamda zaman aşımı nedeniyle doğrulanamadı; sayısal sonuç veya ülke genelinde kapsama iddiası yoktur.

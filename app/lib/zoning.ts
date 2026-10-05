@@ -131,7 +131,7 @@ export function zoningVerificationLabel(value: ZoningVerification) {
   return {
     "user-declared": "Kullanıcı girdisi · doğrulanmadı",
     "document-pending-review": "Belge eklendi · uzman doğrulaması bekliyor",
-    "municipal-viewer": "Kullanıcı beyanı: belediye e-İmar ekranı · doğrulanmadı",
+    "municipal-viewer": "e-İmar kaynak kaydı · doğrulama bekliyor",
     "approved-plan": "Onaylı plan ve plan notundan aktarıldı",
     "certified-document": "Onaylı imar durumu belgesiyle doğrulandı",
   }[value];
@@ -195,3 +195,4 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
       "Plan paftası, plan notları ve yetkili idarenin güncel imar durumu birlikte doğrulanmadan ruhsat veya yatırım kararı üretmez.",
   };
 }
+
