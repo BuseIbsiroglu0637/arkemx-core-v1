@@ -117,7 +117,11 @@ export async function searchEmlakjet(rawCriteria, { launchBrowser, signal } = {}
     const text = await inspectPage();
     const raw = await page.locator('main article').evaluateAll(elements => elements.slice(0, 24).map(e => ({
       title: e.querySelector('h3')?.textContent?.trim() || '', url: e.querySelector('h3 a')?.href || '',
-      text: e.innerText, paragraphs: Array.from(e.querySelectorAll('p')).map(p => p.innerText),
+      // content-visibility:auto can omit offscreen descendants from innerText.
+      // Keep price boundaries: unit prices and concatenated card text are not totals.
+      text: Array.from(e.querySelectorAll('*')).map(n => n.textContent?.trim() || '')
+        .filter(value => /^[\d.,]+\s*₺$/.test(value)).join('\n'),
+      paragraphs: Array.from(e.querySelectorAll('p')).map(p => p.textContent?.trim() || ''),
     })));
     if (!raw.length && classifySourcePage(text) !== 'empty') throw new LandBrowserError('layout-changed', 'Emlakjet ilan kartları okunamadı; boş sonuç kabul edilmedi.');
     const searchedAt = new Date().toISOString();

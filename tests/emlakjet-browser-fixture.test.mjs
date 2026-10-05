@@ -33,6 +33,11 @@ function fixture(mode, visits) {
         if (mode === 'ignored-filter') html = html.replace('data-key="min-m2" value="1000"','data-key="min-m2" value=""');
         // Regression: the result must work even if client input/click handlers fail.
         if (mode === 'inert-handlers') html = html.replace(/<script>[\s\S]*?<\/script>/, '');
+        if (mode === 'offscreen') {
+          html = '<style>article{content-visibility:auto;contain-intrinsic-size:400px;min-height:400px}</style>' + html;
+          html = html.replace('<article>', '<div style="height:2000px"></div><article>');
+          html = html.replaceAll('</article>', '<div>300 ₺/m²</div><del>999.000 ₺</del></article>');
+        }
         if (mode === 'malformed') html = html.replaceAll('/ilan/sentetik-tarla-', '/other/');
         if (mode === 'wrong-scope') html = html.replace('Kastamonu Merkez Satılık Arsa', 'Ankara Satılık Arsa');
         if (mode === 'blocked' || (mode === 'late-block' && value('max-fiyat'))) html = '<html><head><title>Bir dakika lütfen...</title></head><body><input type="hidden" name="cf-turnstile-response"></body></html>';
@@ -66,4 +71,12 @@ test('filtered server-rendered result works without input handlers and ignored c
   const out = await searchEmlakjet(criteria, {launchBrowser:fixture('inert-handlers',visits)});
   assert.equal(out.candidates.length,22); assert.equal(visits.length,1);
   await assert.rejects(searchEmlakjet(criteria,{launchBrowser:fixture('ignored-filter',[])}), e=>e.code==='layout-changed' && e.diagnostic.stage==='verify-result-filter');
+});
+
+test('offscreen cards retain location, area and current total price with content-visibility:auto', async () => {
+  const out = await searchEmlakjet(criteria, { launchBrowser: fixture('offscreen', []) });
+  assert.equal(out.sources[0].readCount, 24);
+  assert.equal(out.candidates.length, 22);
+  assert.deepEqual(out.candidates.map(c => c.priceTRY), Array.from({ length: 22 }, (_, i) => 602000 + i * 1000));
+  assert.ok(out.candidates.every(c => c.district === 'Merkez' && c.areaM2 === 2000));
 });
