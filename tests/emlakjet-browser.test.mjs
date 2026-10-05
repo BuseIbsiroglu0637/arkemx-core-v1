@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emlakjetSearchUrl, isEmlakjetListing, parseEmlakjetCard, searchEmlakjet } from '../scripts/lib/emlakjet-browser.mjs';
+import { emlakjetSearchUrl, emlakjetResultUrl, isEmlakjetListing, parseEmlakjetCard, searchEmlakjet } from '../scripts/lib/emlakjet-browser.mjs';
 const criteria = { province: 'Kastamonu', district: 'Merkez', tenure: 'sale', minArea: 1000, maxArea: 0, maxPrice: 0, use: 'residential', needs: [] };
 const card = { title: 'Sentetik tarla 9999 m²', url: 'https://www.emlakjet.com/ilan/sentetik-tarla-12345678',
   paragraphs: ['Merkez, Örnek Köyü', '3935 m² · Yolu Açılmış · 107/m² · 24.06.2025'], text: 'Sentetik tarla 9999 m²\n3935 m² · 107/m²\n420.000 ₺\n450.000 ₺' };
@@ -25,4 +25,12 @@ test('unsupported criteria do not launch, missing Chromium stays explicit', asyn
   await assert.rejects(searchEmlakjet({ ...criteria, tenure: 'rent' }, { launchBrowser: async () => { launched = true; } }), e => e.code === 'unsupported-criteria');
   assert.equal(launched, false);
   await assert.rejects(searchEmlakjet(criteria, { launchBrowser: async () => { throw Error('missing'); } }), e => e.code === 'browser-unavailable');
+});
+
+test('public result URL carries the site-observed filter serialization and low-price sort', () => {
+  const u = new URL(emlakjetResultUrl({...criteria, maxPrice:10000000, maxArea:5000}));
+  assert.equal(new URLSearchParams(u.searchParams.get('filtreler')).get('max-fiyat'),'10000000');
+  assert.equal(u.searchParams.get('min-m2'),'1000'); assert.equal(u.searchParams.get('max-m2'),'5000');
+  assert.equal(u.searchParams.get('siralama'),'dusuk-fiyat');
+  assert.equal(new URLSearchParams(new URL(emlakjetResultUrl(criteria)).searchParams.get('filtreler')).get('min-m2'),'1000');
 });

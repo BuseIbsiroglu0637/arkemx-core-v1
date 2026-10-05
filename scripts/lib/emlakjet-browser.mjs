@@ -7,6 +7,16 @@ const slug = value => value.toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').norma
 export function emlakjetSearchUrl(criteria) {
   return `https://www.emlakjet.com/satilik-arsa/${[criteria.province, criteria.district].filter(Boolean).map(slug).join('-')}`;
 }
+export function emlakjetResultUrl(criteria) {
+  const url = new URL(emlakjetSearchUrl(criteria));
+  const filters = [['max-fiyat', criteria.maxPrice], ['min-m2', criteria.minArea], ['max-m2', criteria.maxArea]].filter(([, value]) => value > 0);
+  filters.forEach(([key, value], index) => {
+    if (index === 0) url.searchParams.set('filtreler', `${key}=${value}`);
+    else url.searchParams.set(key, String(value));
+  });
+  url.searchParams.set('siralama', 'dusuk-fiyat');
+  return url.href;
+}
 export function isEmlakjetListing(value) {
   try {
     const u = new URL(value);
@@ -76,65 +86,35 @@ export async function searchEmlakjet(rawCriteria, { launchBrowser, signal } = {}
       } catch (error) { await inspectPage(); throw new LandBrowserError('layout-changed', 'Emlakjet ilan kartları yüklenmedi; boş sonuç kabul edilmedi.', error); }
       return inspectPage();
     }
-    const startUrl = emlakjetSearchUrl(criteria);
+    const startUrl = emlakjetResultUrl(criteria);
     await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
     await ready();
     // Scope is verified on the visible heading before adopting its province.
     const expectedHeading = [criteria.province, criteria.district, 'Satılık Arsa'].filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
     if ((await page.getByRole('heading', { level: 1 }).innerText()).trim().toLocaleLowerCase('tr-TR') !== expectedHeading) throw new LandBrowserError('layout-changed', 'Emlakjet il/ilçe araması doğrulanamadı.');
-    async function fillFilter(group, button, placeholder, key, value) {
-      if (!value) return;
-      let stage = 'open-filter';
+    // Use the public result URL observed on the site's own form. Reading does not
+    // depend on client hydration, debounced input handlers or a full load event.
+    const finalUrl = new URL(page.url());
+    const encoded = new URLSearchParams(finalUrl.searchParams.get('filtreler') || '');
+    for (const [key, value, button, placeholder] of [
+      ['max-fiyat', criteria.maxPrice, 'En Fazla Fiyat', 'En Fazla'],
+      ['min-m2', criteria.minArea, 'En Az Metrekare', 'En Az'],
+      ['max-m2', criteria.maxArea, 'En Fazla Metrekare', 'En Fazla'],
+    ]) {
+      if (!value) continue;
+      const field = page.locator('fieldset').filter({ has: page.getByRole('button', { name: button, exact: true }) }).getByPlaceholder(placeholder, { exact: true });
       try {
-        const toggle = page.getByRole('button', { name: group, exact: true });
-        if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
-        const field = page.locator('fieldset').filter({ has: page.getByRole('button', { name: button, exact: true }) }).getByPlaceholder(placeholder, { exact: true });
-        stage = 'fill-field';
-        await field.fill(String(value));
-        stage = 'commit-field';
-        await toggle.click(); // Blur commits the value; the site applies automatic search.
-        stage = 'verify-url';
-        await page.waitForURL(url => {
-          const params = new URLSearchParams(url.searchParams.get('filtreler') || '');
-          // The live UI serializes the first filter under filtreler and later ones as query parameters.
-          return (params.get(key) || url.searchParams.get(key)) === String(value);
-        }, { timeout: 15000 });
-        stage = 'read-results';
-        await ready();
+        const applied = number((await field.inputValue()).replace(/\s/g, ''));
+        if ((encoded.get(key) || finalUrl.searchParams.get(key)) !== String(value) || applied !== value) throw Error('Requested filter differs from displayed result form');
       } catch (error) {
-        if (error instanceof LandBrowserError || signal?.aborted) throw error;
         await inspectPage();
-        const url = new URL(page.url());
-        const diagnostic = {
-          stage, filter: key, path: url.pathname, title: (await page.title()).slice(0, 160),
-          filters: Object.fromEntries([...url.searchParams].filter(([name]) => ['filtreler', 'max-fiyat', 'min-m2', 'max-m2', 'siralama'].includes(name))),
-          articleCount: await page.locator('main article').count(),
-          fields: await page.locator('fieldset').evaluateAll(elements => elements.slice(0, 6).map(e => ({
-            buttons: Array.from(e.querySelectorAll('button')).map(b => b.getAttribute('aria-label')),
-            inputs: Array.from(e.querySelectorAll('input')).map(i => ({ placeholder: i.getAttribute('placeholder'), visible: Boolean(i.getClientRects().length), disabled: i.disabled })),
-          }))),
-          toggle: await page.getByRole('button', { name: group, exact: true }).evaluateAll(elements => elements.map(e => ({ expanded: e.getAttribute('aria-expanded'), visible: Boolean(e.getClientRects().length) }))),
-        };
-        const failure = new LandBrowserError('layout-changed', `Emlakjet ${group.toLocaleLowerCase('tr-TR')} filtresi uygulanamadı (${stage}); boş sonuç kabul edilmedi.`, error);
-        failure.diagnostic = diagnostic;
+        const failure = new LandBrowserError('layout-changed', `Emlakjet sonuç sayfasında ${key} filtresi doğrulanamadı; boş sonuç kabul edilmedi.`, error);
+        failure.diagnostic = { stage: 'verify-result-filter', filter: key, path: finalUrl.pathname, title: await page.title(), articleCount: await page.locator('main article').count() };
         throw failure;
       }
     }
-    await fillFilter('Fiyat', 'En Fazla Fiyat', 'En Fazla', 'max-fiyat', criteria.maxPrice);
-    await fillFilter('Metrekare', 'En Az Metrekare', 'En Az', 'min-m2', criteria.minArea);
-    await fillFilter('Metrekare', 'En Fazla Metrekare', 'En Fazla', 'max-m2', criteria.maxArea);
-    await page.getByRole('button', { name: 'Düşük Fiyat', exact: true }).click();
-    await page.waitForURL(url => url.searchParams.get('siralama') === 'dusuk-fiyat');
-    // Load the committed result URL once to avoid reading the preceding SPA render.
-    const resultUrl = page.url();
-    const finalUrl = new URL(resultUrl);
-    const encoded = new URLSearchParams(finalUrl.searchParams.get('filtreler') || '');
-    for (const [key, value] of [['max-fiyat', criteria.maxPrice], ['min-m2', criteria.minArea], ['max-m2', criteria.maxArea]]) {
-      if (value && (encoded.get(key) || finalUrl.searchParams.get(key)) !== String(value)) throw new LandBrowserError('layout-changed', 'Emlakjet sonuç filtreleri doğrulanamadı.');
-    }
-    await page.goto(resultUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
-    const text = await ready();
-    if ((await page.getByRole('heading', { level: 1 }).innerText()).trim().toLocaleLowerCase('tr-TR') !== expectedHeading) throw new LandBrowserError('layout-changed', 'Emlakjet sonuç konumu doğrulanamadı.');
+    if (finalUrl.searchParams.get('siralama') !== 'dusuk-fiyat') throw new LandBrowserError('layout-changed', 'Emlakjet sonuç sıralaması doğrulanamadı.');
+    const text = await inspectPage();
     const raw = await page.locator('main article').evaluateAll(elements => elements.slice(0, 24).map(e => ({
       title: e.querySelector('h3')?.textContent?.trim() || '', url: e.querySelector('h3 a')?.href || '',
       text: e.innerText, paragraphs: Array.from(e.querySelectorAll('p')).map(p => p.innerText),

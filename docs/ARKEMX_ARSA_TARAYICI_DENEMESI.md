@@ -1,6 +1,6 @@
 # Arsa tarayıcı araştırması — başlangıç sürümü
 
-Bu sürüm ARKEMX yerel demo/Codespaces geliştirme sunucusunda, normal Chromium ile Emlakjet arama formunu kullanır. ChatGPT'nin tarayıcısına veya OpenAI API anahtarına ihtiyaç duymaz. Üretim Cloudflare dağıtımında etkinleşmez; mevcut sunucu agent/feed bağlantısı korunur.
+Bu sürüm ARKEMX yerel demo/Codespaces geliştirme sunucusunda, normal Chromium ile Emlakjet’in filtreli ilan sayfasını açar. ChatGPT'nin tarayıcısına veya OpenAI API anahtarına ihtiyaç duymaz. Üretim Cloudflare dağıtımında etkinleşmez; mevcut sunucu agent/feed bağlantısı korunur.
 
 ## Açılış
 
@@ -20,7 +20,7 @@ Normal demo için `npm run demo:local` kullanın. Tarayıcı denemesi yalnız `d
 ## Kapsam
 
 - Yalnız satın alma; varsayılan kaynak Emlakjet; ilk sayfada en fazla 24 ilan kartı.
-- İl/ilçe sayfası açılır; fiyat ve alan filtreleri site formuna girilir. Okunan kartlar konum/alan/bütçeye göre ayrıca kontrol edilir.
+- İl/ilçe, fiyat ve alan kriterleri sitenin kendi formunda gözlenen filtreli sayfa adresine aktarılır. Sayfa açılınca URL ve formdaki değerlerin istenen kriterlerle eşleştiği doğrulanır. Okunan kartlar konum/alan/bütçeye göre ayrıca kontrol edilir.
 - İstenen toplam fiyata göre artan sıralama. Eksik veya olağan dışı fiyat en sona bırakılır ve doğrulama ister.
 - Kullanım bilgisi varsa bir ilan beyanı olarak korunur. Emlakjet kartında açık kategori bulunmadığı için yalnız belirgin başlık beyanları alınır; diğerlerinde kullanım eksik gösterilir. Tarla/bahçe üretim alanı sayılmaz; kullanım uyuşmazlığı kartta gösterilir ve mevcut incelemeye alma kapısı bunu engeller.
 - Karttaki başlık, URL, alan, fiyat ve konum okunur. Ayrıntılı açıklama, fotoğraf, iletişim bilgisi ve altyapı doğrulaması bu sürüme dahil değildir.
@@ -33,7 +33,7 @@ Normal demo için `npm run demo:local` kullanın. Tarayıcı denemesi yalnız `d
 
 ## Emlakjet erişim denemesi
 
-2026-10-05 tarihinde ChatGPT bulut tarayıcısında Kastamonu/Merkez, satılık arsa ve en az 1.000 m² filtresi 80 sonuç gösterdi. Düşük fiyat sıralaması, maksimum alan ve fiyat alanları da çalıştı. Bu gözlem Codespaces Playwright erişimini kanıtlamaz. Codespaces için tek, sınırlı arama:
+2026-10-05 tarihinde ChatGPT bulut tarayıcısında Kastamonu/Merkez, satılık arsa ve en az 1.000 m² filtresi 80 sonuç gösterdi. Düşük fiyat sıralaması, maksimum alan ve fiyat alanları da çalıştı. Codespaces ikinci denemesinde sayfa ve 30 kart açıldı, ancak form etkileşimi URL’ye uygulanmadı. Adaptör bu yüzden doğrulanmış filtreli sonuç URL’sini tek sefer açar; ekrandaki alan ve fiyat değerlerini ayrıca kontrol eder. Bu gözlem Codespaces Playwright erişimini kanıtlamaz. Codespaces için tek, sınırlı arama:
 
 ```bash
 npm run probe:land

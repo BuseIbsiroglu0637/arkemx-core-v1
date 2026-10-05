@@ -30,6 +30,9 @@ function fixture(mode, visits) {
           }));
           document.querySelector('#sort').addEventListener('click',()=>{const u=new URL(location.href);u.searchParams.set('siralama','dusuk-fiyat');location.href=u.href;});
         </script>`;
+        if (mode === 'ignored-filter') html = html.replace('data-key="min-m2" value="1000"','data-key="min-m2" value=""');
+        // Regression: the result must work even if client input/click handlers fail.
+        if (mode === 'inert-handlers') html = html.replace(/<script>[\s\S]*?<\/script>/, '');
         if (mode === 'malformed') html = html.replaceAll('/ilan/sentetik-tarla-', '/other/');
         if (mode === 'wrong-scope') html = html.replace('Kastamonu Merkez Satılık Arsa', 'Ankara Satılık Arsa');
         if (mode === 'blocked' || (mode === 'late-block' && value('max-fiyat'))) html = '<html><head><title>Bir dakika lütfen...</title></head><body><input type="hidden" name="cf-turnstile-response"></body></html>';
@@ -40,7 +43,7 @@ function fixture(mode, visits) {
     return browser;
   };
 }
-test('Emlakjet Chromium applies all range filters, sorts and bounds card reading', async () => {
+test('Emlakjet Chromium verifies result ranges, sorts and bounds card reading', async () => {
   const visits=[];
   const out = await searchEmlakjet(criteria, { launchBrowser: fixture('results', visits) });
   assert.equal(out.sources[0].name, 'Emlakjet'); assert.equal(out.sources[0].readCount,24); assert.equal(out.sources[0].totalCount,80);
@@ -56,4 +59,11 @@ test('Emlakjet explicit empty result is completed, challenge stops initial and f
 });
 test('Emlakjet unknown card layout or wrong location cannot become successful empty research', async () => {
   for (const mode of ['malformed','wrong-scope']) await assert.rejects(searchEmlakjet(criteria, { launchBrowser: fixture(mode,[]) }), e=>e.code==='layout-changed');
+});
+
+test('filtered server-rendered result works without input handlers and ignored criteria fail closed', async () => {
+  const visits=[];
+  const out = await searchEmlakjet(criteria, {launchBrowser:fixture('inert-handlers',visits)});
+  assert.equal(out.candidates.length,22); assert.equal(visits.length,1);
+  await assert.rejects(searchEmlakjet(criteria,{launchBrowser:fixture('ignored-filter',[])}), e=>e.code==='layout-changed' && e.diagnostic.stage==='verify-result-filter');
 });
