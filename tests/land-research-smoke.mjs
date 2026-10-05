@@ -142,6 +142,27 @@ try {
  await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
  assert.equal(detailCalls,afterPartial);assert.equal(await page.getByPlaceholder('Ada numarası',{exact:true}).inputValue(),'');
  console.log('PASS cached missing detail is refreshed; village fills independently without invented parcel or zoning rights');
+ await page.getByRole('button',{name:/^04 Yapı yerleşimi/}).click();
+ const draft=page.getByRole('region',{name:'Taslak yapı bilgileri'});
+ await draft.waitFor();
+ const zoningBeforeDraft=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'].zoning,PROJECT_STORAGE_KEY);
+ await draft.getByLabel('Kullanım',{exact:true}).selectOption('Tarımsal Yapı');
+ await draft.getByLabel('Yapı genişliği (m)',{exact:true}).fill('18');
+ await draft.getByLabel('Yapı derinliği (m)',{exact:true}).fill('24');
+ await draft.getByLabel('Kat adedi',{exact:true}).fill('3');
+ await draft.getByLabel('Kat yüksekliği (m)',{exact:true}).fill('3.2');
+ await draft.getByLabel('100 m² başına park',{exact:true}).fill('1.5');
+ await page.waitForFunction(key=>{const g=JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'];return g?.buildingWidth===18&&g.buildingDepth===24&&g.floors===3&&g.floorHeight===3.2&&g.usage==='Tarımsal Yapı'&&g.parkingPer100===1.5;},PROJECT_STORAGE_KEY);
+ const draftGeo=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'],PROJECT_STORAGE_KEY);
+ assert.deepEqual(draftGeo.zoning,zoningBeforeDraft);assert.equal(draftGeo.parcelRecord.projectEligible,false);assert.equal(draftGeo.massingModel.source.authoritative,false);
+ assert.equal(await page.getByLabel('İmar uyumlu kütle alternatifleri',{exact:true}).count(),0);
+ assert.equal(await page.getByRole('link',{name:/Mimariye Geç/}).count(),0);
+ await page.reload();await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
+ await page.getByRole('button',{name:/^04 Yapı yerleşimi/}).click();
+ assert.equal(await draft.getByLabel('Yapı genişliği (m)',{exact:true}).inputValue(),'18');
+ assert.equal(await draft.getByLabel('Kat adedi',{exact:true}).inputValue(),'3');
+ assert.equal(await draft.getByLabel('Kat yüksekliği (m)',{exact:true}).inputValue(),'3.2');
+ console.log('PASS building draft inputs work without zoning, persist after reload and do not grant placement approval');
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 

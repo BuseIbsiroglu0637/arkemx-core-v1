@@ -2293,8 +2293,19 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       </>}
 
     </div> : <div className="geo-control-section geo-zoning-required">
-      <span>05 / YAPI YERLEŞİMİ</span><h3>Önce imar girdilerini tamamlayın.</h3>
-      <p className="geo-caution"><b>Yapı zarfı henüz üretilmedi.</b> Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve ön/yan/arka çekme mesafeleri girilmeden sistem yerleşim alternatifi hesaplamaz.</p>
+      <span>{simple ? "04 / YAPI YERLEŞİMİ" : "05 / YAPI YERLEŞİMİ"}</span><h3>Taslak yapı bilgilerini girin.</h3>
+      <p className="geo-caution"><b>İmar bilgileri bekleniyor.</b> Yapı bilgilerini şimdi kaydedebilirsiniz. Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlandığında yerleşim ön kontrolü açılır.</p>
+      <section aria-label="Taslak yapı bilgileri">
+        <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
+        <div className="geo-field-grid">
+          <label>Yapı genişliği (m)<input type="number" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingWidth(normalizeMassingDimension(Math.max(6, Math.min(70, Number(event.target.value))))); }} /></label>
+          <label>Yapı derinliği (m)<input type="number" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingDepth(normalizeMassingDimension(Math.max(8, Math.min(100, Number(event.target.value))))); }} /></label>
+          <label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => { setSelectedMassingId("manual"); setFloors(Math.max(1, Math.min(20, Math.round(Number(event.target.value))))); }} /></label>
+          <label>Kat yüksekliği (m)<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => { setSelectedMassingId("manual"); setFloorHeight(Math.max(2.6, Math.min(12, Number(event.target.value)))); }} /></label>
+          <label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Math.max(0, Math.min(10, Number(event.target.value))))} /></label>
+        </div>
+        <p>Bilgiler proje taslağına kaydedilir. İmar uygunluğu ve yapı zarfı henüz hesaplanmadı.</p>
+      </section>
       <button className="geo-wide-action" type="button" onClick={() => openFocusedStage("zoning")}>İmar bilgilerine dön</button>
     </div>,
     terrain: <div className="geo-control-section">
