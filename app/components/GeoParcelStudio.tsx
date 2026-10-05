@@ -449,6 +449,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const listingIdentity = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.parcelIdentity : null;
   const listingZoning = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.zoningDeclaration : null;
   const listingZoningApplied = useRef("");
+  const currentListingZoning = useRef(listingZoning); currentListingZoning.current = listingZoning;
   const [block, setBlock] = useState("");
   const [parcelNo, setParcelNo] = useState("");
   const [fileNotice, setFileNotice] = useState("Proje başlangıç konumu yükleniyor. Mahalle/köy, ada ve parsel seçimini tamamlayın.");
@@ -873,7 +874,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           || !["found","not-found","ambiguous","unsupported"].includes(result.status)) throw Error("İmar yanıtının parsel kimliği doğrulanamadı.");
         if (controller.signal.aborted) return;
         setOfficialZoningResult(result);
-        const next = officialZoningPrefill(currentZoning.current,result,listingZoning);
+        const next = officialZoningPrefill(currentZoning.current,result,currentListingZoning.current);
         if (next) {setZoning(next);setMaxCoverage(next.taks >= 0 ? next.taks * 100 : -1);setMaxFar(next.kaks);setMaxHeight(next.hmax);}
         setOfficialZoningNotice(result.message + (result.status === "found" && !next ? " Mevcut imar çalışması korundu; kaynak değerleri aşağıda gösteriliyor." : ""));
       }).catch(error => {if (!controller.signal.aborted) setOfficialZoningNotice(error instanceof Error ? error.message : "İmar sorgusu tamamlanamadı.");})
