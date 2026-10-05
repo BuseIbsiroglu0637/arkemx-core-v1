@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { readEmlakjetParcelDetail } from '../scripts/lib/emlakjet-parcel-detail.mjs';
 import { searchEmlakjet } from '../scripts/lib/emlakjet-browser.mjs';
 const criteria = { province: 'Kastamonu', district: 'Merkez', tenure: 'sale', minArea: 1000, maxArea: 5000, maxPrice: 1000000, use: 'residential', needs: [] };
 const card = (i, area=2000, price=600000) => `<article><h3><a href="https://www.emlakjet.com/ilan/sentetik-tarla-${10000000+i}">Sentetik tarla ${i}</a></h3><p>Merkez, Örnek Köyü</p><p>${area} m² · 300/m² · 05.10.2026</p><div>${price.toLocaleString('tr-TR')} ₺</div></article>`;
@@ -41,6 +42,10 @@ function fixture(mode, visits) {
         if (mode === 'malformed') html = html.replaceAll('/ilan/sentetik-tarla-', '/other/');
         if (mode === 'wrong-scope') html = html.replace('Kastamonu Merkez Satılık Arsa', 'Ankara Satılık Arsa');
         if (mode === 'blocked' || (mode === 'late-block' && value('max-fiyat'))) html = '<html><head><title>Bir dakika lütfen...</title></head><body><input type="hidden" name="cf-turnstile-response"></body></html>';
+        if (mode.startsWith('detail-')) {
+          html = `<h1>Sentetik ilan</h1><nav aria-label="Sayfa yolu"><a href="/satilik-konut-imarli-arsa/kastamonu">Kastamonu Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez">Kastamonu Merkez Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez-kuzyaka-koyu">Merkez Kuzyaka Köyü Satılık Konut İmarlı</a></nav><ul><li><span>İlan Numarası</span><button>12345678</button></li><li><span>Ada</span><span>143</span></li>${mode === 'detail-missing' ? '' : '<li><span>Parsel</span><span>11</span></li>'}</ul><p>Benzer ilan açıklaması: 999 ada 777 parsel</p>`;
+          if (mode === 'detail-blocked') html = '<title>Bir dakika lütfen...</title><input type="hidden" name="cf-turnstile-response">';
+        }
         return route.fulfill({ contentType: 'text/html; charset=utf-8', body: html });
       });
       return context;
@@ -79,4 +84,15 @@ test('offscreen cards retain location, area and current total price with content
   assert.equal(out.candidates.length, 22);
   assert.deepEqual(out.candidates.map(c => c.priceTRY), Array.from({ length: 22 }, (_, i) => 602000 + i * 1000));
   assert.ok(out.candidates.every(c => c.district === 'Merkez' && c.areaM2 === 2000));
+});
+
+test('selected listing detail reads scoped fields and reports missing data or access block', async () => {
+  const input = {url:'https://www.emlakjet.com/ilan/sentetik-arsa-12345678',province:'Kastamonu',district:'Merkez'};
+  const visits=[];
+  const out = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-found',visits)});
+  assert.equal(visits.length,1); assert.equal(out.status,'found');
+  assert.equal(out.parcelIdentity.block,'143'); assert.equal(out.parcelIdentity.parcelNo,'11'); assert.equal(out.parcelIdentity.neighborhood,'Kuzyaka Köyü');
+  const missing = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-missing',[])});
+  assert.equal(missing.status,'missing'); assert.equal(missing.parcelIdentity,null);
+  await assert.rejects(readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-blocked',[])}), e=>e.code==='source-blocked');
 });

@@ -34,3 +34,35 @@ test('public result URL carries the site-observed filter serialization and low-p
   assert.equal(u.searchParams.get('siralama'),'dusuk-fiyat');
   assert.equal(new URLSearchParams(new URL(emlakjetResultUrl(criteria)).searchParams.get('filtreler')).get('min-m2'),'1000');
 });
+
+import { parseEmlakjetParcelDetail, readEmlakjetParcelDetail } from '../scripts/lib/emlakjet-parcel-detail.mjs';
+import { landParcelPrefill, normalizeLandParcelIdentity } from '../app/lib/land-parcel-prefill.ts';
+import { normalizeLandCandidate, readLandResearch } from '../app/lib/land-research.ts';
+const detailInput = { url: card.url, province: 'Kastamonu', district: 'Merkez' };
+const detailRaw = { rows: [{ label: 'İlan Numarası', value: '12345678' }, { label: 'Ada', value: '143' }, { label: 'Parsel', value: '11' }],
+  breadcrumbs: [['Kastamonu', 'kastamonu'], ['Kastamonu Merkez', 'kastamonu-merkez'], ['Merkez Kuzyaka Köyü', 'kastamonu-merkez-kuzyaka-koyu']].map(([text, path]) => ({text: text + ' Satılık Konut İmarlı', url: 'https://www.emlakjet.com/satilik-konut-imarli-arsa/' + path})) };
+const detailAt = '2026-10-05T13:00:00Z';
+test('parcel identity comes from explicit listing fields and matched breadcrumb, survives shortlist storage', () => {
+  const identity = parseEmlakjetParcelDetail(detailRaw, detailInput, detailAt);
+  assert.equal(identity.block, '143'); assert.equal(identity.parcelNo, '11'); assert.equal(identity.neighborhood, 'Kuzyaka Köyü');
+  const candidate = normalizeLandCandidate({ ...parseEmlakjetCard(card, detailAt, 'Kastamonu'), parcelIdentity: identity }, detailAt);
+  assert.deepEqual(readLandResearch({ schema:'ARKEM-LAND-RESEARCH/1.0', criteria, shortlist:[candidate], selectedId:candidate.id }).shortlist[0].parcelIdentity, identity);
+  assert.equal(normalizeLandParcelIdentity({ ...identity, sourceUrl: 'https://other.test/' }, card.url), null);
+});
+test('absent or ambiguous parcel fields stay missing, wrong listing or administrative scope is rejected', () => {
+  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: detailRaw.rows.filter(r => r.label !== 'Ada') }, detailInput, detailAt), null);
+  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: [...detailRaw.rows, {label:'Parsel',value:'12'}] }, detailInput, detailAt), null);
+  assert.throws(() => parseEmlakjetParcelDetail(detailRaw, {...detailInput, district:'Araç'}, detailAt), e => e.code === 'layout-changed');
+  assert.throws(() => parseEmlakjetParcelDetail(detailRaw, {...detailInput, url:card.url.replace('12345678','99999999')}, detailAt), e => e.code === 'layout-changed');
+});
+test('parcel prefill preserves user edits and geometry and does not introduce area or zoning', () => {
+  const identity = parseEmlakjetParcelDetail(detailRaw, detailInput, detailAt);
+  const prefill = landParcelPrefill({ province:'Kastamonu', district:'Merkez' }, identity);
+  assert.equal(prefill.block,'143'); assert.deepEqual(Object.keys(prefill), ['province','district','neighborhood','block','parcelNo']);
+  for (const current of [{block:'210'}, {province:'Sakarya'}, {parcel:[{}]}, {previewParcel:[{}]}, prefill]) assert.equal(landParcelPrefill(current, identity),null);
+});
+test('invalid detail URL cannot launch a browser', async () => {
+  let launched = false;
+  await assert.rejects(readEmlakjetParcelDetail({...detailInput,url:'https://evil.test/ilan/test-12345678'}, { launchBrowser:async()=>{launched=true;} }), e => e.code === 'unsupported-criteria');
+  assert.equal(launched,false);
+});

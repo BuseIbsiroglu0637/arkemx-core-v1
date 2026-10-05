@@ -26,6 +26,8 @@ import {
 } from "../lib/terrain-model";
 import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { assessLandCandidate, object, readLandResearch } from "../lib/land-research";
+import { landParcelPrefill, type LandParcelIdentity } from "../lib/land-parcel-prefill";
 import { decodeProjectEnvelope, PROJECT_BACKUP_KEY } from "../lib/project-storage";
 
 type Stage = "locate" | "import" | "draw" | "zoning" | "design" | "terrain" | "export";
@@ -33,6 +35,7 @@ type ViewMode = "map" | "terrain" | "data";
 type BasemapMode = "satellite" | "street" | "hybrid";
 
 type GeoParcelSavedState = {
+  listingIdentitySource?: LandParcelIdentity | null;
   reference?: string;
   parcel?: GeoPoint[];
   previewParcel?: GeoPoint[];
@@ -434,6 +437,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [neighborhoodOptions, setNeighborhoodOptions] = useState<AdministrativeOption[]>([]);
   const [administrativeLoading, setAdministrativeLoading] = useState<"province" | "district" | "neighborhood" | "idle">("province");
   const [administrativeSource, setAdministrativeSource] = useState<"official" | "fallback">("fallback");
+  const [parcelHydrated, setParcelHydrated] = useState(false);
+  const [listingIdentitySource, setListingIdentitySource] = useState<LandParcelIdentity | null>(null);
+  const candidatePrefillApplied = useRef("");
+  const research = readLandResearch(object(project.modules["decision-assistant"]).landResearch);
+  const selectedCandidate = research?.shortlist.find(c => c.id === research.selectedId);
+  const listingIdentity = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.parcelIdentity : null;
   const [block, setBlock] = useState("");
   const [parcelNo, setParcelNo] = useState("");
   const [fileNotice, setFileNotice] = useState("Proje başlangıç konumu yükleniyor. Mahalle/köy, ada ve parsel seçimini tamamlayın.");
@@ -574,6 +583,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         // An empty module map is a valid clean project, so persistence must be
         // enabled before the first parcel edit or spatial-file import.
         transferApplied.current = true;
+      setParcelHydrated(true);
         persistedGeoRef.current = false;
         setProvince(declared.province);
         setDistrict(declared.district);
@@ -590,6 +600,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       }
 
       transferApplied.current = true;
+      setParcelHydrated(true);
       persistedGeoRef.current = true;
       if (recoverySource !== "project") {
         patchModule("geo-parcel", saved);
@@ -666,6 +677,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setDistrictId(saved.districtId ?? "");
       setNeighborhood(saved.neighborhood ?? "");
       setNeighborhoodId(saved.neighborhoodId ?? "");
+      setListingIdentitySource(saved.listingIdentitySource ?? null);
       setBlock(saved.block ?? "");
       setParcelNo(saved.parcelNo ?? "");
       setParcelLookup(hasSavedBoundary || hasSavedPreviewBoundary ? "found" : "idle");
@@ -779,6 +791,24 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, patchModule, project.id, project.modules]);
+
+  useEffect(() => {
+    if (!parcelHydrated || !listingIdentity) return;
+    const key = `${listingIdentity.sourceUrl}:${listingIdentity.retrievedAt}`;
+    if (candidatePrefillApplied.current === key) return;
+    const prefill = landParcelPrefill({ province, district, neighborhood, block, parcelNo, parcel }, listingIdentity);
+    if (!prefill) return;
+    const timer = window.setTimeout(() => {
+      candidatePrefillApplied.current = key;
+      setProvince(prefill.province); setDistrict(prefill.district);
+      setNeighborhood(prefill.neighborhood);
+      if (!neighborhoodId && administrativeSource === "fallback") setNeighborhoodId("offline-neighborhood-manual");
+      setBlock(prefill.block); setParcelNo(prefill.parcelNo);
+      setListingIdentitySource(listingIdentity);
+      setFileNotice("Mahalle/köy, ada ve parsel ilandan otomatik dolduruldu. TKGM sorgusuyla parsel sınırını doğrulayın.");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [administrativeSource, neighborhoodId, parcelHydrated, listingIdentity?.sourceUrl, listingIdentity?.retrievedAt, province, district, neighborhood, block, parcelNo, parcel]);
 
   useEffect(() => {
     if (!provinceOptions.length || !province) return;
@@ -1131,6 +1161,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       ? metrics
       : { ...metrics, area: 0, geometryValid: false };
     const moduleSnapshot = {
+      listingIdentitySource,
       reference: parcelRecord.reference,
       province,
       provinceId,
@@ -1188,7 +1219,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }
 
     patchModule("geo-parcel", moduleSnapshot);
-  }, [activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, project.id, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
+  }, [listingIdentitySource, activeMassingId, administrativeSource, block, building, buildingDepth, buildingWidth, center, dataStatus, district, districtId, exaggeration, floorHeight, floors, frontEdge, hydrated, massingModel, maxCoverage, maxFar, maxHeight, metrics, neighborhood, neighborhoodId, offsetEast, offsetNorth, officialBoundaryEvidence, parcel, parcelNo, parcelRecord, parkingPer100, patchModule, project.id, province, provinceId, requiredSetback, rotation, slope, sourceCrs, sourceNetwork, system, terrainContours.length, terrainLayers, terrainModel, usage, zoning]);
 
   useEffect(() => {
     let disposed = false;
@@ -2307,3 +2338,4 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     {!simple ? <footer className="geo-studio-foot"><b>Hukuki ve teknik sınır</b><p>Bu çalışma alanı erken karar, veri hazırlığı ve disiplinler arası koordinasyon içindir. Tapu/kadastro kaydı, aplikasyon, imar uygunluğu, zemin etüdü, mühendislik hesabı veya ruhsat projesi yerine geçmez. TKGM parsel kimliği; e-Plan/TUCBS katmanları, belediye e-İmar adaptörleri ve onaylı imar durumu belgesiyle kaynaklandırılır. Yetkili servis, protokol veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p></footer> : null}
   </section>;
 }
+

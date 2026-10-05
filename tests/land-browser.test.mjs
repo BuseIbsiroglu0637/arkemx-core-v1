@@ -55,3 +55,19 @@ test('local middleware requires demo session and same origin; preserves source-b
     const response=await fetch(root+'/api/land-candidates',{method:'POST',headers,body:JSON.stringify(criteria)});assert.equal(response.status,502);const data=await response.json();assert.equal(data.sources[0].status,'blocked');assert.equal(calls,1);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+test('detail middleware uses session/origin guards and returns explicit Emlakjet block', async () => {
+  let handler, calls = 0;
+  landBrowserLocalPlugin({detail:async()=>{calls++;throw new LandBrowserError('source-blocked','Emlakjet detay erişim engeli');}}).configureServer({config:{server:{host:'127.0.0.1'}},middlewares:{use(fn){handler=fn;}}});
+  const server=createServer((req,res)=>handler(req,res,()=>{res.statusCode=404;res.end();})); await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const root='http://127.0.0.1:'+server.address().port;
+  const body=JSON.stringify({url:'https://www.emlakjet.com/ilan/sentetik-arsa-12345678',province:'Kastamonu',district:'Merkez'});
+  try {
+    const headers={'content-type':'application/json',cookie:'arkemx_prototype_session=1',origin:root};
+    assert.equal((await fetch(root+'/api/land-candidate-detail',{method:'POST',headers:{'content-type':'application/json'},body})).status,401);
+    assert.equal((await fetch(root+'/api/land-candidate-detail',{method:'POST',headers:{...headers,origin:'https://evil.test'},body})).status,403);
+    assert.equal((await fetch(root+'/api/land-candidate-detail',{headers})).status,405);
+    const response=await fetch(root+'/api/land-candidate-detail',{method:'POST',headers,body});
+    assert.equal(response.status,502); const data=await response.json(); assert.equal(data.code,'source-blocked');assert.equal(data.sources[0].name,'Emlakjet');assert.equal(data.sources[0].status,'blocked');assert.equal(calls,1);
+  } finally {await new Promise(resolve=>server.close(resolve));}
+});

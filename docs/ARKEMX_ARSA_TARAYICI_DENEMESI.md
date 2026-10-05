@@ -50,3 +50,7 @@ npm run test:land-research
 ```
 
 Chromium testleri sentetik sayfalar kullanır; canlı ilanlara otomatik CI isteği göndermez. Canlı kaynağın erişimi ve düzeni zamanla değişebilir. Üretim için ayrı, yetkili ve korumalı tarayıcı servisi ile kalıcı hesap kotası gerekir; bu geliştirme middleware'i üretime taşınmamalıdır.
+
+## Seçilen ilandan ada/parsel aktarımı
+
+Parsel incelemesine geçildiğinde Emlakjet adayının detay sayfası bir kez okunur. İlan numarası ve il/ilçe yolu eşleşirse açık mahalle/köy, Ada ve Parsel alanları proje kaydında ilan beyanı olarak tutulur. Boş ve uyumlu parsel seçim alanları otomatik doldurulur; mevcut kimlikle çelişen bilgiler veya sınır geometrisi üzerine yazılmaz. Kaynak bilgisi sayfada gösterilir. Eksik alan veya erişim engeli açıkça belirtilir. İlan alanı, fiyatı ve imar beyanı bu işlemle mühendislik hesabına veya onaylı imar verisine aktarılmaz. Resmî idari liste eşleşmesinden sonra mevcut TKGM sorgusu çalıştırılabilir. Detay okuma yalnız `demo:land` yerel prototipinde etkindir; günlük en fazla 30 detay isteği ve aynı oturum/origin denetimleri uygulanır.

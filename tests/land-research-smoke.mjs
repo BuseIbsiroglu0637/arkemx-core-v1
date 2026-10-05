@@ -6,7 +6,7 @@ import {encodeProjectEnvelope,PROJECT_STORAGE_KEY} from '../app/lib/project-stor
 import {landCriteriaKey} from '../app/lib/land-research.ts';
 const root=process.env.ARKEMX_E2E_URL || 'http://127.0.0.1:5173';
 const project={schema:'ARKEM-PROJECT/1.0',id:'ARK-LAND-TEST',name:'Sentetik agent testi',revision:'P01',phase:'Ön fizibilite',coordinateReference:'WGS84 / EPSG:4326',updatedAt:new Date().toISOString(),experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''},events:[],modules:{'decision-assistant':{input:{name:'Sentetik agent testi',projectType:'new',usage:'industrial',location:'Kastamonu Merkez',parcelStatus:'unknown',targetArea:1200,floors:2,floorHeight:4,system:'undecided',priorities:['cost'],budget:'undecided',timeline:'flexible',documents:[],experienceMode:'guided'}}}};
-const url='https://www.sahibinden.com/ilan/emlak-arsa-satilik-sentetik-test-123456789/detay';
+const url='https://www.emlakjet.com/ilan/sentetik-arsa-12345678';
 const candidate={id:url,url,title:'Sentetik arsa test adayı',source:'Sentetik test kaynağı',province:'Kastamonu',district:'Merkez',tenure:'sale',areaM2:3000,priceTRY:9000000,use:'industrial',description:'Yalnız otomatik test verisi',retrievedAt:new Date().toISOString(),basis:'browser-listing'};
 const browser=await chromium.launch();
 const context=await browser.newContext({viewport:{width:1366,height:900}});
@@ -21,6 +21,16 @@ await page.route('**/api/land-candidates',async route=>{
  if(mode==='delayed') await new Promise(resolve=>setTimeout(resolve,800));
  try {await route.fulfill({json:{schema:'ARKEM-LAND-SEARCH/1.0',criteriaKey:landCriteriaKey(criteria),searchedAt:new Date().toISOString(),provider:'Test',sources:[{name:'Hepsiemlak',status:'completed',readCount:1,totalCount:131}],candidates:mode==='empty'?[]:[candidate]}});} catch { /* The UI may abort a stale request. */ }
 });
+let detailCalls=0;
+await page.route('**/api/land-candidate-detail', route => {
+ detailCalls++;
+ return route.fulfill({json:{schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
+});
+await page.route('**/api/tkgm?*',route=>{
+ const path=new URL(route.request().url()).searchParams.get('path');
+ const properties=path==='idariYapi/ilListe'?{id:37,text:'Kastamonu'}:path==='idariYapi/ilceListe/37'?{id:1,text:'Merkez'}:{id:2,text:'Kuzyaka Köyü'};
+ return route.fulfill({json:{features:[{properties}]}});
+});
 const research=()=>page.locator('[data-testid="land-research-studio"]');
 const shortlist=()=>page.getByRole('region',{name:'Kaydedilen kısa liste'});
 async function open(){await page.goto(root+'/arsa-arastirma');await research().getByRole('button',{name:'Adayları getir',exact:true}).waitFor();}
@@ -34,6 +44,16 @@ try {
  await shortlist().getByRole('button',{name:'İncelemeye al',exact:true}).click();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();
  await page.reload();await shortlist().getByText('Sentetik arsa test adayı',{exact:false}).first().waitFor();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();console.log('PASS shortlist and selection survive reload');
  await research().getByRole('link',{name:'Parsel incelemesine geç'}).click();await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).waitFor();console.log('PASS candidate remains unverified on parcel screen');
+ await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
+ assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
+ await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields select')?.value==='37');
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key))?.payload?.modules?.['geo-parcel']?.block==='143',PROJECT_STORAGE_KEY);
+ const geo=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'],PROJECT_STORAGE_KEY);
+ assert.equal(geo.neighborhood,'Kuzyaka Köyü'); assert.equal(geo.parcel.length,0); assert.equal(geo.metrics.area,0); assert.equal(geo.parcelRecord.projectEligible,false);
+ await page.reload(); await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
+ assert.equal(detailCalls,1); assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
+ console.log('PASS automatic ada/parsel prefill persists, keeps listing area out of engineering calculations');
+
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye al'}).isDisabled(),true);
  await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS conflicting criteria return project to research');
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('10000000');mode='empty';await search();await research().getByText('Bu aramada gösterilecek aday bulunamadı.').waitFor();assert.equal(await shortlist().locator('article').count(),1);
