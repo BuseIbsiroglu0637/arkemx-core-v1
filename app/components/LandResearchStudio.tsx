@@ -116,10 +116,9 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
       {notice ? <p role="status" className="land-notice">{notice}</p> : null}
       {sourceStatus.length ? <section className="land-source-status" aria-label="Araştırılan kaynaklar"><h2>Kaynak durumu</h2>{sourceStatus.map(item => <p key={item.name}><b>{item.name}: {item.status === "completed" ? "Arama tamamlandı" : item.status === "blocked" ? "Erişim engellendi" : "Araştırma tamamlanamadı"}</b>{item.status === "completed" ? <span> · {item.readCount} ilan kartı okundu{item.totalCount === null ? "" : ` · kaynakta ${item.totalCount} sonuç`}</span> : null}{item.note ? <small>{item.note}</small> : null}</p>)}</section> : null}
       <h2>Arama sonuçları {result && result.criteriaKey === currentKey ? `· ${candidates.length} aday` : ""}</h2>
-      {candidates.length ? <div className="land-cards">{candidates.map(c => card(c, false))}</div> : <p>{result ? "Bu aramada gösterilecek aday bulunamadı." : "Kriterlerinizi belirleyip adayları getirin."}</p>}
+      {candidates.length ? <div className="land-cards">{candidates.map(c => card(c, false))}</div> : <p>{result ? "Bu aramada gösterilecek aday bulunamadı." : sourceStatus.some(item => item.status !== "completed") ? "Araştırma tamamlanamadığı için ilanlar okunamadı." : "Kriterlerinizi belirleyip adayları getirin."}</p>}
     </div></div>
     <section className="land-shortlist" aria-label="Kaydedilen kısa liste"><h2>Kısa liste · {shortlist.length} aday</h2><p>Kaydedilen adaylar mevcut kriterlere göre tekrar değerlendirilir. Fiyatlar, kaydedildikleri tarihteki ilan bilgileri veya kaynak beyanlarıdır.</p>{shortlist.length ? <div className="land-cards">{shortlist.map(c => card(c, true))}</div> : <p>Getirilen adaylardan incelemek istediklerinizi kısa listeye alın.</p>}</section>
     {canInspect ? <section className="land-next"><div><b>{selected?.title}</b><p>Seçim, satın alma veya uygunluk onayı değildir. Şimdi parsel kimliği, sınırı ve imar kanıtını doğrulayın.</p></div><Link href="/arsa-fizibilite-studyosu?stage=locate#geo-studyo">Parsel incelemesine geç →</Link><button type="button" onClick={() => { setSelectedId(null); persist({ selectedId: null }); }}>Araştırmaya dön</button></section> : null}
   </section>;
 }
-

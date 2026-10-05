@@ -31,6 +31,9 @@ test('blocking, explicitly empty results and unknown layouts remain distinct', (
   assert.equal(classifySourcePage('Verify you are human'), 'blocked');
   assert.equal(classifySourcePage('0 ilan bulundu'), 'empty');
   assert.equal(classifySourcePage('Site is currently unavailable'), 'unknown');
+  assert.equal(classifySourcePage('', {title:'Bir dakika lütfen...'}), 'blocked');
+  assert.equal(classifySourcePage('', {challengeDetected:true}), 'blocked');
+  assert.equal(classifySourcePage('Bir dakika lütfen, sonuçlar yükleniyor', {title:'Arsa ilanları'}), 'unknown');
   assert.deepEqual(readLandSourceStatus([{name:'Hepsiemlak',status:'blocked',readCount:-1,totalCount:null}]),[{name:'Hepsiemlak',status:'blocked',readCount:0,totalCount:null,note:''}]);
 });
 test('browser unavailable does not become an empty successful response', async () => {

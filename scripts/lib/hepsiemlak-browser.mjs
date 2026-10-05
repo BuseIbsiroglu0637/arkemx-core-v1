@@ -40,8 +40,10 @@ export function parseHepsiemlakCard(card, retrievedAt) {
     description: `${category ? `İlan kategorisi: ${category}. ` : ''}Başlık ve ilan kartı okundu; ilan açıklaması, parsel, imar ve altyapı doğrulanmadı.${suspicious ? ' Fiyat/alan oranı olağan dışı; toplam fiyat teyit edilmeli.' : ''}`,
   }, retrievedAt);
 }
-export function classifySourcePage(text) {
-  if (/olağan dışı.*erişim|otomatik.*erişim|verify you are human|checking your browser|just a moment|captcha|access denied|unusual traffic/i.test(text)) return 'blocked';
+export function classifySourcePage(text, { title = '', challengeDetected = false } = {}) {
+  // The Turkish Cloudflare page observed in Codespaces has almost no body text.
+  if (challengeDetected || /^(?:bir dakika lütfen|just a moment)\s*[.!…]*$/i.test(title.trim())
+    || /olağan dışı.*erişim|otomatik.*erişim|verify you are human|checking your browser|just a moment|captcha|access denied|unusual traffic/i.test(text)) return 'blocked';
   if (/\b0\s+ilan bulundu|ilan bulunamadı|sonuç bulunamadı/i.test(text)) return 'empty';
   return 'unknown';
 }
@@ -66,7 +68,10 @@ export async function searchHepsiemlak(rawCriteria, { launchBrowser, signal } = 
     page.setDefaultTimeout(12000);
     async function inspectPage() {
       const text = await page.locator('body').innerText();
-      if (classifySourcePage(text) === 'blocked') throw new LandBrowserError('source-blocked', 'Hepsiemlak bu tarayıcıya erişimi engelledi veya insan doğrulaması istedi. Araştırma durduruldu; aday bulunamadı olarak gösterilmez.');
+      const title = await page.title();
+      const challengeDetected = await page.evaluate(() => !document.querySelector('main article, input#squareMin')
+        && Boolean(document.querySelector('input[id^="cf-chl-widget-"][id$="_response"], input[name="cf-turnstile-response"]')));
+      if (classifySourcePage(text, { title, challengeDetected }) === 'blocked') throw new LandBrowserError('source-blocked', 'Hepsiemlak bu araştırma tarayıcısında insan doğrulaması istedi veya erişimi engelledi. İlanlar okunamadı ve araştırma durduruldu.');
       return text;
     }
     await page.goto(searchPageUrl(criteria), { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -100,7 +105,10 @@ export async function searchHepsiemlak(rawCriteria, { launchBrowser, signal } = 
     await page.waitForURL(url => (criteria.maxPrice === 0 || url.searchParams.get('p32') === String(criteria.maxPrice))
       && (criteria.minArea === 0 || url.searchParams.get('p25') === String(criteria.minArea))
       && (criteria.maxArea === 0 || url.searchParams.get('p26') === String(criteria.maxArea)), { timeout: 12000 });
-    await page.waitForFunction(() => document.querySelector('main article') || /0\s+ilan bulundu|ilan bulunamadı|sonuç bulunamadı|captcha|verify you are human|access denied|olağan dışı/i.test(document.body.innerText), null, { timeout: 12000 });
+    await page.waitForFunction(() => document.querySelector('main article')
+      || /^(?:bir dakika lütfen|just a moment)\s*[.!…]*$/i.test(document.title.trim())
+      || document.querySelector('input[id^="cf-chl-widget-"][id$="_response"], input[name="cf-turnstile-response"]')
+      || /0\s+ilan bulundu|ilan bulunamadı|sonuç bulunamadı|captcha|verify you are human|access denied|olağan dışı/i.test(document.body.innerText), null, { timeout: 12000 });
     const text = await inspectPage();
     const raw = await page.getByRole('article').evaluateAll(elements => elements.slice(0, 24).map(element => ({
       title: element.querySelector('h3')?.textContent?.trim() || '', text: element.innerText,

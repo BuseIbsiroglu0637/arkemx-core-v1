@@ -11,6 +11,8 @@ function fixture(mode) {
     browser.newContext=async opts=>{const context=await create(opts);await context.route('https://www.hepsiemlak.com/**',route=>{
       const filtered=new URL(route.request().url()).searchParams.has('p25');
       let html=mode==='blocked'?'<main>Olağan dışı erişim tespit ettik</main>':mode==='layout'?'<main>Geçici hata</main>':`<main>${filtered?(mode==='empty'?'0 ilan bulundu':'131 ilan bulundu'+Array.from({length:30},(_,i)=>card(i+1, i===0?12000000:620000+i*1000)).join('')):'405 ilan bulundu'}</main><input id="priceMax" data-filter="price" placeholder="En Çok TL"><input id="squareMin" data-filter="min" placeholder="En Az m²"><input id="squareMax" data-filter="max" placeholder="En Çok m²"><button id="search">Ara</button><script>document.getElementById('search').addEventListener('click',()=>{const u=new URL(location.href);u.searchParams.set('p32',document.querySelector('[data-filter="price"]').value);u.searchParams.set('p25',document.querySelector('[data-filter="min"]').value);const max=document.querySelector('[data-filter="max"]').value;if(max)u.searchParams.set('p26',max);location.href=u.href;});</script>`;
+      if (mode==='cloudflare-tr') html='<html><head><title>Bir dakika lütfen...</title></head><body><input type="hidden" id="cf-chl-widget-example_response"></body></html>';
+      if (mode==='challenge-field') html='<html><head><title>Doğrulama</title></head><body><input type="hidden" id="cf-chl-widget-example_response"></body></html>';
       if (mode==='ids') html=html.replace('placeholder="En Az m²"','placeholder="Minimum alan"').replace('placeholder="En Çok m²"','placeholder="Maksimum alan"');
       if (mode==='legacy') html=html.replace('id="priceMax"','').replace('id="squareMin"','').replace('id="squareMax"','').replace('placeholder="En Az m²"','placeholder="En az m2"');
       return route.fulfill({contentType:'text/html; charset=utf-8',body:html});
@@ -38,4 +40,10 @@ test('legacy form without IDs accepts plain m2 and mixed case placeholders',asyn
 });
 test('missing form becomes explicit layout error rather than successful empty result',async()=>{
   await assert.rejects(runFixture('layout'),e=>e.code==='layout-changed' && /filtresi/.test(e.message));
+});
+
+test('Turkish Cloudflare title and challenge-only DOM stop before filter fill',async()=>{
+  for(const mode of ['cloudflare-tr','challenge-field']) {
+    await assert.rejects(runFixture(mode),e=>e.code==='source-blocked' && /İlanlar okunamadı/.test(e.message));
+  }
 });

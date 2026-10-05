@@ -29,7 +29,7 @@ Normal demo için `npm run demo:local` kullanın. Tarayıcı denemesi yalnız `d
 
 ## Hata durumları
 
-İnsan doğrulaması veya otomatik erişim engeli `source-blocked` olarak döner ve araştırma durur. CAPTCHA çözülmez, stealth/proxy kullanılmaz ve döngüsel tekrar yapılmaz. Bu durum boş sonuç değildir. Eksik Chromium `browser-unavailable`; okunamayan düzen `layout-changed`; bağlantı/zaman aşımı `unavailable` olarak gösterilir. Yalnız açık boş sonuç veya başarıyla okunan kartların kriter dışı kalması tamamlanmış boş arama sayılır.
+İnsan doğrulaması veya otomatik erişim engeli `source-blocked` olarak döner ve araştırma durur. Codespaces denemesinde görülen Cloudflare “Bir dakika lütfen…” başlığı ve doğrulama alanı da bu kapsamdadır. Bu durumda tarayıcı kurulumu tamamlanmış olsa bile ilanlara erişim yoktur; filtre veya kriter değiştirerek sonuç alındığı varsayılmaz. CAPTCHA çözülmez, stealth/proxy kullanılmaz ve döngüsel tekrar yapılmaz. Bu durum boş sonuç değildir. Eksik Chromium `browser-unavailable`; okunamayan düzen `layout-changed`; bağlantı/zaman aşımı `unavailable` olarak gösterilir. Yalnız açık boş sonuç veya başarıyla okunan kartların kriter dışı kalması tamamlanmış boş arama sayılır.
 
 ## Doğrulama
 
