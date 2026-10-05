@@ -108,3 +108,32 @@ test('draft architecture can retain its program while missing zoning or failing 
  }
  assert.equal(ctx.selectedMassingId,'balanced');assert.ok(ctx.massingModel);
 });
+
+import { deriveProgramFloorPlates, buildProgramPlanElements, coordinateProgramAxes } from '../app/lib/plan-program.ts';
+test('unequal program rooms retain their target area and stay inside their floor plate', () => {
+  for (const areas of [[100,40,3], [100,100,100,1], [1000,100,50,10,1]]) {
+    for (const netRatio of [78,90,95]) {
+      const spaces = areas.map((unitArea,i) => ({ id: String(i), unitArea, count: 1 }));
+      const plates = deriveProgramFloorPlates(spaces, [], 1, netRatio, 1.45);
+      const elements = buildProgramPlanElements(spaces, 6, 5, 1, 3.5, 5, 5, [], plates);
+      const rooms = elements.filter(element => element.type === 'space');
+      assert.equal(rooms.length, areas.length);
+      for (const room of rooms) {
+        const area = room.widthBays * room.heightBays * plates[0].width / 6 * plates[0].depth / 5;
+        assert.ok(Math.abs(area - room.sourceUnitArea) / room.sourceUnitArea <= .03, JSON.stringify({room,area,netRatio}));
+        assert.ok(room.x >= 0 && room.y >= 0 && room.x + room.widthBays <= 6.001 && room.y + room.heightBays <= 5.001);
+      }
+    }
+  }
+});
+test('axis coordination respects the smallest floor without changing its area', () => {
+  const plates = [{level:1,width:20,depth:18,grossArea:360,netArea:280},{level:2,width:7,depth:5,grossArea:35,netArea:27}];
+  const copy = structuredClone(plates);
+  assert.deepEqual(coordinateProgramAxes(plates,6,5), {baysX:3,baysY:2});
+  assert.deepEqual(plates, copy);
+  // A plate narrower than 4 m remains insufficient for two 2 m bays.
+  const narrow = [{level:1,width:3,depth:5,grossArea:15,netArea:11}];
+  const axes = coordinateProgramAxes(narrow,6,5);
+  assert.equal(axes.baysX,2);
+  assert.ok(narrow[0].width / axes.baysX < 2);
+});

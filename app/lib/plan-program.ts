@@ -296,6 +296,17 @@ function requiredAdjacencyLayout(
  * Room rectangles use fractional bay dimensions so source unit areas are represented
  * geometrically instead of being displayed only as labels.
  */
+export function coordinateProgramAxes(plates: ProgramFloorPlate[], baysX: number, baysY: number) {
+  const count = (current: number, dimensions: number[]) => {
+    const smallest = dimensions.length ? Math.min(...dimensions) : 0;
+    return Math.max(2, Math.min(16, Math.round(current) || 2, Math.floor(smallest / 2)));
+  };
+  return {
+    baysX: count(baysX, plates.map((plate) => plate.width)),
+    baysY: count(baysY, plates.map((plate) => plate.depth)),
+  };
+}
+
 export function buildProgramPlanElements(
   spaces: unknown[],
   baysX: number,
@@ -312,8 +323,6 @@ export function buildProgramPlanElements(
   const safeFloors = Math.max(1, Math.min(30, Math.round(floors)));
   const safeSpanX = Math.max(.1, spanX);
   const safeSpanY = Math.max(.1, spanY);
-  const coreStripBays = Math.max(.45, Math.min(1, safeBaysX * .15));
-  const roomWidthBays = Math.max(1, safeBaysX - coreStripBays);
   const instances = expandProgramSpaces(spaces, fallbackLiveLoad);
   const floorBuckets = distributeToFloors(instances, safeFloors, relationships);
 
@@ -325,6 +334,9 @@ export function buildProgramPlanElements(
     const levelSpanY = profile?.depth ? profile.depth / safeBaysY : safeSpanY;
     const bayArea = levelSpanX * levelSpanY;
     const floorArea = safeBaysX * safeBaysY * bayArea;
+    // Reserve the actual gross/net remainder rather than shrinking rooms to a fixed strip.
+    const coreStripBays = Math.max(.01, Math.min(safeBaysX * .15, safeBaysX * Math.max(0, 1 - bucket.netArea / Math.max(floorArea, .01))));
+    const roomWidthBays = safeBaysX - coreStripBays;
     const adjacencyLayout = requiredAdjacencyLayout(
       bucket.items,
       relationships,
@@ -377,21 +389,20 @@ export function buildProgramPlanElements(
       const rows = splitIntoRows(bucket.items, desiredRows);
       let yCursor = 0;
 
-      rows.forEach((row, rowIndex) => {
-        const remainingRows = Math.max(1, rows.length - rowIndex);
-        const availableHeight = Math.max(.2, safeBaysY - yCursor);
-        const exactHeight = row.area > 0 ? row.area / Math.max(roomWidthBays * bayArea, .01) : availableHeight / remainingRows;
-        const rowHeight = Math.max(.2, Math.min(availableHeight / remainingRows * 1.35, exactHeight));
+      rows.forEach((row) => {
+        const availableHeight = Math.max(0, safeBaysY - yCursor);
+        const exactHeight = row.area / Math.max(roomWidthBays * bayArea, .01);
+        const rowHeight = Math.min(availableHeight, exactHeight);
         let xCursor = 0;
         row.items
           .sort((a, b) => a.order - b.order)
           .forEach((instance, itemIndex) => {
-            const remainingWidth = Math.max(.15, roomWidthBays - xCursor);
+            const remainingWidth = Math.max(0, roomWidthBays - xCursor);
             const isLast = itemIndex === row.items.length - 1;
             const exactWidth = instance.unitArea > 0 ? instance.unitArea / Math.max(rowHeight * bayArea, .01) : remainingWidth;
-            const width = Math.max(.15, Math.min(remainingWidth, isLast ? remainingWidth : exactWidth));
+            const width = Math.min(remainingWidth, isLast ? remainingWidth : exactWidth);
             const exactRoomHeight = instance.unitArea > 0 ? instance.unitArea / Math.max(width * bayArea, .01) : rowHeight;
-            const height = Math.max(.15, Math.min(rowHeight, exactRoomHeight));
+            const height = Math.min(rowHeight, exactRoomHeight);
             pushProgramSpace(instance, xCursor, yCursor, width, height);
             xCursor += width;
           });

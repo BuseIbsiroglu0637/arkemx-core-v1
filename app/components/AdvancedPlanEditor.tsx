@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
-import { expandProgramSpaces, buildProgramPlanElements, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
+import { expandProgramSpaces, buildProgramPlanElements, coordinateProgramAxes, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
@@ -607,10 +607,13 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (!confirmed) return;
     const platesForBuild = recommendedFloorPlates.length === floorCount ? recommendedFloorPlates : floorPlates;
     if (platesForBuild.length === floorCount) setFloorPlates(platesForBuild);
+    const axes = coordinateProgramAxes(platesForBuild, baysX, baysY);
+    setBaysX(axes.baysX);
+    setBaysY(axes.baysY);
     const generated = buildProgramPlanElements(
       upstreamSpaces,
-      baysX,
-      baysY,
+      axes.baysX,
+      axes.baysY,
       floorCount,
       Number(architectureModule?.result?.liveLoad) || 3.5,
       activeSpanX,
@@ -1052,6 +1055,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     </div>
     {!issueFocus ? <section className="cad-plan-completion" data-state={planGatePass ? "pass" : "review"}>
       <div><span>04 / MİMARİ TAMAMLAMA KAPISI</span><b>{planGatePass ? "Plan ve aks çalışması tamamlandı" : "Plan ve aks çalışması henüz tamamlanmadı"}</b><small>{planGatePass ? "Mimari adımı kapanabilir. Sıradaki ana proje adımı Sistem seçimidir." : `Bekleyen: ${missingPlanGateItems.join(" · ") || "Kontroller güncelleniyor"}`}</small></div>
+      {!axisReady ? <p>{floorPlates.filter((plate) => plate.width / baysX < 2 || plate.depth / baysY < 2).map((plate) => `K${plate.level}: X ${(plate.width / baysX).toFixed(2)} m / Y ${(plate.depth / baysY).toFixed(2)} m`).join(" · ")}. Aks aralıkları en az 2 m olmalıdır. Yeniden kurma aks sayısını azaltır; bir kat boyutu 4 m altında kalıyorsa mahal dağılımını veya kat kararını Mimari Programda düzenleyin.</p> : null}
+      {!planGatePass && upstreamReady && (!areaRepresentationPass || !axisReady) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mahal alanlarını ve aksları yeniden kur</button> : null}
       {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
     </section> : null}
   </section>;

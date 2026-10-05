@@ -1,5 +1,6 @@
 // Synthetic HTTP fixtures test the real UI and persistence, not live advertisements.
 import assert from 'node:assert/strict';
+import {deriveProgramFloorPlates,buildProgramPlanElements} from '../app/lib/plan-program.ts';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {encodeProjectEnvelope,PROJECT_STORAGE_KEY} from '../app/lib/project-storage.ts';
@@ -179,6 +180,29 @@ try {
  const afterHandoff=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules,PROJECT_STORAGE_KEY);
  assert.deepEqual(afterHandoff['geo-parcel'].zoning,zoningBeforeDraft);assert.equal(afterHandoff['architectural-program'].siteReview.status,'pending');assert.equal(afterHandoff['geo-parcel'].parcelRecord.projectEligible,false);
  console.log('PASS draft link opens editable architecture, preserves draft after reload and keeps zoning/placement review pending');
+
+ const planSpaces=[100,40,3].map((unitArea,index)=>({id:`plan-test-${index}`,name:`Sentetik mahal ${index+1}`,code:`T-${index+1}`,zone:'Test',unitArea,count:1}));
+ const planPlates=deriveProgramFloorPlates(planSpaces,[],1,90,1.45);
+ const planSeed=buildProgramPlanElements(planSpaces,16,16,1,3.5,5,5,[],planPlates).map(element=>element.type==='space'?{...element,widthBays:element.widthBays*.8}:element);
+ const planProject=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload,PROJECT_STORAGE_KEY);
+ planProject.modules['architectural-program']={input:{targetGross:143/.9,floors:1,netRatio:90,aspect:1.45,programRequirementsConfirmed:true},spaces:planSpaces,relationships:[],result:{grossDemand:143/.9,liveLoad:3.5},siteReview:{status:'pending'}};
+ planProject.modules['plan-editor']={level:1,floorCount:1,baysX:16,baysY:16,spanX:planPlates[0].width/16,spanY:planPlates[0].depth/16,floorPlates:planPlates,elements:planSeed};
+ await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:PROJECT_STORAGE_KEY,value:encodeProjectEnvelope(planProject)});
+ await page.goto(root+'/plan-ve-aks');
+ const completion=page.locator('.cad-plan-completion');
+ await completion.getByText(/Mahal alanlarının geometrik temsili/).waitFor();
+ await completion.getByText(/Aks geometrisi/).waitFor();
+ page.once('dialog',dialog=>dialog.accept());
+ await completion.getByRole('button',{name:'Mahal alanlarını ve aksları yeniden kur',exact:true}).click();
+ await page.locator('.cad-plan-completion[data-state="pass"]').waitFor();
+ await completion.getByRole('link',{name:/Sistem ve Yöntemi Seç/}).waitFor();
+ await page.reload();
+ await page.locator('.cad-plan-completion[data-state="pass"]').waitFor();
+ const repaired=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules,PROJECT_STORAGE_KEY);
+ assert.deepEqual(repaired['geo-parcel'].zoning,zoningBeforeDraft);
+ assert.equal(repaired['geo-parcel'].parcelRecord.projectEligible,false);
+ console.log('PASS plan repair restores room areas and valid axes, persists after reload without granting zoning approval');
+
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 
