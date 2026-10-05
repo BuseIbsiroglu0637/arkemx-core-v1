@@ -84,22 +84,40 @@ export async function searchEmlakjet(rawCriteria, { launchBrowser, signal } = {}
     if ((await page.getByRole('heading', { level: 1 }).innerText()).trim().toLocaleLowerCase('tr-TR') !== expectedHeading) throw new LandBrowserError('layout-changed', 'Emlakjet il/ilçe araması doğrulanamadı.');
     async function fillFilter(group, button, placeholder, key, value) {
       if (!value) return;
+      let stage = 'open-filter';
       try {
         const toggle = page.getByRole('button', { name: group, exact: true });
         if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
         const field = page.locator('fieldset').filter({ has: page.getByRole('button', { name: button, exact: true }) }).getByPlaceholder(placeholder, { exact: true });
+        stage = 'fill-field';
         await field.fill(String(value));
+        stage = 'commit-field';
         await toggle.click(); // Blur commits the value; the site applies automatic search.
+        stage = 'verify-url';
         await page.waitForURL(url => {
           const params = new URLSearchParams(url.searchParams.get('filtreler') || '');
           // The live UI serializes the first filter under filtreler and later ones as query parameters.
           return (params.get(key) || url.searchParams.get(key)) === String(value);
         }, { timeout: 15000 });
+        stage = 'read-results';
         await ready();
       } catch (error) {
         if (error instanceof LandBrowserError || signal?.aborted) throw error;
         await inspectPage();
-        throw new LandBrowserError('layout-changed', `Emlakjet ${group.toLocaleLowerCase('tr-TR')} filtresi uygulanamadı; boş sonuç kabul edilmedi.`, error);
+        const url = new URL(page.url());
+        const diagnostic = {
+          stage, filter: key, path: url.pathname, title: (await page.title()).slice(0, 160),
+          filters: Object.fromEntries([...url.searchParams].filter(([name]) => ['filtreler', 'max-fiyat', 'min-m2', 'max-m2', 'siralama'].includes(name))),
+          articleCount: await page.locator('main article').count(),
+          fields: await page.locator('fieldset').evaluateAll(elements => elements.slice(0, 6).map(e => ({
+            buttons: Array.from(e.querySelectorAll('button')).map(b => b.getAttribute('aria-label')),
+            inputs: Array.from(e.querySelectorAll('input')).map(i => ({ placeholder: i.getAttribute('placeholder'), visible: Boolean(i.getClientRects().length), disabled: i.disabled })),
+          }))),
+          toggle: await page.getByRole('button', { name: group, exact: true }).evaluateAll(elements => elements.map(e => ({ expanded: e.getAttribute('aria-expanded'), visible: Boolean(e.getClientRects().length) }))),
+        };
+        const failure = new LandBrowserError('layout-changed', `Emlakjet ${group.toLocaleLowerCase('tr-TR')} filtresi uygulanamadı (${stage}); boş sonuç kabul edilmedi.`, error);
+        failure.diagnostic = diagnostic;
+        throw failure;
       }
     }
     await fillFilter('Fiyat', 'En Fazla Fiyat', 'En Fazla', 'max-fiyat', criteria.maxPrice);
