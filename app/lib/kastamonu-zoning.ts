@@ -71,11 +71,12 @@ export async function queryKastamonuZoning(raw:unknown, fetcher:typeof fetch=fet
   const geometry=JSON.stringify({rings:[geom.coordinates[0]],spatialReference:{wkid:4326}});
   const params=new URLSearchParams({f:'json',where:'1=1',geometry,geometryType:'esriGeometryPolygon',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'objectid,planid,taks,takstip,emsalkaks,emsalkakstip,yapiyuksekligi,yapiyuksekligitip,onbahcemesafesi,yanbahcemesafesi,yapiduzeni,konuttip',returnGeometry:'true',outSR:'4326',resultRecordCount:'20'});
   // 1826 belongs to Uygulama İmar Planları. 1942 is Mülga and is never queried.
-  const zones=features(await json(`${KASTAMONU_IMAR_ROOT}/1826/query?${params}`));
+  const zoneData=await json(`${KASTAMONU_IMAR_ROOT}/1826/query?${params}`);
+  const zones=features(zoneData);
   if(!zones.length) return {...base,status:'not-found',message:'Bu parsel için kaynakta konut imar kaydı bulunamadı. Bu sonuç parselin imarsız olduğu anlamına gelmez.'};
   if(zones.length!==1) return {...base,status:'ambiguous',message:'Parsel birden fazla imar alanıyla kesişiyor; tek değer otomatik aktarılmadı.'};
   const zone=record(zones[0].attributes), boundary=record(zones[0].geometry);
-  if(!Array.isArray(boundary.rings)||boundary.rings.length!==1 || record(boundary.spatialReference).wkid!==4326) throw new ZoningQueryError('geometry-unsupported','İmar sınırı WGS84 tek parça poligon olarak doğrulanamadı.');
+  if(!Array.isArray(boundary.rings)||boundary.rings.length!==1 || (record(zoneData.spatialReference).wkid ?? record(boundary.spatialReference).wkid)!==4326) throw new ZoningQueryError('geometry-unsupported','İmar sınırı WGS84 tek parça poligon olarak doğrulanamadı.');
   const polygon=ring(boundary.rings[0]);
   if (!parcel.every(p=>pointInPolygon(p,polygon)) || polygonEdgesCross(polygon,parcel)) return {...base,status:'ambiguous',message:'İmar alanı parsel sınırının tamamını kapsamıyor; koşullar otomatik aktarılmadı.'};
   if(!Number.isSafeInteger(zone.planid) || Number(zone.planid)<=0 || !Number.isSafeInteger(zone.objectid)) throw new ZoningQueryError('layout-changed','İmar kaydının plan kimliği doğrulanamadı.');

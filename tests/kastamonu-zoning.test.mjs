@@ -15,12 +15,12 @@ function fixture({cad=cadastral,zones=[{attributes:zone,geometry:{rings:[boundar
     if(u.hostname==='cbsapi.tkgm.gov.tr')return Response.json(cad);
     assert.equal(u.origin+'/arcgis/rest/services/IDARE_PUBLIC/IMAR_PUBLIC/FeatureServer',KASTAMONU_IMAR_ROOT);
     assert.equal(options.redirect,'error');assert.ok(options.signal);
-    return Response.json(zoneError?{error:{code:400}}:{features:u.pathname.includes('/1826/')?zones:plans},{status});
+    return Response.json(zoneError?{error:{code:400}}:{spatialReference:{wkid:4326},features:u.pathname.includes('/1826/')?zones:plans},{status});
   };
   return {fetcher,calls};
 }
 test('source adapter re-reads TKGM, uses only current plan layer and scopes full geometry; values carry plan evidence without approval',async()=>{
-  const f=fixture(),r=await queryKastamonuZoning(input,f.fetcher);
+  const f=fixture({zones:[{attributes:zone,geometry:{rings:[boundary]}}]}),r=await queryKastamonuZoning(input,f.fetcher);
   assert.equal(r.status,'found');assert.equal(f.calls.length,3);
   const u=new URL(f.calls[1].url);assert.ok(u.pathname.includes('/1826/query'));assert.equal(u.searchParams.get('inSR'),'4326');assert.deepEqual(JSON.parse(u.searchParams.get('geometry')).rings,[parcel]);
   assert.equal(r.conditions.taks,.25);assert.equal(r.conditions.kaks,.75);assert.equal(r.source.planId,'UIP-TEST');
