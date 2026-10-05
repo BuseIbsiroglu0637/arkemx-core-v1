@@ -55,3 +55,14 @@
 .arx-simple-head-actions { display:flex; align-items:center; gap:16px; }
 .arx-simple-head-actions > a { color:#536d78; font-size:12px; font-weight:700; }
 .arx-simple-head-actions > a:hover,.arx-simple-head-actions > a:focus-visible { color:#a65d36; }
+
+.arx-module-tools { margin-top: 38px; }
+.arx-module-tools-heading { margin-bottom: 18px; }
+.arx-module-tools-heading h2 { font-size: 22px; font-weight: 650; margin: 0 0 8px; }
+.arx-module-tools-heading p { font-size: 13px; color: #65747e; margin: 0; }
+.arx-module-tool { align-items: flex-start; }
+.arx-module-output { font-size: 12px; line-height: 1.55; color: #65747e; }
+.arx-module-status { width: fit-content; font-size: 11px; font-weight: 650; border-radius: 5px; background: #eef2f4; color: #53646f; padding: 5px 8px; }
+.arx-module-status[data-state="complete"] { background: #e5f1eb; color: #276047; }
+.arx-module-status[data-state="review"] { background: #fff0df; color: #805328; }
+.arx-module-status[data-state="recorded"] { background: #e7f0f5; color: #355b71; }

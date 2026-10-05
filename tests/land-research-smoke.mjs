@@ -1,5 +1,6 @@
 // Synthetic HTTP fixtures test the real UI and persistence, not live advertisements.
 import assert from 'node:assert/strict';
+import {PROJECT_MODULES} from '../app/lib/project-graph.ts';
 import {deriveProgramFloorPlates,buildProgramPlanElements} from '../app/lib/plan-program.ts';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -216,6 +217,29 @@ try {
  await page.waitForURL('**/bim-koordinasyon');
  assert.equal(await page.locator('h1').first().innerText(),'BIM koordinasyon');
  console.log('PASS structural concept continues to BIM coordination with its model saved');
+
+ await page.goto(root+'/araclar');
+ const moduleTools=page.getByTestId('project-module-tools');
+ await moduleTools.getByRole('heading',{name:'13 proje modülü',exact:true}).waitFor();
+ await page.waitForFunction(()=>!document.querySelector('.arx-module-status[data-state="loading"]'));
+ const moduleCards=moduleTools.getByTestId('project-module-card');
+ assert.equal(await moduleCards.count(),13);
+ assert.deepEqual(await moduleCards.evaluateAll(cards=>cards.map(card=>card.dataset.module)),PROJECT_MODULES.map(module=>module.id));
+ assert.equal(await moduleTools.locator('[data-module="structural-concept"]').getAttribute('href'),'/tasiyici-on-tasarim');
+ assert.equal(await moduleTools.locator('[data-module="engineering-coordination"]').getAttribute('href'),'/bim-koordinasyon');
+ await moduleTools.locator('[data-module="architectural-program"]').getByText('Aşama kontrolü geçti',{exact:true}).waitFor();
+ await moduleTools.locator('[data-module="model-library-review"]').getByText('Başlatılmadı',{exact:true}).waitFor();
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+ await page.setViewportSize({width:1440,height:1000});
+ const emptyToolsProject={...planProject,modules:{},experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''}};
+ await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:PROJECT_STORAGE_KEY,value:encodeProjectEnvelope(emptyToolsProject)});
+ await page.reload();
+ await page.waitForFunction(()=>document.querySelectorAll('.arx-module-status[data-state="empty"]').length===13);
+ assert.equal(await moduleCards.count(),13);
+ assert.equal(await page.getByRole('link',{name:/Yeni proje/}).count(),1);
+ console.log('PASS all 13 module cards show project states, remain available with no project and fit mobile');
+
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 

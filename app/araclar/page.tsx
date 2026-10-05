@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowUpRight, Blocks, ClipboardList, DraftingCompass, FileBox,
-  FolderOpen, GitMerge, Layers3, Map, Scale, Wrench,
+  ArrowUpRight, ClipboardList, FolderOpen,
 } from "lucide-react";
+import { ProjectModuleTools } from "../components/ProjectModuleTools";
 import { AccountHeaderLink } from "../components/AccountHeaderLink";
 import "../sade-arac-paneli.css";
 
@@ -17,14 +17,6 @@ export const metadata: Metadata = {
 const tools = [
   { name: "Yeni proje", icon: ClipboardList, href: "/proje-baslat", section: "Proje" },
   { name: "Proje Çalışma Alanı", icon: FolderOpen, href: "/dijital-proje-merkezi#canli-proje-grafigi", section: "Proje" },
-  { name: "Arazi ve parsel", icon: Map, href: "/arsa-fizibilite-studyosu", section: "Tasarım" },
-  { name: "Mimari program", icon: Layers3, href: "/mimari-program-studyosu", section: "Tasarım" },
-  { name: "Plan ve aks", icon: DraftingCompass, href: "/plan-ve-aks", section: "Tasarım" },
-  { name: "Taşıyıcı ön tasarım", icon: Blocks, href: "/tasiyici-on-tasarim", section: "Mühendislik" },
-  { name: "Yapı sistemi", icon: Scale, href: "/sistem-karsilastirma", section: "Mühendislik" },
-  { name: "BIM koordinasyon", icon: GitMerge, href: "/bim-koordinasyon", section: "Mühendislik" },
-  { name: "Proje takibi", icon: Wrench, href: "/proje-takibi", section: "Teslim" },
-  { name: "Dijital teslim", icon: FileBox, href: "/dijital-proje-merkezi", section: "Teslim" },
 ] as const;
 
 export default function ToolsPage() {
@@ -37,7 +29,7 @@ export default function ToolsPage() {
         </header>
         <section className="arx-simple-tools" aria-labelledby="arx-tools-title">
           <h1 id="arx-tools-title">Araçlar</h1>
-          <div className="arx-simple-grid">
+          <div className="arx-simple-grid" aria-label="Proje işlemleri">
             {tools.map((tool) => {
               const Icon = tool.icon;
               return (
@@ -52,6 +44,7 @@ export default function ToolsPage() {
               );
             })}
           </div>
+          <ProjectModuleTools />
         </section>
       </div>
     </main>
