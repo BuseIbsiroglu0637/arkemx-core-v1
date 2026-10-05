@@ -46,3 +46,9 @@ html[data-theme=dark] .land-watch { color:#eda87f; }
 
 .land-source-status { border:1px solid var(--land-border); border-radius:10px; padding:16px; margin:16px 0; background:var(--land-surface); }
 .land-source-status small { display:block; margin-top:6px; }
+
+.land-area-estimate { display:grid; gap:12px; min-width:0; padding:16px; border:1px solid var(--land-border); border-radius:8px; }
+.land-area-estimate p { margin:0; font-size:14px; }
+.land-area-estimate details { min-width:0; }
+.land-area-estimate summary { cursor:pointer; font-size:13px; }
+.land-area-estimate details label { margin-top:12px; }

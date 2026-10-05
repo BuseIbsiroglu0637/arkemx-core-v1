@@ -39,6 +39,7 @@ async function saved(){await page.waitForFunction(key=>JSON.parse(localStorage.g
 try {
  await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS unknown land starts research');
  await open();assert.equal(await research().getByLabel('İl',{exact:true}).inputValue(),'Kastamonu');
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'2000'); console.log('PASS minimum land area defaults from project gross area and floors');
  await research().getByLabel('En az arsa alanı').fill('2000');await research().getByLabel('En fazla arsa alanı').fill('5000');await research().getByLabel('Arsa satın alma bütçesi').fill('10000000');
  await search();await research().getByText('Tarayıcıda okunan ilan kartı',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Arama tamamlandı',{exact:true}).waitFor();assert.equal(await research().locator('option[value="rent"]').evaluate(option=>option.disabled),true);await research().getByRole('button',{name:'Kısa listeye al',exact:true}).click();await saved();
  await shortlist().getByRole('button',{name:'İncelemeye al',exact:true}).click();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();
@@ -66,6 +67,30 @@ try {
  const other={...project,id:'ARK-LAND-OTHER',name:'İkinci sentetik proje',updatedAt:new Date().toISOString()};
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(other)});
  await page.reload();await research().getByText('İkinci sentetik proje',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),0);console.log('PASS projects keep separate shortlists');
+ const sizingProject={...other,modules:{'decision-assistant':{input:{...other.modules['decision-assistant'].input,targetArea:1000,floors:10}}}};
+ await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(sizingProject)});
+ await page.reload(); await research().getByText('700 m²',{exact:true}).waitFor();
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'700');
+ await research().getByLabel('En az arsa alanı').fill('900');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['decision-assistant'].landResearch?.areaSizing?.mode==='manual',PROJECT_STORAGE_KEY);
+ const revised=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload,PROJECT_STORAGE_KEY);
+ revised.modules['decision-assistant'].input.targetArea=2000;
+ await page.evaluate(({key,envelope})=>localStorage.setItem(key,envelope),{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(revised)});
+ await page.reload();await research().getByText('1.350 m²',{exact:true}).waitFor();
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'900');
+ await research().getByRole('button',{name:'Önerilen alt sınırı kullan',exact:true}).click();
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'1350');
+ await research().getByRole('button',{name:'Kriterleri kaydet'}).click();
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['decision-assistant'].landResearch?.areaSizing?.mode==='auto',PROJECT_STORAGE_KEY);
+ const enlarged=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload,PROJECT_STORAGE_KEY);
+ enlarged.modules['decision-assistant'].input.targetArea=3000;
+ await page.evaluate(({key,envelope})=>localStorage.setItem(key,envelope),{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(enlarged)});
+ await page.reload();await research().getByText('2.000 m²',{exact:true}).waitFor();
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'2000');
+ await research().getByText('Arsa hesabı varsayımlarını düzenle',{exact:true}).click();
+ await research().getByLabel('Varsayılan emsal',{exact:true}).fill('1');
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'3000');
+ console.log('PASS sizing auto-updates after brief revisions, preserves manual limits and accepts changed assumptions');
  assert.deepEqual(errors,[]);
 }finally{await browser.close();}
 

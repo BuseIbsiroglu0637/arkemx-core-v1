@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { assessLandCandidate, LAND_NEEDS, LAND_USES, landCriteriaKey, normalizeLandCandidate, object, parseLandCriteria, readLandResearch, readLandSourceStatus, type LandSourceStatus, type LandCandidate, type LandCriteria, type LandResearch, type LandSearchResponse } from "../lib/land-research";
+import { DEFAULT_LAND_AREA_SIZING, estimateMinimumLandArea, type LandAreaSizing } from "../lib/land-area-sizing";
 import { useProjectKernel } from "./ProjectKernel";
 
 export function LandResearchStudio() {
@@ -13,11 +14,14 @@ export function LandResearchStudio() {
   const location = typeof input.location === "string" ? input.location.trim().split(/\s*\/\s*|\s+/) : [];
   const initial: LandCriteria = { province: location[0] || "", district: location.slice(1).join(" "), tenure: "sale", minArea: 0, maxArea: 0, maxPrice: 0,
     use: Object.hasOwn(LAND_USES, String(input.usage)) ? input.usage as LandCriteria["use"] : "industrial", needs: [] };
-  return <LandResearchWorkspace key={project.id} name={project.name} initial={initial} saved={readLandResearch(brief.landResearch)} onSave={landResearch => patchModule("decision-assistant", { landResearch })} />;
+  return <LandResearchWorkspace key={project.id} name={project.name} targetArea={input.targetArea} floors={input.floors} initial={initial} saved={readLandResearch(brief.landResearch)} onSave={landResearch => patchModule("decision-assistant", { landResearch })} />;
 }
 
-function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string; initial: LandCriteria; saved: LandResearch | null; onSave: (value: LandResearch) => void }) {
-  const [criteria, setCriteria] = useState(saved?.criteria ?? initial);
+function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSave }: { name: string; targetArea: unknown; floors: unknown; initial: LandCriteria; saved: LandResearch | null; onSave: (value: LandResearch) => void }) {
+  const [criteriaDraft, setCriteria] = useState(saved?.criteria ?? initial);
+  const [areaSizing, setAreaSizing] = useState<LandAreaSizing>(saved?.areaSizing ?? { ...DEFAULT_LAND_AREA_SIZING, mode: saved && saved.criteria.minArea > 0 ? "manual" : "auto" });
+  const areaEstimate = estimateMinimumLandArea(targetArea, floors, areaSizing);
+  const criteria = { ...criteriaDraft, minArea: areaSizing.mode === "auto" ? areaEstimate?.minimumArea ?? 0 : criteriaDraft.minArea };
   const [shortlist, setShortlist] = useState(saved?.shortlist ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(saved?.selectedId ?? null);
   const [searchedAt, setSearchedAt] = useState(saved?.searchedAt ?? "");
@@ -44,12 +48,17 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
     return () => { abort.abort(); controller.current?.abort(); sequence.current++; };
   }, []);
   function persist(next: { criteria?: LandCriteria; shortlist?: LandCandidate[]; selectedId?: string | null; searchedAt?: string } = {}) {
-    onSave({ schema: "ARKEM-LAND-RESEARCH/1.0", criteria: next.criteria ?? criteria,
+    onSave({ schema: "ARKEM-LAND-RESEARCH/1.0", areaSizing, criteria: next.criteria ?? criteria,
       shortlist: next.shortlist ?? shortlist, selectedId: next.selectedId === undefined ? selectedId : next.selectedId, searchedAt: next.searchedAt ?? searchedAt });
   }
   function change<K extends keyof LandCriteria>(key: K, value: LandCriteria[K]) {
     controller.current?.abort(); sequence.current++; setBusy(false); setResult(null); setSourceStatus([]); setNotice("");
+    if (key === "minArea") setAreaSizing(current => ({ ...current, mode: "manual" }));
     setCriteria(current => ({ ...current, [key]: value }));
+  }
+  function changeAreaSizing(next: LandAreaSizing) {
+    controller.current?.abort(); sequence.current++; setBusy(false); setResult(null); setSourceStatus([]); setNotice("");
+    setAreaSizing(next);
   }
   async function search() {
     if (!parsed || busy) return;
@@ -105,6 +114,19 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
       <label>İşlem türü<select value={criteria.tenure} onChange={e => change("tenure", e.target.value as LandCriteria["tenure"])}><option value="sale">Satın alma</option><option value="rent" disabled={browserMode}>Kiralama</option></select></label>
       <label>Yatırım kullanımı<select value={criteria.use} onChange={e => change("use", e.target.value as LandCriteria["use"])}>{Object.entries(LAND_USES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       {([ ["minArea", "En az arsa alanı · m²"], ["maxArea", "En fazla arsa alanı · m²"], ["maxPrice", criteria.tenure === "rent" ? "En fazla aylık arsa kirası · TL" : "Arsa satın alma bütçesi · TL"] ] as const).map(([key, label]) => <label key={key}>{label}<input type="number" min={0} step={1} value={criteria[key] || ""} placeholder="Sınır yok" onChange={e => change(key, e.target.value === "" ? 0 : Number(e.target.value))} /></label>)}
+      <div className="land-area-estimate" aria-label="Projeye göre arsa alanı önerisi">
+        <b>Projeye göre ön arsa alanı önerisi</b>
+        {areaEstimate ? <><p>{areaEstimate.targetArea.toLocaleString("tr-TR")} m² hedef brüt alan · {areaEstimate.floors} kat · yaklaşık {areaEstimate.footprint.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² taban.</p>
+          <p><strong>{areaEstimate.minimumArea.toLocaleString("tr-TR")} m²</strong> önerilen arama alt sınırı · {areaSizing.mode === "auto" ? "Otomatik uygulanıyor" : "Elle belirlenen alt sınır kullanılıyor"}</p>
+          <small>Taban ihtiyacı / {areaSizing.coverage.toLocaleString("tr-TR")} = {Math.ceil(areaEstimate.byCoverage).toLocaleString("tr-TR")} m²; brüt alan / {areaSizing.far.toLocaleString("tr-TR")} = {Math.ceil(areaEstimate.byFar).toLocaleString("tr-TR")} m². Büyük olan değer 50 m² adımlarla yukarı yuvarlanır.</small>
+          <button type="button" disabled={busy || areaSizing.mode === "auto"} onClick={() => changeAreaSizing({ ...areaSizing, mode: "auto" })}>Önerilen alt sınırı kullan</button></> : <p>Öneri için proje başlangıcında geçerli hedef brüt alan ve tam kat adedi girin; varsayım değerlerini kontrol edin.</p>}
+        <details><summary>Arsa hesabı varsayımlarını düzenle</summary>
+          <label>Varsayılan taban oranı · %<input type="number" min={1} max={100} step={1} value={Math.round(areaSizing.coverage * 100) || ""} onChange={e => changeAreaSizing({ ...areaSizing, coverage: Number(e.target.value) / 100 })} /></label>
+          <label>Varsayılan emsal<input type="number" min={0.01} max={20} step={0.05} value={areaSizing.far || ""} onChange={e => changeAreaSizing({ ...areaSizing, far: Number(e.target.value) })} /></label>
+        </details>
+        <small>Oranlar ön arama varsayımıdır; parselin onaylı TAKS/KAKS değerleri değildir. Brüt alanın tamamı emsale dahil varsayılır. Kat izni, çekme mesafeleri, otopark ve açık alan ihtiyacı ayrıca kontrol edilmelidir.</small>
+        {criteria.maxArea > 0 && criteria.minArea > criteria.maxArea ? <p className="land-watch">Alt sınır, belirlediğiniz en fazla arsa alanını aşıyor. Alan aralığını güncelleyin.</p> : null}
+      </div>
       <small>Arsa bütçesi toplam yatırım bütçesinden ayrıdır. Kapalı alan ihtiyacı, gerekli arsa alanıyla aynı değildir.</small>
       <fieldset><legend>İncelemede doğrulanacak ihtiyaçlar</legend>{LAND_NEEDS.map(need => <label key={need}><input type="checkbox" checked={criteria.needs.includes(need)} onChange={() => change("needs", criteria.needs.includes(need) ? criteria.needs.filter(n => n !== need) : [...criteria.needs, need])} />{need}</label>)}</fieldset>
       {!parsed ? <p className="land-watch">İl ve alan/bütçe aralıklarını kontrol edin.</p> : null}

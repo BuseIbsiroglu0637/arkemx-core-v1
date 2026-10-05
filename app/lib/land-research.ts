@@ -1,3 +1,4 @@
+import { readLandAreaSizing, type LandAreaSizing } from "./land-area-sizing.ts";
 import { normalizeLandParcelIdentity, type LandParcelIdentity } from "./land-parcel-prefill.ts";
 export type LandCriteria = {
   province: string; district: string; tenure: "sale" | "rent";
@@ -21,6 +22,7 @@ export type LandSearchResponse = {
 export type LandResearch = {
   schema: "ARKEM-LAND-RESEARCH/1.0"; criteria: LandCriteria;
   shortlist: LandCandidate[]; selectedId: string | null; searchedAt: string;
+  areaSizing?: LandAreaSizing | null;
 };
 export const LAND_NEEDS = ["Tır erişimi", "Enerji kapasitesi", "Su bağlantısı", "Genişleme alanı"] as const;
 export const LAND_USES = { industrial: "Üretim / depo", residential: "Konut", commercial: "Ticari", agricultural: "Tarımsal", mixed: "Karma kullanım" } as const;
@@ -97,7 +99,7 @@ export function readLandResearch(value: unknown): LandResearch | null {
   if (v.schema !== "ARKEM-LAND-RESEARCH/1.0" || !criteria) return null;
   const shortlist = Array.isArray(v.shortlist) ? v.shortlist.slice(0, 30).map(c => normalizeLandCandidate(c, clean(object(c).retrievedAt, 40))).filter((c): c is LandCandidate => Boolean(c)) : [];
   const unique = [...new Map(shortlist.map(c => [c.id, c])).values()];
-  return { schema: "ARKEM-LAND-RESEARCH/1.0", criteria, shortlist: unique,
+  return { schema: "ARKEM-LAND-RESEARCH/1.0", criteria, shortlist: unique, areaSizing: readLandAreaSizing(v.areaSizing),
     selectedId: typeof v.selectedId === "string" && unique.some(c => c.id === v.selectedId) ? v.selectedId : null,
     searchedAt: clean(v.searchedAt, 40) };
 }

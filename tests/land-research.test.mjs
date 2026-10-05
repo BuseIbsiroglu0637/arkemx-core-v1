@@ -102,3 +102,22 @@ test('agent: server invokes Responses API and preserves source-linked results',a
 test('quota: actual atomic SQLite query limits each owner/day to ten reservations',()=>{
  const db=new DatabaseSync(':memory:');try{db.exec(LAND_QUOTA_TABLE);const reserve=db.prepare(LAND_QUOTA_RESERVATION);for(let i=1;i<=10;i++) assert.equal(reserve.get('a','2026-10-05').requests,i);assert.equal(reserve.get('a','2026-10-05'),undefined);assert.equal(reserve.get('b','2026-10-05').requests,1);assert.equal(reserve.get('a','2026-10-06').requests,1);}finally{db.close();}
 });
+
+
+import { estimateMinimumLandArea, readLandAreaSizing } from '../app/lib/land-area-sizing.ts';
+test('land size considers both gross area capacity and approximate footprint, rounding upward', () => {
+ const residential=estimateMinimumLandArea(1000,10);
+ assert.equal(residential.footprint,100);assert.equal(residential.minimumArea,700);
+ const lowRise=estimateMinimumLandArea(1200,2);
+ assert.equal(lowRise.minimumArea,2000);
+ assert.equal(estimateMinimumLandArea(1000,10,{mode:'auto',coverage:0.4,far:1}).minimumArea,1000);
+ for(const [area,floors] of [[0,2],[1000,0],[1000,1.5],[NaN,2],[Infinity,2],['1000',2]]) assert.equal(estimateMinimumLandArea(area,floors),null);
+ for(const assumptions of [{mode:'auto',coverage:0,far:1.5},{mode:'auto',coverage:1.1,far:1.5},{mode:'auto',coverage:0.3,far:NaN}]) assert.equal(estimateMinimumLandArea(1000,10,assumptions),null);
+});
+test('automatic and manually chosen search sizing persist as assumptions separate from parcel evidence', () => {
+ const areaSizing={mode:'manual',coverage:0.3,far:1.5};
+ const stored=readLandResearch({schema:'ARKEM-LAND-RESEARCH/1.0',criteria,shortlist:[],selectedId:null,areaSizing});
+ assert.deepEqual(stored.areaSizing,areaSizing);
+ assert.equal(readLandAreaSizing({mode:'verified',coverage:0.3,far:1.5}),null);
+ assert.equal(readLandResearch({schema:'ARKEM-LAND-RESEARCH/1.0',criteria,shortlist:[]}).areaSizing,null);
+});
