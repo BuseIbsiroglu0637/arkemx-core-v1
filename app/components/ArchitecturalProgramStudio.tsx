@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { architecturePlacementPending, architectureSiteContext } from "../lib/architecture-draft";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createArchitecturalScheme, type ArchitecturalCoreStrategy } from "../lib/architectural-scheme";
 import { downloadTextFile } from "../lib/engineering";
@@ -105,6 +106,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   const [southShading, setSouthShading] = useState(55);
   const [selectedStrategy, setSelectedStrategy] = useState<"compact" | "balanced" | "daylight">("balanced");
   const [coreStrategy, setCoreStrategy] = useState<ArchitecturalCoreStrategy>("central");
+  const placementPending = architecturePlacementPending(project.modules["geo-parcel"]);
   const [siteContext, setSiteContext] = useState<SiteContext>({});
   const [status, setStatus] = useState("Mimari program çalışma alanı hazır");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -131,7 +133,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       if (typeof input.elevators === "number") setElevators(input.elevators);
       if (typeof input.programRequirementsConfirmed === "boolean") setProgramRequirementsConfirmed(input.programRequirementsConfirmed);
       if (input.coreStrategy === "central" || input.coreStrategy === "split" || input.coreStrategy === "perimeter") setCoreStrategy(input.coreStrategy);
-      if (input.siteContext && typeof input.siteContext === "object") setSiteContext(input.siteContext as SiteContext);
+      if (input.siteContext && typeof input.siteContext === "object") setSiteContext(architectureSiteContext(project.modules["geo-parcel"], input.siteContext) as SiteContext);
       if (saved.spaces?.length) setSpaces(saved.spaces);
       if (saved.relationships?.length) setRelationships(saved.relationships);
       setStatus("Kayıtlı mimari çalışma otomatik açıldı");
@@ -148,7 +150,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     else if (sourceUse.includes("eğitim") || sourceUse.includes("sosyal")) setUse("education");
     else if (sourceUse) setUse("industrial");
     const geo = objectValue(project.modules["geo-parcel"]);
-    if (geo.massingModel) setSiteContext({ massingModel: geo.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : undefined });
+    if (geo.massingModel) setSiteContext(architectureSiteContext(geo, { massingModel: geo.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : undefined }) as SiteContext);
     setStatus(source.site.parcelArea > 0 ? "Parsel, alan, kullanım ve kat verileri otomatik aktarıldı" : "Yeni mimari program oluşturuldu");
     setTransferReady(true);
     }, 0);
@@ -198,16 +200,16 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     coreStrategy,
     spaces,
     relationships,
-    massingModel: siteContext.massingModel,
-    selectedMassingId: siteContext.selectedMassingId,
-  }), [aspect, coreStrategy, corridorWidth, elevators, floorHeight, floors, netRatio, project.id, relationships, siteContext.massingModel, siteContext.selectedMassingId, spaces, stairs, targetGross, targetTravel, use]);
+    massingModel: placementPending ? undefined : siteContext.massingModel,
+    selectedMassingId: placementPending ? undefined : siteContext.selectedMassingId,
+  }), [aspect, coreStrategy, corridorWidth, elevators, floorHeight, floors, netRatio, placementPending, project.id, relationships, siteContext.massingModel, siteContext.selectedMassingId, spaces, stairs, targetGross, targetTravel, use]);
   const checks = architecturalScheme.checks;
 
   useEffect(() => {
     // Hydrate the stored brief before publishing editable defaults into the shared project.
     if (!hydrated || !transferReady) return;
-    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext, programRequirementsConfirmed }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
-  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, programRequirementsConfirmed, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
+    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", siteReview: { status: placementPending ? "pending" : "precheck-complete" }, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext: architectureSiteContext(project.modules["geo-parcel"], siteContext), programRequirementsConfirmed }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
+  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, placementPending, programRequirementsConfirmed, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
 
   const loadTemplate = () => {
     setProgramRequirementsConfirmed(false);
@@ -227,7 +229,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     const architecture = objectValue(project.modules["architectural-program"]);
     const input = objectValue(architecture.input);
     const upstreamContext = objectValue(input.siteContext);
-    setSiteContext({ ...upstreamContext, massingModel: geo.massingModel ?? upstreamContext.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : typeof upstreamContext.selectedMassingId === "string" ? upstreamContext.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : typeof upstreamContext.parcelReference === "string" ? upstreamContext.parcelReference : undefined });
+    setSiteContext(architectureSiteContext(geo, { ...upstreamContext, massingModel: geo.massingModel ?? upstreamContext.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : typeof upstreamContext.selectedMassingId === "string" ? upstreamContext.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : typeof upstreamContext.parcelReference === "string" ? upstreamContext.parcelReference : undefined }) as SiteContext);
     setStatus(geo.massingModel ? "V112 yapı zarfı, seçili kütle, kat ve kullanım verisi aktarıldı" : "Parsel ve proje zincirindeki alan, kat, kullanım verisi aktarıldı");
   };
   const updateSpace = (id: string, patch: Partial<Space>) => {
@@ -497,6 +499,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
 
   return <section className={simple ? "architect-app arx-architect-simple" : "architect-app"} data-testid="architectural-program-studio">
     {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve yedek</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
+    {hydrated && placementPending && <div className="arx-architect-draft-warning" role="status" aria-label="Bekleyen imar ve yerleşim kontrolü"><b>İmar ve yerleşim doğrulaması bekliyor · taslak mimari çalışma</b><span>Mahal programını ve ihtiyaçlarını hazırlayabilirsiniz. Bu çalışma imar uygunluğu veya parsel yerleşimi onayı oluşturmaz.</span><Link href="/arsa-fizibilite-studyosu">İmar ve yerleşim bilgilerine dön →</Link></div>}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>
     {simple && <div className="arx-architect-primary">
   <div className="arx-architect-transfer" data-ready={transferReady ? "true" : "false"} role="status">

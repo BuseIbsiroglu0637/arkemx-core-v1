@@ -1996,6 +1996,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
   const exportManifest = () => downloadBlob(`${reference}-veri-manifestosu.json`, JSON.stringify({ schema: "ARKEM-GEO-MANIFEST/2.4", previousSchema: "ARKEM-GEO-MANIFEST/2.3", legacySchema: "ARKEM-GEO-MANIFEST/2.0", reference, sourceCrs, dataStatus, exportReview, officialReleaseEligible: false, coordinateOrigin: center, parcelRecord, parcelSourceNetwork: sourceNetwork, terrainModel, terrainLayers, massingModel, selectedMassingId: activeMassingId, frontEdge, counts: { parcelVertices: parcel.length, buildingVertices: building.length, contourSegments: terrainContours.length, massingAlternatives: massingModel.alternatives.length }, planningInputs: { requiredSetback, maxCoverage, maxFar, maxHeight, parkingPer100 }, zoning: createZoningProvenance(zoning, reference), metrics, provenance: createGeoProvenance({ reference, sourceCrs, dataStatus, administrativeSource, geometryValid: metrics.geometryValid, vertexCount: parcel.length }), connectors: [...GEO_CONNECTORS, ...ZONING_CONNECTORS], verification: { officialCadastre: false, licensedSurvey: dataStatus === "Harita mühendisi ölçümü" || dataStatus === "Onaylı aplikasyon verisi", zoningCertificate: zoning.verification === "certified-document", measuredElevation: terrainModel.basis === "measured-z", massingAuthoritative: massingModel.source.authoritative }, limitations: ["Kadastro sınırı değildir", "İmar uygunluk belgesi değildir", "Aplikasyon veya ruhsat projesi değildir", ...terrainModel.limitations, ...massingModel.limitations] }, null, 2), "application/json");
 
+  const draftArchitectureAction = <div className="geo-stage-next" data-ready="draft" aria-label="Taslak mimari geçiş">
+    <div><span>İMAR / YERLEŞİM İNCELEMESİ BEKLİYOR</span><b>Mimari ihtiyaç programını taslak olarak hazırlayın.</b><small>İmar ve yerleşim kontrolü beklemede kalır.</small></div>
+    <a href="/mimari-program-studyosu">Taslak olarak mimariye devam et →</a>
+  </div>;
   const stageContent: Record<Stage, React.ReactNode> = {
     locate: <div className="geo-control-section"><span>01 / PARSELİ BUL</span><h3>Resmî sorgudaki sırayla konumu seçin.</h3>{administrativeSource === "fallback" && <div className="arx-geo-offline-alert" role="status">
       <b>TKGM bağlantısı yok: mahalleler resmî kaynaktan yüklenemedi.</b>
@@ -2199,6 +2203,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <button type="button" className={designPanel === "adjust" ? "active" : ""} onClick={() => setDesignPanel("adjust")}>İnce ayar</button>
       </nav>
 
+      {!placementDecisionPass && draftArchitectureAction}
       {simple && placementDecisionPass && <div className="geo-stage-next geo-stage-next-prominent" data-ready="true">
         <div>
           <span>✓ ARAZİ ADIMI TAMAMLANDI</span>
@@ -2307,6 +2312,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <p>Bilgiler proje taslağına kaydedilir. İmar uygunluğu ve yapı zarfı henüz hesaplanmadı.</p>
       </section>
       <button className="geo-wide-action" type="button" onClick={() => openFocusedStage("zoning")}>İmar bilgilerine dön</button>
+      {draftArchitectureAction}
     </div>,
     terrain: <div className="geo-control-section">
       <span>06 / GIS + 3B ARAZİ</span>

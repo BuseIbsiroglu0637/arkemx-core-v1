@@ -95,3 +95,16 @@ test('zoning middleware accepts the original Codespaces host before the worker r
     const response=await send({method:'POST',headers,body});assert.equal(response.status,200);assert.equal((await response.json()).status,'not-found');assert.equal(calls,1);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+import { architecturePlacementPending, architectureSiteContext } from '../app/lib/architecture-draft.ts';
+test('draft architecture can retain its program while missing zoning or failing placement stays pending',()=>{
+ const complete={zoning:{taks:.3,kaks:1.5,hmax:12,frontSetback:5,sideSetback:3,rearSetback:3,planScale:'1/1000',buildingOrder:'Ayrık'},metrics:{geometryValid:true,setbackPass:true,area:1000,allowedFootprint:300,allowedGross:1500,footprint:200,gross:600,buildingHeight:9}};
+ assert.equal(architecturePlacementPending(complete),false);
+ const ctx={parcelReference:'143/11',massingModel:{schema:'ARKEM-ZONING-MASSING/1.0'},selectedMassingId:'balanced'};
+ assert.deepEqual(architectureSiteContext(complete,ctx),ctx);
+ for(const value of [{},{...complete,zoning:{...complete.zoning,hmax:-1}},{...complete,metrics:{...complete.metrics,setbackPass:false}},{...complete,metrics:{...complete.metrics,gross:2000}},{...complete,metrics:{...complete.metrics,geometryValid:false}}]) {
+   assert.equal(architecturePlacementPending(value),true);
+   assert.deepEqual(architectureSiteContext(value,ctx),{parcelReference:'143/11'});
+ }
+ assert.equal(ctx.selectedMassingId,'balanced');assert.ok(ctx.massingModel);
+});

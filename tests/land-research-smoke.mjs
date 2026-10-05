@@ -163,6 +163,22 @@ try {
  assert.equal(await draft.getByLabel('Kat adedi',{exact:true}).inputValue(),'3');
  assert.equal(await draft.getByLabel('Kat yüksekliği (m)',{exact:true}).inputValue(),'3.2');
  console.log('PASS building draft inputs work without zoning, persist after reload and do not grant placement approval');
+ await page.getByRole('link',{name:'Taslak olarak mimariye devam et →',exact:true}).click();
+ const architecture=page.getByTestId('architectural-program-studio');
+ await architecture.waitFor();
+ await architecture.getByLabel('Bekleyen imar ve yerleşim kontrolü',{exact:true}).waitFor();
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['architectural-program']?.siteReview?.status==='pending',PROJECT_STORAGE_KEY);
+ const initialArch=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['architectural-program'],PROJECT_STORAGE_KEY);
+ assert.equal(initialArch.input.floors,3);assert.equal(initialArch.input.floorHeight,3.2);
+ assert.equal(initialArch.architecturalScheme.source.massingConnected,false);assert.equal(initialArch.architecturalScheme.source.authoritativeMassing,false);
+ const target=architecture.getByLabel('Hedef brüt alan (m²)',{exact:true});await target.fill('1400');await target.press('Tab');
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['architectural-program']?.input?.targetGross===1400,PROJECT_STORAGE_KEY);
+ await page.reload();await architecture.getByLabel('Bekleyen imar ve yerleşim kontrolü',{exact:true}).waitFor();
+ await page.waitForFunction(()=>document.querySelector('.arx-architect-fields input[type="number"]')?.value==='1400');
+ assert.equal(await target.inputValue(),'1400');
+ const afterHandoff=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules,PROJECT_STORAGE_KEY);
+ assert.deepEqual(afterHandoff['geo-parcel'].zoning,zoningBeforeDraft);assert.equal(afterHandoff['architectural-program'].siteReview.status,'pending');assert.equal(afterHandoff['geo-parcel'].parcelRecord.projectEligible,false);
+ console.log('PASS draft link opens editable architecture, preserves draft after reload and keeps zoning/placement review pending');
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 
