@@ -77,8 +77,11 @@ try {
  const official=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'].zoning,PROJECT_STORAGE_KEY);
  assert.equal(official.verification,'municipal-viewer');assert.equal(official.expertReviewStatus,'not-reviewed');assert.equal(official.planId,'UIP-TEST');assert.equal(official.rearSetback,-1);
  const callsBeforeReload=officialCalls;await page.reload();
+ await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
  await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.zoning?.taks===0.25,PROJECT_STORAGE_KEY);
  await page.getByRole('button',{name:/^03 İmar bilgileri/}).click();
+ const conditionsPanel=page.locator('details.geo-zoning-primary-block');
+ await conditionsPanel.waitFor();if(await conditionsPanel.getAttribute('open')===null)await conditionsPanel.locator('summary').click();
  await page.getByPlaceholder('TAKS girin',{exact:true}).waitFor();assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.25');assert.equal(officialCalls,callsBeforeReload);
  console.log('PASS automatic official zoning query, source-bound transfer and cache survive reload without approved rights');
 
