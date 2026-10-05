@@ -43,7 +43,7 @@ function fixture(mode, visits) {
         if (mode === 'wrong-scope') html = html.replace('Kastamonu Merkez Satılık Arsa', 'Ankara Satılık Arsa');
         if (mode === 'blocked' || (mode === 'late-block' && value('max-fiyat'))) html = '<html><head><title>Bir dakika lütfen...</title></head><body><input type="hidden" name="cf-turnstile-response"></body></html>';
         if (mode.startsWith('detail-')) {
-          html = `<h1>Sentetik ilan</h1><nav aria-label="Sayfa yolu"><a href="/satilik-konut-imarli-arsa/kastamonu">Kastamonu Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez">Kastamonu Merkez Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez-kuzyaka-koyu">Merkez Kuzyaka Köyü Satılık Konut İmarlı</a></nav><ul><li><span>İlan Numarası</span><button>12345678</button></li><li><span>Ada</span><span>143</span></li>${mode === 'detail-missing' ? '' : '<li><span>Parsel</span><span>11</span></li>'}</ul><p>Benzer ilan açıklaması: 999 ada 777 parsel</p>`;
+          html = `<h1>Sentetik ilan</h1><nav aria-label="Sayfa yolu"><a href="/satilik-konut-imarli-arsa/kastamonu">Kastamonu Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez">Kastamonu Merkez Satılık Konut İmarlı</a><a href="/satilik-konut-imarli-arsa/kastamonu-merkez-kuzyaka-koyu">Merkez Kuzyaka Köyü Satılık Konut İmarlı</a></nav><ul><li><span>İlan Numarası</span><button>12345678</button></li><li><span>Ada</span><span>143</span></li>${mode === 'detail-missing' ? '' : '<li><span>Parsel</span><span>11</span></li>'}</ul><section><h2>Sentetik ilan Açıklaması</h2><div>TAKS: 0,30; Emsal: 1,50; Hmax: 10,50 m</div></section><p>Benzer ilan açıklaması: 999 ada 777 parsel TAKS: 0,90</p>`;
           if (mode === 'detail-blocked') html = '<title>Bir dakika lütfen...</title><input type="hidden" name="cf-turnstile-response">';
         }
         return route.fulfill({ contentType: 'text/html; charset=utf-8', body: html });
@@ -91,6 +91,7 @@ test('selected listing detail reads scoped fields and reports missing data or ac
   const visits=[];
   const out = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-found',visits)});
   assert.equal(visits.length,1); assert.equal(out.status,'found');
+  assert.equal(out.detailVersion,2); assert.equal(out.zoningDeclaration.taks,0.3); assert.equal(out.zoningDeclaration.kaks,1.5); assert.equal(out.zoningDeclaration.hmax,10.5);
   assert.equal(out.parcelIdentity.block,'143'); assert.equal(out.parcelIdentity.parcelNo,'11'); assert.equal(out.parcelIdentity.neighborhood,'Kuzyaka Köyü');
   const missing = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-missing',[])});
   assert.equal(missing.status,'missing'); assert.equal(missing.parcelIdentity,null);

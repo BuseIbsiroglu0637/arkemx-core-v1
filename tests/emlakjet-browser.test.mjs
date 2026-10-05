@@ -66,3 +66,22 @@ test('invalid detail URL cannot launch a browser', async () => {
   await assert.rejects(readEmlakjetParcelDetail({...detailInput,url:'https://evil.test/ilan/test-12345678'}, { launchBrowser:async()=>{launched=true;} }), e => e.code === 'unsupported-criteria');
   assert.equal(launched,false);
 });
+
+import { parseEmlakjetZoningDeclaration } from '../scripts/lib/emlakjet-parcel-detail.mjs';
+import { listingZoningPrefill } from '../app/lib/land-zoning-declaration.ts';
+test('explicit listing zoning labels retain decimals and units without inferring values from floors or search assumptions', () => {
+ const raw={...detailRaw,description:'TAKS: %30; KAKS: 1,50; Hmax: 10,50 m. 3 kat villa.'};
+ const zoning=parseEmlakjetZoningDeclaration(raw,detailInput,detailAt);
+ assert.equal(zoning.taks,0.3);assert.equal(zoning.kaks,1.5);assert.equal(zoning.hmax,10.5);
+ assert.equal(parseEmlakjetZoningDeclaration({...detailRaw,description:'%40, 2,5 Kat Villa imarlı'},detailInput,detailAt),null);
+ assert.equal(parseEmlakjetZoningDeclaration({...raw,description:raw.description+' KAKS: 2,00'},detailInput,detailAt).kaks,null);
+ const ambiguous=parseEmlakjetZoningDeclaration({...detailRaw,description:'TAKS: 0,30-0,40; Hmax: 3 kat; Emsal: belirsiz'},detailInput,detailAt);
+ assert.equal(ambiguous,null);
+});
+test('listing zoning prefill fills missing fields with source evidence and keeps reviewed or conflicting work', () => {
+ const declaration=parseEmlakjetZoningDeclaration({...detailRaw,description:'TAKS: 0,30; Emsal: 1,50; Yençok: 9 m'},detailInput,detailAt);
+ const current={taks:-1,kaks:-1,hmax:-1,landUse:'',sourceDocument:'',sourceUrl:'',sourceType:'',sourceNote:'',expertReviewStatus:'not-reviewed',verification:'user-declared'};
+ const next=listingZoningPrefill(current,declaration);
+ assert.equal(next.taks,0.3);assert.equal(next.kaks,1.5);assert.equal(next.hmax,9);assert.equal(next.sourceType,'İlan beyanı');assert.equal(next.sourceUrl,card.url);assert.equal(next.verification,'user-declared');
+ for(const patch of [{taks:0.2},{sourceDocument:'plan.pdf'},{sourceUrl:'https://municipality.test/'},{expertReviewStatus:'reviewed-consistent'},{verification:'approved-plan'}]) assert.equal(listingZoningPrefill({...current,...patch},declaration),null);
+});

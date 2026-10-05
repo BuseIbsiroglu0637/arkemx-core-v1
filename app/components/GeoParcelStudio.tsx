@@ -27,6 +27,7 @@ import {
 import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { assessLandCandidate, object, readLandResearch } from "../lib/land-research";
+import { listingZoningPrefill } from "../lib/land-zoning-declaration";
 import { landParcelPrefill, type LandParcelIdentity } from "../lib/land-parcel-prefill";
 import { decodeProjectEnvelope, PROJECT_BACKUP_KEY } from "../lib/project-storage";
 
@@ -443,6 +444,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const research = readLandResearch(object(project.modules["decision-assistant"]).landResearch);
   const selectedCandidate = research?.shortlist.find(c => c.id === research.selectedId);
   const listingIdentity = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.parcelIdentity : null;
+  const listingZoning = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.zoningDeclaration : null;
+  const listingZoningApplied = useRef("");
   const [block, setBlock] = useState("");
   const [parcelNo, setParcelNo] = useState("");
   const [fileNotice, setFileNotice] = useState("Proje başlangıç konumu yükleniyor. Mahalle/köy, ada ve parsel seçimini tamamlayın.");
@@ -809,6 +812,26 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [administrativeSource, neighborhoodId, parcelHydrated, listingIdentity?.sourceUrl, listingIdentity?.retrievedAt, province, district, neighborhood, block, parcelNo, parcel]);
+
+  useEffect(() => {
+    if (!parcelHydrated || !listingZoning) return;
+    const key = `${listingZoning.sourceUrl}:${listingZoning.retrievedAt}`;
+    if (listingZoningApplied.current === key) return;
+    if ((province && normalizeAdministrativeName(province) !== normalizeAdministrativeName(listingZoning.province))
+      || (district && normalizeAdministrativeName(district) !== normalizeAdministrativeName(listingZoning.district))
+      || (neighborhood && normalizeAdministrativeName(neighborhood) !== normalizeAdministrativeName(listingZoning.neighborhood))) return;
+    if ((block || parcelNo || parcel.length) && (!listingIdentity || (block && block !== listingIdentity.block) || (parcelNo && parcelNo !== listingIdentity.parcelNo))) return;
+    const next = listingZoningPrefill(zoning, listingZoning);
+    if (!next) return;
+    const timer = window.setTimeout(() => {
+      listingZoningApplied.current = key;
+      setZoning(next);
+      setMaxCoverage(next.taks >= 0 ? next.taks * 100 : -1);
+      setMaxFar(next.kaks); setMaxHeight(next.hmax);
+      setFileNotice("İlanda açıkça belirtilen imar değerleri otomatik dolduruldu. Kaynak ilan beyanıdır; resmî plan ve uzman doğrulaması bekleniyor.");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [parcelHydrated, listingZoning?.sourceUrl, listingZoning?.retrievedAt, listingIdentity?.block, listingIdentity?.parcelNo, province, district, neighborhood, block, parcelNo, parcel, zoning]);
 
   useEffect(() => {
     if (!provinceOptions.length || !province) return;
@@ -2038,7 +2061,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
             <small>Bu seçimler resmî onay sağlamaz. Onaylı kaynak statüsü, yetkili doğrulama süreci kurulana kadar kullanıcı arayüzünden atanamaz.</small>
           </label>
           <div className="geo-field-grid">
-            <label>Kaynak türü<select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}><option value="" disabled>Kaynak türünü seçin</option><option>Belediye imar durumu</option><option>e-Plan / plan paftası</option><option>Plan notu / meclis kararı</option><option>Kullanıcı beyanı</option><option>Diğer</option></select></label>
+            <label>Kaynak türü<select value={zoning.sourceType} onChange={(event) => updateZoning("sourceType", event.target.value)}><option value="" disabled>Kaynak türünü seçin</option><option>Belediye imar durumu</option><option>e-Plan / plan paftası</option><option>Plan notu / meclis kararı</option><option>Kullanıcı beyanı</option><option>İlan beyanı</option><option>Diğer</option></select></label>
             <label>Belge / kaynak tarihi<input type="date" value={zoning.sourceDate} onChange={(event) => updateZoning("sourceDate", event.target.value)} /></label>
             <label>Plan adı<input value={zoning.planName} onChange={(event) => updateZoning("planName", event.target.value)} placeholder="Uygulama imar planı" /></label>
             <label>Plan ölçeği<select value={zoning.planScale} onChange={(event) => updateZoning("planScale", event.target.value)}><option value="" disabled>Plan ölçeğini seçin</option><option>1/1000 Uygulama İmar Planı</option><option>1/5000 Nazım İmar Planı</option><option>1/25000 Çevre Düzeni Planı</option><option>Diğer / plan paftasına göre</option></select></label>

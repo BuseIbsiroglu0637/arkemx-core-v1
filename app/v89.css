@@ -1,2 +1,0 @@
-.command-result-summary::after{content:"TR · EN · AZ · RU · IT · DE · FR";margin-left:auto;font-size:10px;letter-spacing:.12em;color:#d17443}
-@media(max-width:640px){.command-result-summary::after{display:block;margin:6px 0 0}}

@@ -24,7 +24,7 @@ await page.route('**/api/land-candidates',async route=>{
 let detailCalls=0;
 await page.route('**/api/land-candidate-detail', route => {
  detailCalls++;
- return route.fulfill({json:{schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
+ return route.fulfill({json:{detailVersion:2,zoningDeclaration:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',taks:0.4,kaks:0.8,hmax:7.5,landUse:'Konut İmarlı',sourceUrl:url,retrievedAt:new Date().toISOString(),evidence:'Sentetik açık TAKS/KAKS/Hmax bilgileri',basis:'listing-declaration'},schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
 });
 await page.route('**/api/tkgm?*',route=>{
  const path=new URL(route.request().url()).searchParams.get('path');
@@ -54,6 +54,13 @@ try {
  await page.reload(); await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
  assert.equal(detailCalls,1); assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
  console.log('PASS automatic ada/parsel prefill persists, keeps listing area out of engineering calculations');
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.zoning?.taks===0.4,PROJECT_STORAGE_KEY);
+ const transferred=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'].zoning,PROJECT_STORAGE_KEY);
+ assert.equal(transferred.kaks,0.8);assert.equal(transferred.hmax,7.5);assert.equal(transferred.sourceUrl,url);assert.equal(transferred.verification,'user-declared');assert.equal(transferred.expertReviewStatus,'not-reviewed');
+ await page.getByRole('button',{name:/^03 İmar bilgileri/}).click();
+ assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.4');assert.equal(await page.getByPlaceholder('KAKS / emsal girin',{exact:true}).inputValue(),'0.8');assert.equal(await page.getByPlaceholder('Hmax girin',{exact:true}).inputValue(),'7.5');
+ console.log('PASS explicit listing zoning fields auto-transfer and differ from land search assumptions');
+
 
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye al'}).isDisabled(),true);
  await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS conflicting criteria return project to research');

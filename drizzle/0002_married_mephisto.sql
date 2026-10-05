@@ -1,4 +1,0 @@
-ALTER TABLE `project_evidence_events` ADD `transition_token` text DEFAULT '' NOT NULL;--> statement-breakpoint
-CREATE UNIQUE INDEX `project_evidence_events_transition_idx` ON `project_evidence_events` (`transition_token`);--> statement-breakpoint
-ALTER TABLE `project_evidence_items` ADD `transition_token` text DEFAULT '' NOT NULL;--> statement-breakpoint
-CREATE UNIQUE INDEX `project_evidence_single_published_idx` ON `project_evidence_items` (`project_slug`,`target_type`,`target_key`) WHERE "project_evidence_items"."status" = 'published' AND "project_evidence_items"."target_type" IN ('fact', 'stage');

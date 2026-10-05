@@ -1,7 +1,0 @@
-import type { Metadata } from "next";
-import { ResourceLibrary } from "../components/ResourceLibrary";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-
-export const metadata: Metadata={title:"Teknik Dokümanlar",description:"Arkem Yapı Sistemleri teknik rehberleri, kontrol listeleri ve indirilebilir proje ön değerlendirme araçları.",alternates:{canonical:"/dokumanlar"}};
-
-export default function Page(){return <main className="inner-page knowledge-page"><section className="inner-hero platform-hero knowledge-hero"><SiteHeader/><div className="shell inner-hero-content"><p className="eyebrow light">Arkem Bilgi Bankası</p><h1>Mevzuattan standarda,<br/><em>tek teknik indeks.</em></h1><p>Yatırımcı, tasarımcı ve saha ekipleri için inşaat kanunları, yönetmelikler, standart aileleri ve uygulama araçlarına resmî kaynaklardan düzenli erişim.</p></div></section><section className="knowledge-intro"><div className="shell"><span>01 / ARA</span><p>Kanun, yönetmelik, disiplin veya anahtar kelimeyle bulun.</p><span>02 / DOĞRULA</span><p>Kaynağı doğrudan resmî kurum sayfasında açın.</p><span>03 / UYGULA</span><p>Projeye özel şartları yetkili uzmanla birlikte değerlendirin.</p></div></section><section className="section shell"><ResourceLibrary/></section><section className="service-cta"><div className="shell"><p className="eyebrow light">Teknik Kapsam Desteği</p><h2>Bilgiyi projeye özgü<br/><em>karara dönüştürelim.</em></h2><a className="button copper" href="/iletisim">Teknik Görüşme Başlatın <span>↗</span></a></div></section><SiteFooter/></main>}

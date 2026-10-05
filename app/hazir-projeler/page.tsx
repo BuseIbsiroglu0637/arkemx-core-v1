@@ -1,3 +1,0 @@
-import type { Metadata } from "next"; import { PlatformPage } from "../components/PlatformPage"; import { readyProjects } from "../data/platform";
-export const metadata: Metadata={title:"Satılık Hazır Hafif Çelik Ev Projeleri",description:"Mimari, statik, üretim ve montaj dokümanlarıyla hazır hafif çelik konut proje paketleri.",alternates:{canonical:"/hazir-projeler"}};
-export default function Page(){return <PlatformPage eyebrow="Arkem Proje Market" title="Hazır hafif çelik projelerle" accent="zaman kazanın." intro="Önceden geliştirilmiş konut tiplerini inceleyin; arsanıza ve ihtiyaçlarınıza göre uyarlama seçenekleriyle uygulama setine ulaşın." cards={readyProjects} commerce/>}
