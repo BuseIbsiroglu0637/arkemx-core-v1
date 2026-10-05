@@ -203,6 +203,19 @@ try {
  assert.equal(repaired['geo-parcel'].parcelRecord.projectEligible,false);
  console.log('PASS plan repair restores room areas and valid axes, persists after reload without granting zoning approval');
 
+
+ await page.goto(root+'/tasiyici-on-tasarim');
+ const structural=page.getByTestId('structural-designer');
+ await structural.waitFor();
+ const coordination=structural.getByRole('link',{name:'BIM Koordinasyon →',exact:true});
+ await coordination.waitFor();
+ assert.equal(await coordination.getAttribute('href'),'/bim-koordinasyon');
+ assert.equal(await structural.getByRole('link',{name:'← Sistem seçimi',exact:true}).getAttribute('href'),'/sistem-karsilastirma');
+ await page.waitForFunction(key=>{const p=JSON.parse(localStorage.getItem(key)).payload;return p.modules['structural-concept']?.input?.width>0;},PROJECT_STORAGE_KEY);
+ await coordination.click();
+ await page.waitForURL('**/bim-koordinasyon');
+ assert.equal(await page.locator('h1').first().innerText(),'BIM koordinasyon');
+ console.log('PASS structural concept continues to BIM coordination with its model saved');
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 

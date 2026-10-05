@@ -1019,7 +1019,9 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   const regularNextJourneyStep = regularNext.short === "Arazi" && landResearchPending
     ? { short: "Arsa araştırması", href: "/arsa-arastirma" }
     : regularNext;
-  const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
+  const nextJourneyStep = normalizedModule.includes("STRUCTURAL CONCEPT")
+    ? { short: "BIM Koordinasyon", href: "/bim-koordinasyon" }
+    : normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
     ? { short: "Plan & Aks", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
       ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
