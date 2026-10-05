@@ -10,7 +10,7 @@ function fixture(mode) {
     const create=browser.newContext.bind(browser);
     browser.newContext=async opts=>{const context=await create(opts);await context.route('https://www.hepsiemlak.com/**',route=>{
       const filtered=new URL(route.request().url()).searchParams.has('p25');
-      let html=mode==='blocked'?'<main>Olağan dışı erişim tespit ettik</main>':mode==='layout'?'<main>Geçici hata</main>':`<main>${filtered?(mode==='empty'?'0 ilan bulundu':'131 ilan bulundu'+Array.from({length:30},(_,i)=>card(i+1, i===0?12000000:620000+i*1000)).join('')):'405 ilan bulundu'}</main><input placeholder="En Çok TL"><input placeholder="En Az m²"><input placeholder="En Çok m²"><button onclick="location.href='/kastamonu-satilik/arsa?p32='+document.querySelector('[placeholder=\"En Çok TL\"]').value+'&p25='+document.querySelector('[placeholder=\"En Az m²\"]').value">Ara</button>`;
+      let html=mode==='blocked'?'<main>Olağan dışı erişim tespit ettik</main>':mode==='layout'?'<main>Geçici hata</main>':`<main>${filtered?(mode==='empty'?'0 ilan bulundu':'131 ilan bulundu'+Array.from({length:30},(_,i)=>card(i+1, i===0?12000000:620000+i*1000)).join('')):'405 ilan bulundu'}</main><input placeholder="En Çok TL"><input placeholder="En Az m²"><input placeholder="En Çok m²"><button id="search">Ara</button><script>document.getElementById('search').addEventListener('click',()=>{const u=new URL(location.href);u.searchParams.set('p32',document.querySelector('[placeholder="En Çok TL"]').value);u.searchParams.set('p25',document.querySelector('[placeholder="En Az m²"]').value);location.href=u.href;});</script>`;
       return route.fulfill({contentType:'text/html',body:html});
     });return context;};return browser;
   };

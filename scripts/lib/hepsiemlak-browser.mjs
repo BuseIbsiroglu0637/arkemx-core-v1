@@ -1,7 +1,7 @@
 import { assessLandCandidate, landCriteriaKey, normalizeLandCandidate, parseLandCriteria } from '../../app/lib/land-research.ts';
 
 export class LandBrowserError extends Error {
-  constructor(code, message) { super(message); this.code = code; }
+  constructor(code, message, cause) { super(message, cause ? { cause } : undefined); this.code = code; }
 }
 const source = 'Hepsiemlak · tarayıcı araştırması';
 const number = value => Number(value.replace(/\./g, '').replace(',', '.'));
@@ -107,7 +107,7 @@ export async function searchHepsiemlak(rawCriteria, { launchBrowser, signal } = 
   } catch (error) {
     if (error instanceof LandBrowserError) throw error;
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'Arama iptal edildi.');
-    throw new LandBrowserError('unavailable', 'Hepsiemlak araştırması tamamlanamadı. Bağlantı veya sayfa düzeni kontrol edilmeli; boş sonuç kabul edilmedi.');
+    throw new LandBrowserError('unavailable', 'Hepsiemlak araştırması tamamlanamadı. Bağlantı veya sayfa düzeni kontrol edilmeli; boş sonuç kabul edilmedi.', error);
   } finally {
     clearTimeout(timer); signal?.removeEventListener('abort', abort);
     await context?.close().catch(() => {}); await browser?.close().catch(() => {});
