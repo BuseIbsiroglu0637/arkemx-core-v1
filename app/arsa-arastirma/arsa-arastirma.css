@@ -42,3 +42,7 @@ html[data-theme=dark] .arx-land-page { --land-surface:#0e2029; --land-muted:#a4b
 html[data-theme=dark] .land-watch { color:#eda87f; }
 @media(max-width:1080px) { .land-cards { grid-template-columns:1fr; } }
 @media(max-width:760px) { .land-layout { grid-template-columns:1fr; } .land-criteria,.land-card { padding:18px; } .land-card-actions button { flex:1 1 160px; } .land-next>a { width:100%; text-align:center; } }
+
+
+.land-source-status { border:1px solid var(--land-border); border-radius:10px; padding:16px; margin:16px 0; background:var(--land-surface); }
+.land-source-status small { display:block; margin-top:6px; }

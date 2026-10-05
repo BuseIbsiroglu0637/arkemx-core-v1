@@ -24,6 +24,7 @@ if (!existsSync(viteCli)) {
   process.exit(1);
 }
 const localUrl = "http://127.0.0.1:5173/dijital-proje-merkezi";
+const landBrowser = process.argv.includes("--land-browser");
 const openBrowser = !process.argv.includes("--no-browser");
 const logFolder = path.join(projectRoot, ".wrangler", "logs");
 mkdirSync(logFolder, { recursive: true });
@@ -34,6 +35,7 @@ console.log("GitHub Codespaces veya yayinlanmis site gerekmiyor.");
 console.log(process.env.ARKEMX_REMOTE_D1_DATABASE_ID
   ? "Hesap/taslak surekliligi: paylasilan uzak D1 etkin."
   : "Hesap/taslak surekliligi: yerel D1 + taslak indir/yukle yedegi.");
+if (landBrowser) console.log("Arsa arastirmasi: Hepsiemlak tarayici denemesi etkin (ilk sayfa, 24 ilan karti). ");
 console.log("Kapatmak icin bu pencerede Ctrl+C kullanin.\n");
 
 const localConfig = path.join(projectRoot, "vite.local.config.mjs");
@@ -48,6 +50,7 @@ const child = spawn(process.execPath, args, {
   env: {
     ...process.env,
     ARKEMX_LOCAL_DEMO: "1",
+    ARKEMX_LOCAL_LAND_BROWSER: landBrowser ? "1" : "0",
     ARKEMX_PROTOTYPE_DEMO_AUTH: "1",
     WRANGLER_WRITE_LOGS: "false",
     WRANGLER_LOG_PATH: logFolder,
@@ -71,3 +74,4 @@ child.on("exit", (code, signal) => {
     process.exitCode = 1;
   }
 });
+

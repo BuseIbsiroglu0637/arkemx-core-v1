@@ -1,7 +1,7 @@
 name: Land research agent
 on:
   push:
-    branches: [fix/07-plan-ve-aks-duzenlemeleri]
+    branches: [fix/07-plan-ve-aks-duzenlemeleri, feat/hepsiemlak-tarayici-arastirma]
   workflow_dispatch:
 concurrency:
   group: land-research-${{ github.ref }}
@@ -18,10 +18,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:land-research
+      - run: npm run test:land-browser
       - run: node --experimental-strip-types --test tests/project-storage-reconciliation.test.mjs
       - run: npm run typecheck
       - run: npm run build:local
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:land-browser:e2e
       - name: Browser regression with synthetic HTTP fixtures
         run: |
           npm run demo:local -- --no-browser > /tmp/arkemx-land.log 2>&1 &

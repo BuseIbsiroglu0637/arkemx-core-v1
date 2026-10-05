@@ -7,6 +7,7 @@
 import vinext from "vinext";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig } from "vite";
+import { landBrowserLocalPlugin } from "./scripts/lib/land-browser-local-plugin.mjs";
 
 const remoteD1Id = process.env.ARKEMX_REMOTE_D1_DATABASE_ID?.trim();
 const remoteD1Name = process.env.ARKEMX_REMOTE_D1_DATABASE_NAME?.trim() || "arkemx-shared-demo";
@@ -21,6 +22,7 @@ export default defineConfig({
     strictPort: true,
   },
   plugins: [
+    ...(process.env.ARKEMX_LOCAL_LAND_BROWSER === "1" ? [landBrowserLocalPlugin()] : []),
     vinext(),
     cloudflare({
       viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
@@ -39,3 +41,4 @@ export default defineConfig({
     }),
   ],
 });
+

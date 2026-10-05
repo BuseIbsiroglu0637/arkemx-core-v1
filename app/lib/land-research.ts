@@ -9,11 +9,12 @@ export type LandCandidate = {
   province: string; district: string; tenure: "sale" | "rent" | null;
   areaM2: number | null; priceTRY: number | null;
   use: string; description: string; retrievedAt: string;
-  basis: "provider-listing" | "search-index" | "ai-search";
+  basis: "provider-listing" | "search-index" | "ai-search" | "browser-listing";
 };
+export type LandSourceStatus = { name: string; status: "completed" | "blocked" | "failed"; readCount: number; totalCount: number | null; note?: string };
 export type LandSearchResponse = {
   schema: "ARKEM-LAND-SEARCH/1.0"; candidates: LandCandidate[];
-  searchedAt: string; provider: string; criteriaKey: string;
+  searchedAt: string; provider: string; criteriaKey: string; sources?: LandSourceStatus[];
 };
 export type LandResearch = {
   schema: "ARKEM-LAND-RESEARCH/1.0"; criteria: LandCriteria;
@@ -60,7 +61,7 @@ export function normalizeLandCandidate(value: unknown, retrievedAt: string): Lan
     province: clean(v.province, 60), district: clean(v.district, 60), tenure: v.tenure as LandCandidate["tenure"],
     areaM2: positive(v.areaM2), priceTRY: v.tenure === null ? null : positive(v.priceTRY), use: clean(v.use, 40),
     description: clean(v.description, 600).replace(/<[^>]*>/g, ""), retrievedAt,
-    basis: v.basis === "search-index" ? "search-index" : v.basis === "ai-search" ? "ai-search" : "provider-listing" };
+    basis: v.basis === "browser-listing" ? "browser-listing" : v.basis === "search-index" ? "search-index" : v.basis === "ai-search" ? "ai-search" : "provider-listing" };
 }
 export function assessLandCandidate(candidate: LandCandidate, criteria: LandCriteria) {
   const mismatch: string[] = [], missing: string[] = [];
@@ -95,4 +96,15 @@ export function readLandResearch(value: unknown): LandResearch | null {
   return { schema: "ARKEM-LAND-RESEARCH/1.0", criteria, shortlist: unique,
     selectedId: typeof v.selectedId === "string" && unique.some(c => c.id === v.selectedId) ? v.selectedId : null,
     searchedAt: clean(v.searchedAt, 40) };
+}
+
+
+export function readLandSourceStatus(value: unknown): LandSourceStatus[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 10).flatMap(item => {
+    const v = object(item), name = clean(v.name, 80);
+    if (!name || !["completed", "blocked", "failed"].includes(String(v.status))) return [];
+    const count = (n: unknown) => typeof n === "number" && Number.isInteger(n) && n >= 0 ? n : null;
+    return [{ name, status: v.status as LandSourceStatus["status"], readCount: count(v.readCount) ?? 0, totalCount: count(v.totalCount), note: clean(v.note, 300) }];
+  });
 }
