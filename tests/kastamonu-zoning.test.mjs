@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {queryKastamonuZoning,KASTAMONU_IMAR_ROOT} from '../app/lib/kastamonu-zoning.ts';
+import {queryKastamonuZoning,KASTAMONU_IMAR_ROOT,officialConnectionFailure} from '../app/lib/kastamonu-zoning.ts';
 import {officialZoningPrefill} from '../app/lib/official-zoning-prefill.ts';
 import {DEFAULT_ZONING,createZoningProvenance} from '../app/lib/zoning.ts';
 const input={province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',neighborhoodId:'123',block:'143',parcelNo:'11'};
@@ -51,4 +51,14 @@ test('null and non-value fields stay unknown; manual, reviewed and edited listin
   const current={...DEFAULT_ZONING,...listing,sourceType:'İlan beyanı',sourceNote:'Otomatik ilan aktarımı · örnek'};
   const next=officialZoningPrefill(current,r,listing);assert.equal(next.taks,-1);assert.equal(next.kaks,-1);assert.equal(next.landUse,'Konut Alanı');
   assert.equal(officialZoningPrefill({...current,taks:.5},r,listing),null);
+});
+
+test('connection failures identify the failing source and safe transport reason',async()=>{
+  const dns=new TypeError('fetch failed',{cause:Object.assign(new Error('private address must not leak'),{code:'ENOTFOUND'})});
+  await assert.rejects(queryKastamonuZoning(input,async()=>{throw dns;}),e=>e.code==='unavailable' && e.message.includes('TKGM parsel servisi: DNS') && !e.message.includes('private'));
+  await assert.rejects(queryKastamonuZoning(input,async url=>String(url).includes('cbsapi.tkgm.gov.tr')?Response.json(cadastral):Promise.reject(dns)),e=>e.message.includes('Kastamonu e-İmar konut alanı servisi: DNS'));
+  await assert.rejects(queryKastamonuZoning(input,fixture({status:503}).fetcher),e=>e.message.includes('Kastamonu e-İmar konut alanı servisi: HTTP 503'));
+  for(const [code,expected] of [['UND_ERR_CONNECT_TIMEOUT','bağlantı zaman aşımı'],['CERT_HAS_EXPIRED','TLS sertifikası doğrulanamadı'],['ECONNRESET','bağlantı kurulamadı veya kesildi']]) assert.equal(officialConnectionFailure({cause:{code}}),expected);
+  assert.equal(officialConnectionFailure({cause:{message:'unexpected redirect'}}),'kaynak başka adrese yönlendiriyor');
+  assert.equal(officialConnectionFailure(new Error('secret')),'ağ isteği başarısız');
 });

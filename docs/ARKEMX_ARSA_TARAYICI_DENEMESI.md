@@ -74,3 +74,9 @@ TAKS, emsal ve yükseklik yalnız `Deger` tipli alanlardan; ön/yan mesafeler ve
 
 
 Codespaces `demo:land` çalışmasında `/api/zoning-conditions` aynı yerel middleware üzerinden sunulur. Origin kontrolü worker adres dönüşümünden önce gerçek Host üzerinden yapılır; demo oturumu, aynı kaynak, 2 KB gövde, iptal ve günlük 60 sorgu sınırı korunur. Worker tarafından görülen localhost adresi Codespaces origin'iyle karşılaştırılmaz. Güvensiz forwarded-host başlığı kabul edilen kaynakları genişletmez.
+
+### Resmî imar bağlantısının teşhisi
+
+`npm run probe:zoning`, Codespaces/yerel Node ortamından TKGM il listesini ve Kastamonu e-İmar'ın konut alanı/plan katmanı metadatasını ayrı ayrı sınar. En fazla 25 saniye sürer; her kaynak için HTTP durumu veya DNS, bağlantı zaman aşımı, TLS ya da yönlendirme nedenini gösterir. TLS doğrulaması kapatılmaz ve başka adreslere yönlendirme izlenmez. Başarılı metadata kontrolü, seçilen parselin imar kaydının bulunduğu anlamına gelmez.
+
+Parsel sorgusundaki bağlantı hatası artık hangi aşamanın (TKGM parsel, e-İmar konut alanı, e-İmar plan) başarısız olduğunu belirtir. Tek başına ağ hatası bot engeli olarak yorumlanmaz; formdaki değerler değiştirilmez.

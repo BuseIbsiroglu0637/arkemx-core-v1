@@ -27,6 +27,7 @@
     "demo:land": "node scripts/start-local-demo.mjs --land-browser",
     "test:land-browser": "node --experimental-strip-types --test tests/land-browser.test.mjs tests/emlakjet-browser.test.mjs",
     "test:land-browser:e2e": "node --experimental-strip-types --test tests/land-browser-fixture.test.mjs tests/emlakjet-browser-fixture.test.mjs",
+    "probe:zoning": "node --experimental-strip-types scripts/probe-zoning.mjs",
     "probe:land": "node --experimental-strip-types scripts/probe-land-browser.mjs",
     "test:zoning-source": "node --experimental-strip-types --test tests/kastamonu-zoning.test.mjs"
   },
