@@ -4171,3 +4171,7 @@ html[data-theme="dark"] .arx-geo-simple .geo-zoning-summary > small {
 html[data-theme="dark"] .arx-geo-simple .geo-zoning-summary > button {
   color:#df8a57 !important;
 }
+.arx-candidate-context { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; padding:20px; border:1px solid #b96636; border-radius:10px; background:var(--geo-card,#fff); color:var(--geo-text,#193c4b); }
+.arx-candidate-context b,.arx-candidate-context p { flex-basis:100%; margin:0; line-height:1.65; }
+.arx-candidate-context a { min-height:44px; display:inline-flex; align-items:center; color:inherit; text-decoration:underline; }
+html[data-theme=dark] .arx-candidate-context { background:#0e2029; color:#e2ecef; }

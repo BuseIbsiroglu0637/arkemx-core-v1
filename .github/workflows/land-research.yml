@@ -1,0 +1,39 @@
+name: Land research agent
+on:
+  push:
+    branches: [fix/07-plan-ve-aks-duzenlemeleri]
+  workflow_dispatch:
+concurrency:
+  group: land-research-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run test:land-research
+      - run: node --experimental-strip-types --test tests/project-storage-reconciliation.test.mjs
+      - run: npm run typecheck
+      - run: npm run build:local
+      - run: npx playwright install --with-deps chromium
+      - name: Browser regression with synthetic HTTP fixtures
+        run: |
+          npm run demo:local -- --no-browser > /tmp/arkemx-land.log 2>&1 &
+          for attempt in $(seq 1 90); do
+            if curl --silent --fail http://127.0.0.1:5173/arsa-arastirma > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:land-research:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: land-research-browser
+          path: |
+            test-artifacts/
+            /tmp/arkemx-land.log

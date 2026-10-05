@@ -59,6 +59,8 @@ arkemx-*.log
 /Arkem-Yapi-Sistemleri-*.zip
 
 # Local credentials and databases
+/.dev.vars
+/.dev.vars.*
 /.npmrc
 *.sqlite
 *.sqlite3

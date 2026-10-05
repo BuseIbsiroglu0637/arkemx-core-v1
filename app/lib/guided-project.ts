@@ -135,14 +135,14 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     },
     {
       id: "parcel",
-      label: "Parsel ve arazi kimliği",
+      label: parcelKnown ? "Parsel ve arazi kimliği" : "Arsa araştırması ve aday seçimi",
       detail: parcelVerified
         ? "Ada / parsel bilgisinin hazır olduğu kullanıcı tarafından beyan edildi; numara ve resmî geometri bu başlangıç adımında doğrulanmış sayılmaz."
         : parcelKnown
           ? "Parsel biliniyor; koordinatlı sınır ve resmî kimlik kontrol edilmelidir."
-          : "Parsel kimliği veya yatırım bölgesi henüz netleştirilmelidir.",
+          : "Yatırım kriterleriyle aday arsalar araştırılır; seçilen adayın parsel kimliği ve sınırı sonraki aşamada doğrulanır.",
       status: parcelKnown ? "official-review" : "missing",
-      route: "/arsa-fizibilite-studyosu#geo-studyo",
+      route: parcelKnown ? "/arsa-fizibilite-studyosu#geo-studyo" : "/arsa-arastirma",
     },
     {
       id: "zoning",
@@ -202,9 +202,9 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     }
     : !parcelKnown
       ? {
-        title: "Parsel kimliğini belirleyin",
-        copy: "Yatırım alanını haritada bulun; ada, parsel ve koordinatlı sınırı proje kimliğine bağlayın.",
-        route: "/arsa-fizibilite-studyosu",
+        title: "Kriterlerinize göre aday arsaları araştırın",
+        copy: "Bölge, arsa bütçesi ve alan kriterlerini belirleyin. ARKEMX kaynaklarda adayları araştırır; kısa listeye alınan adaylar parsel ve imar incelemesine geçer.",
+        route: "/arsa-arastirma",
       }
       : {
         title: "Parsel ve imar kanıtını doğrulayın",

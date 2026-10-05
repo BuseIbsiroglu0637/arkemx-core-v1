@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GeoParcelStudio } from "../components/GeoParcelStudio";
+import { LandCandidateContext } from "../components/LandCandidateContext";
 import "../sade-arac-paneli.css";
 import "./sade-arazi.css";
 
@@ -26,6 +27,7 @@ export default function SiteStudioPage() {
         <p>Parseli bulun veya sınır dosyanızı yükleyin. İmar girdilerini, kaynak durumunu ve harita önizlemesini aynı çalışma alanında yönetin.</p>
       </div>
       <section id="geo-studyo" aria-label="Parsel çalışma alanı">
+        <LandCandidateContext />
         <GeoParcelStudio simple />
       </section>
     </div>

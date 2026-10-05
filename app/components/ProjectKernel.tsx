@@ -1014,7 +1014,11 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
       media.removeEventListener("change", revealActiveStep);
     };
   }, [activeJourneyIndex]);
-  const regularNextJourneyStep = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
+  const landResearchPending = thread.nextAction.route === "/arsa-arastirma";
+  const regularNext = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
+  const regularNextJourneyStep = regularNext.short === "Arazi" && landResearchPending
+    ? { short: "Arsa araştırması", href: "/arsa-arastirma" }
+    : regularNext;
   const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
     ? { short: "Plan & Aks", href: "/plan-ve-aks" }
     : normalizedModule.includes("PLAN")
@@ -1117,7 +1121,7 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
     <div className="kernel-actions">{previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← Önceki adım</Link> : null}<Link href="/dijital-proje-merkezi">Dijital zincir ↗</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={reset}>Yeni oturum</button></div>
   </div><nav className="project-guided-journey" aria-label="Rehberli proje akışı">
     <header><span>TEK PROJE · YEDİ BAĞLI ADIM</span><b>Her modül önceki adımın verisini kullanır</b><small>Şu an: {activeJourneyIndex + 1}. adım / {PROJECT_JOURNEY.length} · Sonuçlar aynı proje kaydında birleşir</small></header>
-    <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; return <Link key={step.href} href={step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{step.label}</small><strong>{step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>
+    <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; const research = step.short === "Arazi" && landResearchPending; return <Link key={step.href} href={research ? "/arsa-arastirma" : step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{research ? "Aday arsaları araştır" : step.label}</small><strong>{research ? "Kriterler + kısa liste" : step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>
     <aside className="project-live-handoff" aria-label="Aktarılan proje verileri">
       <span className="project-continuity-score"><small>VERİ DEVAMLILIĞI</small><b>%{Math.round(completedCount / PROJECT_JOURNEY.length * 100)} · {completedCount}/{PROJECT_JOURNEY.length} adım</b></span>
       <span><small>PARSEL</small><b>{thread.canonical.site.reference}</b></span>

@@ -1,4 +1,5 @@
 import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source.ts";
+import { assessLandCandidate, readLandResearch } from "./land-research.ts";
 
 export type ProjectModuleKey =
   | "decision-assistant"
@@ -123,6 +124,12 @@ function closeEnough(first: number, second: number, tolerance: number) {
 }
 
 export function deriveProjectThread(modules: Record<string, unknown>) {
+  const brief = record(modules["decision-assistant"]);
+  const briefInput = record(brief.input);
+  const research = readLandResearch(brief.landResearch);
+  const selectedCandidate = research?.shortlist.find(candidate => candidate.id === research.selectedId);
+  const selectedCandidateReady = Boolean(research && selectedCandidate && assessLandCandidate(selectedCandidate, research.criteria).mismatch.length === 0);
+  const needsLandResearch = briefInput.projectType !== "demolition" && ["unknown", "searching"].includes(text(briefInput.parcelStatus));
   const geo = record(modules["geo-parcel"]);
   const geoMetrics = record(geo.metrics);
   const geoPlanning = record(geo.planning);
@@ -633,9 +640,11 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   const readiness = Math.round(activeCount / nodes.length * 100);
   const quality = Math.max(0, 100 - issues.filter((issue) => issue.severity === "critical").length * 16 - issues.filter((issue) => issue.severity === "review").length * 7 - issues.filter((issue) => issue.severity === "info").length * 2);
   const nextNode = nodes.find((node) => !node.active && node.blockedBy.length === 0) ?? nodes.find((node) => !node.active);
-  const nextAction = !parcelReadyForNextStage
+  const nextAction = needsLandResearch && !parcelReadyForNextStage && !selectedCandidateReady
+    ? { label: "Kriterlerine göre aday arsaları araştır", route: "/arsa-arastirma", blockedBy: [] as ProjectModuleKey[] }
+    : !parcelReadyForNextStage
     ? {
-      label: "Parsel kimliğini ve sınırını doğrula",
+      label: selectedCandidateReady ? "Seçilen adayın parselini ve sınırını doğrula" : "Parsel kimliğini ve sınırını doğrula",
       route: "/arsa-fizibilite-studyosu?stage=locate#geo-studyo",
       blockedBy: [] as ProjectModuleKey[],
     }
