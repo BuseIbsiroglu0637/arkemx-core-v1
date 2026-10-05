@@ -50,8 +50,8 @@ test('parcel identity comes from explicit listing fields and matched breadcrumb,
   assert.equal(normalizeLandParcelIdentity({ ...identity, sourceUrl: 'https://other.test/' }, card.url), null);
 });
 test('absent or ambiguous parcel fields stay missing, wrong listing or administrative scope is rejected', () => {
-  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: detailRaw.rows.filter(r => r.label !== 'Ada') }, detailInput, detailAt), null);
-  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: [...detailRaw.rows, {label:'Parsel',value:'12'}] }, detailInput, detailAt), null);
+  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: detailRaw.rows.filter(r => r.label !== 'Ada') }, detailInput, detailAt).block, '');
+  assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: [...detailRaw.rows, {label:'Parsel',value:'12'}] }, detailInput, detailAt).parcelNo, '');
   assert.throws(() => parseEmlakjetParcelDetail(detailRaw, {...detailInput, district:'Araç'}, detailAt), e => e.code === 'layout-changed');
   assert.throws(() => parseEmlakjetParcelDetail(detailRaw, {...detailInput, url:card.url.replace('12345678','99999999')}, detailAt), e => e.code === 'layout-changed');
 });
@@ -84,4 +84,18 @@ test('listing zoning prefill fills missing fields with source evidence and keeps
  const next=listingZoningPrefill(current,declaration);
  assert.equal(next.taks,0.3);assert.equal(next.kaks,1.5);assert.equal(next.hmax,9);assert.equal(next.sourceType,'İlan beyanı');assert.equal(next.sourceUrl,card.url);assert.equal(next.verification,'user-declared');
  for(const patch of [{taks:0.2},{sourceDocument:'plan.pdf'},{sourceUrl:'https://municipality.test/'},{expertReviewStatus:'reviewed-consistent'},{verification:'approved-plan'}]) assert.equal(listingZoningPrefill({...current,...patch},declaration),null);
+});
+
+test('missing ada/parsel retains independently declared village and fills only compatible missing fields',()=>{
+  const raw={...detailRaw,rows:[detailRaw.rows[0]],breadcrumbs:detailRaw.breadcrumbs.map(row=>({...row,text:row.text.replace('Kuzyaka','Göcen')}))};
+  const identity=parseEmlakjetParcelDetail(raw,detailInput,detailAt);
+  assert.equal(identity.neighborhood,'Göcen Köyü');assert.equal(identity.block,'');assert.equal(identity.parcelNo,'');
+  const next=landParcelPrefill({province:'Kastamonu',district:'Merkez'},identity);
+  assert.equal(next.neighborhood,'Göcen Köyü');assert.equal(next.block,'');assert.equal(next.parcelNo,'');
+  assert.equal(landParcelPrefill({...next},identity),null);
+  assert.equal(landParcelPrefill({province:'Kastamonu',district:'Merkez',block:'210',parcelNo:'15'},identity).block,'210');
+  for(const current of [{neighborhood:'Başka Köy'},{province:'Sakarya'},{parcel:[{}]},{previewParcel:[{}]}])assert.equal(landParcelPrefill(current,identity),null);
+  assert.equal(normalizeLandParcelIdentity({...identity,block:'unknown'},card.url),null);
+  const candidate=normalizeLandCandidate({...parseEmlakjetCard(card,detailAt,'Kastamonu'),parcelIdentity:identity,listingDetailVersion:3},detailAt);
+  assert.equal(readLandResearch({schema:'ARKEM-LAND-RESEARCH/1.0',criteria,shortlist:[candidate],selectedId:candidate.id}).shortlist[0].parcelIdentity.neighborhood,'Göcen Köyü');
 });

@@ -13,7 +13,7 @@ export type LandCandidate = {
   areaM2: number | null; priceTRY: number | null;
   parcelIdentity?: LandParcelIdentity | null;
   zoningDeclaration?: LandZoningDeclaration | null;
-  listingDetailVersion?: 2;
+  listingDetailVersion?: 2 | 3;
   use: string; description: string; retrievedAt: string;
   basis: "provider-listing" | "search-index" | "ai-search" | "browser-listing";
 };
@@ -68,7 +68,7 @@ export function normalizeLandCandidate(value: unknown, retrievedAt: string): Lan
   const positive = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n > 0 ? n : null;
   return { id: url, url, title, source: clean(v.source, 100) || new URL(url).hostname,
     province: clean(v.province, 60), district: clean(v.district, 60), tenure: v.tenure as LandCandidate["tenure"],
-    listingDetailVersion: v.listingDetailVersion === 2 ? 2 : undefined,
+    listingDetailVersion: v.listingDetailVersion === 3 ? 3 : v.listingDetailVersion === 2 ? 2 : undefined,
     zoningDeclaration: zoningDeclaration && zoningDeclaration.province === clean(v.province,60) && zoningDeclaration.district === clean(v.district,60) ? zoningDeclaration : null,
     parcelIdentity: identity && identity.province === clean(v.province, 60) && identity.district === clean(v.district, 60) ? identity : null,
     areaM2: positive(v.areaM2), priceTRY: v.tenure === null ? null : positive(v.priceTRY), use: clean(v.use, 40),

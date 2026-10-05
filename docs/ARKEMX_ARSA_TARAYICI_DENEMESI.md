@@ -80,3 +80,7 @@ Codespaces `demo:land` çalışmasında `/api/zoning-conditions` aynı yerel mid
 `npm run probe:zoning`, Codespaces/yerel Node ortamından TKGM il listesini ve Kastamonu e-İmar'ın konut alanı/plan katmanı metadatasını ayrı ayrı sınar. En fazla 25 saniye sürer; her kaynak için HTTP durumu veya DNS, bağlantı zaman aşımı, TLS ya da yönlendirme nedenini gösterir. TLS doğrulaması kapatılmaz ve başka adreslere yönlendirme izlenmez. Başarılı metadata kontrolü, seçilen parselin imar kaydının bulunduğu anlamına gelmez.
 
 Parsel sorgusundaki bağlantı hatası artık hangi aşamanın (TKGM parsel, e-İmar konut alanı, e-İmar plan) başarısız olduğunu belirtir. Tek başına ağ hatası bot engeli olarak yorumlanmaz; formdaki değerler değiştirilmez.
+
+### Eksik ada/parsel ile konum aktarımı
+
+İlanın doğrulanan il/ilçe ve mahalle/köy bilgisi, ada veya parsel belirtilmese de Arazi ve Parsel sayfasına aktarılır. Eksik ya da birden fazla farklı değer içeren numara alanı boş kalır; ilandaki metrekare, fiyat veya harita konumundan numara türetilmez. Kullanıcı seçimleri ve mevcut sınır geometrisi korunur. Önceki sürümün eksik detay önbelleği, detay sürümü 3 ile bir kez yeniden okunur. Mahalle/köy aktarılması parsel sınırı veya imar doğrulaması sayılmaz.

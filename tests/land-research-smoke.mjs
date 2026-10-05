@@ -21,10 +21,11 @@ await page.route('**/api/land-candidates',async route=>{
  if(mode==='delayed') await new Promise(resolve=>setTimeout(resolve,800));
  try {await route.fulfill({json:{schema:'ARKEM-LAND-SEARCH/1.0',criteriaKey:landCriteriaKey(criteria),searchedAt:new Date().toISOString(),provider:'Test',sources:[{name:'Hepsiemlak',status:'completed',readCount:1,totalCount:131}],candidates:mode==='empty'?[]:[candidate]}});} catch { /* The UI may abort a stale request. */ }
 });
-let detailCalls=0;
+let detailCalls=0,detailMode='full';
 await page.route('**/api/land-candidate-detail', route => {
  detailCalls++;
- return route.fulfill({json:{detailVersion:2,zoningDeclaration:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',taks:0.4,kaks:0.8,hmax:7.5,landUse:'Konut İmarlı',sourceUrl:url,retrievedAt:new Date().toISOString(),evidence:'Sentetik açık TAKS/KAKS/Hmax bilgileri',basis:'listing-declaration'},schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
+ if(detailMode==='partial')return route.fulfill({json:{detailVersion:3,schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'missing',retrievedAt:new Date().toISOString(),parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Göcen Köyü',block:'',parcelNo:'',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'},zoningDeclaration:null}});
+ return route.fulfill({json:{detailVersion:3,zoningDeclaration:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',taks:0.4,kaks:0.8,hmax:7.5,landUse:'Konut İmarlı',sourceUrl:url,retrievedAt:new Date().toISOString(),evidence:'Sentetik açık TAKS/KAKS/Hmax bilgileri',basis:'listing-declaration'},schema:'ARKEM-LAND-PARCEL-DETAIL/1.0',url,status:'found',parcelIdentity:{province:'Kastamonu',district:'Merkez',neighborhood:'Kuzyaka Köyü',block:'143',parcelNo:'11',sourceUrl:url,retrievedAt:new Date().toISOString(),basis:'listing-declaration'}}});
 });
 let officialMode='not-found',officialCalls=0;
 await page.route('**/api/zoning-conditions',route=>{
@@ -35,7 +36,7 @@ await page.route('**/api/zoning-conditions',route=>{
 });
 await page.route('**/api/tkgm?*',route=>{
  const path=new URL(route.request().url()).searchParams.get('path');
- const properties=path==='idariYapi/ilListe'?{id:37,text:'Kastamonu'}:path==='idariYapi/ilceListe/37'?{id:1,text:'Merkez'}:{id:2,text:'Kuzyaka Köyü'};
+ const properties=path==='idariYapi/ilListe'?{id:37,text:'Kastamonu'}:path==='idariYapi/ilceListe/37'?{id:1,text:'Merkez'}:{id:2,text:detailMode==='partial'?'Göcen Köyü':'Kuzyaka Köyü'};
  return route.fulfill({json:{features:[{properties}]}});
 });
 const research=()=>page.locator('[data-testid="land-research-studio"]');
@@ -51,7 +52,7 @@ try {
  await search();await research().getByText('Tarayıcıda okunan ilan kartı',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Arama tamamlandı',{exact:true}).waitFor();assert.equal(await research().locator('option[value="rent"]').evaluate(option=>option.disabled),true);await research().getByRole('button',{name:'Kısa listeye al',exact:true}).click();await saved();
  await shortlist().getByRole('button',{name:'İncelemeye al',exact:true}).click();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();
  await page.reload();await shortlist().getByText('Sentetik arsa test adayı',{exact:false}).first().waitFor();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();console.log('PASS shortlist and selection survive reload');
- await research().getByRole('link',{name:'Parsel incelemesine geç'}).click();await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).waitFor();console.log('PASS candidate remains unverified on parcel screen');
+ await research().getByRole('link',{name:'Parsel incelemesine geç'}).click();await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).waitFor();console.log('PASS candidate remains unverified on parcel screen');const parcelPageUrl=page.url();
  await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
  assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
  await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields select')?.value==='37');
@@ -123,6 +124,24 @@ try {
  await research().getByLabel('Varsayılan emsal',{exact:true}).fill('1');
  assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'3000');
  console.log('PASS sizing auto-updates after brief revisions, preserves manual limits and accepts changed assumptions');
+ // Migrate the previous cached missing-detail result shown in the user's screenshot.
+ detailMode='partial';
+ const partialProject=structuredClone(project);partialProject.id='ARK-LAND-PARTIAL';
+ partialProject.modules['decision-assistant'].landResearch={schema:'ARKEM-LAND-RESEARCH/1.0',criteria:{province:'Kastamonu',district:'Merkez',tenure:'sale',minArea:2000,maxArea:5000,maxPrice:10000000,use:'industrial',needs:[]},shortlist:[{...candidate,parcelIdentity:null,listingDetailVersion:2}],selectedId:url};
+ await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(partialProject)});
+ const callsBeforePartial=officialCalls;
+ await page.goto(parcelPageUrl);
+ await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
+ assert.equal(await page.getByPlaceholder('Ada numarası',{exact:true}).inputValue(),'');
+ assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'');
+ await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).getByText('İlanda ada/parsel bilgisi eksik; mahalle/köy aktarılır, eksik numaralar boş bırakılır.',{exact:true}).waitFor();
+ await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.neighborhood==='Göcen Köyü',PROJECT_STORAGE_KEY);
+ const partialGeo=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'],PROJECT_STORAGE_KEY);
+ assert.equal(partialGeo.parcel.length,0);assert.equal(partialGeo.parcelRecord.projectEligible,false);assert.equal(officialCalls,callsBeforePartial);
+ const afterPartial=detailCalls;await page.reload();
+ await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
+ assert.equal(detailCalls,afterPartial);assert.equal(await page.getByPlaceholder('Ada numarası',{exact:true}).inputValue(),'');
+ console.log('PASS cached missing detail is refreshed; village fills independently without invented parcel or zoning rights');
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
 

@@ -821,7 +821,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       if (!neighborhoodId && administrativeSource === "fallback") setNeighborhoodId("offline-neighborhood-manual");
       setBlock(prefill.block); setParcelNo(prefill.parcelNo);
       setListingIdentitySource(listingIdentity);
-      setFileNotice("Mahalle/köy, ada ve parsel ilandan otomatik dolduruldu. TKGM sorgusuyla parsel sınırını doğrulayın.");
+      setFileNotice(listingIdentity.block && listingIdentity.parcelNo ? "Mahalle/köy, ada ve parsel ilandan otomatik dolduruldu. TKGM sorgusuyla parsel sınırını doğrulayın." : "İlanda bulunan mahalle/köy bilgisi otomatik dolduruldu. İlanda belirtilmeyen ada/parsel numaraları boş bırakıldı.");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [administrativeSource, neighborhoodId, parcelHydrated, listingIdentity?.sourceUrl, listingIdentity?.retrievedAt, province, district, neighborhood, block, parcelNo, parcel]);

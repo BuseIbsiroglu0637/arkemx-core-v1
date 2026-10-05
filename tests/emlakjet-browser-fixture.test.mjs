@@ -91,9 +91,9 @@ test('selected listing detail reads scoped fields and reports missing data or ac
   const visits=[];
   const out = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-found',visits)});
   assert.equal(visits.length,1); assert.equal(out.status,'found');
-  assert.equal(out.detailVersion,2); assert.equal(out.zoningDeclaration.taks,0.3); assert.equal(out.zoningDeclaration.kaks,1.5); assert.equal(out.zoningDeclaration.hmax,10.5);
+  assert.equal(out.detailVersion,3); assert.equal(out.zoningDeclaration.taks,0.3); assert.equal(out.zoningDeclaration.kaks,1.5); assert.equal(out.zoningDeclaration.hmax,10.5);
   assert.equal(out.parcelIdentity.block,'143'); assert.equal(out.parcelIdentity.parcelNo,'11'); assert.equal(out.parcelIdentity.neighborhood,'Kuzyaka Köyü');
   const missing = await readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-missing',[])});
-  assert.equal(missing.status,'missing'); assert.equal(missing.parcelIdentity,null);
+  assert.equal(missing.status,'missing'); assert.equal(missing.parcelIdentity.neighborhood,'Kuzyaka Köyü'); assert.equal(missing.parcelIdentity.block,''); assert.equal(missing.parcelIdentity.parcelNo,'');
   await assert.rejects(readEmlakjetParcelDetail(input,{launchBrowser:fixture('detail-blocked',[])}), e=>e.code==='source-blocked');
 });

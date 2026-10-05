@@ -14,7 +14,7 @@ export function parseEmlakjetParcelDetail(raw, { url, province, district }, retr
     throw new LandBrowserError('layout-changed', 'İlanın il/ilçe bilgileri seçilen adayla eşleşmedi; ada/parsel aktarılmadı.');
   }
   return normalizeLandParcelIdentity({ province, district, neighborhood: locations[2].slice(district.length).trim(),
-    block: single('Ada'), parcelNo: single('Parsel'), sourceUrl: url, retrievedAt, basis: 'listing-declaration' }, url);
+    block: /^\d{1,10}$/.test(single('Ada')) ? single('Ada') : '', parcelNo: /^\d{1,10}$/.test(single('Parsel')) ? single('Parsel') : '', sourceUrl: url, retrievedAt, basis: 'listing-declaration' }, url);
 }
 
 export function parseEmlakjetZoningDeclaration(raw, input, retrievedAt) {
@@ -83,7 +83,7 @@ export async function readEmlakjetParcelDetail(input, { launchBrowser, signal } 
     const retrievedAt = new Date().toISOString();
     const parcelIdentity = parseEmlakjetParcelDetail({ rows, breadcrumbs, description }, input, retrievedAt);
     const zoningDeclaration = parseEmlakjetZoningDeclaration({rows,breadcrumbs,description},input,retrievedAt);
-    return { detailVersion: 2, zoningDeclaration, schema: 'ARKEM-LAND-PARCEL-DETAIL/1.0', url: input.url, parcelIdentity, status: parcelIdentity ? 'found' : 'missing', retrievedAt };
+    return { detailVersion: 3, zoningDeclaration, schema: 'ARKEM-LAND-PARCEL-DETAIL/1.0', url: input.url, parcelIdentity, status: parcelIdentity?.block && parcelIdentity?.parcelNo ? 'found' : 'missing', retrievedAt };
   } catch (error) {
     if (error instanceof LandBrowserError) throw error;
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'İlan okuması iptal edildi.');
