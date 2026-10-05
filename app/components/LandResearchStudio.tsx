@@ -122,7 +122,7 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
           <button type="button" disabled={busy || areaSizing.mode === "auto"} onClick={() => changeAreaSizing({ ...areaSizing, mode: "auto" })}>Önerilen alt sınırı kullan</button></> : <p>Öneri için proje başlangıcında geçerli hedef brüt alan ve tam kat adedi girin; varsayım değerlerini kontrol edin.</p>}
         <details><summary>Arsa hesabı varsayımlarını düzenle</summary>
           <label>Varsayılan taban oranı · %<input type="number" min={1} max={100} step={1} value={Math.round(areaSizing.coverage * 100) || ""} onChange={e => changeAreaSizing({ ...areaSizing, coverage: Number(e.target.value) / 100 })} /></label>
-          <label>Varsayılan emsal<input type="number" min={0.01} max={20} step={0.05} value={areaSizing.far || ""} onChange={e => changeAreaSizing({ ...areaSizing, far: Number(e.target.value) })} /></label>
+          <label>Varsayılan emsal<input type="number" min={0.01} max={20} step={0.01} value={areaSizing.far || ""} onChange={e => changeAreaSizing({ ...areaSizing, far: Number(e.target.value) })} /></label>
         </details>
         <small>Oranlar ön arama varsayımıdır; parselin onaylı TAKS/KAKS değerleri değildir. Brüt alanın tamamı emsale dahil varsayılır. Kat izni, çekme mesafeleri, otopark ve açık alan ihtiyacı ayrıca kontrol edilmelidir.</small>
         {criteria.maxArea > 0 && criteria.minArea > criteria.maxArea ? <p className="land-watch">Alt sınır, belirlediğiniz en fazla arsa alanını aşıyor. Alan aralığını güncelleyin.</p> : null}

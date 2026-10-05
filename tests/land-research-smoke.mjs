@@ -34,7 +34,7 @@ await page.route('**/api/tkgm?*',route=>{
 const research=()=>page.locator('[data-testid="land-research-studio"]');
 const shortlist=()=>page.getByRole('region',{name:'Kaydedilen kısa liste'});
 async function open(){await page.goto(root+'/arsa-arastirma');await research().getByRole('button',{name:'Adayları getir',exact:true}).waitFor();}
-async function search(){const button=research().getByRole('button',{name:'Adayları getir',exact:true});await page.waitForFunction(()=>!document.querySelector('.land-criteria button[type=submit]')?.disabled);await button.click();}
+async function search(){assert.equal(await research().locator('form').evaluate(f=>f.checkValidity()),true,'research form defaults and constraints must allow submission');const button=research().getByRole('button',{name:'Adayları getir',exact:true});await page.waitForFunction(()=>!document.querySelector('.land-criteria button[type=submit]')?.disabled);await button.click();}
 async function saved(){await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key))?.payload?.modules?.['decision-assistant']?.landResearch?.shortlist?.length===1,PROJECT_STORAGE_KEY);}
 try {
  await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS unknown land starts research');
