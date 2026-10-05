@@ -268,7 +268,7 @@ function requiredAdjacencyLayout(
     y: 0,
     widthBays: hubWidth,
     heightBays: roomHeightBays,
-    role: "hub" as const,
+    role: "hub" as "hub" | "satellite",
   }];
 
   let yCursor = 0;

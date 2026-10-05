@@ -36,7 +36,7 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
     const abort = new AbortController();
     fetch("/api/land-candidates", { cache: "no-store", signal: abort.signal }).then(async response => {
       if (!response.ok) throw Error();
-      const data = await response.json(); setConnection(data.ready === true ? "ready" : "missing");
+      const data = object(await response.json()); setConnection(data.ready === true ? "ready" : "missing");
     }).catch(() => { if (!abort.signal.aborted) setConnection("error"); });
     return () => { abort.abort(); controller.current?.abort(); sequence.current++; };
   }, []);
@@ -54,12 +54,13 @@ function LandResearchWorkspace({ name, initial, saved, onSave }: { name: string;
     const requestId = ++sequence.current; setBusy(true); setNotice(""); setResult(null); persist();
     try {
       const response = await fetch("/api/land-candidates", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed), signal: abort.signal });
-      const data = await response.json();
+      const data = object(await response.json());
       if (requestId !== sequence.current) return;
       if (!response.ok) { if (data.code === "not-configured") setConnection("missing"); throw Error(typeof data.error === "string" ? data.error : "Adaylar getirilemedi."); }
-      if (data.schema !== "ARKEM-LAND-SEARCH/1.0" || data.criteriaKey !== currentKey || !Array.isArray(data.candidates)) throw Error("Arama yanıtı doğrulanamadı.");
-      const safe = data.candidates.map((v: unknown) => normalizeLandCandidate(v, data.searchedAt)).filter((c: LandCandidate | null): c is LandCandidate => Boolean(c));
-      setResult({ ...data, candidates: safe }); setSearchedAt(data.searchedAt); setConnection("ready"); persist({ searchedAt: data.searchedAt });
+      if (data.schema !== "ARKEM-LAND-SEARCH/1.0" || data.criteriaKey !== currentKey || !Array.isArray(data.candidates) || typeof data.searchedAt !== "string" || typeof data.provider !== "string") throw Error("Arama yanıtı doğrulanamadı.");
+      const timestamp = data.searchedAt;
+      const safe = data.candidates.map((v: unknown) => normalizeLandCandidate(v, timestamp)).filter((c: LandCandidate | null): c is LandCandidate => Boolean(c));
+      setResult({ schema: "ARKEM-LAND-SEARCH/1.0", criteriaKey: currentKey, provider: data.provider, searchedAt: data.searchedAt, candidates: safe }); setSearchedAt(data.searchedAt); setConnection("ready"); persist({ searchedAt: data.searchedAt });
       if (!safe.length) setNotice("Bu aramada aday bulunamadı. Bölge veya kriterleri değiştirerek tekrar araştırabilirsiniz.");
     } catch (error) { if (!abort.signal.aborted && requestId === sequence.current) setNotice(error instanceof Error ? error.message : "Araştırma tamamlanamadı."); }
     finally { if (requestId === sequence.current) setBusy(false); }

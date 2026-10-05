@@ -42,5 +42,9 @@ try {
  ready=false;await page.reload();await research().getByRole('heading',{name:'Canlı araştırma bağlantısı bekleniyor'}).waitFor();assert.equal(await research().getByRole('button',{name:'Adayları getir',exact:true}).isDisabled(),true);assert.equal(await shortlist().locator('article').count(),1);console.log('PASS missing API access is explicit');
  await mkdir('test-artifacts',{recursive:true});
  for(const width of [1366,390]){await page.setViewportSize({width,height:900});for(const theme of ['light','dark']){await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow');await page.screenshot({path:`test-artifacts/land-${width}-${theme}.png`,fullPage:true});}}
- console.log('PASS mobile/desktop widths');assert.deepEqual(errors,[]);
+ console.log('PASS mobile/desktop widths');
+ const other={...project,id:'ARK-LAND-OTHER',name:'İkinci sentetik proje',updatedAt:new Date().toISOString()};
+ await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(other)});
+ await page.reload();await research().getByText('İkinci sentetik proje',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),0);console.log('PASS projects keep separate shortlists');
+ assert.deepEqual(errors,[]);
 }finally{await browser.close();}
