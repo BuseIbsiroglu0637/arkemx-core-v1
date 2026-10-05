@@ -14,7 +14,7 @@ const browser=await chromium.launch();
 const context=await browser.newContext({viewport:{width:1366,height:900}});
 await context.addCookies([{name:'arkemx_prototype_session',value:'1',url:root}]);
 await context.addInitScript(({key,envelope})=>{if(!sessionStorage.getItem('land-test-seeded')){localStorage.clear();localStorage.setItem(key,envelope);sessionStorage.setItem('land-test-seeded','1');}}, {key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(project)});
-const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const page=await context.newPage();page.setDefaultTimeout(20000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
 let ready=true,mode='result';
 await page.route('**/api/land-candidates',async route=>{
  if(route.request().method()==='GET') return route.fulfill({json:{ready,provider:ready?'Hepsiemlak tarayıcı denemesi':null,mode:'local-browser'}});
@@ -232,7 +232,7 @@ try {
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  await page.setViewportSize({width:1440,height:1000});
- const emptyToolsProject={...planProject,modules:{},experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''}};
+ const emptyToolsProject={...planProject,id:'ARK-TOOLS-EMPTY',updatedAt:new Date().toISOString(),modules:{},experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''}};
  await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:PROJECT_STORAGE_KEY,value:encodeProjectEnvelope(emptyToolsProject)});
  await page.reload();
  await page.waitForFunction(()=>document.querySelectorAll('.arx-module-status[data-state="empty"]').length===13);
@@ -242,4 +242,5 @@ try {
 
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
+
 

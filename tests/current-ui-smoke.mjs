@@ -28,14 +28,14 @@ test("local build renders the ARKEMX tools catalogue on its dedicated route", as
   const html = await response.text();
   assert.match(html, /<h1 id="arx-tools-title">Araçlar<\/h1>/);
   assert.match(html, /href="\/proje-baslat"/);
-  assert.match(html, /href="\/arsa-fizibilite-studyosu"/);
+  assert.match(html, /href="\/arsa-fizibilite-studyosu\?stage=zoning/);
   assert.match(html, /href="\/mimari-program-studyosu"/);
   assert.match(html, /href="\/plan-ve-aks"/);
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.match(html, /href="\/sistem-karsilastirma"/);
   assert.match(html, /href="\/bim-koordinasyon"/);
   assert.match(html, /href="\/proje-takibi"/);
-  assert.match(html, /href="\/dijital-proje-merkezi"/);
+  assert.match(html, /href="\/dijital-proje-merkezi#canli-proje-grafigi"/);
   assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
 });
@@ -412,7 +412,7 @@ test("project centre next action follows the first incomplete guided journey ste
   assert.match(hub, /deriveProjectJourneyState\(thread\)/);
   assert.match(hub, /journeyNextAction\.label/);
   assert.match(hub, /journeyNextAction\.route/);
-  assert.doesNotMatch(center, /thread\.nextAction\.(label|route)/);
+  assert.match(center, /currentJourneyStep\.short === "Arazi"/);
 });
 
 
@@ -424,7 +424,7 @@ test("project centre separates project type and does not count undecided structu
 
   assert.match(kernel, /normalizeProjectName/);
   assert.match(kernel, /Proje\\s\+türü/);
-  assert.match(center, /Proje türü: \{projectType\}/);
+  assert.match(center, /arx-center-project-type">\{projectType\}/);
   assert.match(kernel, /step\.short === "Sistem"/);
   assert.match(kernel, /systemDecisionReady/);
   assert.match(hub, /journeyState\.systemDecisionReady/);
@@ -439,14 +439,14 @@ test("local build renders the simplified, device-scoped project centre", async (
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<h1>Proje Çalışma Alanı<\/h1>/);
-  assert.match(html, /Projenize devam edin/);
-  assert.match(html, /Yerel çalışma/);
-  assert.match(html, /Proje JSON yükle/);
-  assert.match(html, /Proje yedeğini indir/);
-  assert.match(html, /href="\/giris\?return_to=%2Fhesabim"/);
-  assert.match(html, /Ayrıntılı proje kontrolleri/);
+  assert.match(html, /Yeni Proje Başlat/);
+  assert.match(html, /Henüz aktif projeniz yok/);
+  assert.match(html, /Proje Yedeği Yükle/);
+  assert.match(html, /Hesabımdaki Projeleri Aç/);
+  assert.match(html, /href="\/hesabim"/);
+  assert.match(html, /Proje Kontrolleri/);
   assert.match(html, /Proje kontrol özeti/);
-  assert.match(html, /Proje adımları/);
+  assert.match(html, /Aktif proje seçildikten sonra kontroller/);
   assert.match(html, /Teslim hazırlığı ve teknik çıktılar/);
   assert.match(html, /data-testid="digital-project-hub"/);
   assert.doesNotMatch(html, /Bağlı çalışma alanları\./);
@@ -471,7 +471,7 @@ test("local build opens the dedicated structural concept workspace", async () =>
   const html = await response.text();
   assert.match(html, /<h1>Taşıyıcı ön tasarım<\/h1>/);
   assert.match(html, /data-testid="structural-designer"/);
-  assert.match(html, /href="\/plan-ve-aks"/);
+  assert.match(html, /href="\/sistem-karsilastirma"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="design-studio-hero"/);
 });
@@ -525,12 +525,12 @@ test("local build renders the focused ARKEMX sign-in entry", async () => {
   const response = await render("/giris?return_to=%2Fbim-koordinasyon");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<h1 id="arx-auth-title">ARKEMX’e giriş<\/h1>/);
-  assert.match(html, /Güvenli giriş yap/);
+  assert.match(html, /<h1 id="arx-auth-title">ARKEMX’e Giriş<\/h1>/);
+  assert.match(html, /Giriş Yap/);
   assert.match(html, /action="\/hesap-baglantisi"/);
   assert.match(html, /name="return_to" value="\/bim-koordinasyon"/);
   assert.match(html, /href="\/hesap-kurulum\?return_to=%2Fbim-koordinasyon&amp;entry=first-use"/);
-  assert.match(html, /İlk kullanım adımını aç/);
+  assert.match(html, /İlk kurulumu başlat/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="v4-mobile-site-header/);
   assert.doesNotMatch(html, /class="account-story/);
@@ -540,8 +540,8 @@ test("local build renders the first-use account setup entry", async () => {
   const response = await render("/hesap-kurulum?return_to=%2Fdijital-proje-merkezi&entry=first-use");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<h1 id="arx-setup-title">Hesap kurulumunu tamamlayın<\/h1>/);
-  assert.match(html, /Güvenli girişle devam et/);
+  assert.match(html, /<h1 id="arx-setup-title">ARKEMX hesabınızı hazırlayın<\/h1>/);
+  assert.match(html, /Güvenli oturumunuzu açın/);
   assert.match(html, /action="\/hesap-baglantisi"/);
   assert.match(html, /entry=first-use/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
@@ -691,9 +691,9 @@ test("active projects do not reopen as a blank new-project form", () => {
   const graphSource = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
   const coreSource = fs.readFileSync(new URL("../app/lib/project-core.ts", import.meta.url), "utf8");
 
-  assert.match(startSource, /project-start-active-project/);
-  assert.match(startSource, /Bu projenin başlangıç bilgileri proje çekirdeğine kaydedildi/);
-  assert.match(startSource, /Yeni Bir Proje Başlat/);
+  assert.match(startSource, /editingActiveProject/);
+  assert.match(startSource, /Aktif projenin başlangıç bilgileri yüklendi/);
+  assert.match(startSource, /newProjectMode/);
   assert.match(graphSource, /Parsel kimliğini ve sınırını doğrula/);
   assert.match(graphSource, /\/arsa-fizibilite-studyosu\?stage=locate#geo-studyo/);
   assert.match(coreSource, /bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"/);
@@ -716,7 +716,7 @@ test("completed projects are saved before their recovery draft is cleared", () =
   assert.match(accountSource, /meaningfulDraft/);
   assert.match(accountSource, /openAccountProject/);
   assert.match(accountSource, /importProject\(item\.payload\)/);
-  assert.match(accountSource, />Aç<\/button>/);
+  assert.match(accountSource, /onClick=\{\(\) => \{ void openAccountProject\(item\); \}\}/);
 });
 
 
@@ -728,7 +728,7 @@ test("parcel workspace can return to the persistent project start summary", () =
   assert.match(parcelPage, /href="\/proje-baslat\?view=summary"/);
   assert.match(parcelPage, /Önceki adıma dön/);
   assert.match(startPage, /summaryMode/);
-  assert.match(startPage, /Proje başlangıç özeti/);
+  assert.match(startStudio, /Proje başlangıç özeti/);
   assert.match(startStudio, /intakeFromProjectModule/);
   assert.match(startStudio, /summaryReady/);
   assert.match(startStudio, /if \(completed \|\| summaryReady\)/);
@@ -752,7 +752,7 @@ test("account keeps draft continuation clear without a redundant project-header 
   const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
   assert.match(accountSource, /Taslağa Devam Et/);
   assert.match(accountSource, /arx-account-draft-actions/);
-  assert.match(accountSource, /<footer><Link href="\/dijital-proje-merkezi">Projeye Devam Et →<\/Link><\/footer>/);
+  assert.match(accountSource, /<Link href="\/dijital-proje-merkezi">Proje Çalışma Alanına Git/);
   assert.doesNotMatch(accountSource, /<header>[\s\S]{0,300}Projeye Devam Et<\/Link>[\s\S]{0,50}<\/header>/);
 });
 
@@ -760,7 +760,7 @@ test("account keeps draft continuation clear without a redundant project-header 
 test("account and delete flows use clearer project continuation and close controls", () => {
   const accountSource = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
   const centerSource = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
-  assert.match(accountSource, /Projeye Devam Et/);
+  assert.match(accountSource, /Proje Çalışma Alanına Git/);
   assert.doesNotMatch(centerSource, />Vazgeç<\/button>/);
   assert.match(centerSource, /aria-label="Silme panelini kapat"/);
   assert.match(centerSource, /<X size=\{17\}/);
@@ -770,16 +770,16 @@ test("account and delete flows use clearer project continuation and close contro
 test("every guided project stage exposes a previous-step action", () => {
   const pages = [
     ["../app/arsa-fizibilite-studyosu/page.tsx", "/proje-baslat?view=summary"],
-    ["../app/mimari-program-studyosu/page.tsx", "/arsa-fizibilite-studyosu#geo-studyo"],
+    ["../app/mimari-program-studyosu/page.tsx", "/arsa-fizibilite-studyosu?stage=design#geo-studyo", "Yapı Yerleşimine Dön"],
     ["../app/plan-ve-aks/page.tsx", "/mimari-program-studyosu"],
-    ["../app/tasiyici-on-tasarim/page.tsx", "/plan-ve-aks"],
-    ["../app/sistem-karsilastirma/page.tsx", "/tasiyici-on-tasarim"],
-    ["../app/bim-koordinasyon/page.tsx", "/sistem-karsilastirma"],
+    ["../app/tasiyici-on-tasarim/page.tsx", "/sistem-karsilastirma"],
+    ["../app/sistem-karsilastirma/page.tsx", "/plan-ve-aks"],
+    ["../app/bim-koordinasyon/page.tsx", "/tasiyici-on-tasarim"],
     ["../app/proje-takibi/page.tsx", "/bim-koordinasyon"],
   ];
-  for (const [relativePath, previousHref] of pages) {
+  for (const [relativePath, previousHref, previousLabel = "Önceki adıma dön"] of pages) {
     const source = fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
-    assert.match(source, /Önceki adıma dön/);
+    assert.ok(source.includes(previousLabel));
     assert.ok(source.includes(`href="${previousHref}"`));
   }
 
@@ -818,7 +818,8 @@ test("active project summary cannot be overwritten by a separate unfinished draf
   const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
   const account = fs.readFileSync(new URL("../app/components/ClientAccountSettings.tsx", import.meta.url), "utf8");
 
-  assert.match(start, /if \(summaryMode\) \{\s*setDraftReady\(true\);\s*return;/);
+  assert.match(start, /if \(summaryMode \|\| \(hasActiveProject && !newProjectMode\)\) \{/);
+  assert.match(start, /if \(summaryMode\) setDraftReady\(true\)/);
   assert.match(start, /if \(summaryMode \|\| !draftReady/);
   assert.match(start, /Başlangıç kararları proje çekirdeğinden yeniden yüklendi/);
 
@@ -894,7 +895,7 @@ test("zoning form starts empty and does not invent planning rights", () => {
   assert.ok(zoning.includes('sourceDate: ""'));
   assert.ok(zoning.includes('sourceNote: ""'));
   assert.ok(studio.includes("İmar girdileri bekleniyor"));
-  assert.ok(studio.includes("Yapı zarfı henüz üretilmedi"));
+  assert.ok(studio.includes("tamamlanmadan yapı zarfı hesabı üretilmez"));
   assert.ok(studio.includes("Plan ölçeğini seçin"));
   assert.ok(studio.includes("Yapı nizamını seçin"));
   assert.ok(studio.includes("TAKS girin"));
@@ -921,9 +922,9 @@ test("unverified zoning massing uses qualified language and flags manual Hmax co
 test("unverified massing terminology avoids implying official zoning rights", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes("V112 / İMAR GİRDİLİ KÜTLE ÖN KONTROLÜ"));
-  assert.ok(studio.includes("Girdi kullanım oranı"));
+  assert.ok(studio.includes("Girdi kullanımı"));
   assert.ok(studio.includes('massingModel.source.authoritative ? "V112 / İMAR UYUMLU KÜTLE MOTORU"'));
-  assert.ok(studio.includes('massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanım oranı"'));
+  assert.ok(studio.includes('massingModel.source.authoritative ? "Hak kullanımı" : "Girdi kullanımı"'));
 });
 
 
@@ -1036,12 +1037,12 @@ test("simple parcel workspace keeps project kernel compact and splits long zonin
 });
 
 
-test("simple parcel workspace collapses legal limits and resets placement to summary", () => {
+test("simple parcel workspace keeps placement summary and qualified calculation limits", () => {
   const studio = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
   assert.ok(studio.includes('if (stage === "design") setDesignPanel("summary")'));
-  assert.ok(studio.includes('geo-studio-foot-collapsible'));
-  assert.ok(studio.includes('ⓘ Teknik ve hukuki sınırlar'));
-  assert.ok(studio.includes('Ayrıntıları göster'));
+  assert.ok(studio.includes('Bu sonuç parametrik ön kontroldür; imar uygunluğu, aplikasyon, ruhsat veya resmî onay değildir.'));
+  assert.ok(studio.includes('Hukuki ve teknik sınır'));
+  assert.ok(studio.includes('!simple ? <footer className="geo-studio-foot"')); 
 });
 
 
@@ -1213,3 +1214,4 @@ test("project center labels 10-of-13 as module coverage rather than data errors"
   assert.match(hub, /Henüz bağlı değil/);
   assert.doesNotMatch(hub, /<span>VERİ HAZIRLIĞI<\/span><b>%\{thread\.metrics\.readiness\}/);
 });
+

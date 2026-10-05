@@ -23,6 +23,8 @@ jobs:
       - run: node --experimental-strip-types --test tests/project-storage-reconciliation.test.mjs
       - run: npm run typecheck
       - run: npm run build:local
+      - name: Module routes, draft persistence and engineering gates
+        run: node --experimental-strip-types --test tests/module-draft.test.mjs tests/module-routes.test.mjs tests/current-ui-smoke.mjs tests/bim-section-strategy.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-zoning.test.mjs tests/technical-export-review.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npm run test:land-browser:e2e
       - name: Browser regression with synthetic HTTP fixtures
@@ -33,6 +35,7 @@ jobs:
             sleep 1
           done
           npm run test:land-research:e2e
+          node --experimental-strip-types tests/module-tools-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -40,3 +43,4 @@ jobs:
           path: |
             test-artifacts/
             /tmp/arkemx-land.log
+

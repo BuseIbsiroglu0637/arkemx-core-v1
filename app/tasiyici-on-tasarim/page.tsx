@@ -18,7 +18,7 @@ export default function StructuralConceptPage() {
       <header className="arx-simple-head">
         <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
         <nav className="arx-workspace-nav" aria-label="Sayfa bağlantıları">
-          <Link href="/plan-ve-aks"><ArrowLeft size={16} aria-hidden="true" /> Önceki adıma dön</Link>
+          <Link href="/sistem-karsilastirma"><ArrowLeft size={16} aria-hidden="true" /> Önceki adıma dön</Link>
           <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
           <Link href="/araclar">Tüm araçlar</Link>
         </nav>
@@ -34,3 +34,4 @@ export default function StructuralConceptPage() {
     </div>
   </main>;
 }
+

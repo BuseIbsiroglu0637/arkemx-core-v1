@@ -2331,7 +2331,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   };
 
   return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"} data-arx-results={showResults ? "open" : "closed"}>
-    {simple ? <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} compact /> : <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
+    {simple ? <ProjectKernelBar moduleKey="geo-parcel" module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} compact /> : <ProjectKernelBar moduleKey="geo-parcel" module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
     <header className="geo-studio-top"><div><span>ARKEM / GEO·BIM WORKSPACE · V111 GIS + 3B</span><b>Parsel, Kot & Arazi Stüdyosu</b></div><div><span className="geo-status live">ORTAK KATMAN MOTORU</span><small>2B + 3B · WGS84 / yerel ENU</small></div></header>
     {simple && <>
       <nav className="arx-geo-quick-nav" aria-label="Arazi parsel temel işlemleri">
@@ -2436,4 +2436,5 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     {!simple ? <footer className="geo-studio-foot"><b>Hukuki ve teknik sınır</b><p>Bu çalışma alanı erken karar, veri hazırlığı ve disiplinler arası koordinasyon içindir. Tapu/kadastro kaydı, aplikasyon, imar uygunluğu, zemin etüdü, mühendislik hesabı veya ruhsat projesi yerine geçmez. TKGM parsel kimliği; e-Plan/TUCBS katmanları, belediye e-İmar adaptörleri ve onaylı imar durumu belgesiyle kaynaklandırılır. Yetkili servis, protokol veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p></footer> : null}
   </section>;
 }
+
 

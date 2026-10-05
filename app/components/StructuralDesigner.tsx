@@ -376,7 +376,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   };
 
   return <section className={`structural-designer engineering-workbench${home ? " home-designer" : ""}`} data-testid="structural-designer">
-    <ProjectKernelBar module="STRUCTURAL CONCEPT STUDIO 2.0" confidence="Beş sistem / ön boyutlandırma" compact={compactKernel} />
+    <ProjectKernelBar moduleKey="structural-concept" module="STRUCTURAL CONCEPT STUDIO 2.0" confidence="Beş sistem / ön boyutlandırma" compact={compactKernel} />
     <div className="designer-head"><div><p className="eyebrow">V114 / Taşıyıcı Sistem Stüdyosu 2.0</p><h2>Aynı geometriyi kurun.<br/><em>Beş sistemi ölçerek karşılaştırın.</em></h2></div><p>Betonarme, Betonarme Prefabrik, yapısal çelik, hafif çelik ve karma sistemi aynı aks, yük ve mimari şema üzerinde ön boyutlandırın. Maliyet, süre, karbon, kütle ve üretilebilirlik göstergelerini birlikte okuyun; sonuç nihai statik analiz veya uygulama projesi değildir.</p><div className="engineering-sync"><span>DİJİTAL DEVİR TESLİM</span><b>{syncStatus}</b><button onClick={importUpstream}>V113 / Plan / program verisini aktar ↘</button></div></div>
     <div className="v114-source-band" data-state={structuralStudio.source.architecturalSchemeConnected ? structuralStudio.source.authoritativeGeometry ? "verified" : "derived" : "missing"}><div><span>V114 / TAŞIYICI SİSTEM STÜDYOSU 2.0</span><b>{structuralStudio.source.architecturalSchemeConnected ? "V113 mekânsal şeması bağlı" : "V113 mekânsal şeması bulunamadı"}</b><small>{structuralStudio.geometry.width.toFixed(1)} × {structuralStudio.geometry.depth.toFixed(1)} m · {structuralStudio.geometry.floors} kat · {structuralStudio.geometry.maximumSpan.toFixed(1)} m en büyük açıklık</small></div><div><span>ÖNERİLEN ÖN İNCELEME</span><b>{structuralStudio.recommendation.label}</b><small>{structuralStudio.recommendation.score.toFixed(1)} / 100 · sistem kararı değildir</small></div><div><span>AKTİF ÖN BOYUTLANDIRMA</span><b>{activeAlternative.preliminary.column}</b><small>{activeAlternative.preliminary.beam}</small></div></div>
     <div className="designer-workspace engineering-layout">
@@ -408,3 +408,4 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     {home && <div className="designer-home-more"><a href="/tasarim-calismalari">Tam ekran stüdyoyu, plan editörünü, BIM ve VR karar akışını açın <span>↗</span></a></div>}
   </section>;
 }
+

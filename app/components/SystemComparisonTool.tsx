@@ -313,7 +313,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   }
 
   return <section className="system-comparison-tool mcda-tool" data-testid="system-comparison-tool">
-    <ProjectKernelBar module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" />
+    <ProjectKernelBar moduleKey="system-comparison" module="STRUCTURAL SYSTEM MCDA" confidence="Çok ölçütlü ön eleme" />
     <div className="mcda-heading"><div><p className="eyebrow light">Arkem Çok Ölçütlü Karar Motoru</p><h2>Tek puan değil,<br/><em>gerekçeli sistem seçimi.</em></h2></div><p>Beş taşıyıcı sistemi proje geometrisi ve sizin kriter ağırlıklarınızla karşılaştırın. Sonuç aralıkları veri belirsizliğini, engel notları ise detaylı inceleme gerektiren başlıkları gösterir.</p></div>
     <div className="mcda-thread-sync"><div><span>BAĞLI PROJE VERİSİ</span><b>Alan, kat, kullanım ve en büyük açıklığı ortak modelden alın.</b></div><button className="thread-import-button primary" onClick={importProjectGeometry}>Parsel / mimari / aks verisini aktar ↘</button></div>
     <div className="mcda-workspace">
@@ -328,3 +328,4 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     <footer className="mcda-foot"><b>Karar sınırı</b><p>MCDA sonucu, tanımlanan kriter ve ağırlıklara bağlı ön elemedir; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir. Kesin seçim, aynı performans şartnamesine göre hazırlanmış proje alternatifleri ve güncel piyasa verisiyle yapılır.</p></footer>
   </section>;
 }
+

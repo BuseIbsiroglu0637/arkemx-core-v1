@@ -13,7 +13,8 @@ import {
   stampProjectModule,
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
-import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
+import { deriveProjectThread, type ProjectThread, type ProjectModuleKey } from "../lib/project-graph";
+import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
@@ -990,14 +991,18 @@ export function useProjectKernel() {
   return value;
 }
 
-export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", compact = false }: { module: string; confidence?: string; compact?: boolean }) {
+export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerlendirme", compact = false }: { module: string; moduleKey?: ProjectModuleKey; confidence?: string; compact?: boolean }) {
   const { project, thread, persistence, setIdentity, setExperience, synchronizeProject, reset } = useProjectKernel();
   const [editing, setEditing] = useState(false);
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
   const exportProject = () => downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
 
   const normalizedModule = module.toUpperCase();
-  const activeJourneyIndex = Math.max(0, PROJECT_JOURNEY.findIndex((step) => step.modules.some((keyword) => normalizedModule.includes(keyword))));
+  const activeJourneyIndex = moduleKey ? MODULE_JOURNEY_INDEX[moduleKey] : Math.max(0, PROJECT_JOURNEY.findIndex((step) => step.modules.some((keyword) => normalizedModule.includes(keyword))));
+  const isArchitecture = moduleKey ? moduleKey === "architectural-program" : normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM");
+  const isPlan = moduleKey ? moduleKey === "plan-editor" : normalizedModule.includes("PLAN");
+  const isSystem = moduleKey ? moduleKey === "system-comparison" : normalizedModule.includes("SYSTEM");
+  const isStructural = moduleKey ? moduleKey === "structural-concept" : normalizedModule.includes("STRUCTURAL CONCEPT");
   useEffect(() => {
     const scroller = journeyScrollerRef.current;
     if (!scroller) return;
@@ -1019,21 +1024,21 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   const regularNextJourneyStep = regularNext.short === "Arazi" && landResearchPending
     ? { short: "Arsa araştırması", href: "/arsa-arastirma" }
     : regularNext;
-  const nextJourneyStep = normalizedModule.includes("STRUCTURAL CONCEPT")
+  const nextJourneyStep = isStructural
     ? { short: "BIM Koordinasyon", href: "/bim-koordinasyon" }
-    : normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
+    : isArchitecture
     ? { short: "Plan & Aks", href: "/plan-ve-aks" }
-    : normalizedModule.includes("PLAN")
+    : isPlan
       ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
-      : normalizedModule.includes("SYSTEM")
+      : isSystem
         ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
         : regularNextJourneyStep;
   const regularPreviousJourneyStep = PROJECT_JOURNEY[Math.max(0, activeJourneyIndex - 1)];
-  const previousJourneyStep = normalizedModule.includes("PLAN")
+  const previousJourneyStep = isPlan
     ? { short: "Mimari", href: "/mimari-program-studyosu" }
-    : normalizedModule.includes("STRUCTURAL CONCEPT")
+    : isStructural
       ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
-      : normalizedModule.includes("SYSTEM")
+      : isSystem
         ? { short: "Plan & Aks", href: "/plan-ve-aks" }
         : activeJourneyIndex === 1
           ? { short: "Brief", href: "/proje-baslat" }
@@ -1049,11 +1054,11 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme", co
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
   const systemMilestoneReady = deriveProjectJourneyState(thread).systemDecisionReady;
-  const canAdvanceFromCurrentModule = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
+  const canAdvanceFromCurrentModule = isArchitecture
     ? architectureMilestoneReady
-    : normalizedModule.includes("PLAN")
+    : isPlan
       ? architectureMilestoneReady && planMilestoneReady
-      : normalizedModule.includes("SYSTEM")
+      : isSystem
         ? systemMilestoneReady
         : true;
   const structureSystemLabels: Record<string, string> = {
@@ -1147,3 +1152,4 @@ export function ProjectThreadDock() {
     </Link>
   </aside>;
 }
+

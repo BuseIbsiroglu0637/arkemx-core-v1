@@ -21,14 +21,6 @@ const icons: Record<ProjectModuleKey, LucideIcon> = {
   "demolition-screening": Wrench,
 };
 
-const workspaceRoutes: Partial<Record<ProjectModuleKey, string>> = {
-  "architectural-program": "/mimari-program-studyosu",
-  "system-comparison": "/sistem-karsilastirma",
-  "structural-concept": "/tasiyici-on-tasarim",
-  "engineering-coordination": "/bim-koordinasyon",
-  "project-os": "/proje-takibi",
-};
-
 export function ProjectModuleTools() {
   const { thread, hydrated } = useProjectKernel();
   return <section className="arx-module-tools" aria-labelledby="arx-module-tools-title" data-testid="project-module-tools">
@@ -43,7 +35,7 @@ export function ProjectModuleTools() {
         const state = !hydrated ? "loading" : node?.milestoneComplete ? "complete" : node?.active ? node.readiness < 100 ? "review" : "recorded" : "empty";
         const status = state === "loading" ? "Kontrol ediliyor" : state === "complete" ? "Aşama kontrolü geçti" : state === "review" ? "İnceleme bekliyor" : state === "recorded" ? "Kayıt var" : "Başlatılmadı";
         const missing = hydrated ? node?.blockedBy.map((id) => PROJECT_MODULES.find((item) => item.id === id)?.label).filter(Boolean) ?? [] : [];
-        return <Link key={module.id} href={workspaceRoutes[module.id] ?? module.route} className="arx-simple-tool arx-module-tool" data-testid="project-module-card" data-module={module.id}>
+        return <Link key={module.id} href={module.route} className="arx-simple-tool arx-module-tool" data-testid="project-module-card" data-module={module.id}>
           <span className="arx-simple-tool-icon"><Icon size={25} strokeWidth={1.7} aria-hidden="true" /></span>
           <span className="arx-simple-tool-content">
             <small>{module.code} · {module.stage}</small>
@@ -58,3 +50,4 @@ export function ProjectModuleTools() {
     </div>
   </section>;
 }
+

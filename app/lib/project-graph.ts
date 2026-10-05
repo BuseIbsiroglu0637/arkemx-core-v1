@@ -69,14 +69,14 @@ export const PROJECT_MODULES: ProjectModuleDefinition[] = [
   { id: "decision-assistant", code: "PIR", label: "Yatırım briefi", discipline: "İşveren / PM", stage: "Tanım", route: "/proje-karar-asistani#karar-motoru", output: "İhtiyaç, öncelik ve veri hazırlığı", dependencies: [] },
   { id: "geo-parcel", code: "GIS", label: "Parsel & bağlam", discipline: "GIS / Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=zoning&focus=source#geo-studyo", output: "Koordinatlı sınır, planlama ve kütle", dependencies: [] },
   { id: "quick-site-scenario", code: "MAS", label: "Yapı yerleşimi", discipline: "Planlama", stage: "Arsa", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", output: "İmar koşullarına uyan kavramsal yerleşim", dependencies: ["geo-parcel"] },
-  { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu#mimari-motor", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
+  { id: "architectural-program", code: "ARC", label: "Mimari program", discipline: "Mimari", stage: "Tasarım", route: "/mimari-program-studyosu", output: "Mahal programı, zonlama ve kabuk", dependencies: ["geo-parcel"] },
   { id: "plan-editor", code: "BIM", label: "Plan & aks modeli", discipline: "Mimari", stage: "Tasarım", route: "/plan-ve-aks", output: "Kat, aks, mahal, çekirdek ve plan koordinasyonu", dependencies: ["architectural-program"] },
-  { id: "system-comparison", code: "MCDA", label: "Sistem seçimi", discipline: "Yapı mühendisliği", stage: "Tasarım", route: "/yapi-sistemi-karsilastirma#sistem-karsilastirma", output: "Gerekçeli taşıyıcı sistem kısa listesi", dependencies: ["geo-parcel", "architectural-program"] },
-  { id: "structural-concept", code: "STR", label: "Taşıyıcı ön tasarım", discipline: "Yapı mühendisliği", stage: "Tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", output: "Geometri, yük izi, kontrol ve metraj", dependencies: ["plan-editor", "system-comparison"] },
-  { id: "engineering-coordination", code: "ICE", label: "Disiplin koordinasyonu", discipline: "Mimari / Statik / MEP", stage: "Koordinasyon", route: "/muhendislik-koordinasyon#koordinasyon-motoru", output: "Çakışma, kot, şaft ve issue kaydı", dependencies: ["architectural-program", "plan-editor", "structural-concept"] },
-  { id: "digital-delivery-scope", code: "BEP", label: "Bilgi teslim planı", discipline: "BIM / PM", stage: "Koordinasyon", route: "/dijital-donusum#teslim-kapsami", output: "Bilgi gereksinimi ve karar kapıları", dependencies: ["decision-assistant"] },
-  { id: "arkem-x", code: "LCA", label: "Performans laboratuvarı", discipline: "Karbon / DfMA / AIM", stage: "Koordinasyon", route: "/arkemx#laboratuvar", output: "Karbon, üretim, saha ve pasaport", dependencies: ["structural-concept"] },
-  { id: "project-os", code: "CDE", label: "Proje OS", discipline: "PM / Yapım", stage: "Teslim", route: "/proje-os#proje-os-motoru", output: "Program, karar, maliyet ve teslim", dependencies: ["digital-delivery-scope", "engineering-coordination"] },
+  { id: "system-comparison", code: "MCDA", label: "Sistem seçimi", discipline: "Yapı mühendisliği", stage: "Tasarım", route: "/sistem-karsilastirma", output: "Gerekçeli taşıyıcı sistem kısa listesi", dependencies: ["geo-parcel", "architectural-program"] },
+  { id: "structural-concept", code: "STR", label: "Taşıyıcı ön tasarım", discipline: "Yapı mühendisliği", stage: "Tasarım", route: "/tasiyici-on-tasarim", output: "Geometri, yük izi, kontrol ve metraj", dependencies: ["plan-editor", "system-comparison"] },
+  { id: "engineering-coordination", code: "ICE", label: "Disiplin koordinasyonu", discipline: "Mimari / Statik / MEP", stage: "Koordinasyon", route: "/bim-koordinasyon", output: "Çakışma, kot, şaft ve issue kaydı", dependencies: ["architectural-program", "plan-editor", "structural-concept"] },
+  { id: "digital-delivery-scope", code: "BEP", label: "Bilgi teslim planı", discipline: "BIM / PM", stage: "Koordinasyon", route: "/bilgi-teslim-plani", output: "Bilgi gereksinimi ve karar kapıları", dependencies: ["decision-assistant"] },
+  { id: "arkem-x", code: "LCA", label: "Performans laboratuvarı", discipline: "Karbon / DfMA / AIM", stage: "Koordinasyon", route: "/performans-laboratuvari", output: "Karbon, üretim, saha ve pasaport", dependencies: ["structural-concept"] },
+  { id: "project-os", code: "CDE", label: "Proje OS", discipline: "PM / Yapım", stage: "Teslim", route: "/proje-takibi", output: "Program, karar, maliyet ve teslim", dependencies: ["digital-delivery-scope", "engineering-coordination"] },
   { id: "model-library-review", code: "3DM", label: "3B model inceleme", discipline: "BIM / Görselleştirme", stage: "Teslim", route: "/3b-model-kutuphanesi#model-kutuphanesi", output: "Model inceleme ve revizyon notu", dependencies: ["plan-editor"] },
   { id: "demolition-screening", code: "DEM", label: "Yıkım risk modeli", discipline: "Yıkım mühendisliği", stage: "Arsa", route: "/yikim-karar-studyosu#yikim-motoru", output: "Yöntem ön eleme ve risk kaydı", dependencies: ["geo-parcel"] },
 ];
@@ -355,7 +355,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
     : number(geoMetrics.footprint) > 0
       ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
       : number(structureGeometry.floorArea) > 0
-        ? { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı tabanını düzelt" }
+        ? { label: "Taşıyıcı ön tasarım", route: "/tasiyici-on-tasarim", actionLabel: "Taşıyıcı tabanını düzelt" }
         : { label: "Bilinmeyen kaynak", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi incele" };
 
   const grossSource = architectureGross > 0
@@ -364,7 +364,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       ? { label: "Plan & aks modeli", route: "/tasarim-calismalari#plan-editor", actionLabel: "Plan alanını düzelt" }
       : geoGross > 0
         ? { label: "Yapı Yerleşimi", route: "/arsa-fizibilite-studyosu?stage=design#geo-studyo", actionLabel: "Kütleyi düzelt" }
-        : { label: "Taşıyıcı ön tasarım", route: "/tasarim-calismalari#tasiyici-on-tasarim", actionLabel: "Taşıyıcı alanını düzelt" };
+        : { label: "Taşıyıcı ön tasarım", route: "/tasiyici-on-tasarim", actionLabel: "Taşıyıcı alanını düzelt" };
 
   const floorCountSource = number(plan.floorCount) > 0
     ? { label: "Plan & aks modeli", route: "/tasarim-calismalari/yukseklik-duzeltme", actionLabel: "Kat adedini düzelt" }
@@ -682,3 +682,4 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 }
 
 export type ProjectThread = ReturnType<typeof deriveProjectThread>;
+

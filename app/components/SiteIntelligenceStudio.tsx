@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 const schemes = {
   "Kompakt": { coverage: .68, efficiency: .91, solar: 72, carbon: 78, note: "Kısa dolaşım, yüksek alan verimi ve daha küçük dış kabuk." },
@@ -35,6 +36,23 @@ export function SiteIntelligenceStudio() {
   const [maxFar, setMaxFar] = useState(1.2);
   const [maxHeight, setMaxHeight] = useState(12.5);
 
+
+  const draftReady = useModuleRestore("quick-site-scenario", saved => {
+    const input = { ...moduleRecord(saved.input), ...moduleRecord(moduleRecord(saved.input).planning) };
+    setWidth(restoreModuleValue(input.width, width));
+    setDepth(restoreModuleValue(input.depth, depth));
+    setSetback(restoreModuleValue(input.setback, setback));
+    setFloors(restoreModuleValue(input.floors, floors));
+    setSlope(restoreModuleValue(input.slope, slope));
+    setOrientation(restoreModuleValue(input.orientation, orientation));
+    setUse(restoreModuleValue(input.use, use));
+    setMaxCoverage(restoreModuleValue(input.maxCoverage, maxCoverage));
+    setMaxFar(restoreModuleValue(input.maxFar, maxFar));
+    setMaxHeight(restoreModuleValue(input.maxHeight, maxHeight));
+    if (typeof input.system === "string" && Object.hasOwn(systemFactors, input.system)) setSystem(input.system as keyof typeof systemFactors);
+    if (typeof input.scheme === "string" && Object.hasOwn(schemes, input.scheme)) setScheme(input.scheme as Scheme);
+  });
+
   const result = useMemo(() => {
     const plot = width * depth;
     const envelope = Math.max(100, (width - setback * 2) * (depth - setback * 2));
@@ -53,8 +71,9 @@ export function SiteIntelligenceStudio() {
   }, [width, depth, setback, floors, slope, use, system, scheme, maxCoverage, maxFar, maxHeight]);
 
   useEffect(() => {
+    if (!draftReady) return;
     patchModule("quick-site-scenario", { input: { width, depth, setback, floors, slope, orientation, use, system, scheme, planning: { maxCoverage, maxFar, maxHeight } }, result, status: "synthetic-rectangular-plot" });
-  }, [depth, floors, maxCoverage, maxFar, maxHeight, orientation, patchModule, result, scheme, setback, slope, system, use, width]);
+  }, [draftReady, depth, floors, maxCoverage, maxFar, maxHeight, orientation, patchModule, result, scheme, setback, slope, system, use, width]);
 
   const exportScenario = () => downloadTextFile("arkem-hizli-arsa-senaryosu.json", JSON.stringify({ schema: "ARKEM-SITE-SCENARIO/1.0", dataStatus: "SYNTHETIC", units: "m", input: { width, depth, setback, floors, slope, orientation, use, system, scheme, maxCoverage, maxFar, maxHeight }, result }, null, 2), "application/json");
 
@@ -68,7 +87,7 @@ export function SiteIntelligenceStudio() {
   };
 
   return <section className="site-intelligence-studio">
-    <ProjectKernelBar module="QUICK SITE SCENARIO" confidence="Sentetik dikdörtgen parsel" />
+    <ProjectKernelBar moduleKey="quick-site-scenario" module="QUICK SITE SCENARIO" confidence="Sentetik dikdörtgen parsel" />
     <header className="site-studio-head"><div><span>ARKEM / SITE INTELLIGENCE</span><b>Arsa & Ön Fizibilite Stüdyosu</b></div><div><i></i><span>CANLI SENARYO</span><small>Kalıcı veri saklanmaz</small></div></header>
     <div className="site-studio-body">
       <aside className="site-studio-controls">
@@ -109,3 +128,4 @@ export function SiteIntelligenceStudio() {
     <footer><b>Kavramsal karar desteği</b><p>Bu araç imar durumu, ruhsat uygunluğu, zemin etüdü, kesin metraj, statik hesap veya sertifikalı çevresel analiz yerine geçmez. Gerçek çalışma, doğrulanmış parsel ve proje verileriyle hazırlanır.</p></footer>
   </section>;
 }
+

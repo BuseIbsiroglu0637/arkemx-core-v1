@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 type Tab = "brief" | "lca" | "dfma" | "site" | "passport" | "twin";
 type System = "Betonarme" | "Betonarme Prefabrik" | "Yapısal Çelik" | "Hafif Çelik";
@@ -48,6 +49,29 @@ export function ArkemXLab() {
   const [material, setMaterial] = useState("Ana taşıyıcı çelik kolon");
   const [assetChecks, setAssetChecks] = useState([true, true, false, true, true, false, true, true]);
   const [scenario, setScenario] = useState("Baz işletme");
+  const draftReady = useModuleRestore("arkem-x", (saved) => {
+    const input = { ...moduleRecord(saved.site), ...moduleRecord(saved.asset), ...moduleRecord(saved.twin), ...moduleRecord(saved.input) };
+    setArea(restoreModuleValue(input.area, area));
+    setType(restoreModuleValue(input.type, type));
+    setPriority(restoreModuleValue(input.priority, priority));
+    if (typeof input.system === "string" && Object.hasOwn(systems, input.system)) setSystem(input.system as System); else setSystem(system);
+    setTransport(restoreModuleValue(input.transport, transport));
+    setRecycled(restoreModuleValue(input.recycled, recycled));
+    if (["Ürün EPD", "Sektör EPD", "Genel katsayı"].includes(String(input.epdQuality))) setEpdQuality(input.epdQuality as typeof epdQuality); else setEpdQuality(epdQuality);
+    setServiceLife(restoreModuleValue(input.serviceLife, serviceLife));
+    setModuleWidth(restoreModuleValue(input.moduleWidth, moduleWidth));
+    setModuleLength(restoreModuleValue(input.moduleLength, moduleLength));
+    setPieceWeight(restoreModuleValue(input.pieceWeight, pieceWeight));
+    setCraneCapacity(restoreModuleValue(input.craneCapacity, craneCapacity));
+    setRepetition(restoreModuleValue(input.repetition, repetition));
+    setPlanned(restoreModuleValue(input.planned, planned));
+    setActual(restoreModuleValue(input.actual, actual));
+    setCaptureCoverage(restoreModuleValue(input.captureCoverage, captureCoverage));
+    setIssues(restoreModuleValue(input.issues, issues));
+    setMaterial(restoreModuleValue(input.material, material));
+    setAssetChecks(restoreModuleValue(input.assetChecks, assetChecks));
+    setScenario(restoreModuleValue(input.scenario, scenario));
+  });
 
   const lca = useMemo(() => {
     const profile = systems[system];
@@ -92,9 +116,9 @@ export function ArkemXLab() {
     return { energy: 100, occupancy: 58, alerts: 2, temperature: 23.6 };
   }, [scenario]);
 
-  const projectData = useMemo(() => ({ input: { area, type, priority, system }, lca, dfma, site: { planned, actual, captureCoverage, issues }, asset: { material, completeness: passportCompleteness }, twin: { scenario, ...scenarioMetrics }, status: "pre-assessment" }), [actual, area, captureCoverage, dfma, issues, lca, material, passportCompleteness, planned, priority, scenario, scenarioMetrics, system, type]);
+  const projectData = useMemo(() => ({ input: { area, type, priority, system, transport, recycled, epdQuality, serviceLife, moduleWidth, moduleLength, pieceWeight, craneCapacity, repetition, planned, actual, captureCoverage, issues, material, assetChecks, scenario }, lca, dfma, site: { planned, actual, captureCoverage, issues }, asset: { material, completeness: passportCompleteness }, twin: { scenario, ...scenarioMetrics }, status: "pre-assessment" }), [actual, area, assetChecks, captureCoverage, craneCapacity, dfma, epdQuality, issues, lca, material, moduleLength, moduleWidth, passportCompleteness, pieceWeight, planned, priority, recycled, repetition, scenario, scenarioMetrics, serviceLife, system, transport, type]);
 
-  useEffect(() => { patchModule("arkem-x", projectData); }, [patchModule, projectData]);
+  useEffect(() => { if (!draftReady) return; patchModule("arkem-x", projectData); }, [draftReady, patchModule, projectData]);
   const exportData = () => downloadTextFile("arkem-x-teknik-karar-kaydi.json", JSON.stringify({ schema: "ARKEM-X/2.0", generatedAt: new Date().toISOString(), ...projectData }, null, 2), "application/json");
   const importEngineeringData = () => {
     if (thread.canonical.architecture.grossArea > 0) setArea(Math.max(100, Math.round(thread.canonical.architecture.grossArea)));
@@ -106,7 +130,7 @@ export function ArkemXLab() {
   };
 
   return <section className="arkem-x-lab xlab-professional" data-testid="arkem-x-lab">
-    <ProjectKernelBar module="ARKEMX DECISION LAB" confidence="Altı teknik ön değerlendirme" />
+    <ProjectKernelBar moduleKey="arkem-x" module="ARKEMX DECISION LAB" confidence="Altı teknik ön değerlendirme" />
     <header className="xlab-command"><div><span>ARKEMX / ENGINEERING DECISION LAB</span><b>Tek proje verisi · izlenebilir varsayım · açık çıktı</b></div><div><button onClick={importEngineeringData}>METRAJ / MODEL AKTAR ↘</button><button onClick={exportData}>TEKNİK KAYIT JSON ↓</button></div></header>
     <nav className="xlab-tabs" role="tablist" aria-label="ARKEMX teknik modülleri">{tabs.map((item) => <button type="button" role="tab" aria-label={item.label} id={`xlab-tab-${item.id}`} aria-controls="xlab-panel" aria-selected={tab === item.id} key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><i>{item.code}</i><span>{item.no}</span><b>{item.label}</b></button>)}</nav>
     <div className="xlab-body" id="xlab-panel" role="tabpanel" aria-labelledby={`xlab-tab-${tab}`} tabIndex={0}>
@@ -125,3 +149,4 @@ export function ArkemXLab() {
     <footer className="xlab-disclaimer"><b>Teknik statü</b><p>Laboratuvar; karar yöntemini, veri ihtiyacını ve açık çıktıyı gösteren ön değerlendirme sistemidir. Statik hesap, sertifikalı LCA, vinç planı, hakediş, iş güvenliği planı veya canlı bina otomasyonu değildir. Proje kararları yetkili uzman ve doğrulanmış kaynak verilerle kapatılır.</p></footer>
   </section>;
 }
+

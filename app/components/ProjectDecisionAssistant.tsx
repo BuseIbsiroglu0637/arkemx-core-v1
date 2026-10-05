@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { site } from "../data/site";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 const goals = [
   ["konut", "Konut / villa"],
@@ -63,6 +64,17 @@ export function ProjectDecisionAssistant() {
   const [resultVisible, setResultVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generatedAt, setGeneratedAt] = useState("");
+  const draftReady = useModuleRestore("decision-assistant", (saved) => {
+    const input = moduleRecord(saved.input);
+    setGoal(restoreModuleValue(input.goal, goal));
+    setStage(restoreModuleValue(input.stage, stage));
+    setSystem(restoreModuleValue(input.system, system));
+    setLocation(restoreModuleValue(input.location, location));
+    setArea(restoreModuleValue(input.area, area));
+    setDocuments(restoreModuleValue(input.documents, documents));
+    setPriorities(restoreModuleValue(input.priorities, priorities));
+    setResultVisible(saved.status === "report-generated");
+  });
 
   const toggle = (value: string, values: string[], setter: (next: string[]) => void) => setter(values.includes(value) ? values.filter((item) => item !== value) : [...values, value]);
 
@@ -113,9 +125,9 @@ export function ProjectDecisionAssistant() {
     return { service, score, nextSteps, uncheckedDocuments, maturity, riskFlags };
   }, [area, documents, goal, location, priorities.length, stage, system]);
 
-  useEffect(() => {
+  useEffect(() => { if (!draftReady) return;
     patchModule("decision-assistant", { input: { goal, stage, system, location, area, documents, priorities }, result, status: resultVisible ? "report-generated" : "draft" });
-  }, [area, documents, goal, location, patchModule, priorities, result, resultVisible, stage, system]);
+  }, [draftReady, area, documents, goal, location, patchModule, priorities, result, resultVisible, stage, system]);
 
   const summary = useMemo(() => [
     "Merhaba Arkem Yapı Sistemleri, Proje Karar Asistanı özetimi iletiyorum.",
@@ -167,7 +179,7 @@ export function ProjectDecisionAssistant() {
   const downloadReport = () => downloadTextFile("arkem-proje-on-hazirlik.json", JSON.stringify({ schema: "ARKEM-BRIEF/1.0", input: { goal, stage, system, location, area, documents, priorities }, result, generatedAt }, null, 2), "application/json");
 
   return <div className="decision-assistant">
-    <ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Veri olgunluğu taraması" />
+    <ProjectKernelBar moduleKey="decision-assistant" module="PROJECT DEFINITION & READINESS" confidence="Veri olgunluğu taraması" />
     <form className="decision-form" onSubmit={submit}>
       <div className="decision-form-heading"><p className="eyebrow">Proje Verisi</p><h2>İhtiyacı adım adım<br/><em>somutlaştıralım.</em></h2><p>Yanıtlar yalnızca bu tarayıcıda sonucu oluşturur; sunucuya kaydedilmez.</p></div>
 
@@ -198,3 +210,4 @@ export function ProjectDecisionAssistant() {
     </section>}
   </div>;
 }
+

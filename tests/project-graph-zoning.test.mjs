@@ -189,7 +189,7 @@ test("completed placement is inferred and does not send the project back to quic
   assert.equal(thread.nextAction.label, "Sistemi ve yöntemi seç");
 });
 
-test("resolved structural system advances beyond the system decision gate", () => {
+test("site system hints stay pending until the actual structural model selects a system", () => {
   const geo = geoModule({
     authoritative: false,
     verification: "user-declared",
@@ -202,12 +202,15 @@ test("resolved structural system advances beyond the system decision gate", () =
     },
   });
   geo.system = "Yapısal Çelik";
-  const thread = deriveProjectThread({
+  const modules = {
     "decision-assistant": { status: "Brief tamamlandı" },
     "geo-parcel": geo,
     "architectural-program": { input: { targetGross: 1200, floors: 3, floorHeight: 3.4 } },
     "system-comparison": { input: { preferredSystem: "steel" }, ranking: [] },
-  });
+  };
+  const pending = deriveProjectThread(modules);
+  assert.equal(pending.nextAction.label, "Sistemi ve yöntemi seç");
+  const thread = deriveProjectThread({ ...modules, "structural-concept": { input: { system: "steel" } } });
 
   assert.equal(thread.nodes.find(node => node.id === "quick-site-scenario")?.active, true);
   assert.notEqual(thread.nextAction.label, "Hızlı yerleşim");
@@ -864,6 +867,7 @@ test("project graph counts all 13 declared project modules as active when presen
     PROJECT_MODULES.map((module) => [module.id, {}])
   );
 
+  modules["geo-parcel"] = geoModule({ plan, conditions, source: { type: "Kullanıcı beyanı", date: "2026-10-05", note: "Sentetik kaynaklı imar koşulları" } });
   const thread = deriveProjectThread(modules);
 
   assert.equal(thread.metrics.totalCount, 13);
@@ -875,3 +879,11 @@ test("project graph counts all 13 declared project modules as active when presen
     PROJECT_MODULES.map((module) => module.id)
   );
 });
+
+test("empty module placeholders do not count an unverified placement as active", () => {
+  const modules = Object.fromEntries(PROJECT_MODULES.map(module => [module.id, {}]));
+  const thread = deriveProjectThread(modules);
+  assert.equal(thread.metrics.activeCount,12);
+  assert.equal(thread.nodes.find(node => node.id === "quick-site-scenario").active,false);
+});
+

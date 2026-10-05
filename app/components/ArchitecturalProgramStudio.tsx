@@ -498,7 +498,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   }
 
   return <section className={simple ? "architect-app arx-architect-simple" : "architect-app"} data-testid="architectural-program-studio">
-    {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve yedek</summary><ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
+    {simple ? <details className="arx-architect-project-details"><summary>Proje bilgileri ve yedek</summary><ProjectKernelBar moduleKey="architectural-program" module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" /></details> : <ProjectKernelBar moduleKey="architectural-program" module="ARCHITECTURAL PROGRAM ENGINE" confidence="Mimari program / ön tasarım" />}
     {hydrated && placementPending && <div className="arx-architect-draft-warning" role="status" aria-label="Bekleyen imar ve yerleşim kontrolü"><b>İmar ve yerleşim doğrulaması bekliyor · taslak mimari çalışma</b><span>Mahal programını ve ihtiyaçlarını hazırlayabilirsiniz. Bu çalışma imar uygunluğu veya parsel yerleşimi onayı oluşturmaz.</span><Link href="/arsa-fizibilite-studyosu">İmar ve yerleşim bilgilerine dön →</Link></div>}
     <header className="architect-head"><div><p className="eyebrow light">Arkem Mimari Program & Performans Stüdyosu</p><h2>Metrekareyi değil,<br/><em>mekânsal sistemi tasarlayın.</em></h2></div><p>Mahal programı, net–brüt verimi, kullanıcı yükü, komşuluklar, düşey çekirdek, kaçış ön göstergesi ve cephe kararlarını aynı revizyon zincirinde yönetin.</p><div className="architect-status"><span>AKTARIM DURUMU</span><b>{status}</b></div></header>
     {simple && <div className="arx-architect-primary">
@@ -612,3 +612,4 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     <footer className="architect-disclaimer"><b>Mesleki sınır</b><p>Bu stüdyo mimari program, alternatif üretimi ve disiplinler arası veri hazırlığı içindir. İmar uygunluğu, yangın tahliyesi, erişilebilirlik, enerji performansı ve uygulama projesi; doğrulanmış mevzuat, bağlam verisi ve yetkili proje müelliflerinin tasarımıyla kesinleştirilir.</p></footer>
   </section>;
 }
+

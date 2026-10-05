@@ -862,7 +862,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       <div><span>{isKmKrFocus ? "ARKEMX / KM-KR" : isProgramAreaFocus ? "ARKEMX / ARC SYNC" : "ARKEMX / PLAN"}</span><b>{project.name}</b></div>
       <div><span>{project.phase}</span><span>{project.revision}</span></div>
     </div> : <>
-      <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Mimari plan koordinasyonu" compact={compactKernel} />
+      <ProjectKernelBar moduleKey="plan-editor" module="PARAMETRIC PLAN AUTHORING" confidence="Mimari plan koordinasyonu" compact={compactKernel} />
       <section className="cad-plan-handoff" data-ready={upstreamReady ? "true" : "false"}>
         <div>
           <span>01 / MİMARİDEN DEVRALINAN VERİ</span>
@@ -1061,3 +1061,4 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     </section> : null}
   </section>;
 }
+

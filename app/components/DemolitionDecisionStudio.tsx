@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 type MethodId = "selective" | "mechanical" | "explosive";
 const methods: { id: MethodId; title: string; copy: string; strengths: string[] }[] = [
@@ -27,6 +28,20 @@ export function DemolitionDecisionStudio() {
   const [checks, setChecks] = useState([true, true, false, false, true, false, false, false]);
   const [activeMethod, setActiveMethod] = useState<MethodId>("explosive");
   const [view, setView] = useState<"scenario" | "risk" | "gate">("scenario");
+  const draftReady = useModuleRestore("demolition-screening", (saved) => {
+    const input = moduleRecord(saved.input);
+    setHeight(restoreModuleValue(input.height, height));
+    setFloors(restoreModuleValue(input.floors, floors));
+    setNeighbor(restoreModuleValue(input.neighbor, neighbor));
+    setAccess(restoreModuleValue(input.access, access));
+    setStructure(restoreModuleValue(input.structure, structure));
+    setOccupancy(restoreModuleValue(input.occupancy, occupancy));
+    setCondition(restoreModuleValue(input.condition, condition));
+    setSensitivity(restoreModuleValue(input.sensitivity, sensitivity));
+    setHazards(restoreModuleValue(input.hazards, hazards));
+    if (Array.isArray(saved.gates) && saved.gates.length === gateLabels.length) setChecks(saved.gates.map(gate => moduleRecord(gate).complete === true)); else setChecks(checks);
+    if (methods.some(method => method.id === saved.selectedMethod)) setActiveMethod(saved.selectedMethod as MethodId); else setActiveMethod(activeMethod);
+  });
 
   const analysis = useMemo(() => {
     const dense = neighbor < 12;
@@ -66,13 +81,13 @@ export function DemolitionDecisionStudio() {
   const readiness = Math.round(checks.filter(Boolean).length / checks.length * 100);
   const selected = methods.find((item) => item.id === activeMethod) ?? methods[0];
   const projectData = useMemo(() => ({ input: { height, floors, neighbor, access, structure, occupancy, condition, sensitivity, hazards }, analysis, selectedMethod: activeMethod, readiness, gates: gateLabels.map((label, index) => ({ label, complete: checks[index] })), status: "method-screening-only" }), [access, activeMethod, analysis, checks, condition, floors, hazards, height, neighbor, occupancy, readiness, sensitivity, structure]);
-  useEffect(() => { patchModule("demolition-screening", projectData); }, [patchModule, projectData]);
+  useEffect(() => { if (!draftReady) return; patchModule("demolition-screening", projectData); }, [draftReady, patchModule, projectData]);
 
   const exportJson = () => downloadTextFile("arkem-yikim-on-degerlendirme.json", JSON.stringify({ schema: "ARKEM-DEMOLITION-SCREEN/1.0", ...projectData }, null, 2), "application/json");
   const exportRisk = () => downloadTextFile("arkem-yikim-risk-kaydi.csv", ["id,hazard,likelihood,consequence,inherent,residual,control", ...analysis.rows.map((row) => `${row.id},"${row.hazard}",${row.likelihood},${row.consequence},${row.inherent},${row.residual},"${row.control}"`)].join("\n"), "text/csv;charset=utf-8");
 
   return <section className="demolition-studio demolition-professional" data-testid="demolition-decision-studio">
-    <ProjectKernelBar module="DEMOLITION RISK ENGINE" confidence="Yöntem ön eleme / güvenlik sınırı" />
+    <ProjectKernelBar moduleKey="demolition-screening" module="DEMOLITION RISK ENGINE" confidence="Yöntem ön eleme / güvenlik sınırı" />
     <header className="demolition-head"><div><span>ARKEM / CONTROLLED DEMOLITION INTELLIGENCE</span><b>Yapı–Çevre–Yöntem Ön Karar Stüdyosu</b></div><div><i></i><span>YÜKSEK SEVİYE TARAMA</span><small>Operasyon veya patlayıcı tasarımı değildir</small></div></header>
     <div className="demolition-command"><nav>{(["scenario", "risk", "gate"] as const).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "scenario" ? "Yöntem senaryosu" : item === "risk" ? "5×5 risk kaydı" : "Karar kapıları"}</button>)}</nav><div><button onClick={exportJson}>JSON ↓</button><button onClick={exportRisk}>RİSK CSV ↓</button></div></div>
     <div className="demolition-body">
@@ -89,3 +104,4 @@ export function DemolitionDecisionStudio() {
     <footer><b>Güvenlik ve yetki sınırı</b><p>Modül yöntem alternatiflerini, bilgi eksiklerini ve ön risk kaydını görünür kılar. Patlayıcı miktarı, ateşleme, delik düzeni, devrilme, ekipman kapasitesi veya saha operasyon talimatı üretmez. Uygulama; yetkili kurumlar, ruhsatlı uzmanlar, proje özelindeki yapı–zemin–çevre analizleri, iş sağlığı ve güvenliği planı ve ölçüm sistemiyle yürütülür.</p></footer>
   </section>;
 }
+

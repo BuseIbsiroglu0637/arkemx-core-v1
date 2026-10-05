@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 const systems = {
   konut: ["Hafif Çelik", "Betonarme", "Karma Sistem"],
@@ -26,6 +27,15 @@ export function DigitalInnovationLab() {
   const [phase, setPhase] = useState("Konsept / avan");
   const [modelDetail, setModelDetail] = useState("LOD 300 / koordinasyon");
   const [capabilities, setCapabilities] = useState({ gis: true, bim: true, schedule: true, cost: false, reality: true, asset: false });
+  const draftReady = useModuleRestore("digital-delivery-scope", (saved) => {
+    const input = moduleRecord(saved.input);
+    if (typeof input.type === "string" && Object.hasOwn(systems, input.type)) setType(input.type as keyof typeof systems); else setType(type);
+    setArea(restoreModuleValue(input.area, area));
+    if (typeof input.priority === "string" && Object.hasOwn(priorities, input.priority)) setPriority(input.priority as keyof typeof priorities); else setPriority(priority);
+    setPhase(restoreModuleValue(input.phase, phase));
+    setModelDetail(restoreModuleValue(input.modelDetail, modelDetail));
+    setCapabilities(restoreModuleValue(input.capabilities, capabilities));
+  });
 
   const result = useMemo(() => {
     const active = Object.values(capabilities).filter(Boolean).length;
@@ -42,7 +52,7 @@ export function DigitalInnovationLab() {
     return { active, complexity, informationMaturity, coordinationLoad, gates, systems: systems[type], uses: priorities[priority].uses };
   }, [area, capabilities, modelDetail, phase, priority, type]);
 
-  useEffect(() => { patchModule("digital-delivery-scope", { input: { type, area, priority, phase, modelDetail, capabilities }, result, status: "bep-scope-draft" }); }, [area, capabilities, modelDetail, patchModule, phase, priority, result, type]);
+  useEffect(() => { if (!draftReady) return; patchModule("digital-delivery-scope", { input: { type, area, priority, phase, modelDetail, capabilities }, result, status: "bep-scope-draft" }); }, [draftReady, area, capabilities, modelDetail, patchModule, phase, priority, result, type]);
   const exportScope = () => downloadTextFile("arkem-dijital-teslim-kapsami.json", JSON.stringify({ schema: "ARKEM-DIGITAL-DELIVERY/1.0", input: { type, area, priority, phase, modelDetail, capabilities }, result }, null, 2), "application/json");
   const importThreadScope = () => {
     if (thread.canonical.architecture.grossArea > 0) setArea(Math.round(thread.canonical.architecture.grossArea));
@@ -53,7 +63,7 @@ export function DigitalInnovationLab() {
 
   return <section className="innovation-lab innovation-lab-professional" aria-labelledby="innovation-lab-title">
     <div className="shell innovation-lab-shell">
-      <ProjectKernelBar module="DIGITAL DELIVERY CONFIGURATOR" confidence="BEP kapsam taslağı" />
+      <ProjectKernelBar moduleKey="digital-delivery-scope" module="DIGITAL DELIVERY CONFIGURATOR" confidence="BEP kapsam taslağı" />
       <div className="innovation-lab-intro"><p className="eyebrow light">Dijital Teslim Yapılandırıcısı</p><h2 id="innovation-lab-title">Araç listesi değil,<br/><em>bilgi teslim planı.</em></h2><p>Proje aşaması, karar önceliği ve gerekli veri yetkinliklerini seçin; ISO 19650 mantığına yaklaşan teslim kapılarını, bilgi eksiklerini ve ilk BEP kapsamını görün.</p><small>Çıktı; sözleşmesel BEP, EIR, MIDP/TIDP veya işveren bilgi gereksinimi değildir. Proje ekibi ve sorumluluk matrisiyle doğrulanır.</small></div>
       <div className="innovation-thread-sync"><div><span>PROJECT THREAD / KAPSAM ÜRETİMİ</span><b>Aktif GIS, BIM, maliyet ve teslim modüllerini BEP taslağına bağlayın.</b></div><button className="thread-import-button primary" onClick={importThreadScope}>Proje zincirinden kapsam oluştur ↘</button></div>
       <div className="innovation-lab-panel">
@@ -63,3 +73,4 @@ export function DigitalInnovationLab() {
     </div>
   </section>;
 }
+

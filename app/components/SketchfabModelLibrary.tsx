@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 type SketchfabModel = {
   uid: string;
@@ -44,7 +45,9 @@ function thumbnail(model: SketchfabModel) {
 
 function formatDate(value?: string) {
   if (!value) return "Tarih yok";
-  return new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(value));
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Tarih yok";
+  return new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
 export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }) {
@@ -56,6 +59,18 @@ export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }
   const [reviewStatus, setReviewStatus] = useState("İnceleme bekliyor");
   const [modelPurpose, setModelPurpose] = useState("Görsel koordinasyon");
   const [reviewNote, setReviewNote] = useState("Model ölçü, koordinat sistemi ve revizyon bilgisiyle doğrulanmalı.");
+  const draftReady = useModuleRestore("model-library-review", (saved) => {
+    setReviewStatus(restoreModuleValue(saved.reviewStatus, reviewStatus));
+    setModelPurpose(restoreModuleValue(saved.modelPurpose, modelPurpose));
+    setReviewNote(restoreModuleValue(saved.reviewNote, reviewNote));
+    const model = moduleRecord(saved.selected);
+    if (typeof model.uid === "string" && typeof model.name === "string") {
+      setModels(current => current.some(item => item.uid === model.uid) ? current : [...current, { uid: model.uid as string, name: model.name as string }]);
+      setSelectedId(model.uid);
+    } else {
+      setSelectedId(fallbackModel.uid);
+    }
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,8 +81,8 @@ export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }
       })
       .then((data) => {
         if (data.results?.length) {
-          setModels(data.results);
-          setSelectedId((current) => data.results?.some((model) => model.uid === current) ? current : data.results![0].uid);
+          setModels(current => [...data.results!, ...current.filter(model => !data.results!.some(item => item.uid === model.uid))]);
+          
           setSyncState("live");
         } else setSyncState("fallback");
       })
@@ -81,11 +96,11 @@ export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }
   const filtered = useMemo(() => models.filter((model) => `${model.name} ${model.description ?? ""} ${(model.categories ?? []).map((category) => category.name).join(" ")}`.toLocaleLowerCase("tr-TR").includes(query.toLocaleLowerCase("tr-TR"))), [models, query]);
   const selected = models.find((model) => model.uid === selectedId) ?? filtered[0] ?? fallbackModel;
   const embedUrl = selected.embedUrl ?? `https://sketchfab.com/models/${selected.uid}/embed`;
-  useEffect(() => { patchModule("model-library-review", { selected: { uid: selected.uid, name: selected.name, faceCount: selected.faceCount, vertexCount: selected.vertexCount }, reviewStatus, modelPurpose, reviewNote, source: syncState === "live" ? "Sketchfab public API" : "fallback record" }); }, [modelPurpose, patchModule, reviewNote, reviewStatus, selected.faceCount, selected.name, selected.uid, selected.vertexCount, syncState]);
+  useEffect(() => { if (!draftReady) return; patchModule("model-library-review", { selected: { uid: selected.uid, name: selected.name, faceCount: selected.faceCount, vertexCount: selected.vertexCount }, reviewStatus, modelPurpose, reviewNote, source: syncState === "live" ? "Sketchfab public API" : "fallback record" }); }, [draftReady, modelPurpose, patchModule, reviewNote, reviewStatus, selected.faceCount, selected.name, selected.uid, selected.vertexCount, syncState]);
   const exportReview = () => downloadTextFile(`${selected.uid}-model-inceleme.json`, JSON.stringify({ schema: "ARKEM-MODEL-REVIEW/1.0", model: selected, review: { status: reviewStatus, purpose: modelPurpose, note: reviewNote }, sourceStatus: syncState }, null, 2), "application/json");
 
   return <section className={`sketchfab-library${compact ? " compact" : ""}`}>
-    <ProjectKernelBar module="3D MODEL REVIEW" confidence={syncState === "live" ? "Canlı harici model kaydı" : "Yerel yedek model"} />
+    <ProjectKernelBar moduleKey="model-library-review" module="3D MODEL REVIEW" confidence={syncState === "live" ? "Canlı harici model kaydı" : "Yerel yedek model"} />
     <header className="sketchfab-library-head"><div><span>ARKEM / 3B MODEL KÜTÜPHANESİ</span><b>Özenç Öztürk · Sketchfab proje akışı</b></div><div><i className={syncState === "live" ? "live" : ""}></i><span>{syncState === "syncing" ? "KÜTÜPHANE EŞLENİYOR" : syncState === "live" ? "CANLI PUBLIC API" : "YEREL YEDEK MODEL"}</span><small>Yeni yayınlanan açık modeller otomatik listelenir</small></div></header>
     <div className="sketchfab-library-body">
       <aside className="sketchfab-model-rail">
@@ -98,3 +113,4 @@ export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }
     </div>
   </section>;
 }
+

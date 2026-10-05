@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createProjectOperatingModel, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 type Module = "overview" | "work" | "program" | "documents" | "decisions" | "revisions" | "cost" | "quality" | "supply" | "handover";
 type Status = "Onaylı" | "İncelemede" | "Revizyon";
@@ -79,6 +80,14 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const [copilot, setCopilot] = useState("risk");
   const [workStates, setWorkStates] = useState<Record<string, ProjectOperatingWorkStatus>>({});
   const [operatingGeneratedAt] = useState(() => project.updatedAt);
+  const draftReady = useModuleRestore("project-os", (saved) => {
+    setWeek(restoreModuleValue(saved.week, week));
+    setDocuments(restoreModuleValue(saved.documents, documents));
+    setDecisions(restoreModuleValue(saved.decisions, decisions));
+    setQualityOpen(restoreModuleValue(saved.qualityOpen, qualityOpen));
+    setHandover(restoreModuleValue(saved.handover, handover));
+    if (Array.isArray(saved.workItems)) setWorkStates(Object.fromEntries(saved.workItems.flatMap(item => { const work = moduleRecord(item); return typeof work.id === "string" && ["open", "in-review", "blocked", "closed"].includes(String(work.status)) ? [[work.id, work.status as ProjectOperatingWorkStatus]] : []; }))); else setWorkStates(workStates);
+  });
   const coordinationHandoff = (project.modules["project-os"] as { coordination?: { bimCoordination?: Parameters<typeof createProjectOperatingModel>[0]["bimCoordination"]; issueGate?: { blocked?: boolean; activeCriticalClashes?: number; reviewedCriticalClashes?: number; technicalApproval?: boolean } } } | undefined)?.coordination;
   const handedOffCoordination = coordinationHandoff?.bimCoordination;
   const issueGate = coordinationHandoff?.issueGate;
@@ -116,9 +125,9 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     return { budget, planned, actual, actualCost, earned, spi, cpi, eac: budget / cpi };
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { if (!draftReady) return;
     patchModule("project-os", { schema: operatingModel.schema, operatingModel, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
-  }, [decisions, documents, earnedValue, handover, operatingModel, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
+  }, [draftReady, decisions, documents, earnedValue, handover, operatingModel, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
 
   const approveDocument = (code: string) => setDocuments((items) => items.map((item) => item.code === code ? { ...item, status: "Onaylı" } : item));
   const closeDecision = (id: string) => setDecisions((items) => items.map((item) => item.id === id ? { ...item, state: "Yanıtlandı", due: "Kapandı" } : item));
@@ -130,7 +139,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     const currentDocs = documents.slice(0, 5);
 
     return <section className="arx-tracking-tool" data-testid="project-operating-system">
-      <ProjectKernelBar module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
+      <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
       <div className="arx-track-grid">
         <section className="arx-track-panel" aria-labelledby="arx-track-work-title">
           <header className="arx-track-head">
@@ -220,7 +229,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   }
 
   return <section className={`project-os-app${compact ? " compact" : ""}`}>
-    <ProjectKernelBar module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />
+    <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />
     <header className="project-os-topbar">
       <div className="os-project-id"><span>V116 / PROJECT OS 2.0</span><b>Endüstriyel Yapı · Dijital Proje Merkezi</b></div>
       <div className="os-live" data-issue-gate={issueGate?.blocked ? "blocked" : "conceptual"}><i></i><span>{issueGate?.blocked ? "KRİTİK BIM BLOKAJI" : operatingModel.source.coordinationConnected ? "V115 BAĞLI" : "ÖRNEK VERİ"}</span><b>{issueGate?.blocked ? `${issueGate.activeCriticalClashes ?? 0} kritik çakışma · 4B/5B onay kapısı kapalı` : operatingModel.source.coordinationConnected ? "Koordinasyon issue’ları aktarıldı" : "Kaynak bağlantısı bekleniyor"}</b></div>
@@ -309,3 +318,4 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     <footer className="project-os-foot"><span>ISO 19650 CDE / OPENBIM / 4B / EARNED VALUE / REALITY / ASSET DATA</span><p>ARKEM-PROJECT-OS/2.0 · Kaynak, sorumlu, hedef tarih ve revizyon izli · Kurumsal CDE ve onaylı program yerine geçmez</p></footer>
   </section>;
 }
+

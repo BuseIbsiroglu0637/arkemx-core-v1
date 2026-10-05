@@ -189,7 +189,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
       .slice(0, 4);
 
     return <section className="arx-bim-tool" data-testid="engineering-coordination-studio" data-transfer-ready={transferReady ? "true" : "false"} data-service-zone={serviceZone}>
-      <ProjectKernelBar module="INTEGRATED COORDINATION ENGINE" confidence="BIM / issue koordinasyonu" compact />
+      <ProjectKernelBar moduleKey="engineering-coordination" module="INTEGRATED COORDINATION ENGINE" confidence="BIM / issue koordinasyonu" compact />
       <div className="arx-bim-grid">
         <section className="arx-bim-panel" aria-labelledby="arx-bim-input-title">
           <header className="arx-bim-panel-head">
@@ -308,7 +308,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
   }
 
   return <section className="coordination-app" data-testid="engineering-coordination-studio" data-transfer-ready={transferReady ? "true" : "false"} data-service-zone={serviceZone}>
-    <ProjectKernelBar module="BIM & DISCIPLINE COORDINATION" confidence="V113 + V114 · IFC/BCF hazırlık" />
+    <ProjectKernelBar moduleKey="engineering-coordination" module="BIM & DISCIPLINE COORDINATION" confidence="V113 + V114 · IFC/BCF hazırlık" />
     <header className="coordination-head"><div><p className="eyebrow light">V115 / BIM VE DİSİPLİN KOORDİNASYONU</p><h2>Modeli üst üste koymayın.<br/><em>Çakışmayı karara bağlayın.</em></h2></div><p>V113 mimari şemasını, V114 taşıyıcı ön boyutlarını ve MEP–yangın–zemin girdilerini ortak aks, kot ve revizyon üzerinde federasyon modeline bağlayın. Çakışmaları BCF uyumlu issue kaydına; metraj, karbon ve süre verisini 4B / 5B göstergelerine dönüştürün.</p><div><span>SON SENKRON</span><b>{syncMessage}</b><button onClick={importThread}>V113 + V114 modelini yenile ↻</button></div></header>
     <div className="v115-source-band" data-state={bimCoordination.source.architectureConnected && bimCoordination.source.structureConnected ? bimCoordination.source.geometryMatches ? "connected" : "conflict" : "missing"}><div><span>ORTAK MODEL KAYNAKLARI</span><b>V113 {bimCoordination.source.architectureConnected ? "bağlı" : "bekleniyor"} · V114 {bimCoordination.source.structureConnected ? "bağlı" : "bekleniyor"}</b><small>{bimCoordination.source.geometryMatches ? "Kat, plaka ve taşıyıcı aks geometrisi aynı revizyonda." : "Kaynak geometri ve revizyon eşleşmesi doğrulanmalı."}</small></div><div><span>KOORDİNAT / REVİZYON</span><b>{bimCoordination.coordinateSystem.reference}</b><small>{bimCoordination.federation.commonRevision} · {bimCoordination.spatial.levels.length} kot · {bimCoordination.spatial.axes.x.length + bimCoordination.spatial.axes.y.length} aks</small></div><div><span>TESLİM SINIRI</span><b>IFC4 hazırlık manifestosu</b><small>BCF uyumlu issue · native IFC / BCFZIP değildir</small></div></div>
     <div className="coordination-workspace">
@@ -326,3 +326,4 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
     <footer className="coordination-disclaimer"><b>Koordinasyon ve teslim sınırı</b><p>Bu motor erken disiplin koordinasyonu, BIM hazırlık manifestosu ve issue üretimi içindir. Native IFC modeli veya BCFZIP üretmez; statik/geoteknik hesap, yangın güvenliği, mekanik–elektrik tesisat tasarımı, metraj, LCA, iş programı, maliyet kontrolü ya da uygulama detayı yerine geçmez. Girdiler yetkili uzmanlarca doğrulanmalı ve gerçek BIM elemanlarıyla koordine edilmelidir.</p></footer>
   </section>;
 }
+
