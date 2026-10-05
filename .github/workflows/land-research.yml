@@ -26,7 +26,7 @@ jobs:
       - run: npm run test:land-browser:e2e
       - name: Browser regression with synthetic HTTP fixtures
         run: |
-          npm run demo:local -- --no-browser > /tmp/arkemx-land.log 2>&1 &
+          npm run demo:land -- --no-browser > /tmp/arkemx-land.log 2>&1 &
           for attempt in $(seq 1 90); do
             if curl --silent --fail http://127.0.0.1:5173/arsa-arastirma > /dev/null; then break; fi
             sleep 1
