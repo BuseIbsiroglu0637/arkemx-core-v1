@@ -2296,7 +2296,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <span>{simple ? "04 / YAPI YERLEŞİMİ" : "05 / YAPI YERLEŞİMİ"}</span><h3>Taslak yapı bilgilerini girin.</h3>
       <p className="geo-caution"><b>İmar bilgileri bekleniyor.</b> Yapı bilgilerini şimdi kaydedebilirsiniz. Plan ölçeği, yapı nizamı, TAKS, KAKS/Hmax ve çekme mesafeleri tamamlandığında yerleşim ön kontrolü açılır.</p>
       <section aria-label="Taslak yapı bilgileri">
-        <label>Kullanım<select value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
+        <label>Kullanım<select aria-label="Kullanım" value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
         <div className="geo-field-grid">
           <label>Yapı genişliği (m)<input type="number" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingWidth(normalizeMassingDimension(Math.max(6, Math.min(70, Number(event.target.value))))); }} /></label>
           <label>Yapı derinliği (m)<input type="number" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingDepth(normalizeMassingDimension(Math.max(8, Math.min(100, Number(event.target.value))))); }} /></label>
