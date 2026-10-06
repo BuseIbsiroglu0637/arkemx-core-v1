@@ -415,6 +415,16 @@ test("project centre next action follows the first incomplete guided journey ste
   assert.match(center, /currentJourneyStep\.short === "Arazi"/);
 });
 
+test("project centre clearly distinguishes seven journey stages from technical modules", () => {
+  const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
+  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
+  const moduleCount = (graph.match(/\{ id: "/g) || []).length;
+  assert.equal(moduleCount, 13);
+  assert.match(center, /PROJECT_MODULES\.length/);
+  assert.match(center, /ana aşama tamamlandı/);
+  assert.match(center, /teknik modül/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
