@@ -261,23 +261,25 @@ test("project MCDA link opens a focused workspace instead of the public comparis
   assert.doesNotMatch(page, /SiteFooter/);
 
   assert.match(tool, /if \(simple\)/);
-  assert.match(tool, /arx-system-project-strip/);
-  assert.match(tool, /ARKEMX \/ MCDA/);
+  assert.match(tool, /arx-system-context/);
+  assert.match(tool, /MÜHENDİSLİK \/ SİSTEM SEÇİMİ/);
   assert.doesNotMatch(tool.match(/if \(simple\)[\s\S]*?return <section className="system-comparison-tool/)?.[0] ?? "", /ProjectKernelBar module="STRUCTURAL SYSTEM MCDA"/);
-  assert.match(tool, /Proje verilerini aktar/);
-  assert.match(tool, /PROJE VERİSİ DEĞİŞTİ/);
-  assert.match(tool, /MCDA güncellemesi gerekli/);
-  assert.match(tool, /Güncel proje verisini aktar ve yeniden hesapla/);
+  assert.match(tool, /Proje verilerini yenile/);
+  assert.match(tool, /PROJE VERİSİ GÜNCELLENDİ/);
+  assert.match(tool, /Karşılaştırma girdileri aktif proje verisinden farklı/);
+  assert.match(tool, /Proje verilerini yenile ve puanları güncelle/);
   assert.match(tool, /Persist the canonical project source immediately/);
   assert.match(tool, /sourceKey: mcdaSourceKey\(currentProjectSource\)/);
   assert.match(tool, /sourceStatus: "current"/);
   assert.match(tool, /sourceSnapshot/);
   assert.match(tool, /sourceStatus: sourceStale/);
   assert.match(tool, /buildMcdaProjectSnapshot/);
-  assert.match(tool, /Beş sistemin karşılaştırması/);
+  assert.match(tool, /Sistem ön değerlendirmesi/);
+  assert.match(tool, /Kısa listeden çıkar/);
+  assert.match(tool, /Listeyi temizle/);
   assert.match(tool, /href="\/tasiyici-on-tasarim"/);
   assert.match(css, /arx-mcda-page/);
-  assert.match(css, /arx-system-project-strip/);
+  assert.match(css, /arx-system-context/);
   assert.match(css, /arx-mcda-source-status\.is-stale/);
 });
 
@@ -554,12 +556,26 @@ test("local build renders the focused system comparison with working navigation"
   assert.match(html, /<h1>Yapı sistemi karşılaştırma<\/h1>/);
   assert.match(html, /data-testid="system-comparison-tool"/);
   assert.match(html, /Proje girdileri/);
-  assert.match(html, /Beş sistemin karşılaştırması/);
+  assert.match(html, /Sistem ön değerlendirmesi/);
   assert.match(html, /Kriter öncelikleri ve ağırlıkları/);
   assert.match(html, /href="\/tasiyici-on-tasarim"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="comparison-hero/);
   assert.doesNotMatch(html, /class="project-guided-journey/);
+});
+
+test("final system comparison exposes project KPIs, readable scores and an actionable shortlist", () => {
+  const tool = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/sistem-karsilastirma/sade-sistem.css", import.meta.url), "utf8");
+  assert.match(tool, /formatSpan/);
+  assert.match(tool, /formatScore/);
+  assert.match(tool, /arx-system-context-kpis/);
+  assert.match(tool, /KISA LİSTE · \{shortlist\.length\}/);
+  assert.match(tool, /Listeyi temizle/);
+  assert.match(tool, /Önce sistem seçin/);
+  assert.match(css, /Prototype final polish — system selection/);
+  assert.match(css, /arx-system-result-title/);
+  assert.match(css, /arx-system-next/);
 });
 
 test("local build renders the focused BIM coordination workspace", async () => {
