@@ -479,6 +479,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const [maxHeight, setMaxHeight] = useState(-1);
   const [floorHeight, setFloorHeight] = useState(4.5);
   const [parkingPer100, setParkingPer100] = useState(1);
+  const [draftBuildingInputs, setDraftBuildingInputs] = useState(() => ({
+    width: String(buildingWidth),
+    depth: String(buildingDepth),
+    floors: String(floors),
+    floorHeight: String(floorHeight),
+    parking: String(parkingPer100),
+  }));
   const [sourceCrs, setSourceCrs] = useState("EPSG:4326 / WGS84");
   const [dataStatus, setDataStatus] = useState("Kavramsal / doğrulanmamış");
   const [parcelLookup, setParcelLookup] = useState<"idle" | "loading" | "found" | "error">("idle");
@@ -490,6 +497,45 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const officialZoningAttempt = useRef("");
   const currentZoning = useRef(zoning); currentZoning.current = zoning;
   const currentOfficialZoning = useRef(officialZoningResult); currentOfficialZoning.current = officialZoningResult;
+
+  useEffect(() => {
+    setDraftBuildingInputs({
+      width: String(buildingWidth),
+      depth: String(buildingDepth),
+      floors: String(floors),
+      floorHeight: String(floorHeight),
+      parking: String(parkingPer100),
+    });
+  }, [buildingWidth, buildingDepth, floors, floorHeight, parkingPer100]);
+
+  const commitDraftBuildingInput = (field: keyof typeof draftBuildingInputs) => {
+    const parsed = Number(draftBuildingInputs[field].replace(",", "."));
+    if (!Number.isFinite(parsed) || draftBuildingInputs[field].trim() === "") {
+      setDraftBuildingInputs({
+        width: String(buildingWidth),
+        depth: String(buildingDepth),
+        floors: String(floors),
+        floorHeight: String(floorHeight),
+        parking: String(parkingPer100),
+      });
+      return;
+    }
+    if (field === "width") {
+      setSelectedMassingId("manual");
+      setBuildingWidth(normalizeMassingDimension(Math.max(6, Math.min(70, parsed))));
+    } else if (field === "depth") {
+      setSelectedMassingId("manual");
+      setBuildingDepth(normalizeMassingDimension(Math.max(8, Math.min(100, parsed))));
+    } else if (field === "floors") {
+      setSelectedMassingId("manual");
+      setFloors(Math.max(1, Math.min(20, Math.round(parsed))));
+    } else if (field === "floorHeight") {
+      setSelectedMassingId("manual");
+      setFloorHeight(Math.max(2.6, Math.min(12, parsed)));
+    } else {
+      setParkingPer100(Math.max(0, Math.min(10, parsed)));
+    }
+  };
 
   const zoningNumericReady = [
     zoning.taks,
@@ -2333,7 +2379,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <label>Yapı genişliği <b>{buildingWidth.toFixed(1)} m</b><input type="range" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => setBuildingWidth(normalizeMassingDimension(Number(event.target.value)))} /></label>
         <label>Yapı derinliği <b>{buildingDepth.toFixed(1)} m</b><input type="range" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => setBuildingDepth(normalizeMassingDimension(Number(event.target.value)))} /></label>
         {(taksExceeded || kaksExceeded) && <p className="geo-inline-warning" role="alert"><b>İmar oranı ön kontrolü aşılıyor.</b>{taksExceeded && <> TAKS %{metrics.coverage.toFixed(1)} &gt; %{maxCoverage.toFixed(1)}.</>}{kaksExceeded && <> KAKS {metrics.far.toFixed(2)} &gt; {maxFar.toFixed(2)}.</>}</p>}
-        <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => setFloors(Number(event.target.value))}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => setFloorHeight(Number(event.target.value))}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Number(event.target.value))}/></label></div>
+        <div className="geo-planning-grid"><label>Kat adedi<input type="number" min="1" max="20" value={draftBuildingInputs.floors} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, floors: event.target.value }))} onBlur={() => commitDraftBuildingInput("floors")}/></label><label>Kat yüksekliği<input type="number" min="2.6" max="12" step=".1" value={draftBuildingInputs.floorHeight} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, floorHeight: event.target.value }))} onBlur={() => commitDraftBuildingInput("floorHeight")}/><b>m</b></label><label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={draftBuildingInputs.parking} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, parking: event.target.value }))} onBlur={() => commitDraftBuildingInput("parking")}/></label></div>
         <div className="geo-parking-result" aria-live="polite"><span>Hesaplanan park ihtiyacı</span><b>{metrics.parkingNeed} araç</b><small>{metrics.gross.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² toplam alan ÷ 100 × {parkingPer100.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} = {metrics.parkingDemand.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} → yukarı yuvarlandı</small></div>
         {manualHeightExceedsZoning && <p className="geo-inline-warning" role="alert"><b>Yükseklik sınırı aşılıyor.</b> {manualBuildingHeight.toFixed(2)} m → Hmax {zoning.hmax.toFixed(2)} m.</p>}
         <label>Kuzeye göre açı <b>{rotation}°</b><input type="range" min="-180" max="180" step="5" value={rotation} onChange={(event) => setRotation(Number(event.target.value))} /></label>
@@ -2347,11 +2393,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       <section aria-label="Taslak yapı bilgileri">
         <label>Kullanım<select aria-label="Kullanım" value={usage} onChange={(event) => setUsage(event.target.value)}><option>Sanayi / Depo</option><option>Konut / Villa</option><option>Ticari Yapı</option><option>Tarımsal Yapı</option><option>Sosyal Tesis</option></select></label>
         <div className="geo-field-grid">
-          <label>Yapı genişliği (m)<input type="number" min="6" max="70" step=".1" value={buildingWidth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingWidth(normalizeMassingDimension(Math.max(6, Math.min(70, Number(event.target.value))))); }} /></label>
-          <label>Yapı derinliği (m)<input type="number" min="8" max="100" step=".1" value={buildingDepth} onChange={(event) => { setSelectedMassingId("manual"); setBuildingDepth(normalizeMassingDimension(Math.max(8, Math.min(100, Number(event.target.value))))); }} /></label>
-          <label>Kat adedi<input type="number" min="1" max="20" value={floors} onChange={(event) => { setSelectedMassingId("manual"); setFloors(Math.max(1, Math.min(20, Math.round(Number(event.target.value))))); }} /></label>
-          <label>Kat yüksekliği (m)<input type="number" min="2.6" max="12" step=".1" value={floorHeight} onChange={(event) => { setSelectedMassingId("manual"); setFloorHeight(Math.max(2.6, Math.min(12, Number(event.target.value)))); }} /></label>
-          <label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={parkingPer100} onChange={(event) => setParkingPer100(Math.max(0, Math.min(10, Number(event.target.value))))} /></label>
+          <label>Yapı genişliği (m)<input type="number" min="6" max="70" step=".1" value={draftBuildingInputs.width} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, width: event.target.value }))} onBlur={() => commitDraftBuildingInput("width")} /></label>
+          <label>Yapı derinliği (m)<input type="number" min="8" max="100" step=".1" value={draftBuildingInputs.depth} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, depth: event.target.value }))} onBlur={() => commitDraftBuildingInput("depth")} /></label>
+          <label>Kat adedi<input type="number" min="1" max="20" value={draftBuildingInputs.floors} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, floors: event.target.value }))} onBlur={() => commitDraftBuildingInput("floors")} /></label>
+          <label>Kat yüksekliği (m)<input type="number" min="2.6" max="12" step=".1" value={draftBuildingInputs.floorHeight} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, floorHeight: event.target.value }))} onBlur={() => commitDraftBuildingInput("floorHeight")} /></label>
+          <label>100 m² başına park<input type="number" min="0" max="10" step=".25" value={draftBuildingInputs.parking} onChange={(event) => setDraftBuildingInputs((current) => ({ ...current, parking: event.target.value }))} onBlur={() => commitDraftBuildingInput("parking")} /></label>
         </div>
         <p>Bilgiler proje taslağına kaydedilir. İmar uygunluğu ve yapı zarfı henüz hesaplanmadı.</p>
       </section>
