@@ -443,6 +443,17 @@ test("parcel workflow resets the shared viewport to map context and keeps brief 
   assert.match(start, /usage: geoUsageLabels\[intake\.usage\]/);
 });
 
+test("parcel draft numeric inputs can be cleared before a replacement value is committed", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.match(geo, /const \[draftBuildingInputs, setDraftBuildingInputs\]/);
+  assert.match(geo, /onBlur=\{\(\) => commitDraftBuildingInput\("width"\)\}/);
+  assert.match(geo, /onBlur=\{\(\) => commitDraftBuildingInput\("depth"\)\}/);
+  assert.match(geo, /onBlur=\{\(\) => commitDraftBuildingInput\("floors"\)\}/);
+  assert.match(geo, /onBlur=\{\(\) => commitDraftBuildingInput\("floorHeight"\)\}/);
+  assert.match(geo, /onBlur=\{\(\) => commitDraftBuildingInput\("parking"\)\}/);
+  assert.doesNotMatch(geo, /setBuildingWidth\(normalizeMassingDimension\(Math\.max\(6, Math\.min\(70, Number\(event\.target\.value\)\)\)\)\)/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
