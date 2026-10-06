@@ -250,3 +250,14 @@
   .arx-system-result > button { grid-column: auto; }
   .arx-system-shortlist-heading { display: grid; }
 }
+
+
+/* Final contrast pass for the dark focused workspace shell */
+.arx-system-page .arx-workspace-intro > span { color:#6f9cad; }
+.arx-system-page .arx-workspace-intro h1 { color:#edf4f6; }
+.arx-system-page .arx-workspace-intro p { color:#93aab3; }
+.arx-system-page .arx-workspace-nav a { color:#8fa8b2; }
+.arx-system-page .arx-workspace-nav a:hover,
+.arx-system-page .arx-workspace-nav a:focus-visible { color:#e29461; }
+.arx-system-page .arx-system-note { color:#94a9b1; }
+.arx-system-page .arx-system-note b { color:#d8814c; }
