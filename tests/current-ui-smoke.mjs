@@ -409,6 +409,8 @@ test("project centre separates the actual working stage from earlier incomplete 
   assert.match(kernel, /export function deriveProjectJourneyState/);
   assert.match(kernel, /firstIncompleteIndex/);
   assert.match(kernel, /furthestWorkingIndex/);
+  assert.match(kernel, /Structural predesign still belongs to the System stage/);
+  assert.match(kernel, /Boolean\(node\("engineering-coordination"\)\?\.active\)/);
   assert.match(kernel, /workingIndex/);
   assert.match(kernel, /hasBacklog: firstIncompleteIndex >= 0 && firstIncompleteIndex < workingIndex/);
   assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
