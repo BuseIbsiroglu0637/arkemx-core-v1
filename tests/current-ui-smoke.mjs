@@ -454,6 +454,17 @@ test("parcel draft numeric inputs can be cleared before a replacement value is c
   assert.doesNotMatch(geo, /setBuildingWidth\(normalizeMassingDimension\(Math\.max\(6, Math\.min\(70, Number\(event\.target\.value\)\)\)\)\)/);
 });
 
+test("draft architecture transfer uses the current geo draft and a matching use template", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const architect = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  assert.match(geo, /mimari-program-studyosu\?from=geo-draft/);
+  assert.match(architect, /new URLSearchParams\(window\.location\.search\)\.get\("from"\) === "geo-draft"/);
+  assert.match(architect, /Math\.round\(width \* depth \* nextFloors\)/);
+  assert.match(architect, /setSpaces\(templates\[nextUse\]\.spaces/);
+  assert.match(architect, /setRelationships\(templates\[nextUse\]\.relationships/);
+  assert.match(architect, /Eski kullanım şablonu uyuşmazlığı düzeltildi/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
