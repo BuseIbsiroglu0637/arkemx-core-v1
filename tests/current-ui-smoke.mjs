@@ -474,6 +474,18 @@ test("architectural program detects stale area/floor data and can resync directl
   assert.match(architect, /Plan & Aks'a geçmeden önce aynı kaynağa bağlayın/);
 });
 
+test("geo to architecture navigation snapshots the visible draft before route change", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const architect = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  assert.match(geo, /ARKEM-GEO-ARCH-TRANSFER\/1\.0/);
+  assert.match(geo, /width: normalizeMassingDimension\(buildingWidth\)/);
+  assert.match(geo, /floors,\s*floorHeight/);
+  assert.match(geo, /onClick=\{prepareDraftArchitectureTransfer\}/);
+  assert.match(architect, /arkemx-architecture-draft-transfer:/);
+  assert.match(architect, /const transferSource = Object\.keys\(explicitTransfer\)\.length \? explicitTransfer : geo/);
+  assert.match(architect, /Yapı Yerleşimi ekranındaki güncel taslak doğrudan aktarıldı/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
