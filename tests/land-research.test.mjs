@@ -39,6 +39,13 @@ test('candidate: unavailable values remain unknown, never a budget match',()=>{
 test('assessment: asking price per square metre and infrastructural needs remain unverified',()=>{
  const a=assessLandCandidate(candidate,criteria);assert.equal(a.unitPrice,3000);assert.equal(a.matchesDeclaredCriteria,true);assert.ok(a.review.includes('Tır erişimi: doğrulama bekliyor'));assert.ok(a.review.includes('Parsel ve imar doğrulanmadı'));
 });
+test('assessment: fractional or cooperative ownership is blocked from parcel handoff',()=>{
+ const risky={...candidate,title:'Kastamonu Merkezde Yatırımlık Koop Hisseleri',description:'Kooperatif hissesi satılıktır'};
+ const a=assessLandCandidate(risky,criteria);
+ assert.ok(a.mismatch.some(item=>item.includes('Hisseli / kooperatif')));
+ const research={schema:'ARKEM-LAND-RESEARCH/1.0',criteria,shortlist:[risky],selectedId:risky.id};
+ assert.equal(deriveProjectThread({'decision-assistant':{input:intake,landResearch:research}}).nextAction.route,'/arsa-arastirma');
+});
 test('assessment: rent is compared to rent budget, not purchase budget',()=>{
  const a=assessLandCandidate({...candidate,tenure:'rent',priceTRY:100000},{...criteria,tenure:'rent',maxPrice:90000});assert.deepEqual(a.mismatch,['Arsa bütçesini aşıyor']);
 });
@@ -52,6 +59,15 @@ test('routing: unknown/searching land starts research, identified land starts pa
  }
  assert.match(deriveProjectThread({'decision-assistant':{input:{...intake,parcelStatus:'identified'}}}).nextAction.route,/stage=locate/);
  assert.equal(deriveGuidedProjectRoadmap({...intake,projectType:'demolition'}).nextAction.route,'/yikim-karar-studyosu');
+});
+test('guided roadmap uses live prototype workspaces and ARKEMX analysis state',()=>{
+ const roadmap=deriveGuidedProjectRoadmap({...intake,parcelStatus:'identified'});
+ assert.match(roadmap.nextAction.route,/stage=locate/);
+ assert.equal(roadmap.gates.find(g=>g.id==='system').status,'analysis');
+ assert.equal(roadmap.gates.find(g=>g.id==='system').route,'/sistem-karsilastirma');
+ assert.equal(roadmap.gates.find(g=>g.id==='budget').route,'/proje-takibi');
+ assert.equal(roadmap.gates.find(g=>g.id==='coordination').route,'/bim-koordinasyon');
+ assert.equal(roadmap.gates.find(g=>g.id==='delivery').route,'/bilgi-teslim-plani');
 });
 test('routing: shortlist alone does not advance; selected candidate advances only to parcel review',()=>{
  const research={schema:'ARKEM-LAND-RESEARCH/1.0',criteria,shortlist:[candidate],selectedId:null};
