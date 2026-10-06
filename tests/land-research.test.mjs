@@ -32,6 +32,10 @@ test('candidate: reject unsafe URLs and normalize tracking URLs',()=>{
  for(const url of ['javascript:alert(1)','http://example.com/x','https://user:pass@example.com/x','https://127.0.0.1/x']) assert.equal(safeListingUrl(url),null);
  assert.equal(safeListingUrl(url+'?utm_source=x#top'),url);
 });
+test('candidate: source icon glyphs are removed from visible listing text',()=>{
+ const c=normalizeLandCandidate({...listing,title:'\uE001 Garanti Emlak arsa \uFFFC',description:'\uE010 temiz açıklama'},'2026-10-05');
+ assert.equal(c.title,'Garanti Emlak arsa');assert.equal(c.description,'temiz açıklama');
+});
 test('candidate: unavailable values remain unknown, never a budget match',()=>{
  const c=normalizeLandCandidate({...listing,province:'',district:'',tenure:null,areaM2:null,priceTRY:null,use:''},'2026-10-05');const a=assessLandCandidate(c,criteria);
  assert.equal(a.matchesDeclaredCriteria,false);assert.equal(a.unitPrice,null);assert.equal(a.missing.length,6);
