@@ -62,18 +62,21 @@ type GuidedProjectDraft = {
   savedAt: string;
   step: number;
   intake: ProjectIntake;
+  usageConfirmed: boolean;
 };
 
 function normalizeDraft(value: unknown): GuidedProjectDraft | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as Partial<GuidedProjectDraft>;
   if (candidate.schema !== "ARKEM-GUIDED-DRAFT/1.0" || !candidate.intake) return null;
-  const step = Math.max(0, Math.min(steps.length - 1, Number(candidate.step) || 0));
+  const rawStep = Math.max(0, Math.min(steps.length - 1, Number(candidate.step) || 0));
+  const usageConfirmed = candidate.usageConfirmed === true;
   return {
     schema: "ARKEM-GUIDED-DRAFT/1.0",
     savedAt: typeof candidate.savedAt === "string" && candidate.savedAt ? candidate.savedAt : new Date(0).toISOString(),
-    step,
+    step: usageConfirmed ? rawStep : Math.min(rawStep, 2),
     intake: { ...initial, ...candidate.intake },
+    usageConfirmed,
   };
 }
 
@@ -192,6 +195,7 @@ export function ProjectStartStudio({
     floors: String(initial.floors),
     floorHeight: String(initial.floorHeight),
   });
+  const [usageConfirmed, setUsageConfirmed] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [notice, setNotice] = useState("");
   const [draftReady, setDraftReady] = useState(false);
@@ -268,6 +272,7 @@ export function ProjectStartStudio({
         floorHeight: String(initial.floorHeight),
       });
       setStep(0);
+      setUsageConfirmed(false);
       setRestoredDraft(false);
       setCreatingNewProject(true);
       setDraftTransferMessage("");
@@ -295,6 +300,7 @@ export function ProjectStartStudio({
         floorHeight: String(storedIntake.floorHeight),
       });
       setStep(0);
+      setUsageConfirmed(true);
       setDraftReady(true);
       setActiveBriefLoaded(true);
       setNotice("Aktif projenin başlangıç bilgileri yüklendi. Beş adımda mevcut briefi inceleyebilir veya güncelleyebilirsiniz.");
@@ -328,6 +334,7 @@ export function ProjectStartStudio({
         floorHeight: String(storedIntake.floorHeight),
       });
       setStep(4);
+      setUsageConfirmed(true);
       setNotice("Başlangıç kararları proje çekirdeğinden yeniden yüklendi. Sıradaki teknik adıma buradan devam edebilirsiniz.");
       setSummaryReady(true);
     }, 0);
@@ -377,6 +384,7 @@ export function ProjectStartStudio({
             floorHeight: String(restoredIntake.floorHeight),
           });
           setStep(selected.step);
+          setUsageConfirmed(selected.usageConfirmed);
           setRestoredDraft(true);
           setDraftTransferMessage(
             accountDraft && selected.savedAt === accountDraft.savedAt
@@ -401,6 +409,7 @@ export function ProjectStartStudio({
         savedAt: new Date().toISOString(),
         step,
         intake,
+        usageConfirmed,
       };
       try {
         window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -416,7 +425,7 @@ export function ProjectStartStudio({
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [completed, creatingNewProject, draftHasMeaningfulInput, draftReady, hasActiveProject, intake, restoredDraft, step, summaryMode]);
+  }, [completed, creatingNewProject, draftHasMeaningfulInput, draftReady, hasActiveProject, intake, restoredDraft, step, summaryMode, usageConfirmed]);
 
   const exportDraft = () => {
     const draft: GuidedProjectDraft = {
@@ -424,6 +433,7 @@ export function ProjectStartStudio({
       savedAt: new Date().toISOString(),
       step,
       intake,
+      usageConfirmed,
     };
     const safeName = intake.name.trim().toLowerCase().replace(/[^a-z0-9ğüşöçıİĞÜŞÖÇ]+/gi, "-").replace(/^-+|-+$/g, "") || "arkemx-proje";
     downloadTextFile(`${safeName}-taslak.json`, JSON.stringify(draft, null, 2), "application/json;charset=utf-8");
@@ -446,6 +456,7 @@ export function ProjectStartStudio({
         floorHeight: String(restoredIntake.floorHeight),
       });
       setStep(parsed.step);
+      setUsageConfirmed(parsed.usageConfirmed);
       setDraftReady(true);
       setRestoredDraft(true);
       setCreatingNewProject(true);
@@ -460,7 +471,7 @@ export function ProjectStartStudio({
     : step === 1
       ? intake.location.trim().length >= 2
       : step === 2
-        ? intake.targetArea > 0 && intake.floors > 0 && intake.floorHeight > 0
+        ? usageConfirmed && intake.targetArea > 0 && intake.floors > 0 && intake.floorHeight > 0
         : step === 3
           ? intake.priorities.length > 0
           : true;
@@ -801,7 +812,7 @@ export function ProjectStartStudio({
       <section className="project-start-form">
         {step === 0 && <div className="start-fieldset"><label><span>Projeye verilecek çalışma adı</span><input autoFocus value={intake.name} onChange={(event) => update("name", event.target.value)} placeholder="Örn. Arifiye üretim tesisi" /></label><fieldset><legend>Proje türü</legend>{(Object.keys(projectTypeLabels) as ProjectIntake["projectType"][]).map((value) => <button type="button" className={intake.projectType === value ? "selected" : ""} onClick={() => update("projectType", value)} key={value}><i>{intake.projectType === value ? "✓" : "+"}</i><b>{projectTypeLabels[value]}</b></button>)}</fieldset></div>}
         {step === 1 && <div className="start-fieldset"><label><span>İlk konum bilgisi</span><input autoFocus value={intake.location} onChange={(event) => update("location", event.target.value)} placeholder="İl / ilçe veya bilinen mevki" /></label><fieldset className="start-parcel-options"><legend>Arsa / parsel hangi durumda?</legend>{(Object.keys(parcelStatusLabels) as ProjectIntake["parcelStatus"][]).map((value) => <button type="button" className={intake.parcelStatus === value ? "selected" : ""} aria-pressed={intake.parcelStatus === value} onClick={() => update("parcelStatus", value)} key={value}><i>{intake.parcelStatus === value ? "✓" : "+"}</i><span><b>{parcelStatusLabels[value].title}</b><small>{parcelStatusLabels[value].copy}</small></span></button>)}</fieldset><fieldset className="start-document-grid"><legend>Şu anda elinizde olanlar</legend>{GUIDED_DOCUMENT_OPTIONS.map((item) => <button type="button" className={intake.documents.includes(item.id) ? "selected" : ""} aria-pressed={intake.documents.includes(item.id)} onClick={() => toggleDocument(item.id)} key={item.id}><i>{intake.documents.includes(item.id) ? "✓" : "+"}</i><span><b>{item.short}</b><small>{item.label}</small></span></button>)}</fieldset><div className="start-info-card"><i>GIS</i><div><b>Belge var demek doğrulandı demek değildir</b><p>Parsel geometrisi TKGM/MEGSİS veya yetkili harita verisiyle; imar hakları ise plan, belediye/e-Plan kaynağı ve gerektiğinde uzman incelemesiyle doğrulanır.</p></div></div></div>}
-        {step === 2 && <div className="start-fieldset"><label><span>Yapı kullanımı</span><select value={intake.usage} onChange={(event) => update("usage", event.target.value as ProjectIntake["usage"])}>{(Object.keys(usageLabels) as ProjectIntake["usage"][]).map((value) => <option value={value} key={value}>{usageLabels[value]}</option>)}</select></label><div className="start-number-grid"><label><span>Hedef brüt alan</span><input type="number" min="20" max="1000000" value={numericDrafts.targetArea} onChange={(event) => updateNumericDraft("targetArea", event.target.value, 20, 1_000_000)} onBlur={() => commitNumericDraft("targetArea", 20, 1_000_000)}/><small>m²</small></label><label><span>Kat adedi</span><input type="number" min="1" max="100" value={numericDrafts.floors} onChange={(event) => updateNumericDraft("floors", event.target.value, 1, 100)} onBlur={() => commitNumericDraft("floors", 1, 100)}/><small>kat</small></label></div><details className="start-technical-details"><summary>İsteğe bağlı teknik ayrıntılar</summary><label><span>Hedef kat yüksekliği</span><input type="number" step=".1" min="2.4" max="30" value={numericDrafts.floorHeight} onChange={(event) => updateNumericDraft("floorHeight", event.target.value, 2.4, 30)} onBlur={() => commitNumericDraft("floorHeight", 2.4, 30)}/><small>m</small></label><p>Bilmiyorsanız değiştirmeyin; başlangıç değeri proje ilerledikçe kullanım, sistem ve uzman incelemesine göre güncellenebilir.</p></details><div className="start-live-metric"><span>KAT BAŞINA YAKLAŞIK ALAN</span><b>{floorArea.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²</b><small>Kesin yerleşim parsel ve mimari program aşamasında oluşur.</small></div></div>}
+        {step === 2 && <div className="start-fieldset"><label><span>Yapı kullanımı</span><select value={usageConfirmed ? intake.usage : ""} onChange={(event) => { setUsageConfirmed(true); update("usage", event.target.value as ProjectIntake["usage"]); }}><option value="" disabled>Yapı kullanımını seçin</option>{(Object.keys(usageLabels) as ProjectIntake["usage"][]).map((value) => <option value={value} key={value}>{usageLabels[value]}</option>)}</select></label><div className="start-number-grid"><label><span>Hedef brüt alan</span><input type="number" min="20" max="1000000" value={numericDrafts.targetArea} onChange={(event) => updateNumericDraft("targetArea", event.target.value, 20, 1_000_000)} onBlur={() => commitNumericDraft("targetArea", 20, 1_000_000)}/><small>m²</small></label><label><span>Kat adedi</span><input type="number" min="1" max="100" value={numericDrafts.floors} onChange={(event) => updateNumericDraft("floors", event.target.value, 1, 100)} onBlur={() => commitNumericDraft("floors", 1, 100)}/><small>kat</small></label></div><details className="start-technical-details"><summary>İsteğe bağlı teknik ayrıntılar</summary><label><span>Hedef kat yüksekliği</span><input type="number" step=".1" min="2.4" max="30" value={numericDrafts.floorHeight} onChange={(event) => updateNumericDraft("floorHeight", event.target.value, 2.4, 30)} onBlur={() => commitNumericDraft("floorHeight", 2.4, 30)}/><small>m</small></label><p>Bilmiyorsanız değiştirmeyin; başlangıç değeri proje ilerledikçe kullanım, sistem ve uzman incelemesine göre güncellenebilir.</p></details><div className="start-live-metric"><span>KAT BAŞINA YAKLAŞIK ALAN</span><b>{floorArea.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²</b><small>Kesin yerleşim parsel ve mimari program aşamasında oluşur.</small></div></div>}
         {step === 3 && <div className="start-fieldset"><div className="start-decision-grid"><label><span>Ön taşıyıcı sistem tercihi</span><select value={intake.system} onChange={(event) => update("system", event.target.value as ProjectIntake["system"])}>{(Object.keys(systemLabels) as ProjectIntake["system"][]).map((value) => <option value={value} key={value}>{systemLabels[value]}</option>)}</select></label><label><span>Yaklaşık yatırım bütçesi</span><select value={intake.budget} onChange={(event) => update("budget", event.target.value as ProjectIntake["budget"])}>{(Object.keys(budgetLabels) as ProjectIntake["budget"][]).map((value) => <option value={value} key={value}>{budgetLabels[value]}</option>)}</select></label><label><span>Hedef başlangıç</span><select value={intake.timeline} onChange={(event) => update("timeline", event.target.value as ProjectIntake["timeline"])}>{(Object.keys(timelineLabels) as ProjectIntake["timeline"][]).map((value) => <option value={value} key={value}>{timelineLabels[value]}</option>)}</select></label></div><fieldset><legend>Kararda öncelikli olanlar</legend>{priorityOptions.map(([value, label]) => <button type="button" className={intake.priorities.includes(value) ? "selected" : ""} aria-pressed={intake.priorities.includes(value)} onClick={() => togglePriority(value)} key={value}><i>{intake.priorities.includes(value) ? "✓" : "+"}</i><b>{label}</b></button>)}</fieldset><p className="start-boundary">Bütçe, süre ve sistem bilgileri müşteri hedefidir. Keşif, iş programı veya nihai taşıyıcı sistem kararı sayılmaz; parsel, zemin, açıklık, deprem, yangın, üretim ve tedarik verileriyle doğrulanır.</p></div>}
         {step === 4 && <div className="start-review"><header><span>V107 / KİŞİSEL PROJE YOLU</span><b>{editingActiveProject ? "Kontrol edin; mevcut projenin başlangıç bilgilerini güncelleyin." : "Kontrol edin; sonra tek çalışma alanını oluşturun."}</b><strong><small>BAŞLANGIÇ VERİ HAZIRLIĞI</small>%{roadmap.readiness}</strong></header><dl><div><dt>Proje</dt><dd>{intake.name}</dd></div><div><dt>Tür</dt><dd>{projectTypeLabels[intake.projectType]}</dd></div><div><dt>Konum / parsel</dt><dd>{intake.location} · {parcelReviewLabel}</dd></div><div><dt>Program</dt><dd>{usageLabels[intake.usage]} · {intake.targetArea.toLocaleString("tr-TR")} m² · {intake.floors} kat</dd></div><div><dt>Sistem</dt><dd>{systemLabels[intake.system]}</dd></div><div><dt>Bütçe / takvim</dt><dd>{budgetLabels[intake.budget]} · {timelineLabels[intake.timeline]}</dd></div></dl><section className="start-review-next"><span>SIRADAKİ DOĞRU ADIM</span><h4>{roadmap.nextAction.title}</h4><p>{roadmap.nextAction.copy}</p></section><div className="start-roadmap-gates">{roadmap.gates.map((gate, index) => <article className={`status-${gate.status}`} key={gate.id}><i>{String(index + 1).padStart(2, "0")}</i><div><span>{GUIDED_GATE_LABELS[gate.status]}</span><b>{gate.label}</b><small>{gate.detail}</small></div></article>)}</div>{reviewEvidenceItems.length > 0 && <aside className="start-missing-documents"><span>EKSİK / DOĞRULANACAK VERİLER VE BELGELER</span><ul>{reviewEvidenceItems.map((item) => <li key={item}>{item}</li>)}</ul></aside>}</div>}
         {!canContinue && <p className="start-validation" role="alert">Bu adımın zorunlu bilgisini tamamlayın.</p>}
