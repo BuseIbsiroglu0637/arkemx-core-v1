@@ -30,7 +30,8 @@ export type GuidedGateStatus =
   | "missing"
   | "official-review"
   | "client-decision"
-  | "expert-review";
+  | "expert-review"
+  | "analysis";
 
 export type GuidedJourneyGate = {
   id: "brief" | "parcel" | "zoning" | "architecture" | "system" | "budget" | "coordination" | "delivery";
@@ -74,6 +75,7 @@ export const GUIDED_GATE_LABELS: Record<GuidedGateStatus, string> = {
   "official-review": "Resmî doğrulama bekliyor",
   "client-decision": "Müşteri kararı bekliyor",
   "expert-review": "Arkem uzmanı incelemeli",
+  analysis: "ARKEMX analizi bekliyor",
 };
 
 function hasDocument(intake: GuidedProjectIntake, id: GuidedDocumentId) {
@@ -142,7 +144,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
           ? "Parsel biliniyor; koordinatlı sınır ve resmî kimlik kontrol edilmelidir."
           : "Yatırım kriterleriyle aday arsalar araştırılır; seçilen adayın parsel kimliği ve sınırı sonraki aşamada doğrulanır.",
       status: parcelKnown ? "official-review" : "missing",
-      route: parcelKnown ? "/arsa-fizibilite-studyosu#geo-studyo" : "/arsa-arastirma",
+      route: parcelKnown ? "/arsa-fizibilite-studyosu?stage=locate#geo-studyo" : "/arsa-arastirma",
     },
     {
       id: "zoning",
@@ -151,7 +153,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         ? "Belge mevcut olarak işaretlendi; TAKS, KAKS, Hmax, nizam ve çekmeler kaynağından okunmalıdır."
         : "Resmî plan, belediye/e-Plan kaynağı veya imar belgesi henüz eklenmedi.",
       status: zoningProvided ? "expert-review" : "official-review",
-      route: "/arsa-fizibilite-studyosu#geo-studyo",
+      route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
     },
     {
       id: "architecture",
@@ -166,8 +168,8 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
       detail: intake.system === "undecided"
         ? "Betonarme, prefabrik, çelik, hafif çelik ve hibrit alternatifler karşılaştırılmalıdır."
         : "Ön sistem tercihi girildi; zemin, açıklık, deprem, yangın, üretim ve maliyetle doğrulanmalıdır.",
-      status: intake.system === "undecided" ? "client-decision" : "expert-review",
-      route: "/yapi-sistemi-karsilastirma",
+      status: intake.system === "undecided" ? "analysis" : "expert-review",
+      route: "/sistem-karsilastirma",
     },
     {
       id: "budget",
@@ -176,21 +178,21 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         ? "Bütçe aralığı müşteriyle netleştirilerek metraj ve alternatif senaryoya bağlanmalıdır."
         : "Bütçe ve zaman hedefi ön fizibilite hesabına aktarılmaya hazır.",
       status: intake.budget === "undecided" ? "client-decision" : "expert-review",
-      route: "/proje-os",
+      route: "/proje-takibi",
     },
     {
       id: "coordination",
       label: "Mühendislik koordinasyonu",
       detail: "Mimari, taşıyıcı ve tesisat verileri oluştukça aks, kot, şaft ve çakışma kontrolleri açılır.",
       status: "expert-review",
-      route: "/muhendislik-koordinasyon",
+      route: "/bim-koordinasyon",
     },
     {
       id: "delivery",
-      label: "Teklif, onay ve teslim",
-      detail: "Doğrulanan brief ve teknik kayıtlar teklif, görüşme ve kurumsal teslim paketine dönüşür.",
-      status: "ready",
-      route: "/iletisim",
+      label: "Bilgi teslim planı ve kapanış",
+      detail: "Doğrulanan brief, koordinasyon kayıtları ve teknik çıktılar teslim gereksinimleriyle eşleştirilir.",
+      status: "expert-review",
+      route: "/bilgi-teslim-plani",
     },
   ];
 
@@ -211,7 +213,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         copy: zoningProvided
           ? "Beyan edilen parsel bilgisini, resmî sınırı ve mevcut imar belgesini kaynağıyla doğrulayın."
           : "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
-        route: "/arsa-fizibilite-studyosu#geo-studyo",
+        route: "/arsa-fizibilite-studyosu?stage=locate#geo-studyo",
       };
 
   return {
