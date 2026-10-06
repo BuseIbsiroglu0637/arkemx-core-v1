@@ -446,6 +446,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   const candidatePrefillApplied = useRef("");
   const research = readLandResearch(object(project.modules["decision-assistant"]).landResearch);
   const selectedCandidate = research?.shortlist.find(c => c.id === research.selectedId);
+  const selectedCandidateId = selectedCandidate?.id ?? "";
   const listingIdentity = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.parcelIdentity : null;
   const listingZoning = selectedCandidate && research && !assessLandCandidate(selectedCandidate, research.criteria).mismatch.length ? selectedCandidate.zoningDeclaration : null;
   const listingZoningApplied = useRef("");
@@ -807,6 +808,46 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, patchModule, project.id, project.modules]);
+
+  useEffect(() => {
+    if (!parcelHydrated || !selectedCandidateId || !listingIdentitySource || listingIdentitySource.sourceUrl === selectedCandidateId) return;
+
+    // A newly selected research candidate must never inherit identity fields
+    // that were auto-filled from the previous listing. Preserve user/official
+    // work, but clear only values that still match the previous listing source.
+    if (parcel.length || officialBoundaryEvidence) {
+      candidatePrefillApplied.current = "";
+      listingZoningApplied.current = "";
+      setFileNotice("Yeni ilan adayı seçildi. Mevcut doğrulanmış/sınırlandırılmış parsel çalışması otomatik değiştirilmedi; yeni adayı ayrı incelemek için mevcut parsel kaydını bilinçli olarak sıfırlayın.");
+      return;
+    }
+
+    const previous = listingIdentitySource;
+    const equal = (left: string, right: string) =>
+      normalizeAdministrativeName(left) === normalizeAdministrativeName(right);
+
+    setNeighborhood((current) => current && previous.neighborhood && equal(current, previous.neighborhood) ? "" : current);
+    setNeighborhoodId("");
+    setBlock((current) => current && previous.block && current === previous.block ? "" : current);
+    setParcelNo((current) => current && previous.parcelNo && current === previous.parcelNo ? "" : current);
+    setListingIdentitySource(null);
+    setParcelLookup("idle");
+    setOfficialZoningResult(null);
+    setOfficialZoningNotice("");
+    officialZoningAttempt.current = "";
+    candidatePrefillApplied.current = "";
+    listingZoningApplied.current = "";
+
+    setZoning((current) => {
+      if (current.sourceType !== "İlan beyanı" || current.sourceUrl !== previous.sourceUrl) return current;
+      setRequiredSetback(-1);
+      setMaxCoverage(-1);
+      setMaxFar(-1);
+      setMaxHeight(-1);
+      return { ...DEFAULT_ZONING };
+    });
+    setFileNotice("Yeni ilan adayı seçildi. Önceki ilandan otomatik taşınan mahalle/köy, ada, parsel ve ilan-imar beyanları temizlendi; yeni adayın detayları okunuyor.");
+  }, [parcelHydrated, selectedCandidateId, listingIdentitySource, parcel.length, officialBoundaryEvidence]);
 
   useEffect(() => {
     if (!parcelHydrated || !listingIdentity) return;
