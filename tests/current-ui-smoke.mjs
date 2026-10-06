@@ -400,21 +400,26 @@ test("TAKS plan correction preserves saved geometry before writes and uses the f
 });
 
 
-test("project centre next action follows the first incomplete guided journey step", () => {
+test("project centre separates the actual working stage from earlier incomplete gates", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
   const hub = fs.readFileSync(new URL("../app/components/DigitalProjectHub.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/dijital-proje-merkezi/sade-proje-merkezi.css", import.meta.url), "utf8");
 
   assert.match(kernel, /export function deriveProjectJourneyState/);
   assert.match(kernel, /firstIncompleteIndex/);
+  assert.match(kernel, /furthestWorkingIndex/);
+  assert.match(kernel, /workingIndex/);
+  assert.match(kernel, /hasBacklog: firstIncompleteIndex >= 0 && firstIncompleteIndex < workingIndex/);
   assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
-  assert.match(center, /deriveProjectJourneyState\(thread\)/);
-  assert.match(center, /journeyNextAction\.label/);
-  assert.match(center, /journeyNextAction\.route/);
+  assert.match(center, /workingJourneyIndex = journeyState\.workingIndex/);
+  assert.match(center, /journeyState\.hasBacklog/);
+  assert.match(center, /ÖNCELİKLİ EKSİK/);
+  assert.match(center, /Eksik kontrol var/);
+  assert.match(center, /Çalışılan ana aşama/);
   assert.match(hub, /deriveProjectJourneyState\(thread\)/);
-  assert.match(hub, /journeyNextAction\.label/);
-  assert.match(hub, /journeyNextAction\.route/);
-  assert.match(center, /currentJourneyStep\.short === "Arazi"/);
+  assert.match(css, /Project journey: distinguish current work from earlier unresolved gates/);
+  assert.match(css, /arx-center-journey-step\.is-backlog/);
 });
 
 test("project centre clearly distinguishes seven journey stages from technical modules", () => {
