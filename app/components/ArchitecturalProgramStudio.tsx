@@ -84,6 +84,13 @@ const templates: Record<ProgramUse, { label: string; netRatio: number; liveLoad:
 
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min)); }
 function objectValue(value: unknown) { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
+function programUseFromValue(value: unknown): ProgramUse {
+  const label = String(value ?? "").toLocaleLowerCase("tr-TR");
+  if (label.includes("konut") || label.includes("villa") || label.includes("yaşam")) return "residential";
+  if (label.includes("ofis") || label.includes("ticari")) return "office";
+  if (label.includes("eğitim") || label.includes("sosyal")) return "education";
+  return "industrial";
+}
 
 export function ArchitecturalProgramStudio({ simple = false, issueFocus = false }: { simple?: boolean; issueFocus?: "kaks" | "plan-sync" | false } = {}) {
   const { patchModule, thread, project, hydrated } = useProjectKernel();
@@ -122,15 +129,8 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     const input = saved?.input;
     const geo = objectValue(project.modules["geo-parcel"]);
     const forceGeoDraft = new URLSearchParams(window.location.search).get("from") === "geo-draft";
-    const resolveProgramUse = (value: unknown): ProgramUse => {
-      const label = String(value ?? "").toLocaleLowerCase("tr-TR");
-      if (label.includes("konut") || label.includes("villa") || label.includes("yaşam")) return "residential";
-      if (label.includes("ofis") || label.includes("ticari")) return "office";
-      if (label.includes("eğitim") || label.includes("sosyal")) return "education";
-      return "industrial";
-    };
     const applyGeoDraft = () => {
-      const nextUse = resolveProgramUse(geo.usage || thread.canonical.architecture.use);
+      const nextUse = programUseFromValue(geo.usage || thread.canonical.architecture.use);
       const nextFloors = typeof geo.floors === "number" && geo.floors > 0
         ? clamp(geo.floors, 1, 30)
         : thread.canonical.architecture.floors > 0 ? clamp(thread.canonical.architecture.floors, 1, 30) : 1;
@@ -185,7 +185,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       if (saved.relationships?.length && (confirmed || !savedTemplateUse || savedTemplateUse === savedUse)) setRelationships(saved.relationships);
       else setRelationships(templates[savedUse].relationships.map((relationship) => ({ ...relationship })));
       if (!confirmed && savedTemplateUse && savedTemplateUse !== savedUse) {
-        const geoUse = resolveProgramUse(geo.usage || input.use);
+        const geoUse = programUseFromValue(geo.usage || input.use);
         const geoFloors = typeof geo.floors === "number" && geo.floors > 0 ? clamp(geo.floors, 1, 30) : null;
         const geoWidth = typeof geo.buildingWidth === "number" ? geo.buildingWidth : 0;
         const geoDepth = typeof geo.buildingDepth === "number" ? geo.buildingDepth : 0;
@@ -224,6 +224,46 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules, thread.canonical]);
+
+  const geoDraft = objectValue(project.modules["geo-parcel"]);
+  const geoDraftUse = programUseFromValue(geoDraft.usage || thread.canonical.architecture.use);
+  const geoDraftFloors = typeof geoDraft.floors === "number" && geoDraft.floors > 0 ? clamp(geoDraft.floors, 1, 30) : 0;
+  const geoDraftWidth = typeof geoDraft.buildingWidth === "number" ? geoDraft.buildingWidth : 0;
+  const geoDraftDepth = typeof geoDraft.buildingDepth === "number" ? geoDraft.buildingDepth : 0;
+  const geoDraftGross = geoDraftFloors > 0 && geoDraftWidth > 0 && geoDraftDepth > 0
+    ? Math.round(geoDraftWidth * geoDraftDepth * geoDraftFloors)
+    : 0;
+  const geoDraftFloorHeight = typeof geoDraft.floorHeight === "number" && geoDraft.floorHeight > 0
+    ? clamp(geoDraft.floorHeight, 2.6, 10)
+    : 0;
+  const geoDraftAvailable = geoDraftGross > 0 && geoDraftFloors > 0;
+  const geoDraftMismatch = geoDraftAvailable && (
+    use !== geoDraftUse
+    || Math.abs(targetGross - geoDraftGross) > 1
+    || floors !== geoDraftFloors
+    || (geoDraftFloorHeight > 0 && Math.abs(floorHeight - geoDraftFloorHeight) > .01)
+  );
+
+  const syncFromGeoDraft = () => {
+    const useChanged = use !== geoDraftUse;
+    setUse(geoDraftUse);
+    setTargetGross(Math.max(100, geoDraftGross));
+    setFloors(geoDraftFloors);
+    if (geoDraftFloorHeight > 0) setFloorHeight(geoDraftFloorHeight);
+    if (useChanged) {
+      setSpaces(templates[geoDraftUse].spaces.map((space) => ({ ...space })));
+      setRelationships(templates[geoDraftUse].relationships.map((relationship) => ({ ...relationship })));
+      setNetRatio(templates[geoDraftUse].netRatio);
+    }
+    setProgramRequirementsConfirmed(false);
+    setSiteContext(architectureSiteContext(geoDraft, {
+      massingModel: geoDraft.massingModel,
+      selectedMassingId: typeof geoDraft.selectedMassingId === "string" ? geoDraft.selectedMassingId : undefined,
+      parcelReference: typeof geoDraft.reference === "string" ? geoDraft.reference : undefined,
+    }) as SiteContext);
+    setGrossDraft(null);
+    setStatus(`Arazi taslağı yeniden aktarıldı · ${geoDraftGross.toLocaleString("tr-TR")} m² · ${geoDraftFloors} kat`);
+  };
 
   const result = useMemo(() => {
     const netArea = spaces.reduce((sum, space) => sum + space.count * space.unitArea, 0);
@@ -287,18 +327,22 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     setStatus(`${templates[use].label} program şablonu yüklendi`);
   };
   const importThread = () => {
+    if (geoDraftAvailable) {
+      syncFromGeoDraft();
+      return;
+    }
     const source = thread.canonical;
     if (source.site.proposedGross > 0) setTargetGross(Math.round(source.site.proposedGross));
     if (source.architecture.floors > 0) setFloors(clamp(source.architecture.floors, 1, 30));
     if (source.architecture.floorHeight > 0) setFloorHeight(clamp(source.architecture.floorHeight, 2.6, 10));
-    const sourceUse = source.architecture.use.toLocaleLowerCase("tr-TR");
-    if (sourceUse.includes("konut")) setUse("residential"); else if (sourceUse.includes("ofis") || sourceUse.includes("ticari")) setUse("office"); else if (sourceUse.includes("eğitim") || sourceUse.includes("sosyal")) setUse("education"); else if (sourceUse) setUse("industrial");
-    const geo = objectValue(project.modules["geo-parcel"]);
-    const architecture = objectValue(project.modules["architectural-program"]);
-    const input = objectValue(architecture.input);
-    const upstreamContext = objectValue(input.siteContext);
-    setSiteContext(architectureSiteContext(geo, { ...upstreamContext, massingModel: geo.massingModel ?? upstreamContext.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : typeof upstreamContext.selectedMassingId === "string" ? upstreamContext.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : typeof upstreamContext.parcelReference === "string" ? upstreamContext.parcelReference : undefined }) as SiteContext);
-    setStatus(geo.massingModel ? "V112 yapı zarfı, seçili kütle, kat ve kullanım verisi aktarıldı" : "Parsel ve proje zincirindeki alan, kat, kullanım verisi aktarıldı");
+    const nextUse = programUseFromValue(source.architecture.use);
+    if (nextUse !== use) {
+      setUse(nextUse);
+      setSpaces(templates[nextUse].spaces.map((space) => ({ ...space })));
+      setRelationships(templates[nextUse].relationships.map((relationship) => ({ ...relationship })));
+      setNetRatio(templates[nextUse].netRatio);
+    }
+    setStatus("Proje zincirindeki mevcut alan, kat ve kullanım verisi aktarıldı");
   };
   const updateSpace = (id: string, patch: Partial<Space>) => {
     setProgramRequirementsConfirmed(false);
@@ -584,6 +628,17 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       <span>{siteContext.massingModel ? "Kütle bağlı" : "Kütle bekleniyor"}</span>
     </div>
   </div>
+
+  {geoDraftMismatch && !programRequirementsConfirmed ? <section className="arx-program-requirement-review" data-state="review" role="alert">
+    <div>
+      <span>ARAZİ TASLAĞI GÜNCELLENDİ</span>
+      <b>Mimari Program ile güncel Yapı Yerleşimi aynı değil.</b>
+      <p>Mimari: {targetGross.toLocaleString("tr-TR")} m² · {floors} kat{floorHeight > 0 ? ` · ${floorHeight.toFixed(1)} m` : ""} / Arazi: {geoDraftGross.toLocaleString("tr-TR")} m² · {geoDraftFloors} kat{geoDraftFloorHeight > 0 ? ` · ${geoDraftFloorHeight.toFixed(1)} m` : ""}. Plan & Aks'a geçmeden önce aynı kaynağa bağlayın.</p>
+    </div>
+    <div className="arx-program-requirement-actions">
+      <button type="button" className="primary" onClick={syncFromGeoDraft}>Arazi taslağını yeniden aktar</button>
+    </div>
+  </section> : null}
 
   <div className="arx-architect-stage-strip" aria-label="Mimari çalışma akışı">
     <div className="done"><i>✓</i><span><b>Proje verisi</b><small>Devralındı</small></span></div>
