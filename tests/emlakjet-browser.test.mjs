@@ -49,6 +49,16 @@ test('parcel identity comes from explicit listing fields and matched breadcrumb,
   assert.deepEqual(readLandResearch({ schema:'ARKEM-LAND-RESEARCH/1.0', criteria, shortlist:[candidate], selectedId:candidate.id }).shortlist[0].parcelIdentity, identity);
   assert.equal(normalizeLandParcelIdentity({ ...identity, sourceUrl: 'https://other.test/' }, card.url), null);
 });
+test('parcel identity accepts current Emlakjet breadcrumb labels while URL scope remains authoritative', () => {
+  const currentLabels={...detailRaw,breadcrumbs:[
+    {text:'Kastamonu Satılık Konut İmarlı',url:'https://www.emlakjet.com/satilik-konut-imarli-arsa/kastamonu'},
+    {text:'Merkez Satılık Konut İmarlı',url:'https://www.emlakjet.com/satilik-konut-imarli-arsa/kastamonu-merkez'},
+    {text:'Kayı Köyü Satılık Konut İmarlı',url:'https://www.emlakjet.com/satilik-konut-imarli-arsa/kastamonu-merkez-kayi-koyu'},
+  ]};
+  const identity=parseEmlakjetParcelDetail(currentLabels,detailInput,detailAt);
+  assert.equal(identity.neighborhood,'Kayı Köyü');assert.equal(identity.block,'143');assert.equal(identity.parcelNo,'11');
+  assert.throws(()=>parseEmlakjetParcelDetail({...currentLabels,breadcrumbs:currentLabels.breadcrumbs.map((row,i)=>i===1?{...row,url:row.url.replace('kastamonu-merkez','kastamonu-arac')}:row)},detailInput,detailAt),e=>e.code==='layout-changed');
+});
 test('absent or ambiguous parcel fields stay missing, wrong listing or administrative scope is rejected', () => {
   assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: detailRaw.rows.filter(r => r.label !== 'Ada') }, detailInput, detailAt).block, '');
   assert.equal(parseEmlakjetParcelDetail({ ...detailRaw, rows: [...detailRaw.rows, {label:'Parsel',value:'12'}] }, detailInput, detailAt).parcelNo, '');
