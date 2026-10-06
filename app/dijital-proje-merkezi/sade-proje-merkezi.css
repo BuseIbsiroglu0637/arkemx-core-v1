@@ -1839,3 +1839,48 @@ html[data-theme="dark"] .arx-center-step-card.is-backlog {
 html[data-theme="dark"] .arx-center-step-card.is-backlog > small {
   color:#d9ad67;
 }
+
+
+.arx-center-journey-step.is-provisional > i {
+  border-color:#9db7c0;
+  background:#f0f6f8;
+  color:#476b77;
+}
+.arx-center-journey-step.is-provisional:not(:last-child)::after {
+  background:#b9cbd1;
+}
+.arx-center-journey-step.is-provisional b {
+  color:#45636f;
+}
+.arx-center-journey-step.is-provisional small {
+  color:#6d8791;
+  font-weight:750;
+}
+.arx-center-step-card.is-provisional {
+  border-color:#cfdde1;
+  background:#f8fbfc;
+}
+.arx-center-step-card.is-provisional > small {
+  color:#5f7b86;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-provisional > i {
+  border-color:#35505b;
+  background:#0b171c;
+  color:#9bb5bf;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-provisional:not(:last-child)::after {
+  background:#31464e;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-provisional b {
+  color:#b7c8cf;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-provisional small {
+  color:#91a8b1;
+}
+html[data-theme="dark"] .arx-center-step-card.is-provisional {
+  border-color:#31454d;
+  background:#091115;
+}
+html[data-theme="dark"] .arx-center-step-card.is-provisional > small {
+  color:#91a8b1;
+}
