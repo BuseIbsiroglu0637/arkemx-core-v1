@@ -8,7 +8,7 @@ import {
   MoreHorizontal, ShieldAlert, Trash2, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
-import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_JOURNEY, deriveProjectJourneyState, projectJourneyIndexForModule, useProjectKernel } from "./ProjectKernel";
 import { PROJECT_MODULES } from "../lib/project-graph";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
@@ -53,7 +53,14 @@ export function SimpleProjectCenter() {
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
-  const workingJourneyIndex = journeyState.workingIndex;
+  const latestExplicitJourneyEvent = [...project.events].reverse().find((event) =>
+    (event.action === "create" || event.action === "update")
+    && projectJourneyIndexForModule(event.module) !== null
+  );
+  const explicitJourneyIndex = latestExplicitJourneyEvent
+    ? projectJourneyIndexForModule(latestExplicitJourneyEvent.module)
+    : null;
+  const workingJourneyIndex = explicitJourneyIndex ?? journeyState.workingIndex;
   const currentJourneyStep = PROJECT_JOURNEY[workingJourneyIndex];
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
