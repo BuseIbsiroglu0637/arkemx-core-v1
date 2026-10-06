@@ -502,6 +502,13 @@ export function ProjectStartStudio({
         agricultural: "industrial",
         mixed: "commercial",
       };
+      const geoUsageLabels: Record<ProjectIntake["usage"], string> = {
+        residential: "Konut / Villa",
+        industrial: "Sanayi / Depo",
+        commercial: "Ticari Yapı",
+        agricultural: "Tarımsal Yapı",
+        mixed: "Sosyal Tesis",
+      };
 
       setIdentity({ name: intake.name.trim() || project.name });
       patchModule("decision-assistant", {
@@ -521,6 +528,7 @@ export function ProjectStartStudio({
         district,
         parcelStatus: intake.parcelStatus,
         declaredDocuments: intake.documents,
+        usage: geoUsageLabels[intake.usage],
         floors: intake.floors,
         floorHeight: intake.floorHeight,
         status: intake.parcelStatus === "verified"
