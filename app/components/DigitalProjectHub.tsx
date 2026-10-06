@@ -6,7 +6,7 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 import { downloadTextFile } from "../lib/engineering";
 import { createDeliveryReadiness, createWorkingDeliveryManifest } from "../lib/delivery-readiness";
 import { ProjectCoreRegistry } from "./ProjectCoreRegistry";
-import { deriveProjectJourneyState, PROJECT_JOURNEY, projectJourneyIndexForModule, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { deriveProjectJourneyState, PROJECT_JOURNEY, ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type View = "control" | "journey" | "graph" | "federated" | "rules" | "history";
 const stages = ["Tanım", "Arsa", "Tasarım", "Koordinasyon", "Teslim"] as const;
@@ -54,14 +54,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
   ];
   const journeyState = deriveProjectJourneyState(thread);
   const completedJourney = journeyState.completed;
-  const latestExplicitJourneyEvent = [...project.events].reverse().find((event) =>
-    (event.action === "create" || event.action === "update")
-    && projectJourneyIndexForModule(event.module) !== null
-  );
-  const explicitJourneyIndex = latestExplicitJourneyEvent
-    ? projectJourneyIndexForModule(latestExplicitJourneyEvent.module)
-    : null;
-  const currentJourneyIndex = explicitJourneyIndex ?? journeyState.workingIndex;
+  const currentJourneyIndex = journeyState.workingIndex;
   const systemDecisionReady = journeyState.systemDecisionReady;
   const journeyNextAction = {
     label: journeyState.nextStep.label,
