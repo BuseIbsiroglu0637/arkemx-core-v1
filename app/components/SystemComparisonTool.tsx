@@ -54,6 +54,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   const [shortlist, setShortlist] = useState<SystemId[]>(["steel", "precast", "hybrid"]);
   const [view, setView] = useState<"ranking" | "matrix" | "sensitivity">("ranking");
   const [sourceSnapshot, setSourceSnapshot] = useState<McdaSourceSnapshot | null>(null);
+  const [manualOverrideIntent, setManualOverrideIntent] = useState(false);
 
   const currentProjectSource = useMemo(() => buildMcdaProjectSnapshot({
     use: thread.canonical.architecture.use,
@@ -77,6 +78,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     transferReady
     && currentProjectSource
     && sourceSnapshotCurrent
+    && manualOverrideIntent
     && !inputMatchesProject
   );
 
@@ -110,11 +112,12 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       ranking,
       shortlist,
       sourceSnapshot,
+      manualOverrideIntent,
       sourceKey: mcdaSourceKey(sourceSnapshot),
       sourceStatus: sourceStale ? "stale" : manualOverride ? "manual-override" : "current",
       status: "mcda-pre-screen",
     });
-  }, [area, fireRating, floors, hydrated, manualOverride, patchModule, ranking, repetition, shortlist, sourceSnapshot, sourceStale, span, transferReady, transport, usage, weights]);
+  }, [area, fireRating, floors, hydrated, manualOverride, manualOverrideIntent, patchModule, ranking, repetition, shortlist, sourceSnapshot, sourceStale, span, transferReady, transport, usage, weights]);
 
   const updateWeight = (id: CriterionId, value: number) => setWeights((current) => ({ ...current, [id]: value }));
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -145,6 +148,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     setSpan(Number(currentProjectSource.span.toFixed(2)));
     setUsage(currentProjectSource.usage);
     setSourceSnapshot(currentProjectSource);
+    setManualOverrideIntent(false);
   }, [currentProjectSource, fireRating, patchModule, repetition, transport]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
@@ -156,6 +160,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       weights?: Record<CriterionId, number>;
       shortlist?: SystemId[];
       sourceSnapshot?: McdaSourceSnapshot;
+      manualOverrideIntent?: boolean;
     } | undefined;
     if (saved?.input) {
       const input = saved.input;
@@ -169,23 +174,30 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       if (saved.weights) setWeights(saved.weights);
       if (saved.shortlist) setShortlist(saved.shortlist);
       if (currentProjectSource) {
-        if (saved.sourceSnapshot && mcdaSourceMatches(saved.sourceSnapshot, currentProjectSource)) {
-          // The source is still current. Preserve an intentional manual MCDA scenario.
-          setSourceSnapshot(saved.sourceSnapshot);
-        } else if (!saved.sourceSnapshot && mcdaInputMatchesSource(input, currentProjectSource)) {
+        const explicitManualScenario = saved.manualOverrideIntent === true
+          && saved.sourceSnapshot
+          && mcdaSourceMatches(saved.sourceSnapshot, currentProjectSource)
+          && !mcdaInputMatchesSource(input, currentProjectSource);
+        if (explicitManualScenario) {
+          setSourceSnapshot(saved.sourceSnapshot ?? currentProjectSource);
+          setManualOverrideIntent(true);
+        } else if (mcdaInputMatchesSource(input, currentProjectSource)) {
           setSourceSnapshot(currentProjectSource);
+          setManualOverrideIntent(false);
         } else {
-          // The project advanced after this MCDA record was saved. Start the
-          // workspace from the live project geometry instead of showing stale
-          // area/span values; weights and the user's shortlist remain intact.
+          // Legacy/stale MCDA records may contain old inputs with a current
+          // source snapshot. Unless the user explicitly created a manual
+          // scenario, open from the live project geometry.
           setUsage(currentProjectSource.usage);
           setFloors(currentProjectSource.floors);
           setArea(Number(currentProjectSource.area.toFixed(1)));
           setSpan(Number(currentProjectSource.span.toFixed(2)));
           setSourceSnapshot(currentProjectSource);
+          setManualOverrideIntent(false);
         }
       } else if (saved.sourceSnapshot) {
         setSourceSnapshot(saved.sourceSnapshot);
+        setManualOverrideIntent(saved.manualOverrideIntent === true);
       }
     } else {
       importProjectGeometry();
@@ -243,7 +255,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
           </header>
           <div className="arx-system-fields">
             <label>Kullanım
-              <select value={usage} onChange={(event) => setUsage(event.target.value)}>
+              <select value={usage} onChange={(event) => { setUsage(event.target.value); setManualOverrideIntent(true); }}>
                 <option value="industrial">Sanayi / üretim</option>
                 <option value="storage">Depo / lojistik</option>
                 <option value="residential">Konut</option>
@@ -251,13 +263,13 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
               </select>
             </label>
             <label>Kat adedi
-              <input type="number" min="1" max="50" value={floors} onChange={(event) => setFloors(Number(event.target.value))} />
+              <input type="number" min="1" max="50" value={floors} onChange={(event) => { setFloors(Number(event.target.value)); setManualOverrideIntent(true); }} />
             </label>
             <label>En büyük açıklık (m)
-              <input type="number" min="3" max="60" step=".01" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
+              <input type="number" min="3" max="60" step=".01" value={span} onChange={(event) => { setSpan(Number(event.target.value)); setManualOverrideIntent(true); }} />
             </label>
             <label>Brüt alan (m²)
-              <input type="number" min="50" max="100000" step="1" value={area} onChange={(event) => setArea(Number(event.target.value))} />
+              <input type="number" min="50" max="100000" step="1" value={area} onChange={(event) => { setArea(Number(event.target.value)); setManualOverrideIntent(true); }} />
             </label>
           </div>
           <details className="arx-system-detail">
