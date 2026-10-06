@@ -424,6 +424,10 @@ test("project centre separates the actual working stage from earlier incomplete 
   assert.match(center, /explicitJourneyIndex \?\? journeyState\.workingIndex/);
   assert.match(center, /journeyState\.hasBacklog/);
   assert.match(center, /journeyState\.achieved\[index\]/);
+  assert.match(center, /workedJourneyIndices/);
+  assert.match(center, /architecturalProgram\?\.input\?\.programRequirementsConfirmed/);
+  assert.match(center, /planEditor\?\.elements\?\.length/);
+  assert.match(center, /workedJourneyIndices\.add\(2\)/);
   assert.match(center, /Çalışıldı · üst kontrol bekliyor/);
   assert.match(center, /ÖNCELİKLİ EKSİK/);
   assert.match(center, /Eksik kontrol var/);
