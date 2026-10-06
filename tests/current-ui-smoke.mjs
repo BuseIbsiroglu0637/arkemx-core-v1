@@ -646,6 +646,18 @@ test("structural numeric fields can be cleared before committing a replacement v
   assert.doesNotMatch(structural, /Number\(event\.target\.value\) \|\| min/);
 });
 
+test("structural predesign preserves canonical residential usage and plan completion stays provisional without zoning", () => {
+  const structural = fs.readFileSync(new URL("../app/components/StructuralDesigner.tsx", import.meta.url), "utf8");
+  const plan = fs.readFileSync(new URL("../app/components/AdvancedPlanEditor.tsx", import.meta.url), "utf8");
+  assert.match(structural, /function resolveStructuralUsage/);
+  assert.match(structural, /label === "residential"/);
+  assert.match(structural, /setUsage\(resolveStructuralUsage\(projectUse\)\)/);
+  assert.match(plan, /const zoningFormReady = Boolean/);
+  assert.match(plan, /const zoningVerified = zoningFormReady/);
+  assert.match(plan, /Taslak plan ve aks çalışması tamamlandı/);
+  assert.match(plan, /imar koşulları girilmeden nihai uygunluk sayılmaz/);
+});
+
 test("structural predesign dark theme covers kernel, result panels and MCDA handoff", () => {
   const css = fs.readFileSync(new URL("../app/sade-muhendislik-araclari.css", import.meta.url), "utf8");
   assert.match(css, /Prototype final — structural predesign handoff and dark-theme continuity/);
