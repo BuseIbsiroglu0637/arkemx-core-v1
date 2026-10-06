@@ -129,19 +129,42 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     const input = saved?.input;
     const geo = objectValue(project.modules["geo-parcel"]);
     const forceGeoDraft = new URLSearchParams(window.location.search).get("from") === "geo-draft";
+    let explicitTransfer: Record<string, unknown> = {};
+    if (forceGeoDraft) {
+      try {
+        const key = `arkemx-architecture-draft-transfer:${project.id}`;
+        const raw = window.sessionStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) as Record<string, unknown> : {};
+        if (parsed.schema === "ARKEM-GEO-ARCH-TRANSFER/1.0" && parsed.projectId === project.id) {
+          explicitTransfer = parsed;
+          window.sessionStorage.removeItem(key);
+        }
+      } catch {
+        explicitTransfer = {};
+      }
+    }
+    const transferSource = Object.keys(explicitTransfer).length ? explicitTransfer : geo;
     const applyGeoDraft = () => {
-      const nextUse = programUseFromValue(geo.usage || thread.canonical.architecture.use);
-      const nextFloors = typeof geo.floors === "number" && geo.floors > 0
-        ? clamp(geo.floors, 1, 30)
-        : thread.canonical.architecture.floors > 0 ? clamp(thread.canonical.architecture.floors, 1, 30) : 1;
-      const width = typeof geo.buildingWidth === "number" ? geo.buildingWidth : 0;
-      const depth = typeof geo.buildingDepth === "number" ? geo.buildingDepth : 0;
+      const nextUse = programUseFromValue(transferSource.use || geo.usage || thread.canonical.architecture.use);
+      const nextFloors = typeof transferSource.floors === "number" && transferSource.floors > 0
+        ? clamp(transferSource.floors, 1, 30)
+        : typeof geo.floors === "number" && geo.floors > 0
+          ? clamp(geo.floors, 1, 30)
+          : thread.canonical.architecture.floors > 0 ? clamp(thread.canonical.architecture.floors, 1, 30) : 1;
+      const width = typeof transferSource.width === "number"
+        ? transferSource.width
+        : typeof geo.buildingWidth === "number" ? geo.buildingWidth : 0;
+      const depth = typeof transferSource.depth === "number"
+        ? transferSource.depth
+        : typeof geo.buildingDepth === "number" ? geo.buildingDepth : 0;
       const nextGross = width > 0 && depth > 0
         ? Math.round(width * depth * nextFloors)
         : thread.canonical.site.proposedGross > 0 ? Math.round(thread.canonical.site.proposedGross) : 100;
-      const nextFloorHeight = typeof geo.floorHeight === "number" && geo.floorHeight > 0
-        ? clamp(geo.floorHeight, 2.6, 10)
-        : thread.canonical.architecture.floorHeight > 0 ? clamp(thread.canonical.architecture.floorHeight, 2.6, 10) : 3;
+      const nextFloorHeight = typeof transferSource.floorHeight === "number" && transferSource.floorHeight > 0
+        ? clamp(transferSource.floorHeight, 2.6, 10)
+        : typeof geo.floorHeight === "number" && geo.floorHeight > 0
+          ? clamp(geo.floorHeight, 2.6, 10)
+          : thread.canonical.architecture.floorHeight > 0 ? clamp(thread.canonical.architecture.floorHeight, 2.6, 10) : 3;
       setUse(nextUse);
       setSpaces(templates[nextUse].spaces.map((space) => ({ ...space })));
       setRelationships(templates[nextUse].relationships.map((relationship) => ({ ...relationship })));
@@ -153,9 +176,13 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       setSiteContext(architectureSiteContext(geo, {
         massingModel: geo.massingModel,
         selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined,
-        parcelReference: typeof geo.reference === "string" ? geo.reference : undefined,
+        parcelReference: typeof transferSource.parcelReference === "string"
+          ? transferSource.parcelReference
+          : typeof geo.reference === "string" ? geo.reference : undefined,
       }) as SiteContext);
-      setStatus("Güncel arazi taslağından kullanım, alan, kat ve mahal şablonu aktarıldı");
+      setStatus(Object.keys(explicitTransfer).length
+        ? "Yapı Yerleşimi ekranındaki güncel taslak doğrudan aktarıldı"
+        : "Güncel arazi taslağından kullanım, alan, kat ve mahal şablonu aktarıldı");
       setTransferReady(true);
     };
     if (forceGeoDraft) {
