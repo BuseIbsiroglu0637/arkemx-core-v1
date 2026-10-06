@@ -31,6 +31,15 @@ const usageLabels: Record<StructuralConceptInput["usage"], string> = {
   assembly: "Toplanma / sosyal",
 };
 
+function resolveStructuralUsage(value: unknown): StructuralConceptInput["usage"] {
+  const label = String(value ?? "").trim().toLocaleLowerCase("tr-TR");
+  if (label === "residential" || label.includes("konut") || label.includes("villa") || label.includes("yaşam")) return "residential";
+  if (label === "office" || label === "commercial" || label.includes("ofis") || label.includes("ticari")) return "office";
+  if (label === "storage" || label.includes("depo") || label.includes("lojistik")) return "storage";
+  if (label === "assembly" || label.includes("toplanma") || label.includes("sosyal") || label.includes("eğitim")) return "assembly";
+  return "industrial";
+}
+
 function addMember(group: THREE.Group, size: [number, number, number], position: [number, number, number], material: THREE.Material) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
   mesh.position.set(...position);
@@ -349,8 +358,8 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     const recommended = source.structure.recommendedSystem.toLocaleLowerCase("tr-TR");
     if (shortlistItems[0]) setSystem(shortlistItems[0].id);
     else if (recommended.includes("hafif")) setSystem("light"); else if (recommended.includes("prefabrik")) setSystem("precast"); else if (recommended === "betonarme" || recommended.includes("concrete")) setSystem("concrete"); else if (recommended.includes("karma")) setSystem("hybrid"); else if (recommended.includes("çelik")) setSystem("steel");
-    const projectUse = (scheme?.program?.use || source.architecture.use).toLocaleLowerCase("tr-TR");
-    if (projectUse.includes("konut")) setUsage("residential"); else if (projectUse.includes("ofis")) setUsage("office"); else if (projectUse.includes("depo")) setUsage("storage"); else if (projectUse) setUsage("industrial");
+    const projectUse = scheme?.program?.use || source.architecture.use;
+    if (projectUse) setUsage(resolveStructuralUsage(projectUse));
     setSyncStatus(shortlistItems.length
       ? "Plan geometrisi ve MCDA kısa listesi aktarıldı · " + shortlistItems.length + " sistem"
       : plate ? "V113 mekânsal şeması, çekirdek ve plaka geometrisi aktarıldı"
