@@ -414,6 +414,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setActiveStage(stage);
     if (!simple) return;
     if (stage === "design") setDesignPanel("summary");
+    // The large viewport is shared by all steps. Do not leave a stale
+    // coordinates/3D view visible when the user moves to parcel, zoning or
+    // placement work; those steps need the parcel map as their visual context.
+    setViewMode(stage === "terrain" ? "terrain" : "map");
     setShowSources(false);
     setShowLayers(false);
     setShowResults(false);
