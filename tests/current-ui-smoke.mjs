@@ -601,6 +601,38 @@ test("MCDA manual scenario state requires an explicit user edit and migrates leg
   assert.match(tool, /setArea\(Number\(event\.target\.value\)\); setManualOverrideIntent\(true\)/);
 });
 
+test("MCDA shortlist is explicitly handed to structural predesign and opens on a shortlisted system", () => {
+  const mcda = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+  const structural = fs.readFileSync(new URL("../app/components/StructuralDesigner.tsx", import.meta.url), "utf8");
+  assert.match(mcda, /ARKEM-MCDA-STRUCTURAL-TRANSFER\/1\.0/);
+  assert.match(mcda, /prepareStructuralTransfer/);
+  assert.match(mcda, /onClick=\{prepareStructuralTransfer\}/);
+  assert.match(structural, /arkemx-structural-transfer:/);
+  assert.match(structural, /MCDA kısa listesi ve güncel plan geometrisi aktarıldı/);
+  assert.match(structural, /setSystem\(explicitShortlist\[0\]\.id\)/);
+  assert.match(structural, /engineering-mcda-handoff/);
+  assert.match(structural, /MCDA KISA LİSTESİ/);
+  assert.match(structural, /shortlisted/);
+});
+
+test("structural numeric fields can be cleared before committing a replacement value", () => {
+  const structural = fs.readFileSync(new URL("../app/components/StructuralDesigner.tsx", import.meta.url), "utf8");
+  assert.match(structural, /const \[draft, setDraft\] = useState\(String\(value\)\)/);
+  assert.match(structural, /onChange=\{\(event\) => setDraft\(event\.target\.value\)\}/);
+  assert.match(structural, /onBlur=\{commit\}/);
+  assert.match(structural, /if \(!draft\.trim\(\)\)/);
+  assert.doesNotMatch(structural, /Number\(event\.target\.value\) \|\| min/);
+});
+
+test("structural predesign dark theme covers kernel, result panels and MCDA handoff", () => {
+  const css = fs.readFileSync(new URL("../app/sade-muhendislik-araclari.css", import.meta.url), "utf8");
+  assert.match(css, /Prototype final — structural predesign handoff and dark-theme continuity/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-structural-page \.engineering-workbench/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-structural-page \.project-kernel-compact/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-structural-page \.engineering-panel/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-structural-page \.engineering-mcda-handoff/);
+});
+
 test("local build renders the focused BIM coordination workspace", async () => {
   const response = await render("/bim-koordinasyon");
   assert.equal(response.status, 200);
