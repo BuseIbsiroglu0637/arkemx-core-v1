@@ -121,6 +121,20 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
 
   const updateWeight = (id: CriterionId, value: number) => setWeights((current) => ({ ...current, [id]: value }));
   const toggleShortlist = (id: SystemId) => setShortlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const prepareStructuralTransfer = () => {
+    try {
+      const selected = ranking.filter((item) => shortlist.includes(item.id));
+      window.sessionStorage.setItem(`arkemx-structural-transfer:${project.id}`, JSON.stringify({
+        schema: "ARKEM-MCDA-STRUCTURAL-TRANSFER/1.0",
+        projectId: project.id,
+        transferredAt: new Date().toISOString(),
+        shortlist: selected.map((item) => ({ id: item.id, name: item.name, score: item.score })),
+        sourceKey: mcdaSourceKey(currentProjectSource ?? sourceSnapshot),
+      }));
+    } catch {
+      // ProjectKernel stays as the fallback if sessionStorage is unavailable.
+    }
+  };
   const importProjectGeometry = useCallback(() => {
     if (!currentProjectSource) return;
 
@@ -361,7 +375,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
         </div>
         <div className="arx-system-next">
           <p>Kısa listedeki sistemlerle ön taşıyıcı tasarım aşamasına geçin.</p>
-          {shortlist.length ? <Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarıma geç →</Link> : <button type="button" disabled>Önce sistem seçin</button>}
+          {shortlist.length ? <Link href="/tasiyici-on-tasarim" onClick={prepareStructuralTransfer}>Taşıyıcı ön tasarıma geç →</Link> : <button type="button" disabled>Önce sistem seçin</button>}
         </div>
       </section>
       <p className="arx-system-note" role="note"><b>Karar sınırı:</b> Bu ekran sistem alternatiflerini erken aşamada karşılaştırır; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir.</p>
@@ -379,7 +393,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
         {view === "matrix" && <div className="mcda-matrix"><table><caption className="sr-only">Taşıyıcı sistem teknik puan matrisi</caption><thead><tr><th>Kriter / ağırlık</th>{(Object.keys(profiles) as SystemId[]).map((id) => <th key={id}>{profiles[id].name}</th>)}</tr></thead><tbody>{criteria.map((criterion) => <tr key={criterion.id}><th><b>{criterion.label}</b><small>Ağırlık {weights[criterion.id]}/5</small></th>{(Object.keys(profiles) as SystemId[]).map((id) => <td key={id}><i style={{ "--score": `${profiles[id].scores[criterion.id] * 20}%` } as React.CSSProperties}></i><b>{profiles[id].scores[criterion.id]}</b><small>/5</small></td>)}</tr>)}</tbody></table></div>}
         {view === "sensitivity" && <div className="mcda-sensitivity"><header><span>DUYARLILIK OKUMASI</span><h3>Karar hangi girdiye ne kadar bağlı?</h3><p>Belirsizlik bandı; zemin, kesin yükler, yerel fiyat/termin, üretici ve detay seviyesi bilinmediği için sonucu tek sayı gibi yorumlamayı engeller.</p></header><div className="sensitivity-chart">{ranking.map((item) => <article key={item.id}><b>{item.name}</b><div><i style={{ left: `${item.low}%`, width: `${item.high - item.low}%` }}></i><span style={{ left: `${item.score}%` }}></span></div><small>{item.score.toFixed(1)}</small></article>)}</div><section><span>KARARIN DEĞİŞEBİLECEĞİ DURUMLAR</span>{[["Zemin ve temel","Ağır sistemlerin maliyet / deprem etkisi yeniden sıralanabilir."],["Yerel tedarik","Termin ve üretim kapasitesi hız puanını değiştirebilir."],["Yangın senaryosu",`${fireRating} dakika hedefi kaplama, kesit ve maliyeti etkiler.`],["Mimari revizyon","Açıklık ve kat değişimi mevcut puanları geçersiz kılabilir."]].map(([title,copy]) => <p key={title}><b>{title}</b><span>{copy}</span></p>)}</section></div>}
       </main>
-      <aside className="mcda-shortlist-panel"><span>03 / KISA LİSTE</span><h3>{shortlist.length} sistem birlikte incelenecek</h3>{ranking.filter((item) => shortlist.includes(item.id)).map((item) => <article key={item.id}><div><b>{item.name}</b><strong>{item.score.toFixed(1)}</strong></div><p>{item.risks[0]}</p></article>)}<div className="mcda-next-data"><span>KARARI KESİNLEŞTİREN VERİ</span>{["Zemin etüdü ve temel varsayımı","Taşıyıcı yükler ve açıklık şeması","Yangın ve yapı fiziği hedefleri","Yerel keşif, termin ve lojistik","Üretici / uygulayıcı yeterliliği"].map((item) => <p key={item}>→ {item}</p>)}</div><Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarıma geç ↗</Link></aside>
+      <aside className="mcda-shortlist-panel"><span>03 / KISA LİSTE</span><h3>{shortlist.length} sistem birlikte incelenecek</h3>{ranking.filter((item) => shortlist.includes(item.id)).map((item) => <article key={item.id}><div><b>{item.name}</b><strong>{item.score.toFixed(1)}</strong></div><p>{item.risks[0]}</p></article>)}<div className="mcda-next-data"><span>KARARI KESİNLEŞTİREN VERİ</span>{["Zemin etüdü ve temel varsayımı","Taşıyıcı yükler ve açıklık şeması","Yangın ve yapı fiziği hedefleri","Yerel keşif, termin ve lojistik","Üretici / uygulayıcı yeterliliği"].map((item) => <p key={item}>→ {item}</p>)}</div><Link href="/tasiyici-on-tasarim" onClick={prepareStructuralTransfer}>Taşıyıcı ön tasarıma geç ↗</Link></aside>
     </div>
     <footer className="mcda-foot"><b>Karar sınırı</b><p>MCDA sonucu, tanımlanan kriter ve ağırlıklara bağlı ön elemedir; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir. Kesin seçim, aynı performans şartnamesine göre hazırlanmış proje alternatifleri ve güncel piyasa verisiyle yapılır.</p></footer>
   </section>;
