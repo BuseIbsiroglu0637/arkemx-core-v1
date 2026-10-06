@@ -54,7 +54,7 @@ export function DigitalProjectHub({ simple = false }: { simple?: boolean } = {})
   ];
   const journeyState = deriveProjectJourneyState(thread);
   const completedJourney = journeyState.completed;
-  const currentJourneyIndex = journeyState.currentIndex;
+  const currentJourneyIndex = journeyState.workingIndex;
   const systemDecisionReady = journeyState.systemDecisionReady;
   const journeyNextAction = {
     label: journeyState.nextStep.label,
