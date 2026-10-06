@@ -93,6 +93,28 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     result?: { liveLoad?: number; grossDemand?: number };
     journeyComplete?: boolean;
   } | undefined;
+  const geoModule = project.modules["geo-parcel"] as {
+    zoning?: {
+      taks?: number;
+      kaks?: number;
+      hmax?: number;
+      frontSetback?: number;
+      sideSetback?: number;
+      rearSetback?: number;
+      planScale?: string;
+      buildingOrder?: string;
+      verification?: string;
+    };
+  } | undefined;
+  const zoningInput = geoModule?.zoning;
+  const zoningFormReady = Boolean(
+    zoningInput
+    && [zoningInput.taks, zoningInput.kaks, zoningInput.hmax, zoningInput.frontSetback, zoningInput.sideSetback, zoningInput.rearSetback]
+      .every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0)
+    && zoningInput.planScale
+    && zoningInput.buildingOrder
+  );
+  const zoningVerified = zoningFormReady && zoningInput?.verification === "certified-document";
   const upstreamSpaces = Array.isArray(architectureModule?.spaces) ? architectureModule.spaces : [];
   const upstreamRelationships = Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [];
   const recommendedFloorPlates = useMemo(() => deriveProgramFloorPlates(
@@ -1053,8 +1075,8 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       </div>
       <footer className="cad-editor-foot"><b>{issueFocus ? "Model statüsü · Konsept" : "Plan & Aks statüsü · Mimari koordinasyon"}</b><p>{issueFocus ? "Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir." : "Bu çalışma mimari mahal, çekirdek, boşluk ve aks koordinasyonu içindir. Taşıyıcı sistem, kesit, yük ve KM/KR kararları sonraki mühendislik aşamalarında doğrulanır."}</p></footer>
     </div>
-    {!issueFocus ? <section className="cad-plan-completion" data-state={planGatePass ? "pass" : "review"}>
-      <div><span>04 / MİMARİ TAMAMLAMA KAPISI</span><b>{planGatePass ? "Plan ve aks çalışması tamamlandı" : "Plan ve aks çalışması henüz tamamlanmadı"}</b><small>{planGatePass ? "Mimari adımı kapanabilir. Sıradaki ana proje adımı Sistem seçimidir." : `Bekleyen: ${missingPlanGateItems.join(" · ") || "Kontroller güncelleniyor"}`}</small></div>
+    {!issueFocus ? <section className="cad-plan-completion" data-state={planGatePass ? (zoningVerified ? "pass" : "review") : "review"}>
+      <div><span>04 / MİMARİ TAMAMLAMA KAPISI</span><b>{planGatePass ? (zoningVerified ? "Plan ve aks çalışması tamamlandı" : "Taslak plan ve aks çalışması tamamlandı") : "Plan ve aks çalışması henüz tamamlanmadı"}</b><small>{planGatePass ? (zoningVerified ? "Mimari adımı kapanabilir. Sıradaki ana proje adımı Sistem seçimidir." : zoningFormReady ? "Plan ve aks taslağı hazır; imar kaynağı / doğrulaması tamamlanmadan nihai uygunluk sayılmaz." : "Plan ve aks taslağı hazır; imar koşulları girilmeden nihai uygunluk sayılmaz.") : `Bekleyen: ${missingPlanGateItems.join(" · ") || "Kontroller güncelleniyor"}`}</small></div>
       {!axisReady ? <p>{floorPlates.filter((plate) => plate.width / baysX < 2 || plate.depth / baysY < 2).map((plate) => `K${plate.level}: X ${(plate.width / baysX).toFixed(2)} m / Y ${(plate.depth / baysY).toFixed(2)} m`).join(" · ")}. Aks aralıkları en az 2 m olmalıdır. Yeniden kurma aks sayısını azaltır; bir kat boyutu 4 m altında kalıyorsa mahal dağılımını veya kat kararını Mimari Programda düzenleyin.</p> : null}
       {!planGatePass && upstreamReady && (!areaRepresentationPass || !axisReady) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mahal alanlarını ve aksları yeniden kur</button> : null}
       {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
