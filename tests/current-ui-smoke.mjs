@@ -435,6 +435,14 @@ test("parcel workspace refreshes listing-sourced identity when the selected land
   assert.match(geo, /currentZoning\.current\.sourceType === "İlan beyanı"/);
 });
 
+test("parcel workflow resets the shared viewport to map context and keeps brief usage synchronized", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  const start = fs.readFileSync(new URL("../app/components/ProjectStartStudio.tsx", import.meta.url), "utf8");
+  assert.match(geo, /setViewMode\(stage === "terrain" \? "terrain" : "map"\)/);
+  assert.match(start, /const geoUsageLabels: Record<ProjectIntake\["usage"\], string>/);
+  assert.match(start, /usage: geoUsageLabels\[intake\.usage\]/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
