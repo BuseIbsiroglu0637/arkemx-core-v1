@@ -72,7 +72,16 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
       if (!response.ok) { if (data.code === "not-configured") setConnection("missing"); throw Error(typeof data.error === "string" ? data.error : "Adaylar getirilemedi."); }
       if (data.schema !== "ARKEM-LAND-SEARCH/1.0" || data.criteriaKey !== currentKey || !Array.isArray(data.candidates) || typeof data.searchedAt !== "string" || typeof data.provider !== "string") throw Error("Arama yanıtı doğrulanamadı.");
       const timestamp = data.searchedAt;
-      const safe = data.candidates.map((v: unknown) => normalizeLandCandidate(v, timestamp)).filter((c: LandCandidate | null): c is LandCandidate => Boolean(c));
+      const safe = data.candidates
+        .map((v: unknown) => normalizeLandCandidate(v, timestamp))
+        .filter((c: LandCandidate | null): c is LandCandidate => Boolean(c))
+        .map((candidate, index) => ({ candidate, index, assessment: assessLandCandidate(candidate, criteria) }))
+        .sort((left, right) =>
+          left.assessment.mismatch.length - right.assessment.mismatch.length
+          || left.assessment.missing.length - right.assessment.missing.length
+          || (left.assessment.unitPrice ?? Number.POSITIVE_INFINITY) - (right.assessment.unitPrice ?? Number.POSITIVE_INFINITY)
+          || left.index - right.index)
+        .map(({ candidate }) => candidate);
       setResult({ schema: "ARKEM-LAND-SEARCH/1.0", criteriaKey: currentKey, provider: data.provider, searchedAt: data.searchedAt, candidates: safe, sources: readLandSourceStatus(data.sources) }); setSearchedAt(data.searchedAt); setConnection("ready"); persist({ searchedAt: data.searchedAt });
       if (!safe.length) setNotice("Bu aramada aday bulunamadı. Bölge veya kriterleri değiştirerek tekrar araştırabilirsiniz.");
     } catch (error) { if (!abort.signal.aborted && requestId === sequence.current) setNotice(error instanceof Error ? error.message : "Araştırma tamamlanamadı."); }
@@ -88,7 +97,11 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
     setShortlist(next); setSelectedId(selected); persist({ shortlist: next, selectedId: selected });
   }
   function select(candidate: LandCandidate) {
-    if (assessLandCandidate(candidate, criteria).mismatch.length) return;
+    const assessment = assessLandCandidate(candidate, criteria);
+    if (assessment.mismatch.length) {
+      setNotice(`Bu aday parsel incelemesine aktarılamıyor: ${assessment.mismatch.join(" · ")}`);
+      return;
+    }
     setSelectedId(candidate.id); persist({ selectedId: candidate.id });
     setNotice("Aday incelemeye alındı. Parsel, imar ve altyapı doğrulaması henüz tamamlanmadı.");
   }
@@ -96,7 +109,7 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
   function card(candidate: LandCandidate, savedCard: boolean) {
     const assessment = assessLandCandidate(candidate, criteria);
     return <article className={`land-card${selectedId === candidate.id ? " is-selected" : ""}`} key={candidate.id} data-candidate-url={candidate.url}>
-      <div className="land-card-top"><span>{candidate.basis === "browser-listing" ? "Tarayıcıda okunan ilan kartı" : candidate.basis === "ai-search" ? "AI web araştırması" : candidate.basis === "search-index" ? "Arama dizininde bulunan ilan" : "İlan sağlayıcısı kaydı"}</span><b>{selectedId === candidate.id ? "İncelemede" : "Doğrulama bekliyor"}</b></div>
+      <div className="land-card-top"><span>{candidate.basis === "browser-listing" ? "Tarayıcıda okunan ilan kartı" : candidate.basis === "ai-search" ? "AI web araştırması" : candidate.basis === "search-index" ? "Arama dizininde bulunan ilan" : "İlan sağlayıcısı kaydı"}</span><b>{selectedId === candidate.id ? "İncelemede" : assessment.mismatch.length ? "Kriter / risk uyuşmazlığı" : assessment.missing.length ? "Bilgi eksik · doğrulama gerekli" : "Kriter eşleşmesi"}</b></div>
       <h3><a href={candidate.url} target="_blank" rel="noopener noreferrer">{candidate.title} ↗</a></h3>
       <p>{[candidate.province, candidate.district].filter(Boolean).join(" / ") || "Konum doğrulanmadı"}</p>
       <dl><div><dt>{candidate.tenure === "rent" ? "İstenen aylık kira" : candidate.tenure === "sale" ? "İstenen satış fiyatı" : "İşlem türü doğrulanmadı"}</dt><dd>{money(candidate.priceTRY)}</dd></div><div><dt>İlanda belirtilen alan</dt><dd>{candidate.areaM2 === null ? "Bilgi bulunamadı" : `${candidate.areaM2.toLocaleString("tr-TR")} m²`}</dd></div><div><dt>İlan fiyatı / alan</dt><dd>{assessment.unitPrice === null ? "Hesaplanamıyor" : `${money(assessment.unitPrice)} / m²${candidate.tenure === "rent" ? " / ay" : ""}`}</dd></div></dl>
@@ -104,7 +117,7 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
       <p className={assessment.mismatch.length ? "land-watch" : "land-match"}>{assessment.mismatch.length ? assessment.mismatch.join(" · ") : assessment.matchesDeclaredCriteria ? "İlan beyanları arama kriterleriyle eşleşiyor" : "Aday bulundu; kriter eşleşmesi için bilgiler eksik"}</p>
       <ul>{[...assessment.missing, ...assessment.review].map(text => <li key={text}>{text}</li>)}</ul>
       <small>{candidate.source} · Araştırma: {new Date(candidate.retrievedAt).toLocaleString("tr-TR")}</small>
-      <div className="land-card-actions">{savedCard ? <><button type="button" disabled={Boolean(assessment.mismatch.length)} aria-pressed={selectedId === candidate.id} onClick={() => select(candidate)}>İncelemeye al</button><button type="button" onClick={() => remove(candidate.id)}>Listeden çıkar</button></> : <button type="button" disabled={shortlisted.has(candidate.id)} onClick={() => add(candidate)}>{shortlisted.has(candidate.id) ? "Kısa listede ✓" : "Kısa listeye al"}</button>}</div>
+      <div className="land-card-actions">{savedCard ? <><button type="button" disabled={Boolean(assessment.mismatch.length)} aria-pressed={selectedId === candidate.id} title={assessment.mismatch.length ? assessment.mismatch.join(" · ") : undefined} onClick={() => select(candidate)}>{assessment.mismatch.length ? "İncelemeye uygun değil" : selectedId === candidate.id ? "İncelemede ✓" : "İncelemeye al"}</button><button type="button" onClick={() => remove(candidate.id)}>Listeden çıkar</button></> : <button type="button" disabled={shortlisted.has(candidate.id)} onClick={() => add(candidate)}>{shortlisted.has(candidate.id) ? "Kısa listede ✓" : "Kısa listeye al"}</button>}</div>
     </article>;
   }
   return <section className="land-research" data-testid="land-research-studio">
