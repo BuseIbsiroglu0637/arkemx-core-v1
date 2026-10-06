@@ -419,9 +419,9 @@ test("project centre separates the actual working stage from earlier incomplete 
   assert.match(kernel, /workingIndex/);
   assert.match(kernel, /hasBacklog: firstIncompleteIndex >= 0 && firstIncompleteIndex < workingIndex/);
   assert.match(kernel, /nextStep = PROJECT_JOURNEY\[currentIndex\]/);
-  assert.match(center, /latestExplicitJourneyEvent/);
-  assert.match(center, /projectJourneyIndexForModule\(latestExplicitJourneyEvent\.module\)/);
-  assert.match(center, /explicitJourneyIndex \?\? journeyState\.workingIndex/);
+  assert.match(center, /Current location comes from verified stage evidence/);
+  assert.match(center, /const workingJourneyIndex = journeyState\.workingIndex/);
+  assert.doesNotMatch(center, /latestExplicitJourneyEvent/);
   assert.match(center, /journeyState\.hasBacklog/);
   assert.match(center, /journeyState\.achieved\[index\]/);
   assert.match(center, /workedJourneyIndices/);
@@ -433,8 +433,8 @@ test("project centre separates the actual working stage from earlier incomplete 
   assert.match(center, /Eksik kontrol var/);
   assert.match(center, /Çalışılan ana aşama/);
   assert.match(hub, /deriveProjectJourneyState\(thread\)/);
-  assert.match(hub, /latestExplicitJourneyEvent/);
-  assert.match(hub, /explicitJourneyIndex \?\? journeyState\.workingIndex/);
+  assert.match(hub, /const currentJourneyIndex = journeyState\.workingIndex/);
+  assert.doesNotMatch(hub, /latestExplicitJourneyEvent/);
   assert.match(css, /Project journey: distinguish current work from earlier unresolved gates/);
   assert.match(css, /arx-center-journey-step\.is-backlog/);
 });
