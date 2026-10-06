@@ -581,6 +581,16 @@ test("final system comparison exposes project KPIs, readable scores and an actio
   assert.match(css, /arx-system-next/);
 });
 
+test("system comparison has a complete dark-theme surface instead of light cards on black", () => {
+  const css = fs.readFileSync(new URL("../app/sistem-karsilastirma/sade-sistem.css", import.meta.url), "utf8");
+  assert.match(css, /Final dark theme — focused system comparison/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-system-panel/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-system-fields input/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-system-result\.is-selected/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-system-shortlist/);
+  assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-mcda-source-status\.is-current/);
+});
+
 test("local build renders the focused BIM coordination workspace", async () => {
   const response = await render("/bim-koordinasyon");
   assert.equal(response.status, 200);
