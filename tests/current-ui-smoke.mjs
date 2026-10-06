@@ -425,6 +425,16 @@ test("project centre clearly distinguishes seven journey stages from technical m
   assert.match(center, /teknik modül/);
 });
 
+test("parcel workspace refreshes listing-sourced identity when the selected land candidate changes", () => {
+  const geo = fs.readFileSync(new URL("../app/components/GeoParcelStudio.tsx", import.meta.url), "utf8");
+  assert.match(geo, /const selectedCandidateId = selectedCandidate\?\.id \?\? ""/);
+  assert.match(geo, /listingIdentitySource\.sourceUrl === selectedCandidateId/);
+  assert.match(geo, /setNeighborhoodId\(""/);
+  assert.match(geo, /setListingIdentitySource\(null\)/);
+  assert.match(geo, /Önceki ilandan otomatik taşınan mahalle\/köy, ada, parsel/);
+  assert.match(geo, /currentZoning\.current\.sourceType === "İlan beyanı"/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
