@@ -8,7 +8,7 @@ import {
   MoreHorizontal, ShieldAlert, Trash2, X,
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
-import { PROJECT_JOURNEY, deriveProjectJourneyState, projectJourneyIndexForModule, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { PROJECT_MODULES } from "../lib/project-graph";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
@@ -59,21 +59,12 @@ export function SimpleProjectCenter() {
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
-  const latestExplicitJourneyEvent = [...project.events].reverse().find((event) =>
-    (event.action === "create" || event.action === "update")
-    && projectJourneyIndexForModule(event.module) !== null
-  );
-  const explicitJourneyIndex = latestExplicitJourneyEvent
-    ? projectJourneyIndexForModule(latestExplicitJourneyEvent.module)
-    : null;
-  const workingJourneyIndex = explicitJourneyIndex ?? journeyState.workingIndex;
+  // Current location comes from verified stage evidence, not the latest
+  // persistence event. Background/autosave updates must never move the visible
+  // journey forward on their own.
+  const workingJourneyIndex = journeyState.workingIndex;
 
-  const workedJourneyIndices = new Set<number>(
-    project.events
-      .filter((event) => event.action === "create" || event.action === "update")
-      .map((event) => projectJourneyIndexForModule(event.module))
-      .filter((index): index is number => index !== null)
-  );
+  const workedJourneyIndices = new Set<number>();
   const architecturalProgram = project.modules["architectural-program"] as { spaces?: unknown[]; input?: { programRequirementsConfirmed?: boolean } } | undefined;
   const planEditor = project.modules["plan-editor"] as { elements?: unknown[]; floorPlates?: unknown[]; floorCount?: number } | undefined;
   if (
