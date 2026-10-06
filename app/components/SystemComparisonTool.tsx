@@ -168,10 +168,24 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       if (typeof input.fireRating === "number") setFireRating(input.fireRating);
       if (saved.weights) setWeights(saved.weights);
       if (saved.shortlist) setShortlist(saved.shortlist);
-      if (saved.sourceSnapshot) {
+      if (currentProjectSource) {
+        if (saved.sourceSnapshot && mcdaSourceMatches(saved.sourceSnapshot, currentProjectSource)) {
+          // The source is still current. Preserve an intentional manual MCDA scenario.
+          setSourceSnapshot(saved.sourceSnapshot);
+        } else if (!saved.sourceSnapshot && mcdaInputMatchesSource(input, currentProjectSource)) {
+          setSourceSnapshot(currentProjectSource);
+        } else {
+          // The project advanced after this MCDA record was saved. Start the
+          // workspace from the live project geometry instead of showing stale
+          // area/span values; weights and the user's shortlist remain intact.
+          setUsage(currentProjectSource.usage);
+          setFloors(currentProjectSource.floors);
+          setArea(Number(currentProjectSource.area.toFixed(1)));
+          setSpan(Number(currentProjectSource.span.toFixed(2)));
+          setSourceSnapshot(currentProjectSource);
+        }
+      } else if (saved.sourceSnapshot) {
         setSourceSnapshot(saved.sourceSnapshot);
-      } else if (currentProjectSource && mcdaInputMatchesSource(input, currentProjectSource)) {
-        setSourceSnapshot(currentProjectSource);
       }
     } else {
       importProjectGeometry();
