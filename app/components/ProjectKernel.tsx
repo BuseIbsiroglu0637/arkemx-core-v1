@@ -126,11 +126,31 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
 
   const firstIncompleteIndex = completed.findIndex((value) => !value);
   const currentIndex = firstIncompleteIndex < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteIndex;
+
+  // "Current required gate" and "where the user is actually working" are not
+  // always the same thing. Draft/provisional workflows may continue while an
+  // earlier parcel or zoning check remains open. Keep that earlier gate as a
+  // backlog item without visually sending the project backwards.
+  const node = (id: string) => thread.nodes.find((item) => item.id === id);
+  const workingSignals = [
+    Boolean(node("decision-assistant")?.active),
+    Boolean(node("geo-parcel")?.active || node("quick-site-scenario")?.active),
+    Boolean(node("architectural-program")?.milestoneComplete || node("plan-editor")?.active),
+    Boolean(node("system-comparison")?.milestoneComplete || node("structural-concept")?.active),
+    Boolean(node("structural-concept")?.active || node("engineering-coordination")?.active),
+    Boolean(node("project-os")?.active),
+    Boolean(node("digital-delivery-scope")?.active || node("model-library-review")?.active),
+  ];
+  const furthestWorkingIndex = workingSignals.reduce((furthest, started, index) => started ? Math.max(furthest, index) : furthest, 0);
+  const workingIndex = Math.max(currentIndex, furthestWorkingIndex);
   const nextStep = PROJECT_JOURNEY[currentIndex];
 
   return {
     completed,
     currentIndex,
+    workingIndex,
+    firstIncompleteIndex,
+    hasBacklog: firstIncompleteIndex >= 0 && firstIncompleteIndex < workingIndex,
     nextStep,
     systemDecisionReady,
     allComplete: firstIncompleteIndex < 0,
