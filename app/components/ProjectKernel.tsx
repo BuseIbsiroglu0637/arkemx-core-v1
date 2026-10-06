@@ -136,8 +136,10 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
     Boolean(node("decision-assistant")?.active),
     Boolean(node("geo-parcel")?.active || node("quick-site-scenario")?.active),
     Boolean(node("architectural-program")?.milestoneComplete || node("plan-editor")?.active),
+    // Structural predesign still belongs to the System stage; Coordination
+    // begins when the BIM/discipline coordination workspace is actually opened.
     Boolean(node("system-comparison")?.milestoneComplete || node("structural-concept")?.active),
-    Boolean(node("structural-concept")?.active || node("engineering-coordination")?.active),
+    Boolean(node("engineering-coordination")?.active),
     Boolean(node("project-os")?.active),
     Boolean(node("digital-delivery-scope")?.active || node("model-library-review")?.active),
   ];
