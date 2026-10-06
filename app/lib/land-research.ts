@@ -79,7 +79,7 @@ export function assessLandCandidate(candidate: LandCandidate, criteria: LandCrit
   const mismatch: string[] = [], missing: string[] = [];
   const equal = (a: string, b: string) => a.toLocaleLowerCase("tr-TR") === b.toLocaleLowerCase("tr-TR");
   const ownershipText = `${candidate.title} ${candidate.description}`.toLocaleLowerCase("tr-TR");
-  const fractionalOwnershipRisk = /(^|[^\\p{L}])(hisse|hisseli|kooperatif|koop\\.?|müşterek)([^\\p{L}]|$)/u.test(ownershipText);
+  const fractionalOwnershipRisk = /(^|[^\p{L}])(hisse|hisseli|kooperatif|koop\.?|müşterek)([^\p{L}]|$)/u.test(ownershipText);
   if (fractionalOwnershipRisk) mismatch.push("Hisseli / kooperatif ilanı; bağımsız yapılaşabilir parsel uygunluğu doğrulanmadı");
   if (candidate.tenure === null) missing.push("Satış / kiralama bilgisi eksik");
   else if (candidate.tenure !== criteria.tenure) mismatch.push("İşlem türü farklı");
