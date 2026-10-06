@@ -184,9 +184,23 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       else setSpaces(templates[savedUse].spaces.map((space) => ({ ...space })));
       if (saved.relationships?.length && (confirmed || !savedTemplateUse || savedTemplateUse === savedUse)) setRelationships(saved.relationships);
       else setRelationships(templates[savedUse].relationships.map((relationship) => ({ ...relationship })));
-      if (!confirmed && savedTemplateUse && savedTemplateUse !== savedUse) setNetRatio(templates[savedUse].netRatio);
+      if (!confirmed && savedTemplateUse && savedTemplateUse !== savedUse) {
+        const geoUse = resolveProgramUse(geo.usage || input.use);
+        const geoFloors = typeof geo.floors === "number" && geo.floors > 0 ? clamp(geo.floors, 1, 30) : null;
+        const geoWidth = typeof geo.buildingWidth === "number" ? geo.buildingWidth : 0;
+        const geoDepth = typeof geo.buildingDepth === "number" ? geo.buildingDepth : 0;
+        const geoGross = geoFloors && geoWidth > 0 && geoDepth > 0 ? Math.round(geoWidth * geoDepth * geoFloors) : 0;
+        setUse(geoUse);
+        setSpaces(templates[geoUse].spaces.map((space) => ({ ...space })));
+        setRelationships(templates[geoUse].relationships.map((relationship) => ({ ...relationship })));
+        setNetRatio(templates[geoUse].netRatio);
+        if (geoGross > 0) setTargetGross(Math.max(100, geoGross));
+        if (geoFloors) setFloors(geoFloors);
+        if (typeof geo.floorHeight === "number" && geo.floorHeight > 0) setFloorHeight(clamp(geo.floorHeight, 2.6, 10));
+        setProgramRequirementsConfirmed(false);
+      }
       setStatus(!confirmed && savedTemplateUse && savedTemplateUse !== savedUse
-        ? "Eski kullanım şablonu uyuşmazlığı düzeltildi; proje kullanımına uygun mahal programı yüklendi"
+        ? "Eski kullanım şablonu uyuşmazlığı düzeltildi; güncel arazi taslağı ve proje kullanımına uygun mahal programı yüklendi"
         : "Kayıtlı mimari çalışma otomatik açıldı");
       setTransferReady(true);
       return;
