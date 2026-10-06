@@ -61,6 +61,26 @@ export function SimpleProjectCenter() {
     ? projectJourneyIndexForModule(latestExplicitJourneyEvent.module)
     : null;
   const workingJourneyIndex = explicitJourneyIndex ?? journeyState.workingIndex;
+
+  const workedJourneyIndices = new Set<number>(
+    project.events
+      .filter((event) => event.action === "create" || event.action === "update")
+      .map((event) => projectJourneyIndexForModule(event.module))
+      .filter((index): index is number => index !== null)
+  );
+  const architecturalProgram = project.modules["architectural-program"] as { spaces?: unknown[]; input?: { programRequirementsConfirmed?: boolean } } | undefined;
+  const planEditor = project.modules["plan-editor"] as { elements?: unknown[]; floorPlates?: unknown[]; floorCount?: number } | undefined;
+  if (
+    Boolean(architecturalProgram?.input?.programRequirementsConfirmed)
+    || Boolean(architecturalProgram?.spaces?.length)
+    || Boolean(planEditor?.elements?.length)
+    || Boolean(planEditor?.floorPlates?.length)
+    || Boolean(planEditor?.floorCount && planEditor.floorCount > 0)
+  ) workedJourneyIndices.add(2);
+
+  const systemComparison = project.modules["system-comparison"] as { ranking?: unknown[] } | undefined;
+  if (Boolean(systemComparison?.ranking?.length) || project.modules["structural-concept"]) workedJourneyIndices.add(3);
+
   const currentJourneyStep = PROJECT_JOURNEY[workingJourneyIndex];
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
@@ -483,7 +503,7 @@ export function SimpleProjectCenter() {
         <div className="arx-center-journey-track">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
-            const achieved = journeyState.achieved[index];
+            const achieved = journeyState.achieved[index] || workedJourneyIndices.has(index);
             const current = index === workingJourneyIndex && !journeyState.allComplete;
             const provisional = index < workingJourneyIndex && achieved && !done;
             const backlog = index < workingJourneyIndex && !achieved;
@@ -532,7 +552,7 @@ export function SimpleProjectCenter() {
         <div className="arx-center-step-grid">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
-            const achieved = journeyState.achieved[index];
+            const achieved = journeyState.achieved[index] || workedJourneyIndices.has(index);
             const current = index === workingJourneyIndex && !journeyState.allComplete;
             const provisional = index < workingJourneyIndex && achieved && !done;
             const backlog = index < workingJourneyIndex && !achieved;
