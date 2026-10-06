@@ -209,7 +209,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
           <span>MÜHENDİSLİK / SİSTEM SEÇİMİ</span>
           <h2>{project.name}</h2>
           <p>Çok ölçütlü sistem ön değerlendirmesi</p>
-          <small>{project.phase} · {project.revision}</small>
+          <small>Ön değerlendirme · {project.revision}</small>
         </div>
         <dl className="arx-system-context-kpis">
           <div><dt>Kullanım</dt><dd>{usageLabels[activeUsage] ?? activeUsage}</dd></div>
