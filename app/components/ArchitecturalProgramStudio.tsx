@@ -120,6 +120,48 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     transferApplied.current = true;
     const saved = project.modules["architectural-program"] as { input?: Record<string, unknown>; spaces?: Space[]; relationships?: Relationship[] } | undefined;
     const input = saved?.input;
+    const geo = objectValue(project.modules["geo-parcel"]);
+    const forceGeoDraft = new URLSearchParams(window.location.search).get("from") === "geo-draft";
+    const resolveProgramUse = (value: unknown): ProgramUse => {
+      const label = String(value ?? "").toLocaleLowerCase("tr-TR");
+      if (label.includes("konut") || label.includes("villa") || label.includes("yaşam")) return "residential";
+      if (label.includes("ofis") || label.includes("ticari")) return "office";
+      if (label.includes("eğitim") || label.includes("sosyal")) return "education";
+      return "industrial";
+    };
+    const applyGeoDraft = () => {
+      const nextUse = resolveProgramUse(geo.usage || thread.canonical.architecture.use);
+      const nextFloors = typeof geo.floors === "number" && geo.floors > 0
+        ? clamp(geo.floors, 1, 30)
+        : thread.canonical.architecture.floors > 0 ? clamp(thread.canonical.architecture.floors, 1, 30) : 1;
+      const width = typeof geo.buildingWidth === "number" ? geo.buildingWidth : 0;
+      const depth = typeof geo.buildingDepth === "number" ? geo.buildingDepth : 0;
+      const nextGross = width > 0 && depth > 0
+        ? Math.round(width * depth * nextFloors)
+        : thread.canonical.site.proposedGross > 0 ? Math.round(thread.canonical.site.proposedGross) : 100;
+      const nextFloorHeight = typeof geo.floorHeight === "number" && geo.floorHeight > 0
+        ? clamp(geo.floorHeight, 2.6, 10)
+        : thread.canonical.architecture.floorHeight > 0 ? clamp(thread.canonical.architecture.floorHeight, 2.6, 10) : 3;
+      setUse(nextUse);
+      setSpaces(templates[nextUse].spaces.map((space) => ({ ...space })));
+      setRelationships(templates[nextUse].relationships.map((relationship) => ({ ...relationship })));
+      setNetRatio(templates[nextUse].netRatio);
+      setTargetGross(Math.max(100, nextGross));
+      setFloors(nextFloors);
+      setFloorHeight(nextFloorHeight);
+      setProgramRequirementsConfirmed(false);
+      setSiteContext(architectureSiteContext(geo, {
+        massingModel: geo.massingModel,
+        selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined,
+        parcelReference: typeof geo.reference === "string" ? geo.reference : undefined,
+      }) as SiteContext);
+      setStatus("Güncel arazi taslağından kullanım, alan, kat ve mahal şablonu aktarıldı");
+      setTransferReady(true);
+    };
+    if (forceGeoDraft) {
+      applyGeoDraft();
+      return;
+    }
     if (input) {
       if (typeof input.use === "string" && input.use in templates) setUse(input.use as ProgramUse);
       if (typeof input.targetGross === "number") setTargetGross(input.targetGross);
@@ -134,9 +176,18 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
       if (typeof input.programRequirementsConfirmed === "boolean") setProgramRequirementsConfirmed(input.programRequirementsConfirmed);
       if (input.coreStrategy === "central" || input.coreStrategy === "split" || input.coreStrategy === "perimeter") setCoreStrategy(input.coreStrategy);
       if (input.siteContext && typeof input.siteContext === "object") setSiteContext(architectureSiteContext(project.modules["geo-parcel"], input.siteContext) as SiteContext);
-      if (saved.spaces?.length) setSpaces(saved.spaces);
-      if (saved.relationships?.length) setRelationships(saved.relationships);
-      setStatus("Kayıtlı mimari çalışma otomatik açıldı");
+      const savedUse = typeof input.use === "string" && input.use in templates ? input.use as ProgramUse : "industrial";
+      const savedPrefix = saved.spaces?.[0]?.id?.split("-")[0];
+      const savedTemplateUse = savedPrefix === "RES" ? "residential" : savedPrefix === "OFF" ? "office" : savedPrefix === "EDU" ? "education" : savedPrefix === "IND" ? "industrial" : null;
+      const confirmed = input.programRequirementsConfirmed === true;
+      if (saved.spaces?.length && (confirmed || !savedTemplateUse || savedTemplateUse === savedUse)) setSpaces(saved.spaces);
+      else setSpaces(templates[savedUse].spaces.map((space) => ({ ...space })));
+      if (saved.relationships?.length && (confirmed || !savedTemplateUse || savedTemplateUse === savedUse)) setRelationships(saved.relationships);
+      else setRelationships(templates[savedUse].relationships.map((relationship) => ({ ...relationship })));
+      if (!confirmed && savedTemplateUse && savedTemplateUse !== savedUse) setNetRatio(templates[savedUse].netRatio);
+      setStatus(!confirmed && savedTemplateUse && savedTemplateUse !== savedUse
+        ? "Eski kullanım şablonu uyuşmazlığı düzeltildi; proje kullanımına uygun mahal programı yüklendi"
+        : "Kayıtlı mimari çalışma otomatik açıldı");
       setTransferReady(true);
       return;
     }
@@ -145,11 +196,14 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     if (source.architecture.floors > 0) setFloors(clamp(source.architecture.floors, 1, 30));
     if (source.architecture.floorHeight > 0) setFloorHeight(clamp(source.architecture.floorHeight, 2.6, 10));
     const sourceUse = source.architecture.use.toLocaleLowerCase("tr-TR");
-    if (sourceUse.includes("konut")) setUse("residential");
-    else if (sourceUse.includes("ofis") || sourceUse.includes("ticari")) setUse("office");
-    else if (sourceUse.includes("eğitim") || sourceUse.includes("sosyal")) setUse("education");
-    else if (sourceUse) setUse("industrial");
-    const geo = objectValue(project.modules["geo-parcel"]);
+    const initialUse: ProgramUse = sourceUse.includes("konut") ? "residential"
+      : sourceUse.includes("ofis") || sourceUse.includes("ticari") ? "office"
+      : sourceUse.includes("eğitim") || sourceUse.includes("sosyal") ? "education"
+      : "industrial";
+    setUse(initialUse);
+    setSpaces(templates[initialUse].spaces.map((space) => ({ ...space })));
+    setRelationships(templates[initialUse].relationships.map((relationship) => ({ ...relationship })));
+    setNetRatio(templates[initialUse].netRatio);
     if (geo.massingModel) setSiteContext(architectureSiteContext(geo, { massingModel: geo.massingModel, selectedMassingId: typeof geo.selectedMassingId === "string" ? geo.selectedMassingId : undefined, parcelReference: typeof geo.reference === "string" ? geo.reference : undefined }) as SiteContext);
     setStatus(source.site.parcelArea > 0 ? "Parsel, alan, kullanım ve kat verileri otomatik aktarıldı" : "Yeni mimari program oluşturuldu");
     setTransferReady(true);
