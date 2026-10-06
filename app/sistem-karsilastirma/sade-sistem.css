@@ -261,3 +261,256 @@
 .arx-system-page .arx-workspace-nav a:focus-visible { color:#e29461; }
 .arx-system-page .arx-system-note { color:#94a9b1; }
 .arx-system-page .arx-system-note b { color:#d8814c; }
+
+
+/* Final dark theme — focused system comparison */
+html[data-theme="dark"] .arx-system-page {
+  background:#000 !important;
+  color:#f3f6f7;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-tool {
+  color:#eaf0f2;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context {
+  border-color:#315261;
+  background:linear-gradient(120deg,#071923 0%,#0a2532 58%,#103442 100%);
+  box-shadow:0 12px 34px rgba(0,0,0,.38);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context-copy {
+  border-color:rgba(255,255,255,.1);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context-copy p {
+  color:#c2d0d5;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context-copy small {
+  color:#89a1ab;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context-kpis > div {
+  border-color:rgba(255,255,255,.09);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-context-kpis dt {
+  color:#8da6af;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status {
+  border-color:#2a3d45;
+  background:#0a0f12;
+  color:#e8eef0;
+  box-shadow:none;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status b {
+  color:#eef4f6;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status p {
+  color:#91a4ac;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-current {
+  border-color:#27503e;
+  background:#091710;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-current span {
+  color:#73bc93;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-stale {
+  border-color:#6e4932;
+  background:#1b100a;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-stale span {
+  color:#e69765;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-override {
+  border-color:#5b4c2b;
+  background:#171309;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-override span {
+  color:#d9b45f;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status button {
+  border-color:#39525c;
+  background:#111b20;
+  color:#dce7eb;
+}
+html[data-theme="dark"] .arx-system-page .arx-mcda-source-status.is-stale button {
+  border-color:#c06c3f;
+  background:#a9562f;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-system-page .arx-system-panel {
+  border-color:#292f32;
+  background:#080a0b;
+  color:#edf2f4;
+  box-shadow:0 9px 28px rgba(0,0,0,.26);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head {
+  border-color:#252c2f;
+  background:#0b0e10;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head h2,
+html[data-theme="dark"] .arx-system-page .arx-system-result-name h3,
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist h2 {
+  color:#f4f7f8;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head p,
+html[data-theme="dark"] .arx-system-page .arx-system-result-name p,
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist-heading p,
+html[data-theme="dark"] .arx-system-page .arx-system-next p {
+  color:#8fa2aa;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head button,
+html[data-theme="dark"] .arx-system-page .arx-system-exports button {
+  border-color:#35434a;
+  background:#101518;
+  color:#cbd8dd;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-panel-head button:hover,
+html[data-theme="dark"] .arx-system-page .arx-system-exports button:hover {
+  border-color:#607984;
+  background:#151c20;
+}
+
+html[data-theme="dark"] .arx-system-page .arx-system-fields label {
+  color:#9fb2ba;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-fields input,
+html[data-theme="dark"] .arx-system-page .arx-system-fields select {
+  border-color:#344047;
+  background:#0d1113;
+  color:#eef3f5;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-fields input:focus,
+html[data-theme="dark"] .arx-system-page .arx-system-fields select:focus {
+  border-color:#68818b;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-detail {
+  border-color:#252c2f;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-detail summary {
+  color:#afc2ca;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-detail[open] summary {
+  border-color:#252c2f;
+  background:#0e1214;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-weights label span {
+  color:#c6d2d6;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-weights label small {
+  color:#83979f;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-weights label strong {
+  color:#eef3f5;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-weights > button {
+  border-color:#344047;
+  background:#101518;
+  color:#bccbd1;
+}
+
+html[data-theme="dark"] .arx-system-page .arx-system-result {
+  border-color:#242b2e;
+  background:#080a0b;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result:hover {
+  background:#0d1113;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result.is-selected {
+  background:#17100c;
+  box-shadow:inset 4px 0 0 #c57242;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result-title span {
+  background:#3a2115;
+  color:#eda073;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result-name small {
+  color:#d1845b;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score strong {
+  color:#f0f5f6;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score small {
+  color:#81959e;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score-track {
+  background:#222b2f;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score-track i {
+  background:#526d76;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-score-track b {
+  background:#d07a48;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result > button {
+  border-color:#3b4a50;
+  background:#0e1315;
+  color:#cdd9dd;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result > button:hover {
+  border-color:#6e8791;
+  background:#131a1d;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-result.is-selected > button {
+  border-color:#8b5638;
+  background:#21140e;
+  color:#e8a078;
+}
+
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist {
+  border-color:#2d3538;
+  background:#080a0b;
+  box-shadow:0 9px 28px rgba(0,0,0,.26);
+}
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist-heading > div > span {
+  color:#df8a59;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-shortlist-heading > button {
+  color:#a8b7bd;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-tags button,
+html[data-theme="dark"] .arx-system-page .arx-system-tags .is-empty {
+  border-color:#354047;
+  background:#101518;
+  color:#c9d5da;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-tags button:hover {
+  border-color:#8b5b40;
+  background:#21140e;
+  color:#e9a27a;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-tags button span {
+  color:#d38357;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-next {
+  border-color:#293135;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-next a {
+  border-color:#487080;
+  background:#123747;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-next a:hover {
+  background:#17465a;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-next button:disabled {
+  border-color:#292f32;
+  background:#111416;
+  color:#63737a;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-note {
+  color:#8ea0a8;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-note b {
+  color:#df8553;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-table th,
+html[data-theme="dark"] .arx-system-page .arx-system-table td {
+  border-color:#293135;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-table th {
+  color:#a9bcc4;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-table td {
+  color:#d5dfe3;
+}
+html[data-theme="dark"] .arx-system-page .arx-system-sensitivity p {
+  color:#93a7af;
+}
