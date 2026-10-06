@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { downloadTextFile } from "../lib/engineering";
 import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_MODULES } from "../lib/project-graph";
 import { DigitalProjectHub } from "./DigitalProjectHub";
 
 type CenterAccountProject = {
@@ -467,7 +468,7 @@ export function SimpleProjectCenter() {
             <span>PROJE YOLCULUĞU</span>
             <h2 id="arx-center-journey-title">Neredeyiz?</h2>
           </div>
-          <small>{completedCount} / {PROJECT_JOURNEY.length} adım tamamlandı</small>
+          <small>{completedCount} / {PROJECT_JOURNEY.length} ana aşama tamamlandı · {PROJECT_MODULES.length} teknik modül</small>
         </div>
         <div className="arx-center-journey-track">
           {PROJECT_JOURNEY.map((step, index) => {
@@ -484,7 +485,7 @@ export function SimpleProjectCenter() {
       </section>
 
       <section className="arx-center-overview" aria-label="Proje özeti">
-        <article><span>Proje ilerlemesi</span><strong>{completedCount} / {PROJECT_JOURNEY.length}</strong><small>tamamlanan ana adım</small></article>
+        <article><span>Ana aşama ilerlemesi</span><strong>{completedCount} / {PROJECT_JOURNEY.length}</strong><small>{PROJECT_MODULES.length} teknik modül bu aşamalarda gruplanır</small></article>
         <article><span>Açık konu</span><strong className={thread.issues.length ? "watch" : "good"}>{thread.issues.length}</strong><small>kontrol bekleyen kayıt</small></article>
         <article><span>Veri hazırlığı</span><strong>%{thread.metrics.readiness}</strong><small>bağlı proje verisi</small></article>
       </section>
@@ -510,10 +511,10 @@ export function SimpleProjectCenter() {
       <section className="arx-center-step-section" aria-labelledby="arx-center-steps-title">
         <div className="arx-center-section-heading">
           <div>
-            <span>PROJE ADIMLARI</span>
+            <span>7 ANA AŞAMA</span>
             <h2 id="arx-center-steps-title">Çalışma akışı</h2>
           </div>
-          <small>Her adım aynı proje kaydını kullanır.</small>
+          <small>{PROJECT_MODULES.length} teknik modül bu ana aşamalar altında aynı proje kaydını kullanır.</small>
         </div>
         <div className="arx-center-step-grid">
           {PROJECT_JOURNEY.map((step, index) => {
