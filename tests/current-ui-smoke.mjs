@@ -465,6 +465,15 @@ test("draft architecture transfer uses the current geo draft and a matching use 
   assert.match(architect, /Eski kullanım şablonu uyuşmazlığı düzeltildi/);
 });
 
+test("architectural program detects stale area/floor data and can resync directly from geo draft", () => {
+  const architect = fs.readFileSync(new URL("../app/components/ArchitecturalProgramStudio.tsx", import.meta.url), "utf8");
+  assert.match(architect, /const geoDraftMismatch = geoDraftAvailable/);
+  assert.match(architect, /Math\.round\(geoDraftWidth \* geoDraftDepth \* geoDraftFloors\)/);
+  assert.match(architect, /Arazi taslağını yeniden aktar/);
+  assert.match(architect, /if \(geoDraftAvailable\) \{\s*syncFromGeoDraft\(\)/);
+  assert.match(architect, /Plan & Aks'a geçmeden önce aynı kaynağa bağlayın/);
+});
+
 
 test("project centre separates project type and does not count undecided structure as ready", () => {
   const kernel = fs.readFileSync(new URL("../app/components/ProjectKernel.tsx", import.meta.url), "utf8");
