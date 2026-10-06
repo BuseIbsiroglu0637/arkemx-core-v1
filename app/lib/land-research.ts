@@ -33,7 +33,9 @@ export function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 function clean(value: unknown, limit = 100) {
-  return typeof value === "string" ? value.replace(/[\u0000-\u001f]/g, " ").trim().slice(0, limit) : "";
+  return typeof value === "string"
+    ? value.replace(/[\u0000-\u001f\u007f-\u009f\uE000-\uF8FF\uFFFC\uFFFD]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit)
+    : "";
 }
 export function parseLandCriteria(value: unknown): LandCriteria | null {
   const v = object(value);
