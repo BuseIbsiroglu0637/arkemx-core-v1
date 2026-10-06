@@ -144,7 +144,7 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
       <small>Arsa bütçesi toplam yatırım bütçesinden ayrıdır. Kapalı alan ihtiyacı, gerekli arsa alanıyla aynı değildir.</small>
       <fieldset><legend>İncelemede doğrulanacak ihtiyaçlar</legend>{LAND_NEEDS.map(need => <label key={need}><input type="checkbox" checked={criteria.needs.includes(need)} onChange={() => change("needs", criteria.needs.includes(need) ? criteria.needs.filter(n => n !== need) : [...criteria.needs, need])} />{need}</label>)}</fieldset>
       {!parsed ? <p className="land-watch">İl ve alan/bütçe aralıklarını kontrol edin.</p> : null}
-      {browserMode ? <p className="land-source-note">{browserProvider}: yalnız satın alma, ilk sayfada en fazla 24 ilan kartı. Sonuçlar istenen toplam fiyata göre sıralanır.</p> : null}
+      {browserMode ? <p className="land-source-note">{browserProvider}: yalnız satın alma, ilk sayfada en fazla 24 ilan kartı okunur. ARKEMX kriter/risk uyuşmazlığı olmayan ve bilgisi daha tamam adayları üstte gösterir.</p> : null}
       <button type="submit" disabled={!parsed || busy || connection !== "ready" || (browserMode && criteria.tenure !== "sale")}>{busy ? "Agent kaynakları araştırıyor…" : "Adayları getir"}</button>
       <button type="button" disabled={!parsed || busy} onClick={() => { persist(); setNotice("Arama kriterleri projeye kaydedildi."); }}>Kriterleri kaydet</button>
     </form><div className="land-results">
