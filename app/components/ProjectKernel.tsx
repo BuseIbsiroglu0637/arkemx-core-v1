@@ -134,14 +134,14 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
   const node = (id: string) => thread.nodes.find((item) => item.id === id);
   const workingSignals = [
     Boolean(node("decision-assistant")?.active),
-    Boolean(node("geo-parcel")?.active || node("quick-site-scenario")?.active),
+    Boolean(node("quick-site-scenario")?.milestoneComplete || node("geo-parcel")?.readiness && node("geo-parcel")!.readiness >= 35),
     Boolean(node("architectural-program")?.milestoneComplete || node("plan-editor")?.active),
-    // Structural predesign still belongs to the System stage; Coordination
-    // begins when the BIM/discipline coordination workspace is actually opened.
+    // Structural predesign still belongs to the System stage. Merely seeded
+    // downstream modules must not pull the visible journey forward.
     Boolean(node("system-comparison")?.milestoneComplete || node("structural-concept")?.active),
-    Boolean(node("engineering-coordination")?.active),
-    Boolean(node("project-os")?.active),
-    Boolean(node("digital-delivery-scope")?.active || node("model-library-review")?.active),
+    Boolean(node("engineering-coordination")?.milestoneComplete),
+    Boolean(node("project-os")?.milestoneComplete),
+    Boolean(node("digital-delivery-scope")?.milestoneComplete || node("model-library-review")?.milestoneComplete),
   ];
   const furthestWorkingIndex = workingSignals.reduce((furthest, started, index) => started ? Math.max(furthest, index) : furthest, 0);
   const workingIndex = Math.max(currentIndex, furthestWorkingIndex);
@@ -149,6 +149,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
 
   return {
     completed,
+    achieved: rawCompleted,
     currentIndex,
     workingIndex,
     firstIncompleteIndex,
