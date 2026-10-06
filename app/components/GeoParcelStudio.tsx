@@ -838,14 +838,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     candidatePrefillApplied.current = "";
     listingZoningApplied.current = "";
 
-    setZoning((current) => {
-      if (current.sourceType !== "İlan beyanı" || current.sourceUrl !== previous.sourceUrl) return current;
+    if (currentZoning.current.sourceType === "İlan beyanı" && currentZoning.current.sourceUrl === previous.sourceUrl) {
+      setZoning({ ...DEFAULT_ZONING });
       setRequiredSetback(-1);
       setMaxCoverage(-1);
       setMaxFar(-1);
       setMaxHeight(-1);
-      return { ...DEFAULT_ZONING };
-    });
+    }
     setFileNotice("Yeni ilan adayı seçildi. Önceki ilandan otomatik taşınan mahalle/köy, ada, parsel ve ilan-imar beyanları temizlendi; yeni adayın detayları okunuyor.");
   }, [parcelHydrated, selectedCandidateId, listingIdentitySource, parcel.length, officialBoundaryEvidence]);
 
