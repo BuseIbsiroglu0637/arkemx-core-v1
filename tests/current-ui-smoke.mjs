@@ -572,7 +572,7 @@ test("final system comparison exposes project KPIs, readable scores and an actio
   assert.match(tool, /arx-system-context-kpis/);
   assert.match(tool, /KISA LİSTE · \{shortlist\.length\}/);
   assert.match(tool, /Listeyi temizle/);
-  assert.match(tool, /Önce sistem seçin/);
+  assert.match(tool, /Önce sistem seçin/);\n  assert.match(tool, /The project advanced after this MCDA record was saved/);\n  assert.match(tool, /setArea\(Number\(currentProjectSource\.area\.toFixed\(1\)\)\)/);\n  assert.match(tool, /setSpan\(Number\(currentProjectSource\.span\.toFixed\(2\)\)\)/);
   assert.match(css, /Prototype final polish — system selection/);
   assert.match(css, /arx-system-result-title/);
   assert.match(css, /arx-system-next/);
