@@ -8,12 +8,33 @@ export function parseEmlakjetParcelDetail(raw, { url, province, district }, retr
   const single = label => { const entries = values(label); return entries.length === 1 ? entries[0] : ''; };
   const listingId = new URL(url).pathname.match(/-(\d+)\/?$/)?.[1];
   if (single('İlan Numarası') !== listingId) throw new LandBrowserError('layout-changed', 'İlan numarası doğrulanamadı; ada/parsel aktarılmadı.');
-  const locations = raw.breadcrumbs.filter(row => /^\/satilik-[a-z-]+\/[a-z0-9-]+\/?$/.test(new URL(row.url, url).pathname))
-    .map(row => row.text.replace(/\s+Satılık\s+.+$/, '').trim());
-  if (locations.length !== 3 || locations[0] !== province || locations[1] !== `${province} ${district}` || !locations[2].startsWith(`${district} `)) {
+
+  const slug = value => String(value || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const cleanLocation = value => String(value || '').replace(/\s+Satılık\s+.+$/i, '').trim();
+  const locationRows = raw.breadcrumbs
+    .filter(row => /^\/satilik-[a-z-]+\/[a-z0-9-]+\/?$/.test(new URL(row.url, url).pathname))
+    .map(row => {
+      const parsed = new URL(row.url, url);
+      return { text: cleanLocation(row.text), key: parsed.pathname.split('/').filter(Boolean).at(-1) || '' };
+    });
+  const provinceSlug = slug(province), districtSlug = slug(district);
+  const expectedProvinceDistrict = `${provinceSlug}-${districtSlug}`;
+  const pathScopeValid = locationRows.length === 3
+    && locationRows[0].key === provinceSlug
+    && locationRows[1].key === expectedProvinceDistrict
+    && locationRows[2].key.startsWith(`${expectedProvinceDistrict}-`);
+  if (!pathScopeValid) {
     throw new LandBrowserError('layout-changed', 'İlanın il/ilçe bilgileri seçilen adayla eşleşmedi; ada/parsel aktarılmadı.');
   }
-  return normalizeLandParcelIdentity({ province, district, neighborhood: locations[2].slice(district.length).trim(),
+
+  const thirdText = locationRows[2].text;
+  const prefixes = [`${province} ${district} `, `${district} `];
+  const neighborhood = prefixes.reduce((value, prefix) =>
+    value.toLocaleLowerCase('tr-TR').startsWith(prefix.toLocaleLowerCase('tr-TR')) ? value.slice(prefix.length).trim() : value, thirdText);
+  if (!neighborhood) throw new LandBrowserError('layout-changed', 'İlanın mahalle/köy bilgisi doğrulanamadı; ada/parsel aktarılmadı.');
+
+  return normalizeLandParcelIdentity({ province, district, neighborhood,
     block: /^\d{1,10}$/.test(single('Ada')) ? single('Ada') : '', parcelNo: /^\d{1,10}$/.test(single('Parsel')) ? single('Parsel') : '', sourceUrl: url, retrievedAt, basis: 'listing-declaration' }, url);
 }
 
