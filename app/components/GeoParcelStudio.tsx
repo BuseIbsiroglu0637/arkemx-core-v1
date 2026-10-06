@@ -2088,7 +2088,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
 
   const draftArchitectureAction = <div className="geo-stage-next" data-ready="draft" aria-label="Taslak mimari geçiş">
     <div><span>İMAR / YERLEŞİM İNCELEMESİ BEKLİYOR</span><b>Mimari ihtiyaç programını taslak olarak hazırlayın.</b><small>İmar ve yerleşim kontrolü beklemede kalır.</small></div>
-    <a href="/mimari-program-studyosu">Taslak olarak mimariye devam et →</a>
+    <a href="/mimari-program-studyosu?from=geo-draft">Taslak olarak mimariye devam et →</a>
   </div>;
   const stageContent: Record<Stage, React.ReactNode> = {
     locate: <div className="geo-control-section"><span>01 / PARSELİ BUL</span><h3>Resmî sorgudaki sırayla konumu seçin.</h3>{administrativeSource === "fallback" && <div className="arx-geo-offline-alert" role="status">
