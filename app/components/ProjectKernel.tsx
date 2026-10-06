@@ -85,6 +85,29 @@ export const PROJECT_JOURNEY = [
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
 
+const EXPLICIT_MODULE_JOURNEY_INDEX: Record<string, number> = {
+  "decision-assistant": 0,
+  "geo-parcel": 1,
+  "quick-site-scenario": 1,
+  "demolition-screening": 1,
+  "architectural-program": 2,
+  "plan-editor": 2,
+  "system-comparison": 3,
+  // Structural predesign is part of the System decision phase in the guided UX.
+  "structural-concept": 3,
+  "engineering-coordination": 4,
+  "digital-delivery-scope": 4,
+  "arkem-x": 4,
+  "project-os": 5,
+  "model-library-review": 6,
+};
+
+export function projectJourneyIndexForModule(module: string) {
+  return Object.prototype.hasOwnProperty.call(EXPLICIT_MODULE_JOURNEY_INDEX, module)
+    ? EXPLICIT_MODULE_JOURNEY_INDEX[module]
+    : null;
+}
+
 export function deriveProjectJourneyState(thread: ProjectThread) {
   const systemValue = thread.canonical.structure.system.trim();
   const systemDecisionReady = Boolean(systemValue)
