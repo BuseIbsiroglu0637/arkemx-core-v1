@@ -140,6 +140,26 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
     return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
   });
 
+  // "Achieved" means the stage has genuinely been worked, while "completed"
+  // still means all of its own gates and all earlier sequential gates are
+  // closed. This distinction matters for draft workflows that proceed beyond
+  // an unresolved zoning/parcel check.
+  const node = (id: string) => thread.nodes.find((item) => item.id === id);
+  const achieved = rawCompleted.map((value, index) => {
+    if (value) return true;
+    const step = PROJECT_JOURNEY[index];
+    if (step.short === "Mimari") {
+      return Boolean(node("architectural-program")?.active || node("plan-editor")?.active);
+    }
+    if (step.short === "Sistem") {
+      return Boolean(node("system-comparison")?.active || node("structural-concept")?.active);
+    }
+    if (step.short === "Koordinasyon") {
+      return Boolean(node("engineering-coordination")?.milestoneComplete);
+    }
+    return false;
+  });
+
   // Project journey is intentionally sequential. A later module may already
   // contain seeded or historical data, but it must not appear completed while
   // an earlier decision gate is still open.
@@ -154,7 +174,6 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
   // always the same thing. Draft/provisional workflows may continue while an
   // earlier parcel or zoning check remains open. Keep that earlier gate as a
   // backlog item without visually sending the project backwards.
-  const node = (id: string) => thread.nodes.find((item) => item.id === id);
   const workingSignals = [
     Boolean(node("decision-assistant")?.active),
     Boolean(node("quick-site-scenario")?.milestoneComplete || node("geo-parcel")?.readiness && node("geo-parcel")!.readiness >= 35),
@@ -172,7 +191,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
 
   return {
     completed,
-    achieved: rawCompleted,
+    achieved,
     currentIndex,
     workingIndex,
     firstIncompleteIndex,
