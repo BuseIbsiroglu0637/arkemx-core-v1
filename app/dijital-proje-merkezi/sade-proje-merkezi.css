@@ -1793,3 +1793,49 @@ html[data-theme="dark"] .arx-center-projects-menu > footer > a {
     flex-direction:column;
   }
 }
+
+
+/* Project journey: distinguish current work from earlier unresolved gates */
+.arx-center-journey-step.is-backlog > i {
+  border-color:#d2a15f;
+  background:#fff7e9;
+  color:#9b672b;
+}
+.arx-center-journey-step.is-backlog:not(:last-child)::after {
+  background:#dbc49e;
+}
+.arx-center-journey-step.is-backlog b {
+  color:#7a5b31;
+}
+.arx-center-journey-step.is-backlog small {
+  color:#9b672b;
+  font-weight:750;
+}
+.arx-center-step-card.is-backlog {
+  border-color:#ead5ad;
+  background:#fffaf1;
+}
+.arx-center-step-card.is-backlog > small {
+  color:#9b672b;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-backlog > i {
+  border-color:#6f5732;
+  background:#1b150b;
+  color:#d9ad67;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-backlog:not(:last-child)::after {
+  background:#5b492d;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-backlog b {
+  color:#ddc08d;
+}
+html[data-theme="dark"] .arx-center-journey-step.is-backlog small {
+  color:#d9ad67;
+}
+html[data-theme="dark"] .arx-center-step-card.is-backlog {
+  border-color:#5a472b;
+  background:#151008;
+}
+html[data-theme="dark"] .arx-center-step-card.is-backlog > small {
+  color:#d9ad67;
+}
