@@ -591,6 +591,16 @@ test("system comparison has a complete dark-theme surface instead of light cards
   assert.match(css, /html\[data-theme="dark"\] \.arx-system-page \.arx-mcda-source-status\.is-current/);
 });
 
+test("MCDA manual scenario state requires an explicit user edit and migrates legacy stale inputs", () => {
+  const tool = fs.readFileSync(new URL("../app/components/SystemComparisonTool.tsx", import.meta.url), "utf8");
+  assert.match(tool, /const \[manualOverrideIntent, setManualOverrideIntent\] = useState\(false\)/);
+  assert.match(tool, /manualOverrideIntent\s*&&\s*!inputMatchesProject/);
+  assert.match(tool, /saved\.manualOverrideIntent === true/);
+  assert.match(tool, /Legacy\/stale MCDA records may contain old inputs/);
+  assert.match(tool, /setManualOverrideIntent\(false\)/);
+  assert.match(tool, /setArea\(Number\(event\.target\.value\)\); setManualOverrideIntent\(true\)/);
+});
+
 test("local build renders the focused BIM coordination workspace", async () => {
   const response = await render("/bim-koordinasyon");
   assert.equal(response.status, 200);
