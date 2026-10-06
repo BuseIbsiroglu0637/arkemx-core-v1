@@ -70,3 +70,207 @@ body:has(.arx-workspace-page) .v4-floating-contact { display: none !important; }
   .project-kernel-compact { grid-template-columns: 1fr; align-items: stretch; }
   .project-kernel-compact-actions { justify-content: flex-start; }
 }
+
+
+/* Prototype final — structural predesign handoff and dark-theme continuity */
+.engineering-mcda-handoff {
+  display:grid;
+  grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);
+  gap:0;
+  margin:0;
+  border:1px solid #c7d4d8;
+  border-top:0;
+  background:#f5f8f8;
+}
+.engineering-mcda-handoff > div:first-child {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:62px;
+  padding:11px 16px;
+  border-right:1px solid #d5e0e3;
+}
+.engineering-mcda-handoff > div:first-child span {
+  color:#a85d35;
+  font:800 8px/1.2 var(--font-manrope),Arial,sans-serif;
+  letter-spacing:.1em;
+}
+.engineering-mcda-handoff > div:first-child b {
+  margin-top:5px;
+  color:#203b47;
+  font:720 10px/1.35 var(--font-manrope),Arial,sans-serif;
+}
+.engineering-mcda-handoff > div:last-child {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  padding:10px 14px;
+}
+.engineering-mcda-handoff > div:last-child > span {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:30px;
+  padding:6px 9px;
+  border:1px solid #cbd8dc;
+  background:#fff;
+  color:#3c5965;
+  font:720 8px/1 var(--font-manrope),Arial,sans-serif;
+}
+.engineering-mcda-handoff > div:last-child > span.active {
+  border-color:#b96739;
+  background:#fff4ec;
+  color:#8f4d2a;
+}
+.engineering-mcda-handoff small {
+  color:#879ba3;
+  font:700 7px/1 var(--font-manrope),Arial,sans-serif !important;
+}
+.engineering-controls .designer-tabs button.shortlisted:not(.active) {
+  box-shadow:inset 0 3px #4e9a74;
+  color:#dce9e2;
+}
+
+html[data-theme="dark"] .arx-structural-page .arx-workspace-intro > span { color:#6f9cad; }
+html[data-theme="dark"] .arx-structural-page .arx-workspace-intro h1 { color:#edf4f6; }
+html[data-theme="dark"] .arx-structural-page .arx-workspace-intro p { color:#93aab3; }
+html[data-theme="dark"] .arx-structural-page .arx-workspace-nav a { color:#8fa8b2; }
+html[data-theme="dark"] .arx-structural-page .arx-workspace-nav a:hover,
+html[data-theme="dark"] .arx-structural-page .arx-workspace-nav a:focus-visible { color:#e29461; }
+
+html[data-theme="dark"] .arx-structural-page .engineering-workbench {
+  background:#020506;
+  color:#eaf0f2;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact {
+  border-color:#283338;
+  background:#080b0d;
+  color:#e7eef0;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-name {
+  color:#eef4f6;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-meta {
+  color:#91a5ad;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-meta span {
+  background:#10171a;
+  color:#a8bbc2;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-actions a,
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-actions button {
+  border-color:#33434a;
+  background:#0e1417;
+  color:#c5d3d8;
+}
+html[data-theme="dark"] .arx-structural-page .project-kernel-compact-actions .is-primary {
+  border-color:#365f6f;
+  background:#123747;
+  color:#fff;
+}
+
+html[data-theme="dark"] .arx-structural-page .v114-source-band {
+  border-color:#28363c;
+  background:#28363c;
+}
+html[data-theme="dark"] .arx-structural-page .v114-source-band > div {
+  background:#0b1013;
+  color:#e8eef0;
+}
+html[data-theme="dark"] .arx-structural-page .v114-source-band small {
+  color:#8fa3ab;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff {
+  border-color:#29363b;
+  background:#080c0e;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff > div:first-child {
+  border-color:#29363b;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff > div:first-child b {
+  color:#e7eef1;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff > div:last-child > span {
+  border-color:#334149;
+  background:#101619;
+  color:#c6d3d8;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff > div:last-child > span.active {
+  border-color:#8b5436;
+  background:#21140e;
+  color:#eaa078;
+}
+
+html[data-theme="dark"] .arx-structural-page .engineering-panel {
+  background:#080b0d;
+  color:#e9eff1;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-panel > header {
+  border-color:#293338;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-panel > header small,
+html[data-theme="dark"] .arx-structural-page .engineering-data-grid span,
+html[data-theme="dark"] .arx-structural-page .engineering-checks article p,
+html[data-theme="dark"] .arx-structural-page .engineering-checks article > small,
+html[data-theme="dark"] .arx-structural-page .engineering-load-cards small,
+html[data-theme="dark"] .arx-structural-page .quantity-board small {
+  color:#8ea1a9;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-data-grid,
+html[data-theme="dark"] .arx-structural-page .engineering-data-grid p,
+html[data-theme="dark"] .arx-structural-page .engineering-load-cards,
+html[data-theme="dark"] .arx-structural-page .engineering-load-cards article,
+html[data-theme="dark"] .arx-structural-page .quantity-board,
+html[data-theme="dark"] .arx-structural-page .quantity-board article,
+html[data-theme="dark"] .arx-structural-page .engineering-checks article,
+html[data-theme="dark"] .arx-structural-page .load-trace-table > div {
+  border-color:#283338;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-definition {
+  border-left-color:#b96739;
+  background:#10171a;
+  color:#9cb0b8;
+}
+html[data-theme="dark"] .arx-structural-page .load-trace-table .head {
+  background:#0d202a;
+  color:#91a5ad;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-export-actions {
+  border-color:#293338;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-export-actions button {
+  border-color:#293338;
+  background:#0d1215;
+  color:#d7e1e5;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-export-actions button:hover {
+  background:#143243;
+  color:#fff;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-disclaimer {
+  background:#050d12;
+  color:#8ea1aa;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-controls,
+html[data-theme="dark"] .arx-structural-page .engineering-stage,
+html[data-theme="dark"] .arx-structural-page .engineering-toolbar,
+html[data-theme="dark"] .arx-structural-page .engineering-viewport {
+  border-color:#28363c;
+}
+html[data-theme="dark"] .arx-structural-page .engineering-control-scroll select,
+html[data-theme="dark"] .arx-structural-page .engineering-control-scroll input[type=number] {
+  border-color:#38505a;
+  background:#09151b;
+  color:#eef4f6;
+}
+html[data-theme="dark"] .arx-structural-page .basis-reference span {
+  border-color:#314750;
+  color:#9fb2ba;
+}
+
+@media(max-width:760px) {
+  .engineering-mcda-handoff { grid-template-columns:1fr; }
+  .engineering-mcda-handoff > div:first-child { border-right:0; border-bottom:1px solid #d5e0e3; }
+  html[data-theme="dark"] .arx-structural-page .engineering-mcda-handoff > div:first-child { border-color:#29363b; }
+}
