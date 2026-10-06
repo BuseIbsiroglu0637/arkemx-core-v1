@@ -476,13 +476,15 @@ export function SimpleProjectCenter() {
         <div className="arx-center-journey-track">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
+            const achieved = journeyState.achieved[index];
             const current = index === workingJourneyIndex && !journeyState.allComplete;
-            const backlog = index < workingJourneyIndex && !done;
-            const state = done ? "done" : current ? "current" : backlog ? "backlog" : "upcoming";
+            const provisional = index < workingJourneyIndex && achieved && !done;
+            const backlog = index < workingJourneyIndex && !achieved;
+            const state = current ? "current" : done ? "done" : provisional ? "provisional" : backlog ? "backlog" : "upcoming";
             return <Link key={step.short} href={step.href} className={`arx-center-journey-step is-${state}`}
               aria-current={current ? "step" : undefined}>
               <i aria-hidden="true">{done ? <Check size={13} strokeWidth={2.4} /> : index + 1}</i>
-              <span><b>{step.short}</b><small>{done ? "Tamamlandı" : current ? "Şu an buradasın" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small></span>
+              <span><b>{step.short}</b><small>{current ? "Şu an buradasın" : done ? "Tamamlandı" : provisional ? "Çalışıldı · üst kontrol bekliyor" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small></span>
             </Link>;
           })}
         </div>
@@ -523,13 +525,15 @@ export function SimpleProjectCenter() {
         <div className="arx-center-step-grid">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
+            const achieved = journeyState.achieved[index];
             const current = index === workingJourneyIndex && !journeyState.allComplete;
-            const backlog = index < workingJourneyIndex && !done;
-            return <Link key={step.short} href={step.href} className={`arx-center-step-card ${done ? "is-done" : current ? "is-current" : backlog ? "is-backlog" : ""}`}>
+            const provisional = index < workingJourneyIndex && achieved && !done;
+            const backlog = index < workingJourneyIndex && !achieved;
+            return <Link key={step.short} href={step.href} className={`arx-center-step-card ${current ? "is-current" : done ? "is-done" : provisional ? "is-provisional" : backlog ? "is-backlog" : ""}`}>
               <span>{String(index + 1).padStart(2, "0")} / {step.short.toUpperCase()}</span>
               <b>{step.label}</b>
               <p>{journeyDescriptions[step.short]}</p>
-              <small>{done ? "Tamamlandı ✓" : current ? "Şu an çalışılıyor →" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small>
+              <small>{current ? "Şu an çalışılıyor →" : done ? "Tamamlandı ✓" : provisional ? "Çalışıldı · üst kontrol bekliyor" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small>
             </Link>;
           })}
         </div>
