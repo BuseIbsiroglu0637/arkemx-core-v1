@@ -34,6 +34,12 @@ const journeyDescriptions: Record<(typeof PROJECT_JOURNEY)[number]["short"], str
   Teslim: "Kontrolleri tamamlayın ve dijital teslim paketini hazırlayın.",
 };
 
+function provisionalJourneyLabel(short: (typeof PROJECT_JOURNEY)[number]["short"]) {
+  return short === "Arazi"
+    ? "Çalışıldı · imar doğrulaması bekliyor"
+    : "Çalışıldı · üst kontrol bekliyor";
+}
+
 export function SimpleProjectCenter() {
   const { project, thread, importProject, clearLocalProject, persistence } = useProjectKernel();
   const router = useRouter();
@@ -511,7 +517,7 @@ export function SimpleProjectCenter() {
             return <Link key={step.short} href={step.href} className={`arx-center-journey-step is-${state}`}
               aria-current={current ? "step" : undefined}>
               <i aria-hidden="true">{done ? <Check size={13} strokeWidth={2.4} /> : index + 1}</i>
-              <span><b>{step.short}</b><small>{current ? "Şu an buradasın" : done ? "Tamamlandı" : provisional ? "Çalışıldı · üst kontrol bekliyor" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small></span>
+              <span><b>{step.short}</b><small>{current ? "Şu an buradasın" : done ? "Tamamlandı" : provisional ? provisionalJourneyLabel(step.short) : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small></span>
             </Link>;
           })}
         </div>
@@ -560,7 +566,7 @@ export function SimpleProjectCenter() {
               <span>{String(index + 1).padStart(2, "0")} / {step.short.toUpperCase()}</span>
               <b>{step.label}</b>
               <p>{journeyDescriptions[step.short]}</p>
-              <small>{current ? "Şu an çalışılıyor →" : done ? "Tamamlandı ✓" : provisional ? "Çalışıldı · üst kontrol bekliyor" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small>
+              <small>{current ? "Şu an çalışılıyor →" : done ? "Tamamlandı ✓" : provisional ? provisionalJourneyLabel(step.short) : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small>
             </Link>;
           })}
         </div>
