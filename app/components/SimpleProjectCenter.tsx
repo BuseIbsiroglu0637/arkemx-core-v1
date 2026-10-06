@@ -53,16 +53,19 @@ export function SimpleProjectCenter() {
   const journeyState = deriveProjectJourneyState(thread);
   const completedCount = journeyState.completed.filter(Boolean).length;
   const remainingCount = Math.max(0, PROJECT_JOURNEY.length - completedCount);
-  const currentJourneyStep = PROJECT_JOURNEY[journeyState.currentIndex];
+  const workingJourneyIndex = journeyState.workingIndex;
+  const currentJourneyStep = PROJECT_JOURNEY[workingJourneyIndex];
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
   const journeyNextAction = journeyState.allComplete
     ? { label: "Teslim kontrollerini gözden geçir", route: "#arx-project-controls" }
-    : currentJourneyStep.short === "Arazi"
+    : journeyState.hasBacklog
       ? { label: thread.nextAction.label, route: thread.nextAction.route }
-      : currentJourneyStep.short === "Mimari" && architectureMilestoneReady && !planMilestoneReady
-        ? { label: "Plan ve aksı tamamla", route: "/plan-ve-aks" }
-        : { label: journeyState.nextStep.label, route: journeyState.nextStep.href };
+      : currentJourneyStep.short === "Arazi"
+        ? { label: thread.nextAction.label, route: thread.nextAction.route }
+        : currentJourneyStep.short === "Mimari" && architectureMilestoneReady && !planMilestoneReady
+          ? { label: "Plan ve aksı tamamla", route: "/plan-ve-aks" }
+          : { label: journeyState.nextStep.label, route: journeyState.nextStep.href };
   const storageLabel = persistence.state === "loading"
     ? "Çalışma kaydı kontrol ediliyor"
     : persistence.state === "unavailable"
@@ -468,24 +471,25 @@ export function SimpleProjectCenter() {
             <span>PROJE YOLCULUĞU</span>
             <h2 id="arx-center-journey-title">Neredeyiz?</h2>
           </div>
-          <small>{completedCount} / {PROJECT_JOURNEY.length} ana aşama tamamlandı · {PROJECT_MODULES.length} teknik modül</small>
+          <small>{completedCount} / {PROJECT_JOURNEY.length} ana aşama tamamlandı · aktif çalışma {workingJourneyIndex + 1} / {PROJECT_JOURNEY.length} · {PROJECT_MODULES.length} teknik modül</small>
         </div>
         <div className="arx-center-journey-track">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
-            const current = index === journeyState.currentIndex && !journeyState.allComplete;
-            const state = done ? "done" : current ? "current" : "upcoming";
+            const current = index === workingJourneyIndex && !journeyState.allComplete;
+            const backlog = index < workingJourneyIndex && !done;
+            const state = done ? "done" : current ? "current" : backlog ? "backlog" : "upcoming";
             return <Link key={step.short} href={step.href} className={`arx-center-journey-step is-${state}`}
               aria-current={current ? "step" : undefined}>
               <i aria-hidden="true">{done ? <Check size={13} strokeWidth={2.4} /> : index + 1}</i>
-              <span><b>{step.short}</b><small>{done ? "Tamamlandı" : current ? "Şu an buradasın" : "Henüz başlanmadı"}</small></span>
+              <span><b>{step.short}</b><small>{done ? "Tamamlandı" : current ? "Şu an buradasın" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small></span>
             </Link>;
           })}
         </div>
       </section>
 
       <section className="arx-center-overview" aria-label="Proje özeti">
-        <article><span>Ana aşama ilerlemesi</span><strong>{completedCount} / {PROJECT_JOURNEY.length}</strong><small>{PROJECT_MODULES.length} teknik modül bu aşamalarda gruplanır</small></article>
+        <article><span>Çalışılan ana aşama</span><strong>{workingJourneyIndex + 1} / {PROJECT_JOURNEY.length}</strong><small>{completedCount} ana aşama tamamlandı · {PROJECT_MODULES.length} teknik modül</small></article>
         <article><span>Açık konu</span><strong className={thread.issues.length ? "watch" : "good"}>{thread.issues.length}</strong><small>kontrol bekleyen kayıt</small></article>
         <article><span>Veri hazırlığı</span><strong>%{thread.metrics.readiness}</strong><small>bağlı proje verisi</small></article>
       </section>
@@ -501,9 +505,9 @@ export function SimpleProjectCenter() {
 
       <section className="arx-center-next-work" aria-labelledby="arx-center-next-title">
         <div>
-          <span>SIRADAKİ ADIM</span>
+          <span>{journeyState.hasBacklog ? "ÖNCELİKLİ EKSİK" : "SIRADAKİ ADIM"}</span>
           <h2 id="arx-center-next-title">{journeyNextAction.label}</h2>
-          <p>{journeyDescriptions[journeyState.nextStep.short]}</p>
+          <p>{journeyState.hasBacklog ? "Proje daha ileri bir aşamada çalışılıyor; bu geriye dönük kontrol kapanmadan proje zinciri tamamlanmış sayılmaz." : journeyDescriptions[journeyState.nextStep.short]}</p>
         </div>
         <Link href={journeyNextAction.route}>Çalışmaya Devam Et <ArrowRight size={17} aria-hidden="true" /></Link>
       </section>
@@ -519,12 +523,13 @@ export function SimpleProjectCenter() {
         <div className="arx-center-step-grid">
           {PROJECT_JOURNEY.map((step, index) => {
             const done = journeyState.completed[index];
-            const current = index === journeyState.currentIndex && !journeyState.allComplete;
-            return <Link key={step.short} href={step.href} className={`arx-center-step-card ${done ? "is-done" : current ? "is-current" : ""}`}>
+            const current = index === workingJourneyIndex && !journeyState.allComplete;
+            const backlog = index < workingJourneyIndex && !done;
+            return <Link key={step.short} href={step.href} className={`arx-center-step-card ${done ? "is-done" : current ? "is-current" : backlog ? "is-backlog" : ""}`}>
               <span>{String(index + 1).padStart(2, "0")} / {step.short.toUpperCase()}</span>
               <b>{step.label}</b>
               <p>{journeyDescriptions[step.short]}</p>
-              <small>{done ? "Tamamlandı ✓" : current ? "Devam et →" : "Henüz başlanmadı"}</small>
+              <small>{done ? "Tamamlandı ✓" : current ? "Şu an çalışılıyor →" : backlog ? "Eksik kontrol var" : "Henüz başlanmadı"}</small>
             </Link>;
           })}
         </div>
