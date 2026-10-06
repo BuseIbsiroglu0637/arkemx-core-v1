@@ -23,7 +23,8 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
   const areaEstimate = estimateMinimumLandArea(targetArea, floors, areaSizing);
   const criteria = { ...criteriaDraft, minArea: areaSizing.mode === "auto" ? areaEstimate?.minimumArea ?? 0 : criteriaDraft.minArea };
   const [shortlist, setShortlist] = useState(saved?.shortlist ?? []);
-  const [selectedId, setSelectedId] = useState<string | null>(saved?.selectedId ?? null);
+  const validSavedSelectedId = saved?.selectedId && saved.shortlist.some(candidate => candidate.id === saved.selectedId && assessLandCandidate(candidate, criteria).mismatch.length === 0) ? saved.selectedId : null;
+  const [selectedId, setSelectedId] = useState<string | null>(validSavedSelectedId);
   const [searchedAt, setSearchedAt] = useState(saved?.searchedAt ?? "");
   const [result, setResult] = useState<LandSearchResponse | null>(null);
   const [connection, setConnection] = useState<"loading" | "ready" | "missing" | "error">("loading");
@@ -109,7 +110,7 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
   function card(candidate: LandCandidate, savedCard: boolean) {
     const assessment = assessLandCandidate(candidate, criteria);
     return <article className={`land-card${selectedId === candidate.id ? " is-selected" : ""}`} key={candidate.id} data-candidate-url={candidate.url}>
-      <div className="land-card-top"><span>{candidate.basis === "browser-listing" ? "Tarayıcıda okunan ilan kartı" : candidate.basis === "ai-search" ? "AI web araştırması" : candidate.basis === "search-index" ? "Arama dizininde bulunan ilan" : "İlan sağlayıcısı kaydı"}</span><b>{selectedId === candidate.id ? "İncelemede" : assessment.mismatch.length ? "Kriter / risk uyuşmazlığı" : assessment.missing.length ? "Bilgi eksik · doğrulama gerekli" : "Kriter eşleşmesi"}</b></div>
+      <div className="land-card-top"><span>{candidate.basis === "browser-listing" ? "Tarayıcıda okunan ilan kartı" : candidate.basis === "ai-search" ? "AI web araştırması" : candidate.basis === "search-index" ? "Arama dizininde bulunan ilan" : "İlan sağlayıcısı kaydı"}</span><b>{selectedId === candidate.id && !assessment.mismatch.length ? "İncelemede" : assessment.mismatch.length ? "Kriter / risk uyuşmazlığı" : assessment.missing.length ? "Bilgi eksik · doğrulama gerekli" : "Kriter eşleşmesi"}</b></div>
       <h3><a href={candidate.url} target="_blank" rel="noopener noreferrer">{candidate.title} ↗</a></h3>
       <p>{[candidate.province, candidate.district].filter(Boolean).join(" / ") || "Konum doğrulanmadı"}</p>
       <dl><div><dt>{candidate.tenure === "rent" ? "İstenen aylık kira" : candidate.tenure === "sale" ? "İstenen satış fiyatı" : "İşlem türü doğrulanmadı"}</dt><dd>{money(candidate.priceTRY)}</dd></div><div><dt>İlanda belirtilen alan</dt><dd>{candidate.areaM2 === null ? "Bilgi bulunamadı" : `${candidate.areaM2.toLocaleString("tr-TR")} m²`}</dd></div><div><dt>İlan fiyatı / alan</dt><dd>{assessment.unitPrice === null ? "Hesaplanamıyor" : `${money(assessment.unitPrice)} / m²${candidate.tenure === "rent" ? " / ay" : ""}`}</dd></div></dl>
