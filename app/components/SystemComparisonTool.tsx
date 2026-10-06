@@ -29,6 +29,15 @@ const profiles: Record<SystemId, { name: string; slug: string; description: stri
 };
 
 const defaultWeights: Record<CriterionId, number> = { schedule: 5, certainty: 4, span: 4, mass: 4, carbon: 3, flexibility: 4, supply: 3, fire: 3 };
+const usageLabels: Record<string, string> = {
+  industrial: "Sanayi / üretim",
+  storage: "Depo / lojistik",
+  residential: "Konut",
+  commercial: "Ticari / sosyal",
+};
+const formatArea = (value: number) => value.toLocaleString("tr-TR", { maximumFractionDigits: 1 });
+const formatSpan = (value: number) => value.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatScore = (value: number) => value.toLocaleString("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export function SystemComparisonTool({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
@@ -132,8 +141,8 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
     });
 
     setFloors(currentProjectSource.floors);
-    setArea(currentProjectSource.area);
-    setSpan(currentProjectSource.span);
+    setArea(Number(currentProjectSource.area.toFixed(1)));
+    setSpan(Number(currentProjectSource.span.toFixed(2)));
     setUsage(currentProjectSource.usage);
     setSourceSnapshot(currentProjectSource);
   }, [currentProjectSource, fireRating, patchModule, repetition, transport]);
@@ -152,8 +161,8 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
       const input = saved.input;
       if (typeof input.usage === "string") setUsage(input.usage);
       if (typeof input.floors === "number") setFloors(input.floors);
-      if (typeof input.span === "number") setSpan(input.span);
-      if (typeof input.area === "number") setArea(input.area);
+      if (typeof input.span === "number") setSpan(Number(input.span.toFixed(2)));
+      if (typeof input.area === "number") setArea(Number(input.area.toFixed(1)));
       if (typeof input.repetition === "number") setRepetition(input.repetition);
       if (typeof input.transport === "number") setTransport(input.transport);
       if (typeof input.fireRating === "number") setFireRating(input.fireRating);
@@ -175,33 +184,48 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
   const exportCsv = () => downloadTextFile("arkem-sistem-karsilastirma.csv", ["rank,system,score,low,high,constraints", ...ranking.map((item, index) => `${index + 1},${item.name},${item.score.toFixed(1)},${item.low.toFixed(1)},${item.high.toFixed(1)},"${item.constraints.join("; ")}"`)].join("\n"), "text/csv;charset=utf-8");
 
   if (simple) {
+    const activeUsage = currentProjectSource?.usage ?? usage;
+    const activeArea = currentProjectSource?.area ?? area;
+    const activeFloors = currentProjectSource?.floors ?? floors;
+    const activeSpan = currentProjectSource?.span ?? span;
+
     return <section className="arx-system-tool" data-testid="system-comparison-tool">
-      <div className="arx-system-project-strip" aria-label="Aktif proje ve MCDA durumu">
-        <div><span>ARKEMX / MCDA</span><b>{project.name}</b></div>
-        <div><span>{project.phase}</span><span>{project.revision}</span><span>Çok ölçütlü ön eleme</span></div>
-      </div>
+      <section className="arx-system-context" aria-label="Aktif proje özeti">
+        <div className="arx-system-context-copy">
+          <span>MÜHENDİSLİK / SİSTEM SEÇİMİ</span>
+          <h2>{project.name}</h2>
+          <p>Çok ölçütlü sistem ön değerlendirmesi</p>
+          <small>{project.phase} · {project.revision}</small>
+        </div>
+        <dl className="arx-system-context-kpis">
+          <div><dt>Kullanım</dt><dd>{usageLabels[activeUsage] ?? activeUsage}</dd></div>
+          <div><dt>Brüt alan</dt><dd>{formatArea(activeArea)} m²</dd></div>
+          <div><dt>Kat</dt><dd>{activeFloors}</dd></div>
+          <div><dt>En büyük açıklık</dt><dd>{formatSpan(activeSpan)} m</dd></div>
+        </dl>
+      </section>
       {sourceStale && currentProjectSource ? <section className="arx-mcda-source-status is-stale" role="alert">
         <div>
-          <span>PROJE VERİSİ DEĞİŞTİ</span>
-          <b>MCDA güncellemesi gerekli</b>
-          <p>Kayıtlı MCDA: {area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {floors} kat · {span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık. Güncel proje: {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat · {currentProjectSource.span.toLocaleString("tr-TR", { maximumFractionDigits: 3 })} m açıklık.</p>
+          <span>PROJE VERİSİ GÜNCELLENDİ</span>
+          <b>Karşılaştırma girdileri aktif proje verisinden farklı.</b>
+          <p>Karşılaştırma: {formatArea(area)} m² · {floors} kat · {formatSpan(span)} m açıklık. Güncel proje: {formatArea(currentProjectSource.area)} m² · {currentProjectSource.floors} kat · {formatSpan(currentProjectSource.span)} m açıklık.</p>
         </div>
-        <button type="button" onClick={importProjectGeometry}>Güncel proje verisini aktar ve yeniden hesapla</button>
+        <button type="button" onClick={importProjectGeometry}>Proje verilerini yenile ve puanları güncelle</button>
       </section> : manualOverride && currentProjectSource ? <section className="arx-mcda-source-status is-override" role="note">
         <div>
-          <span>MANUEL MCDA SENARYOSU</span>
-          <b>{"Proje snapshot'ı güncel; MCDA girdileri bilinçli olarak farklı."}</b>
-          <p>Güncel proje referansı {currentProjectSource.area.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m² · {currentProjectSource.floors} kat. İstersen proje değerlerine geri dönebilirsin.</p>
+          <span>MANUEL KARŞILAŞTIRMA SENARYOSU</span>
+          <b>Girdiler güncel projeden bilinçli olarak farklılaştırıldı.</b>
+          <p>Aktif proje referansı {formatArea(currentProjectSource.area)} m² · {currentProjectSource.floors} kat · {formatSpan(currentProjectSource.span)} m açıklık.</p>
         </div>
-        <button type="button" onClick={importProjectGeometry}>Proje değerlerine dön</button>
+        <button type="button" onClick={importProjectGeometry}>Güncel proje değerlerine dön</button>
       </section> : currentProjectSource ? <section className="arx-mcda-source-status is-current" role="status">
-        <div><span>PROJE VERİSİ GÜNCEL</span><b>{"MCDA kaynak snapshot'ı aktif proje ile eşleşiyor."}</b></div>
+        <div><span>PROJE VERİSİYLE SENKRON</span><b>Karşılaştırma güncel proje girdilerini kullanıyor.</b><p>Alan, kat, kullanım ve açıklık değerleri proje zinciriyle eşleşiyor.</p></div>
       </section> : null}
       <div className="arx-system-grid">
         <section className="arx-system-panel" aria-labelledby="arx-system-input-title">
           <header className="arx-system-panel-head">
-            <h2 id="arx-system-input-title">Proje girdileri</h2>
-            <button type="button" onClick={importProjectGeometry}>Proje verilerini aktar ↘</button>
+            <div><h2 id="arx-system-input-title">Proje girdileri</h2><p>Plan ve aks aşamasından gelen değerleri kullanın veya karşılaştırma senaryosu için düzenleyin.</p></div>
+            <button type="button" onClick={importProjectGeometry}>Proje verilerini yenile</button>
           </header>
           <div className="arx-system-fields">
             <label>Kullanım
@@ -216,10 +240,10 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
               <input type="number" min="1" max="50" value={floors} onChange={(event) => setFloors(Number(event.target.value))} />
             </label>
             <label>En büyük açıklık (m)
-              <input type="number" min="3" max="60" step=".5" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
+              <input type="number" min="3" max="60" step=".01" value={span} onChange={(event) => setSpan(Number(event.target.value))} />
             </label>
             <label>Brüt alan (m²)
-              <input type="number" min="50" max="100000" step=".1" value={area} onChange={(event) => setArea(Number(event.target.value))} />
+              <input type="number" min="50" max="100000" step="1" value={area} onChange={(event) => setArea(Number(event.target.value))} />
             </label>
           </div>
           <details className="arx-system-detail">
@@ -250,7 +274,7 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
         </section>
         <section className="arx-system-panel arx-system-results" aria-labelledby="arx-system-results-title">
           <header className="arx-system-panel-head">
-            <div><h2 id="arx-system-results-title">Beş sistemin karşılaştırması</h2><p>Ön tarama puanları, belirsizlik aralıkları ve inceleme gerektiren koşullar.</p></div>
+            <div><h2 id="arx-system-results-title">Sistem ön değerlendirmesi</h2><p>Beş alternatif; puan, belirsizlik bandı ve inceleme gerektiren koşullarla birlikte sıralanır.</p></div>
             <div className="arx-system-exports">
               <button type="button" onClick={exportJson}>JSON indir</button>
               <button type="button" onClick={exportCsv}>CSV indir</button>
@@ -259,20 +283,20 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
           <div className="arx-system-list">
             {ranking.map((item) => <article key={item.id} className={shortlist.includes(item.id) ? "arx-system-result is-selected" : "arx-system-result"}>
               <div className="arx-system-result-name">
-                <h3>{item.name}</h3>
+                <div className="arx-system-result-title"><h3>{item.name}</h3>{shortlist.includes(item.id) ? <span>Seçildi</span> : null}</div>
                 <p>{item.description}</p>
                 <small>{item.constraints[0] ?? "Ön taramada belirgin kısıt görünmüyor."}</small>
               </div>
               <div className="arx-system-score" aria-label={item.name + " ön tarama puanı"}>
-                <div><strong>{item.score.toFixed(1)}</strong><small>± belirsizlik</small></div>
+                <div><strong>{formatScore(item.score)}</strong><small>belirsizlik bandı</small></div>
                 <div className="arx-system-score-track" aria-hidden="true">
                   <i style={{ left: item.low + "%", width: (item.high - item.low) + "%" }} />
                   <b style={{ left: item.score + "%" }} />
                 </div>
-                <small>{item.low.toFixed(0)}–{item.high.toFixed(0)} aralığı</small>
+                <small>{item.low.toFixed(0)}–{item.high.toFixed(0)} puan</small>
               </div>
               <button type="button" aria-pressed={shortlist.includes(item.id)} onClick={() => toggleShortlist(item.id)}>
-                {shortlist.includes(item.id) ? "✓ Kısa listede" : "+ Kısa listeye ekle"}
+                {shortlist.includes(item.id) ? "Kısa listeden çıkar" : "Kısa listeye ekle"}
               </button>
             </article>)}
           </div>
@@ -299,16 +323,22 @@ export function SystemComparisonTool({ simple = false }: { simple?: boolean } = 
         </section>
       </div>
       <section className="arx-system-panel arx-system-shortlist" aria-labelledby="arx-system-shortlist-title">
-        <div>
-          <h2 id="arx-system-shortlist-title">Birlikte incelenecek sistemler</h2>
+        <div className="arx-system-shortlist-main">
+          <div className="arx-system-shortlist-heading">
+            <div><span>KISA LİSTE · {shortlist.length}</span><h2 id="arx-system-shortlist-title">Birlikte değerlendirilecek sistemler</h2><p>Seçili alternatifler bir sonraki ön taşıyıcı tasarım aşamasına birlikte aktarılır.</p></div>
+            {shortlist.length ? <button type="button" onClick={() => setShortlist([])}>Listeyi temizle</button> : null}
+          </div>
           <div className="arx-system-tags">
-            {ranking.filter((item) => shortlist.includes(item.id)).map((item) => <span key={item.id}>{item.name}</span>)}
-            {shortlist.length === 0 ? <span>Henüz sistem seçilmedi.</span> : null}
+            {ranking.filter((item) => shortlist.includes(item.id)).map((item) => <button type="button" key={item.id} onClick={() => toggleShortlist(item.id)}>{item.name}<span>×</span></button>)}
+            {shortlist.length === 0 ? <span className="is-empty">Henüz sistem seçilmedi.</span> : null}
           </div>
         </div>
-        <Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarıma geç →</Link>
+        <div className="arx-system-next">
+          <p>Kısa listedeki sistemlerle ön taşıyıcı tasarım aşamasına geçin.</p>
+          {shortlist.length ? <Link href="/tasiyici-on-tasarim">Taşıyıcı ön tasarıma geç →</Link> : <button type="button" disabled>Önce sistem seçin</button>}
+        </div>
       </section>
-      <p className="arx-system-note" role="note">Bu karşılaştırma yalnızca kavramsal ön elemedir; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir.</p>
+      <p className="arx-system-note" role="note"><b>Karar sınırı:</b> Bu ekran sistem alternatiflerini erken aşamada karşılaştırır; statik uygunluk, yönetmelik kontrolü, keşif, teklif veya uygulama kararı değildir.</p>
     </section>;
   }
 
