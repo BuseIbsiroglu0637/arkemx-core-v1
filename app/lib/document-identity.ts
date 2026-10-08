@@ -17,8 +17,23 @@ export function createDocumentIdentity(input: {
   elementIds?: string[];
   calculationIds?: string[];
   sourceRevision?: string;
+  sourceContext?: { projectId: string; revision: string; elementIds?: string[]; calculationIds?: string[] };
 }) {
   const validReferences = (ids: string[] | undefined) => !!ids?.length && ids.every(id => typeof id === "string" && !!id.trim()) && new Set(ids).size === ids.length;
+  const issues: string[] = [], pending: string[] = [];
+  const context = input.sourceContext;
+  if (!context) pending.push("reference context unavailable");
+  else {
+    if (context.projectId !== input.projectCode) issues.push("source project identity conflict");
+    if (context.revision !== input.revision || context.revision !== input.sourceRevision) issues.push("source revision conflict");
+    if (!context.elementIds) pending.push("element registry unavailable");
+    else for (const id of input.elementIds ?? []) if (!context.elementIds.includes(id)) issues.push("unknown element reference: " + id);
+    if (!context.calculationIds) pending.push("calculation registry unavailable");
+    else for (const id of input.calculationIds ?? []) if (!context.calculationIds.includes(id)) issues.push("unknown calculation reference: " + id);
+  }
+  if (!validReferences(input.elementIds)) pending.push("valid element references unavailable");
+  if (!validReferences(input.calculationIds)) pending.push("valid calculation references unavailable");
+  const validation = { status: issues.length ? "invalid" : pending.length ? "pending" : "consistent", issues, pending, calculationVerification: false, technicalApproval: false };
   const fingerprint = documentFingerprint([
     input.projectCode,
     input.module,
@@ -33,7 +48,8 @@ export function createDocumentIdentity(input: {
     schema: "ARKEM-DOCUMENT-IDENTITY/2.0",
     references: {
       schema: "ARKEM-DOCUMENT-REFERENCES/1.0",
-      status: !!input.revision && input.sourceRevision === input.revision && validReferences(input.elementIds) && validReferences(input.calculationIds) ? "declared" : "unsupported",
+      status: !!input.revision && input.sourceRevision === input.revision && validation.status === "consistent" ? "declared" : "unsupported",
+      validation,
       sourceRevision: input.sourceRevision ?? null,
       elementIds: validReferences(input.elementIds) ? input.elementIds : null,
       calculationIds: validReferences(input.calculationIds) ? input.calculationIds : null,

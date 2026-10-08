@@ -18,6 +18,7 @@ import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
+import { structuralAnalysisBlockers } from "../lib/source-reference-integrity";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -337,7 +338,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
   handoffIds.forEach((handoffId) => {
     const sourceKey = HANDOFF_MODULES[handoffId]?.source;
-    if (identity && sourceKey && modules[sourceKey] && projectIntegrityIssues({ ...identity, modules: { [sourceKey]: modules[sourceKey] } }).length) return;
+    if (identity && sourceKey && modules[sourceKey] && projectIntegrityIssues({ ...identity, modules }).some(issue => issue.startsWith(sourceKey + ":"))) return;
     const thread = deriveProjectThread(modules);
 
     if (handoffId === "H-01" && modules["geo-parcel"]) {
@@ -477,6 +478,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
         units: declaredModuleUnits("structural-concept"),
         sourceRevision,
         inputElementIds,
+        inputElementSnapshot: inputElementIds ? JSON.parse(JSON.stringify(elements)) : null,
         calculationId: null,
         referenceStatus: sourceRevision && inputElementIds ? "pending-calculation" : "unsupported-source",
         input: {
@@ -543,6 +545,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-05" && modules["structural-concept"]) {
       const structure = record(modules["structural-concept"]);
+      if (structuralAnalysisBlockers(structure).length) return;
       const structureResult = record(structure.result);
       const structureGeometry = record(structureResult.geometry);
       if (numeric(structureGeometry.totalArea) <= 0) return;
@@ -763,7 +766,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     if (!hydrated) return;
     setProject((current) => {
       // Opening a legacy/stale draft is not a new source observation.
-      if (current.modules[key] && projectIntegrityIssues({ ...current, modules: { [key]: current.modules[key] } }).length) return current;
+      if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":"))) return current;
       const incoming = record(moduleValue);
       const mergedValue = mergeModuleValue(current.modules[key], {
         ...incoming,

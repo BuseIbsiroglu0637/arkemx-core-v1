@@ -1,3 +1,4 @@
+import { inspectStructuralSourceReferences } from "./source-reference-integrity";
 type RecordValue = Record<string, unknown>;
 const record = (v: unknown): RecordValue => v && typeof v === "object" && !Array.isArray(v) ? v as RecordValue : {};
 export const PLAN_UNITS = { schema: "ARKEM-UNITS/1.0", length: "m", area: "m2", force: "kN", surfaceLoad: "kN/m2", coordinates: "grid-bay" } as const;
@@ -38,6 +39,10 @@ export function projectIntegrityIssues(value: unknown): string[] {
         if (ids.some(id => typeof id !== "string" || !id.trim()) || new Set(ids).size !== ids.length) issues.push(key + ": clash identity missing or duplicated");
       }
     }
+  }
+  if (modules["structural-concept"]) {
+    const refs = inspectStructuralSourceReferences(p);
+    if (refs.status === "invalid") issues.push(...refs.issues.map(issue => "structural-concept: " + issue));
   }
   return issues;
 }

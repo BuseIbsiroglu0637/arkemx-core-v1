@@ -2,12 +2,16 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { registerHooks } from "node:module";
 import { chromium } from "playwright";
 import { encodeProjectEnvelope } from "../app/lib/project-storage.ts";
 import { stampProjectModule } from "../app/lib/project-core.ts";
 import { buildProgramPlanElements } from "../app/lib/plan-program.ts";
-import { declaredModuleUnits } from "../app/lib/project-integrity.ts";
-const out = path.resolve("../../output/G05_Duzeltme_Kanitlari_2026-10-08");
+registerHooks({resolve(s,c,next){if(s.startsWith(".")&&!path.extname(s)){const u=new URL(s+".ts",c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
+const { declaredModuleUnits } = await import("../app/lib/project-integrity.ts");
+const out = path.resolve(process.env.ARKEMX_G05_EVIDENCE_DIR ?? "../../output/G05_Duzeltme_Kanitlari_2026-10-08");
+fs.mkdirSync(out, { recursive: true });
 const root = "http://127.0.0.1:5173", checks = [], errors = [];
 const time = new Date().toISOString();
 const stamp = (key,value) => stampProjectModule({...value,...(declaredModuleUnits(key)?{units:declaredModuleUnits(key)}:{})},{projectId:"G05-BROWSER",projectRevision:"P02",sourceModule:key,recordedAt:time,action:"updated"});
@@ -39,6 +43,9 @@ try {
  await cardA.getByRole("button",{name:"Kapat",exact:true}).waitFor();checks.push("B08 real UI state change, source reorder and page reload preserve RFI ID and status without leakage");await page.screenshot({path:path.join(out,"B08-browser.png"),fullPage:true});assert.deepEqual(errors,[]);
  const finalProject=current;
  await seed(finalProject,"/tasiyici-on-tasarim");await page.getByTestId("nonuniform-floor-warning").waitFor();await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem("arkem-project-kernel-v2"))?.payload?.modules?.["structural-concept"];return s?.geometrySupport?.status==="unsupported-nonuniform-floor-analysis"&&s?.result===null;});const structural=(await stored()).modules["structural-concept"];assert.equal(structural.input.width,20);assert.equal(structural.input.depth,10);assert.equal(structural.modelContext.floorPlates.length,2);checks.push("B06 structural UI retains selected geometry, flags unsupported nonuniform analysis and blocks result transfer");await page.screenshot({path:path.join(out,"B06-unsupported-analysis.png"),fullPage:true});
+ assert.deepEqual(structural.alternatives,[]);assert.equal(structural.structuralStudio,null);assert.equal(await page.getByRole("button",{name:/A3 kurumsal teknik pafta|Ön boyutlandırma tablosu/}).count(),0);assert.equal(await page.getByText("400 m²",{exact:true}).count(),0);
+ const downloadEvent=page.waitForEvent("download");await page.getByRole("button",{name:"Girdileri ve analiz sınırını indir",exact:true}).click();const download=await downloadEvent;const exported=JSON.parse(fs.readFileSync(await download.path(),"utf8"));assert.equal(exported.result,null);assert.equal(exported.structuralStudio,null);assert.equal(exported.geometrySupport.fullBuildingAnalysis,false);assert.equal(exported.sourceReferenceValidation.status,"consistent");assert.equal(exported.documentIdentity.references.status,"unsupported");assert.equal(exported.documentIdentity.references.calculationIds,null);assert.deepEqual(exported.documentIdentity.references.elementIds.slice().sort(),finalProject.modules["plan-editor"].elements.map(e=>e.id).sort());fs.writeFileSync(path.join(out,"B04-B06-actual-download.json"),JSON.stringify(exported,null,2));
+ await page.reload();await page.getByTestId("nonuniform-floor-warning").waitFor();assert.equal((await stored()).modules["structural-concept"].result,null);checks.push("B04/B06 actual JSON download preserves real element refs, unavailable calculations and blocked nonuniform results after reload");
  const stale=structuredClone(current);stale.modules["plan-editor"]._kernel.projectRevision="P01";await seed(stale,"/plan-ve-aks");await page.getByTestId("project-integrity-warning").waitFor();assert.equal((await stored()).modules["plan-editor"]._kernel.projectRevision,"P01");checks.push("B01 UI reload warns and preserves stale P01 source instead of stamping P02");
  const invalid=structuredClone(current);delete invalid.modules["project-os"].coordination.bimCoordination.clashes[0].guid;await seed(invalid,"/proje-takibi");await page.getByText(/Koordinasyon aktarımı reddedildi:/).waitFor();assert.equal((await stored()).modules["project-os"].coordination.bimCoordination.clashes[0].guid,undefined);checks.push("B08 malformed source explicitly rejected in UI and preserved without fabricated GUID");assert.deepEqual(errors,[]);
  fs.writeFileSync(path.join(out,"browser_result.json"),JSON.stringify({executedAt:new Date().toISOString(),fixture:"synthetic",checks,errors,finalProject,technicalApproval:false},null,2));console.log(JSON.stringify({pass:checks.length,checks}));

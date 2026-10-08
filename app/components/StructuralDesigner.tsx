@@ -15,6 +15,7 @@ import {
 import { createCorporateTechnicalPdf, type TechnicalSheetPolyline } from "../lib/technical-sheet";
 import { createStructuralStudio } from "../lib/structural-studio";
 import { createDocumentIdentity } from "../lib/document-identity";
+import { inspectStructuralSourceReferences } from "../lib/source-reference-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Props = { home?: boolean; compactKernel?: boolean };
@@ -87,7 +88,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
   const { patchModule, thread, project, hydrated } = useProjectKernel();
-  const sourceGeometry = project.modules["structural-concept"] as { modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
+  const sourceGeometry = project.modules["structural-concept"] as { sourceRevision?: string | null; inputElementIds?: string[] | null; modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
   const floorGeometry = useMemo(() => sourceGeometry?.modelContext?.floorPlates ?? [], [sourceGeometry?.modelContext?.floorPlates]);
   const nonuniformFloors = new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1;
   const geometrySupport = useMemo(() => ({ status: nonuniformFloors ? "unsupported-nonuniform-floor-analysis" : "uniform-concept-only", floorPlates: floorGeometry, selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, nonuniformFloors, sourceGeometry?.modelContext?.selectedLevel]);
@@ -258,7 +259,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     };
   }, [baysX, baysY, beamDepth, columnSize, depth, floorHeight, floors, showLoads, showSlabs, slabThickness, system, width]);
 
-  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({ schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, documentIdentity: createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision }), designBasis, soilClass, input, result: nonuniformFloors ? null : result, structuralStudio: nonuniformFloors ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString() }, null, 2), "application/json");
+  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({ schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, documentIdentity: createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: ((project.modules["plan-editor"] as { elements?: Array<{ id: string }> } | undefined)?.elements ?? []).map(element => element.id) } }), sourceReferenceValidation: inspectStructuralSourceReferences(project), designBasis, soilClass, input, result: nonuniformFloors ? null : result, structuralStudio: nonuniformFloors ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString() }, null, 2), "application/json");
   const exportCsv = () => { if (nonuniformFloors) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; } return downloadTextFile("arkem-v114-on-boyutlandirma.csv", [
     "system,score,status,column,beam,floor,relative_cost,duration_weeks,carbon_proxy_kgco2e,factory_share,mass_index",
     ...alternatives.map((alternative) => [
