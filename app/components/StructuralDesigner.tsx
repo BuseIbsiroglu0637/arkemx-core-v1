@@ -15,7 +15,7 @@ import {
 import { createCorporateTechnicalPdf, type TechnicalSheetPolyline } from "../lib/technical-sheet";
 import { createStructuralStudio } from "../lib/structural-studio";
 import { createDocumentIdentity } from "../lib/document-identity";
-import { inspectStructuralSourceReferences } from "../lib/source-reference-integrity";
+import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, structuralAnalysisBlockers } from "../lib/source-reference-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Props = { home?: boolean; compactKernel?: boolean };
@@ -90,8 +90,8 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const sourceGeometry = project.modules["structural-concept"] as { sourceRevision?: string | null; inputElementIds?: string[] | null; modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
   const floorGeometry = useMemo(() => sourceGeometry?.modelContext?.floorPlates ?? [], [sourceGeometry?.modelContext?.floorPlates]);
-  const nonuniformFloors = new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1;
-  const geometrySupport = useMemo(() => ({ status: nonuniformFloors ? "unsupported-nonuniform-floor-analysis" : "uniform-concept-only", floorPlates: floorGeometry, selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, nonuniformFloors, sourceGeometry?.modelContext?.selectedLevel]);
+  const nonuniformFloors = structuralAnalysisBlockers({ modelContext: { floorPlates: floorGeometry } }).length > 0;
+  const geometrySupport = useMemo(() => ({ status: nonuniformFloors ? new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1 ? "unsupported-nonuniform-floor-analysis" : "unsupported-invalid-floor-geometry" : "uniform-concept-only", floorPlates: floorGeometry, selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, nonuniformFloors, sourceGeometry?.modelContext?.selectedLevel]);
   const [view, setView] = useState<WorkspaceView>("model");
   const [webglState, setWebglState] = useState<"checking" | "ready" | "fallback">("checking");
   const [system, setSystem] = useState<StructuralSystem>("concrete");
@@ -131,22 +131,23 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     superDeadLoad, liveLoad, roofSnowLoad, basicWindSpeed, sds, sd1, importance, behaviorFactor,
     concreteStrength, steelYield,
   }), [basicWindSpeed, baysX, baysY, beamDepth, behaviorFactor, columnSize, concreteStrength, depth, floorHeight, floors, importance, liveLoad, roofSnowLoad, sds, sd1, slabThickness, steelYield, superDeadLoad, system, usage, width]);
-  const result = useMemo(() => calculateStructuralConcept(input), [input]);
+  // Unsupported geometry returns before result consumers render; no uniform engine is invoked.
+  const result = useMemo(() => runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorGeometry } }, () => calculateStructuralConcept(input)), [floorGeometry, input])!;
   const architecturalScheme = useMemo(() => {
     const architecture = project.modules["architectural-program"] as { architecturalScheme?: unknown } | undefined;
     return architecture?.architecturalScheme;
   }, [project.modules]);
-  const structuralStudio = useMemo(() => createStructuralStudio({
+  const structuralStudio = useMemo(() => runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorGeometry } }, () => createStructuralStudio({
     reference: project.id,
     input,
     architecturalScheme,
     repetition,
     transportDistance,
     fireRating,
-  }), [architecturalScheme, fireRating, input, project.id, repetition, transportDistance]);
-  const alternatives = structuralStudio.alternatives;
+  })), [architecturalScheme, fireRating, floorGeometry, input, project.id, repetition, transportDistance])!;
+  const alternatives = useMemo(() => structuralStudio?.alternatives ?? [], [structuralStudio]);
   const activeAlternative = alternatives.find((alternative) => alternative.system === system) ?? alternatives[0];
-  const checkCounts = useMemo(() => result.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }), [result.checks]);
+  const checkCounts = useMemo(() => result?.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }) ?? { pass: 0, review: 0, block: 0 }, [result]);
 
   useEffect(() => {
     if (!hydrated || !modelHydrated) return;
@@ -453,7 +454,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   };
 
   if (nonuniformFloors) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
-    <p role="alert" data-testid="nonuniform-floor-warning">Kat ölçüleri korundu. Bu araç farklı kat plakaları için taşıyıcı hesap üretemiyor; kat bazlı analiz gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
+    <p role="alert" data-testid="nonuniform-floor-warning">Kat ölçüleri korundu. Bu geometri mevcut uniform kat motoruyla analiz edilemiyor; kat bazlı analiz veya geometri doğrulaması gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
     <ProjectKernelBar module="STRUCTURAL" moduleKey="structural-concept" confidence="Kat bazlı analiz bekleniyor" compact={compactKernel} />
     <h2>Kayıtlı kat geometrisi</h2>
     <p>Seçili kat: K{sourceGeometry?.modelContext?.selectedLevel} · {width} × {depth} m</p>

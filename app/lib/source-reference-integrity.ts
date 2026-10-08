@@ -56,3 +56,7 @@ export function structuralAnalysisBlockers(value: unknown) {
   }
   return issues;
 }
+
+export function runSupportedStructuralAnalysis<T>(source: unknown, calculate: () => T): T | null {
+  return structuralAnalysisBlockers(source).length ? null : calculate();
+}

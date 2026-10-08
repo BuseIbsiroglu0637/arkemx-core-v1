@@ -26,7 +26,7 @@ Bu paketler ortak veri modeli, hesap yürütme yaşam döngüsü, yerel/API kal�
 
 ## B06 ile sınır
 
-H03 seçili katın ölçülerini ve bütün kat plakalarını korur. H05 artık UI açılmasa bile `unsupported` durumunu ve farklı kat ölçülerini denetler; kayıtlı eski pozitif sonuç 400 m² olsa da aktarmaz. Taşıyıcı ekranda sonuç/stüdyo null, alternatifler boş, PDF/CSV sonuç ihracı kapalıdır; gerçek JSON indirmesi yalnız girdileri ve destek sınırını verir. Farklı kat plakaları için ayrı yük yolu, kat bazlı model, sistem analizi ve bu modelden üretilen çizim/hesap desteği geliştirilmedi. B06 **kısmen çözüldü; tam analiz desteği açık**.
+H03 seçili katın ölçülerini ve bütün kat plakalarını korur. H05 artık UI açılmasa bile `unsupported` durumunu ve farklı kat ölçülerini denetler; kayıtlı eski pozitif sonuç 400 m² olsa da aktarmaz. Taşıyıcı ekranda sonuç/stüdyo null, alternatifler boş, PDF/CSV sonuç ihracı kapalıdır; gerçek JSON indirmesi yalnız girdileri ve destek sınırını verir. Ortak analiz kapısı farklı veya geçersiz kat plakalarında uniform hesap ve sistem karşılaştırma motorlarını çağırmaz. Negatif test motor çağrısının sıfır kaldığını, uniform pozitif kontrol ise çağrının yapılabildiğini doğrular. Farklı kat plakaları için ayrı yük yolu, kat bazlı model, sistem analizi ve bu modelden üretilen çizim/hesap desteği geliştirilmedi. B06 **kısmen çözüldü; tam analiz desteği açık**.
 
 ## Açık sınırlar ve sonraki adım
 
