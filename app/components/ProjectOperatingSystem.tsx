@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
-import { createProjectOperatingModel, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
+import { createProjectOperatingModel, restoreOperatingWorkStates, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
-import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
+import { restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 type Module = "overview" | "work" | "program" | "documents" | "decisions" | "revisions" | "cost" | "quality" | "supply" | "handover";
 type Status = "Onaylı" | "İncelemede" | "Revizyon";
@@ -79,6 +79,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const [handover, setHandover] = useState([true, true, true, false, false, false]);
   const [copilot, setCopilot] = useState("risk");
   const [workStates, setWorkStates] = useState<Record<string, ProjectOperatingWorkStatus>>({});
+  const [savedWorkItems, setSavedWorkItems] = useState<unknown[]>([]);
   const [operatingGeneratedAt] = useState(() => project.updatedAt);
   const draftReady = useModuleRestore("project-os", (saved) => {
     setWeek(restoreModuleValue(saved.week, week));
@@ -86,25 +87,32 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     setDecisions(restoreModuleValue(saved.decisions, decisions));
     setQualityOpen(restoreModuleValue(saved.qualityOpen, qualityOpen));
     setHandover(restoreModuleValue(saved.handover, handover));
-    if (Array.isArray(saved.workItems)) setWorkStates(Object.fromEntries(saved.workItems.flatMap(item => { const work = moduleRecord(item); return typeof work.id === "string" && ["open", "in-review", "blocked", "closed"].includes(String(work.status)) ? [[work.id, work.status as ProjectOperatingWorkStatus]] : []; }))); else setWorkStates(workStates);
+    setSavedWorkItems(Array.isArray(saved.workItems) ? saved.workItems : []);
+    setWorkStates({});
   });
   const coordinationHandoff = (project.modules["project-os"] as { coordination?: { bimCoordination?: Parameters<typeof createProjectOperatingModel>[0]["bimCoordination"]; issueGate?: { blocked?: boolean; activeCriticalClashes?: number; reviewedCriticalClashes?: number; technicalApproval?: boolean } } } | undefined)?.coordination;
   const handedOffCoordination = coordinationHandoff?.bimCoordination;
   const issueGate = coordinationHandoff?.issueGate;
-  const operatingModel = useMemo(() => createProjectOperatingModel({
+  const operatingSource = useMemo(() => {
+    const input = {
     projectId: project.id,
     projectRevision: project.revision,
     generatedAt: operatingGeneratedAt,
     bimCoordination: handedOffCoordination,
-  }), [handedOffCoordination, operatingGeneratedAt, project.id, project.revision]);
+    };
+    try { return { model: createProjectOperatingModel(input), error: "" }; }
+    catch (error) { return { model: createProjectOperatingModel({ ...input, bimCoordination: undefined }), error: error instanceof Error ? error.message : "Coordination source unsupported" }; }
+  }, [handedOffCoordination, operatingGeneratedAt, project.id, project.revision]);
+  const operatingModel = operatingSource.model;
+  const restoredStates = useMemo(() => restoreOperatingWorkStates(savedWorkItems, operatingModel.workItems), [savedWorkItems, operatingModel.workItems]);
   // A project manager may acknowledge a critical BIM issue, but cannot close
   // a still-active rule without a verified revised model / authorized approval.
   const workItems = useMemo(() => operatingModel.workItems.map((item) => ({
     ...item,
     status: item.sourceGuid && item.priority === "critical"
-      ? workStates[item.id] === "in-review" ? "in-review" as const : "blocked" as const
-      : workStates[item.id] ?? item.status,
-  })), [operatingModel.workItems, workStates]);
+      ? (workStates[item.id] ?? restoredStates[item.id]) === "in-review" ? "in-review" as const : "blocked" as const
+      : workStates[item.id] ?? restoredStates[item.id] ?? item.status,
+  })), [operatingModel.workItems, workStates, restoredStates]);
   const currentModule = modules.find((item) => item.id === active) ?? modules[0];
   const filteredDocuments = docFilter === "Tümü" ? documents : documents.filter((item) => item.status === docFilter);
   const completion = Math.round((handover.filter(Boolean).length / handover.length) * 100);
@@ -126,8 +134,9 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   }, []);
 
   useEffect(() => { if (!draftReady) return;
+    if (operatingSource.error) return;
     patchModule("project-os", { schema: operatingModel.schema, operatingModel, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
-  }, [draftReady, decisions, documents, earnedValue, handover, operatingModel, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
+  }, [draftReady, decisions, documents, earnedValue, handover, operatingModel, operatingSource.error, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
 
   const approveDocument = (code: string) => setDocuments((items) => items.map((item) => item.code === code ? { ...item, status: "Onaylı" } : item));
   const closeDecision = (id: string) => setDecisions((items) => items.map((item) => item.id === id ? { ...item, state: "Yanıtlandı", due: "Kapandı" } : item));
@@ -139,6 +148,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     const currentDocs = documents.slice(0, 5);
 
     return <section className="arx-tracking-tool" data-testid="project-operating-system">
+      {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Aşağıdaki görevler örnek veridir; kaynak kaydı değiştirilmedi.</p> : null}
       <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
       <div className="arx-track-grid">
         <section className="arx-track-panel" aria-labelledby="arx-track-work-title">
@@ -229,6 +239,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   }
 
   return <section className={`project-os-app${compact ? " compact" : ""}`}>
+    {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Görevler örnek veridir; kaynak kaydı değiştirilmedi.</p> : null}
     <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />
     <header className="project-os-topbar">
       <div className="os-project-id"><span>V116 / PROJECT OS 2.0</span><b>Endüstriyel Yapı · Dijital Proje Merkezi</b></div>

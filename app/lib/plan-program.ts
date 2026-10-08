@@ -39,8 +39,10 @@ export type ProgramPlanElementSeed = {
   load: number;
   fire: string;
   section: string;
-  provenance: "program";
-  sourceSpaceId: string;
+  provenance: "program" | "program-derived";
+  sourceSpaceId?: string;
+  sourceFloorLevel?: number;
+  derivedFromSpaceIds?: string[];
   sourceSpaceInstance?: number;
   sourceSpaceCode?: string;
   sourceZone: string;
@@ -62,9 +64,11 @@ function asString(value: unknown, fallback = "") {
 
 export function expandProgramSpaces(spaces: unknown[], fallbackLiveLoad = 3.5): ProgramSpaceInstance[] {
   const instances: ProgramSpaceInstance[] = [];
+  const ids = spaces.map(value => asString(asRecord(value).id));
+  if (ids.some(id => !id) || new Set(ids).size !== ids.length) throw new Error("Program identity missing or duplicated; stable source IDs required");
   spaces.forEach((value, sourceOrder) => {
     const space = asRecord(value);
-    const sourceSpaceId = asString(space.id, `space-${sourceOrder + 1}`);
+    const sourceSpaceId = asString(space.id);
     const count = Math.max(1, Math.min(48, Math.round(asNumber(space.count, 1))));
     const name = asString(space.name, "Mahal");
     const code = asString(space.code, `A-${String(sourceOrder + 1).padStart(3, "0")}`);
@@ -73,7 +77,7 @@ export function expandProgramSpaces(spaces: unknown[], fallbackLiveLoad = 3.5): 
     const liveLoad = Math.max(0, asNumber(space.liveLoad, fallbackLiveLoad));
     for (let index = 1; index <= count; index += 1) {
       instances.push({
-        key: `program-${sourceSpaceId}-${index}`,
+        key: `program-space:${encodeURIComponent(sourceSpaceId)}:${index}`,
         sourceSpaceId,
         sourceInstance: index,
         code,
@@ -429,8 +433,9 @@ export function buildProgramPlanElements(
       load: fallbackLiveLoad,
       fire: "REI 120",
       section: "—",
-      provenance: "program",
-      sourceSpaceId: "vertical-core",
+      provenance: "program-derived",
+      sourceFloorLevel: level,
+      derivedFromSpaceIds: [...new Set(bucket.items.map(item => item.sourceSpaceId))],
       sourceZone: "Sirkülasyon",
     });
   });
