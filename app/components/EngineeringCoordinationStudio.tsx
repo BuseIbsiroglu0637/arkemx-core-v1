@@ -173,6 +173,7 @@ export function EngineeringCoordinationStudio({ simple = false }: { simple?: boo
   }, [hydrated, importThread, project.modules]);
   const exportBcf = () => downloadTextFile("arkem-koordinasyon-issues.bcf.json", JSON.stringify(createCoordinationPackage({
     projectId: project.id,
+    projectRevision: project.revision,
     coordinateReference: source.site.crs,
     serviceZone,
     shaftArea,

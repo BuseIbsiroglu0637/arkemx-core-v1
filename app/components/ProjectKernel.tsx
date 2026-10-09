@@ -16,6 +16,9 @@ import {
 import { deriveProjectThread, type ProjectThread, type ProjectModuleKey } from "../lib/project-graph";
 import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
+import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
+import { isPortalProject } from "../lib/customer-portal";
+import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -318,7 +321,7 @@ function stampHandoffModules(
     if (!contract) return;
     contract.targets.forEach((target) => {
       if (!stamped[target]) return;
-      stamped[target] = stampProjectModule(stamped[target], {
+      stamped[target] = stampProjectModule({ ...record(stamped[target]), ...(declaredModuleUnits(target) ? { units: declaredModuleUnits(target) } : {}) }, {
         ...identity,
         sourceModule: contract.source,
         action: "handoff",
@@ -328,12 +331,14 @@ function stampHandoffModules(
   return stamped;
 }
 
-function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[]) {
+function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[], identity?: { id: string; revision: string }) {
   const modules = { ...sourceModules };
   const applied: string[] = [];
   const synchronizedAt = new Date().toISOString();
 
   handoffIds.forEach((handoffId) => {
+    const sourceKey = HANDOFF_MODULES[handoffId]?.source;
+    if (identity && sourceKey && modules[sourceKey] && projectIntegrityIssues({ ...identity, modules }).some(issue => issue.startsWith(sourceKey + ":"))) return;
     const thread = deriveProjectThread(modules);
 
     if (handoffId === "H-01" && modules["geo-parcel"]) {
@@ -451,6 +456,8 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-03" && modules["plan-editor"]) {
       const plan = record(modules["plan-editor"]);
+      const geometry = resolvePlanHandoffGeometry(plan);
+      const sourceRevision = stringValue(record(plan._kernel).projectRevision) || null;
       const target = record(modules["structural-concept"]);
       const input = record(target.input);
       const baysX = numeric(plan.baysX);
@@ -459,16 +466,29 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const spanY = numeric(plan.spanY);
       if (baysX <= 0 || baysY <= 0 || spanX <= 0 || spanY <= 0) return;
       const elements = Array.isArray(plan.elements) ? plan.elements.map(record) : [];
+      const ids = elements.map(element => stringValue(element.id));
+      const inputElementIds = ids.length && ids.every(Boolean) && new Set(ids).size === ids.length ? ids : null;
       const architecture = record(modules["architectural-program"]);
       const architectureResult = record(architecture.result);
       const planLoads = elements.map((element) => numeric(element.load)).filter((value) => value > 0);
       const liveLoad = planLoads.length ? Math.max(...planLoads) : numeric(architectureResult.liveLoad);
       modules["structural-concept"] = {
         ...target,
+        result: null,
+        alternatives: [],
+        structuralStudio: null,
+        geometrySupport: { status: structuralAnalysisBlockers({ modelContext: { floorPlates: geometry.floorPlates } }).length ? "unsupported-nonuniform-floor-analysis" : "uniform-concept-only", fullBuildingAnalysis: false, technicalApproval: false },
+        units: declaredModuleUnits("structural-concept"),
+        sourceRevision,
+        inputElementIds,
+        inputElementSnapshot: inputElementIds ? JSON.parse(JSON.stringify(elements)) : null,
+        inputGeometrySnapshot: JSON.parse(JSON.stringify(planGeometrySnapshot(plan))),
+        calculationId: null,
+        referenceStatus: sourceRevision && inputElementIds ? "pending-calculation" : "unsupported-source",
         input: {
           ...input,
-          width: baysX * spanX || numeric(input.width),
-          depth: baysY * spanY || numeric(input.depth),
+          width: geometry.width,
+          depth: geometry.depth,
           floors: numeric(plan.floorCount) || numeric(input.floors),
           floorHeight: thread.canonical.architecture.floorHeight || numeric(input.floorHeight),
           baysX: baysX || numeric(input.baysX),
@@ -477,7 +497,11 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           ...(liveLoad > 0 ? { liveLoad } : {}),
         },
         modelContext: {
-          planRevision: stringValue(plan.revision, "current"),
+          planRevision: sourceRevision,
+          selectedLevel: geometry.selectedLevel,
+          floorPlates: geometry.floorPlates,
+          geometrySource: geometry.geometrySource,
+          fullBuildingAnalysis: geometry.fullBuildingAnalysis,
           elementCount: elements.length,
           columns: elements.filter((element) => element.type === "column").length,
           walls: elements.filter((element) => element.type === "wall").length,
@@ -525,6 +549,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-05" && modules["structural-concept"]) {
       const structure = record(modules["structural-concept"]);
+      if (structuralAnalysisBlockers(structure).length) return;
       const structureResult = record(structure.result);
       const structureGeometry = record(structureResult.geometry);
       if (numeric(structureGeometry.totalArea) <= 0) return;
@@ -744,7 +769,13 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const patchModule = useCallback((key: string, moduleValue: unknown) => {
     if (!hydrated) return;
     setProject((current) => {
-      const mergedValue = mergeModuleValue(current.modules[key], moduleValue);
+      // Opening a legacy/stale draft is not a new source observation.
+      if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":"))) return current;
+      const incoming = record(moduleValue);
+      const mergedValue = mergeModuleValue(current.modules[key], {
+        ...incoming,
+        ...(declaredModuleUnits(key) ? { units: incoming.units ?? declaredModuleUnits(key) } : {}),
+      });
       if (JSON.stringify(current.modules[key]) === JSON.stringify(mergedValue)) return current;
       const timestamp = new Date().toISOString();
       const action = current.modules[key] ? "update" : "create";
@@ -758,7 +789,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       const event: ProjectKernelEvent = { id: `${key}-${Date.now().toString(36)}`, module: key, action, revision: current.revision, timestamp };
       const nextModules = { ...current.modules, [key]: storedValue };
       const automatic = current.experience.autoHandoff
-        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [])
+        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [], current)
         : { modules: nextModules, applied: [] as string[], synchronizedAt: "" };
       const stampedModules = stampHandoffModules(automatic.modules, automatic.applied, {
         projectId: current.id,
@@ -782,10 +813,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     });
   }, [hydrated]);
   const applyHandoff = useCallback((handoffId: string) => {
-    const preview = synchronizeModules(project.modules, [handoffId]);
+    const preview = synchronizeModules(project.modules, [handoffId], project);
     if (!preview.applied.length) return false;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, [handoffId]);
+      const result = synchronizeModules(current.modules, [handoffId], current);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
@@ -807,12 +838,12 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       };
     });
     return true;
-  }, [project.modules]);
+  }, [project]);
   const synchronizeProject = useCallback(() => {
-    const preview = synchronizeModules(project.modules, HANDOFF_IDS);
+    const preview = synchronizeModules(project.modules, HANDOFF_IDS, project);
     if (!preview.applied.length) return 0;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, HANDOFF_IDS);
+      const result = synchronizeModules(current.modules, HANDOFF_IDS, current);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
@@ -834,7 +865,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       };
     });
     return preview.applied.length;
-  }, [project.modules]);
+  }, [project]);
   const removeModule = useCallback((key: string) => setProject((current) => {
     if (!current.modules[key]) return current;
     const timestamp = new Date().toISOString();
@@ -843,8 +874,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     return { ...current, updatedAt: timestamp, modules, events: [...current.events, { id: `${key}-${Date.now().toString(36)}`, module: key, action: "remove" as const, revision: current.revision, timestamp }].slice(-80) };
   }), []);
   const importProject = useCallback((value: unknown) => {
-    if (!value || typeof value !== "object") return false;
-    const candidate = value as Partial<ProjectKernelState>;
+    if (!isPortalProject(value)) return false;
+    const candidate = value as ProjectKernelState;
     if (candidate.schema !== "ARKEM-PROJECT/1.0" || !candidate.id || !candidate.modules || typeof candidate.modules !== "object") return false;
     const timestamp = new Date().toISOString();
     const defaults = createDefaultProject();
@@ -972,7 +1003,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       input: { location: intake.location, grossArea: intake.targetArea, floors: intake.floors },
       status: "Yapı ve çevre verisi bekleniyor",
     };
-    const stampedModules = Object.fromEntries(Object.entries(modules).map(([key, value]) => [key, stampProjectModule(value, {
+    const stampedModules = Object.fromEntries(Object.entries(modules).map(([key, value]) => [key, stampProjectModule({ ...record(value), ...(declaredModuleUnits(key) ? { units: declaredModuleUnits(key) } : {}) }, {
       projectId: projectCode,
       projectRevision: "P01",
       sourceModule: key,
@@ -1058,6 +1089,8 @@ export function useProjectKernel() {
 
 export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerlendirme", compact = false }: { module: string; moduleKey?: ProjectModuleKey; confidence?: string; compact?: boolean }) {
   const { project, thread, persistence, setIdentity, setExperience, synchronizeProject, reset } = useProjectKernel();
+  const integrityIssues = projectIntegrityIssues(project);
+  const integrityWarning = integrityIssues.length ? <p role="alert" data-testid="project-integrity-warning">Kaynak doğrulaması gerekli: {integrityIssues.join("; ")}. Eski veri güncel revizyon veya doğrulanmış kaynak olarak kaydedilemez.</p> : null;
   const [editing, setEditing] = useState(false);
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
   const exportProject = () => downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
@@ -1155,6 +1188,7 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
 
   if (compact) {
     return <div className="project-kernel-compact" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
+      {integrityWarning}
       <div className="project-kernel-compact-main">
         <span className="project-kernel-compact-code">ARKEMX / {currentModule.code}</span>
         <button className="project-kernel-compact-name" onClick={() => setEditing(true)}>{project.name}</button>
@@ -1175,6 +1209,7 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
   }
 
   return <><div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
+    {integrityWarning}
     <div className="kernel-brand"><span>ARKEMX / {currentModule.code}</span><b>{currentModule.label}</b><small>{module}</small></div>
     <div className="kernel-identity"><span>PROJE</span>{editing ? <input aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : <button onClick={() => setEditing(true)}>{project.name}</button>}<small>{project.id}</small></div>
     <label><span>AŞAMA</span><select value={project.phase} onChange={(event) => setIdentity({ phase: event.target.value as ProjectPhase })}>{["Fikir", "Ön fizibilite", "Avan proje", "Uygulama projesi", "Yapım", "Teslim"].map((phase) => <option key={phase}>{phase}</option>)}</select></label>

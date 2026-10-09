@@ -1,5 +1,6 @@
 import type { ProjectCoreSnapshot, ProjectDataTrust } from "./project-core";
 import type { ProjectThread } from "./project-graph";
+import { projectIntegrityIssues } from "./project-integrity";
 
 export type PortalProject = {
   schema: "ARKEM-PROJECT/1.0";
@@ -137,6 +138,7 @@ export function isPortalProject(value: unknown): value is PortalProject {
     && boundedText(candidate.phase, 1, 80)
     && isoTimestamp(candidate.updatedAt)
     && candidate.modules === modules
+    && projectIntegrityIssues(candidate).length === 0
     && Object.keys(modules).length <= 64
     && Object.entries(modules).every(([moduleId, moduleValue]) => (
       /^[a-z0-9][a-z0-9-]{0,63}$/i.test(moduleId)
@@ -161,7 +163,7 @@ export function validateAccountProjectPayload(expectedId: string, value: unknown
   if (!isPortalProject(value)) {
     return {
       ok: false as const,
-      error: "Proje veri paketi doğrulanamadı.",
+      error: "Proje veri paketi doğrulanamadı. " + projectIntegrityIssues(value).join("; "),
       project: null,
     };
   }
