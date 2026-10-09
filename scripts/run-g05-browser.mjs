@@ -45,6 +45,7 @@ try {
   if (!ready) throw new Error(`G05 server readiness timeout; see ${output}/server.log`);
   await run('tests/g05-reload-smoke.mjs');
   await run('tests/g05-review-browser.mjs');
+  await run('tests/ui-contracts-browser.mjs');
 } catch (error) {
   console.error(fs.readFileSync(path.join(output, 'server.log'), 'utf8').slice(-12000));
   throw error;

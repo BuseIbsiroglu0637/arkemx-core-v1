@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import { PROJECT_MODULES } from "../app/lib/project-graph.ts";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 
@@ -441,9 +442,9 @@ test("project centre separates the actual working stage from earlier incomplete 
 
 test("project centre clearly distinguishes seven journey stages from technical modules", () => {
   const center = fs.readFileSync(new URL("../app/components/SimpleProjectCenter.tsx", import.meta.url), "utf8");
-  const graph = fs.readFileSync(new URL("../app/lib/project-graph.ts", import.meta.url), "utf8");
-  const moduleCount = (graph.match(/\{ id: "/g) || []).length;
-  assert.equal(moduleCount, 13);
+  // Count the exported catalogue, not unrelated object literals in the file.
+  assert.equal(PROJECT_MODULES.length, 13);
+  assert.equal(new Set(PROJECT_MODULES.map(module => module.id)).size, 13);
   assert.match(center, /PROJECT_MODULES\.length/);
   assert.match(center, /ana aşama tamamlandı/);
   assert.match(center, /teknik modül/);
@@ -595,7 +596,9 @@ test("final system comparison exposes project KPIs, readable scores and an actio
   assert.match(tool, /KISA LİSTE · \{shortlist\.length\}/);
   assert.match(tool, /Listeyi temizle/);
   assert.match(tool, /Önce sistem seçin/);
-  assert.match(tool, /The project advanced after this MCDA record was saved/);
+  // The warning contract is semantic; copy may be translated independently.
+  assert.match(tool, /sourceStale && currentProjectSource[\s\S]*?className="arx-mcda-source-status is-stale" role="alert"/);
+  assert.match(tool, /onClick=\{importProjectGeometry\}/);
   assert.match(tool, /setArea\(Number\(currentProjectSource\.area\.toFixed\(1\)\)\)/);
   assert.match(tool, /setSpan\(Number\(currentProjectSource\.span\.toFixed\(2\)\)\)/);
   assert.match(css, /Prototype final polish — system selection/);
@@ -1390,4 +1393,3 @@ test("project center labels 10-of-13 as module coverage rather than data errors"
   assert.match(hub, /Henüz bağlı değil/);
   assert.doesNotMatch(hub, /<span>VERİ HAZIRLIĞI<\/span><b>%\{thread\.metrics\.readiness\}/);
 });
-
