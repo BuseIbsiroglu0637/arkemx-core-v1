@@ -54,18 +54,40 @@ function text(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+// Legacy sequential RFI numbers are display labels, never source identities.
+export function operatingWorkStateKey(item: Pick<ProjectOperatingWorkItem, "id" | "revision">) {
+  return `${item.id}@${encodeURIComponent(item.revision)}`;
+}
+
+export function restoreOperatingWorkStates(saved: unknown[], current: ProjectOperatingWorkItem[]) {
+  const states: Record<string, ProjectOperatingWorkStatus> = {};
+  const rows = saved.filter((v): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v));
+  for (const item of current) {
+    const matches = rows.filter(row => item.sourceGuid
+      ? row.sourceGuid === item.sourceGuid
+      : !row.sourceGuid && row.id === item.id);
+    if (matches.length !== 1) continue;
+    const row = matches[0];
+    if (row.revision && row.revision !== item.revision) continue;
+    if (["open", "in-review", "blocked", "closed"].includes(String(row.status))) states[item.id] = row.status as ProjectOperatingWorkStatus;
+  }
+  return states;
+}
+
 export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
   const generatedAt = input.generatedAt ?? new Date().toISOString();
   const revision = text(input.projectRevision, "P01");
   const coordination = input.bimCoordination ?? {};
   const clashes = Array.isArray(coordination.clashes) ? coordination.clashes : [];
+  const guids = clashes.map(clash => text(clash.guid, ""));
+  if (guids.some(guid => !guid) || new Set(guids).size !== guids.length) throw new Error("Clash identity missing or duplicated");
   const coordinationConnected = coordination.schema === "ARKEM-BIM-COORDINATION/3.0";
 
-  const clashWork: ProjectOperatingWorkItem[] = clashes.map((clash, index) => {
-    const guid = text(clash.guid, `BCF-${String(index + 1).padStart(3, "0")}`);
+  const clashWork: ProjectOperatingWorkItem[] = clashes.map((clash) => {
+    const guid = text(clash.guid, "");
     const critical = clash.severity === "critical";
     return {
-      id: `RFI-${String(41 + index).padStart(3, "0")}`,
+      id: `RFI-${encodeURIComponent(input.projectId)}:${encodeURIComponent(guid)}`,
       type: "rfi",
       title: text(clash.title, "Koordinasyon issue incelemesi"),
       owner: text(clash.assignee, "BIM Koordinatörü"),

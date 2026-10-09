@@ -25,6 +25,9 @@ export type TechnicalSheetInput = {
   sheetNo?: string;
   scale?: string;
   coordinateSystem?: string;
+  sourceRevision?: string;
+  elementIds?: string[];
+  calculationIds?: string[];
   preparedBy?: string;
   checkedBy?: string;
   reviewBanner?: string;
@@ -401,7 +404,7 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
     const size = fitSize(bold, cleaned, 7.2, width - 24, 5.4);
     page.drawText(cleaned, { x: x + 12, y: y + 8, size, font: bold, color: accent ? COLORS.copper : COLORS.navy });
   };
-  metaCell("Revizyon", input.revision ?? "P01", titleMetaX, title.y + 70, 113, true);
+  metaCell("Revizyon", input.revision ?? "Bekleniyor", titleMetaX, title.y + 70, 113, true);
   metaCell("Pafta no", input.sheetNo ?? "A-001", titleMetaX + 113, title.y + 70, 132);
   metaCell("Tarih", new Date().toLocaleDateString("tr-TR"), titleMetaX, title.y + 35, 113);
   metaCell("Ölçek", input.scale ?? "Otomatik", titleMetaX + 113, title.y + 35, 132);
@@ -416,6 +419,7 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
     color: COLORS.slate,
   });
   page.drawText(identity.reference, { x: 790, y: 27, size: fitSize(bold, identity.reference, 5.5, 260, 4.5), font: bold, color: COLORS.slate });
+  page.drawText(identity.references.status === "unsupported" ? "Hesap / eleman kaynak baglari eksik: izlenebilir teknik teslim desteklenmiyor." : "Beyan edilen hesap / eleman baglari ayrica dogrulanmalidir.", { x: 42, y: 17, size: 5.3, font: regular, color: COLORS.copper });
   page.drawText("ARKEM-TS / 3.0", { x: 1060, y: 27, size: 5.5, font: bold, color: COLORS.copper });
 
   return document.save({ useObjectStreams: false });

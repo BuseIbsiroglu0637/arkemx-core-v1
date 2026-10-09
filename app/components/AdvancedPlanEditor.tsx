@@ -6,6 +6,7 @@ import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/eng
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { expandProgramSpaces, buildProgramPlanElements, coordinateProgramAxes, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { PLAN_UNITS } from "../lib/project-integrity";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
 type View = "architectural" | "structural" | "loads" | "coordination";
@@ -20,7 +21,7 @@ type PlanElement = {
   load: number;
   fire: string;
   section: string;
-  provenance?: "manual" | "conceptual-seed" | "program";
+  provenance?: "manual" | "conceptual-seed" | "program" | "program-derived";
   sourceSpaceId?: string;
   sourceSpaceInstance?: number;
   sourceSpaceCode?: string;
@@ -115,8 +116,15 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     && zoningInput.buildingOrder
   );
   const zoningVerified = zoningFormReady && zoningInput?.verification === "certified-document";
-  const upstreamSpaces = Array.isArray(architectureModule?.spaces) ? architectureModule.spaces : [];
-  const upstreamRelationships = Array.isArray(architectureModule?.relationships) ? architectureModule.relationships : [];
+  const spaceSource = architectureModule?.spaces;
+  const rawUpstreamSpaces = useMemo(() => Array.isArray(spaceSource) ? spaceSource : [], [spaceSource]);
+  const programSource = useMemo(() => {
+    try { expandProgramSpaces(rawUpstreamSpaces); return { spaces: rawUpstreamSpaces, error: "" }; }
+    catch (error) { return { spaces: [] as typeof rawUpstreamSpaces, error: error instanceof Error ? error.message : "Program source unsupported" }; }
+  }, [rawUpstreamSpaces]);
+  const upstreamSpaces = programSource.spaces;
+  const relationshipSource = architectureModule?.relationships;
+  const upstreamRelationships = useMemo(() => Array.isArray(relationshipSource) ? relationshipSource : [], [relationshipSource]);
   const recommendedFloorPlates = useMemo(() => deriveProgramFloorPlates(
     upstreamSpaces,
     upstreamRelationships,
@@ -766,7 +774,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     importUpstream();
   }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
 
-  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.1", units: "m", floorCount, baysX, baysY, floorPlates, activeFloor: { level, spanX: activeSpanX, spanY: activeSpanY }, elements, metrics }, null, 2), "application/json");
+  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.1", units: PLAN_UNITS, projectId: project.id, revision: project.revision, floorCount, baysX, baysY, floorPlates, activeFloor: { level, spanX: activeSpanX, spanY: activeSpanY }, elements, metrics }, null, 2), "application/json");
   const exportCsv = () => {
     const content = issueFocus
       ? `type,count,quantity,unit\ncolumns,${metrics.columns},${metrics.columns},each\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN`
@@ -880,6 +888,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const kmkrTools: Tool[] = ["select", "column", "wall", "space", "load", "erase"];
 
   return <section className={`advanced-plan-editor cad-plan-editor${issueFocus ? " cad-issue-focus" : ""}`} data-testid="advanced-plan-editor">
+    {programSource.error ? <p role="alert">Program aktarımı reddedildi: {programSource.error}</p> : null}
     {issueFocus ? <div className="cad-issue-project-strip" aria-label="Aktif proje">
       <div><span>{isKmKrFocus ? "ARKEMX / KM-KR" : isProgramAreaFocus ? "ARKEMX / ARC SYNC" : "ARKEMX / PLAN"}</span><b>{project.name}</b></div>
       <div><span>{project.phase}</span><span>{project.revision}</span></div>

@@ -51,6 +51,7 @@ next-env.d.ts
 /worker-configuration.d.ts
 /playwright-report/
 /test-results/
+/test-artifacts/
 arkemx-*.log
 /ekran-test-sonuclari.txt
 

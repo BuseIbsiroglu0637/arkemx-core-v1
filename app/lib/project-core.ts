@@ -141,11 +141,8 @@ export function ensureProjectModuleStamps(
     const moduleValue = record(value);
     const existing = record(moduleValue._kernel);
     if (existing.schema === "ARKEM-MODULE-LINK/1.0" && existing.projectId === identity.projectId) return [key, value];
-    return [key, stampProjectModule(value, {
-      ...identity,
-      sourceModule: key,
-      action: "imported",
-    })];
+    // Imported/legacy bytes cannot acquire a fabricated current source stamp.
+    return [key, { ...(value && typeof value === "object" && !Array.isArray(value) ? moduleValue : { _payload: value }), integrity: { status: "unsupported-source", reason: "Original module source stamp missing or incompatible" } }];
   }));
 }
 
