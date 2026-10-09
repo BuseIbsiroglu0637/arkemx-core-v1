@@ -7,12 +7,12 @@ import { type StructuralConceptInput } from "./engineering.ts";
 type Data=Record<string,unknown>;
 const data=(v:unknown):Data=>v&&typeof v==="object"&&!Array.isArray(v)?v as Data:{};
 export type FrameRecord=Awaited<ReturnType<typeof recordFloorFrame>>;
-export function frameSourceKey(project:unknown){const p=data(project),plan=data(data(p.modules)["plan-editor"]);return traceJson({id:p.id,revision:p.revision,basis:floorCoordinationBasis(plan),coordination:plan.floorCoordination??null,frame:plan.floorFrame??null});}
+export function frameSourceKey(project:unknown){const p=data(project),plan=data(data(p.modules)["plan-editor"]);return traceJson({id:p.id,revision:p.revision,basis:floorCoordinationBasis(plan),coordination:plan.floorCoordination??null,frame:plan.floorFrame??null,...(plan.example===undefined?{}:{example:plan.example})});}
 export async function prepareFrameDocument(project:unknown,input:StructuralConceptInput|undefined,record:FrameRecord|null,format:"PDF"|"DXF"|"JSON"){
   const p=data(project),plan=data(data(p.modules)["plan-editor"]),coordination=inspectFloorCoordination(plan),frame=inspectFloorFrame(plan);
   if(!coordination.geometry||projectIntegrityIssues(project).some(i=>i.startsWith("plan-editor:")))throw Error("Ortak çizim için güncel ve geçerli plan kaynağı gerekiyor.");
   if(record&&(!input||!await verifyFloorFrame(record,project,input)))throw Error("Çözüm güncel kaynakla eşleşmiyor.");
-  const content={schema:"ARKEM-COMMON-FRAME-PACKAGE/1.0",projectId:p.id,revision:p.revision,sourceKey:frameSourceKey(project),coordination,frameDeclaration:frame,calculation:record,fullBuildingAnalysis:false,technicalApproval:false};
+  const content={schema:"ARKEM-COMMON-FRAME-PACKAGE/1.0",projectId:p.id,revision:p.revision,...(plan.example==="ARKEM-SYNTHETIC-B06/1.0"?{example:plan.example}:{}),sourceKey:frameSourceKey(project),coordination,frameDeclaration:frame,calculation:record,fullBuildingAnalysis:false,technicalApproval:false};
   const sha256=await traceSha256(traceJson(content)),sourceId=`COORD-${sha256}`,elementIds=(Array.isArray(plan.elements)?plan.elements:[]).map(e=>String(data(e).id));
   const calculationIds=record?[record.id]:[],bindings=record?[{id:record.id,projectId:String(p.id),revision:String(p.revision),elementIds}]:[];
   const identityInput={projectCode:String(p.id),revision:String(p.revision),module:"COMMON-FRAME",sheetNo:`COMMON-${format}`,sourceRevision:String(p.revision),elementIds,calculationIds,contentDigest:sha256,coordinateSystem:"PROJE ORTAK X/Y/Z / m",sourceContext:{projectId:String(p.id),revision:String(p.revision),elementIds,calculationIds,calculationBindings:bindings}};

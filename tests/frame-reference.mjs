@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {registerHooks} from 'node:module';import {spawnSync} from 'node:child_process';
 registerHooks({resolve(s,c,next){if(s.startsWith('.')&&!path.extname(s)){const u=new URL(s+'.ts',c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
 const {solveLinearFrame}=await import('../app/lib/linear-frame.ts');const {prepareFloorFrame}=await import('../app/lib/floor-frame.ts');const {createB06FrameFixture,frameInput}=await import('./fixtures/b06-frame-project.mjs');
+const {createFrameExample}=await import('../app/lib/frame-example.ts');
 const fixture=createB06FrameFixture(),models=[];
 const cantilever={nodes:[{id:'A',x:0,y:0,z:0},{id:'B',x:4,y:0,z:0}],materials:[{id:'M',name:'synthetic',E:200e6,G:80e6}],sections:[{id:'S',name:'synthetic',A:.02,Iy:.0002,Iz:.0004,J:.0001}],members:[{id:'AB',sourceId:'SRC',kind:'beam',start:'A',end:'B',materialId:'M',sectionId:'S',localZ:[0,0,1]}],supports:[{nodeId:'A',fixed:[true,true,true,true,true,true]}],cases:[{id:'mixed',loads:[{nodeId:'B',values:[100,50,-30,12,8,-5]}]}]};
 models.push({name:'cantilever',model:cantilever});const skew=structuredClone(cantilever);skew.nodes[1]={id:'B',x:3,y:4,z:5};models.push({name:'skew-3d',model:skew});
 models.push({name:'two-distinct-floor-plates',model:prepareFloorFrame(fixture,frameInput(fixture)).content.model});
+const publicExample=createFrameExample();models.push({name:'public-two-floor-example',model:prepareFloorFrame(publicExample.project,publicExample.input).content.model});
 const transfer=structuredClone(cantilever);transfer.nodes=[{id:'A',x:0,y:0,z:0},{id:'C',x:2,y:0,z:0},{id:'B',x:4,y:0,z:0}];transfer.members=[{...transfer.members[0],id:'AC',end:'C'},{...transfer.members[0],id:'CB',start:'C'}];transfer.supports=[{nodeId:'A',fixed:[true,true,true,true,false,false]},{nodeId:'B',fixed:[false,true,true,false,false,false]}];transfer.cases[0].loads=[{nodeId:'C',values:[0,0,-100,0,0,0]}];models.push({name:'segmented-transfer-beam',model:transfer});
 const reports=[];
 const close=(a,b)=>assert.ok(Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=1e-10+Math.abs(b)*1e-7,`${a} differs from OpenSees ${b}`);
