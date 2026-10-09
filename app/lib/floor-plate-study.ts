@@ -3,6 +3,7 @@ import { inspectStructuralSourceReferences, planGeometrySnapshot } from "./sourc
 import { projectIntegrityIssues } from "./project-integrity.ts";
 import { createDocumentIdentity } from "./document-identity.ts";
 import { traceJson, traceSha256 } from "./structural-traceability.ts";
+import { inspectFloorCoordination } from "./floor-coordination.ts";
 
 type Data = Record<string, unknown>;
 const data = (value: unknown): Data => value && typeof value === "object" && !Array.isArray(value) ? value as Data : {};
@@ -51,6 +52,7 @@ export function calculateFloorPlateStudy(project: unknown, input: StructuralConc
       engine: "calculateStructuralConcept/1.0:area-load-expressions-only",
       source: { module: "plan-editor", revision: structure.sourceRevision, units: plan.units, geometry: planGeometrySnapshot(plan), elements },
       input, floors,
+      ...(plan.floorCoordination === undefined ? {} : { coordination: inspectFloorCoordination(plan) }),
       totals: { grossArea: sum(floor => floor.area), permanentLoad: sum(floor => floor.loads.permanentTotal), liveLoad: sum(floor => floor.loads.liveTotal), gravityCombinationProxy: sum(floor => floor.loads.gravityCombinationProxy), seismicWeightProxy: sum(floor => floor.loads.seismicWeightProxy), roofSnowLoad: sum(floor => floor.loads.roofSnowTotal), grossSlabConcreteVolume: sum(floor => floor.quantities.grossSlabConcreteVolume) },
       limitations: ["Katlar yerel 0,0 başlangıcında bağımsız dikdörtgenlerdir; katlar arası konum ve taşıyıcı sürekliliği doğrulanmadı.", "Katın en büyük beyan edilmiş eleman yükü tüm brüt plaka alanına uygulanır; eleman yükü yoksa global girdi kullanılır.", "1,40G + 1,60Q mevcut ön motorun yük göstergesidir; nihai yük birleşimi veya yönetmelik kabulü değildir.", "Plaka miktarı brüttür; boşluklar düşülmez. Kolon, kiriş, temel, birleşim ve transfer katı analizi bu çalışmada yoktur."],
     };

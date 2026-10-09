@@ -7,6 +7,7 @@ import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { expandProgramSpaces, buildProgramPlanElements, coordinateProgramAxes, deriveProgramFloorPlates, evaluateRequiredAdjacency, type ProgramFloorPlate } from "../lib/plan-program";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { PLAN_UNITS } from "../lib/project-integrity";
+import { FloorCoordinationPanel } from "./FloorCoordinationPanel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
 type View = "architectural" | "structural" | "loads" | "coordination";
@@ -1090,6 +1091,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       {!planGatePass && upstreamReady && (!areaRepresentationPass || !axisReady) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mahal alanlarını ve aksları yeniden kur</button> : null}
       {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
     </section> : null}
+    {!issueFocus && modelHydrated && <FloorCoordinationPanel editable/>}
   </section>;
 }
 

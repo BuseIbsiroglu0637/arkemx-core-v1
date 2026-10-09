@@ -97,7 +97,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const floorSource = sourceGeometry?.modelContext?.floorPlates;
   const floorGeometry = useMemo(() => Array.isArray(floorSource) ? floorSource.filter(plate => !!plate && typeof plate === "object" && !Array.isArray(plate)) : [], [floorSource]);
   const invalidSource = projectIntegrityIssues(project).some(issue => issue.startsWith("structural-concept:") || (sourceGeometry?.sourceRevision && issue.startsWith("plan-editor:")));
-  const invalidFloors = structuralAnalysisBlockers(sourceGeometry).length > 0;
+  const invalidFloors = structuralAnalysisBlockers(sourceGeometry).length > 0 || (project.modules["plan-editor"] as { floorCoordination?: unknown } | undefined)?.floorCoordination !== undefined;
   const analysisBlocked = invalidSource || invalidFloors;
   const geometrySupport = useMemo(() => ({ status: analysisBlocked ? invalidFloors ? new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1 ? "unsupported-nonuniform-floor-analysis" : "unsupported-invalid-floor-geometry" : "unsupported-source-integrity" : "uniform-concept-only", floorPlates: floorSource ?? [], selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, floorSource, analysisBlocked, invalidFloors, sourceGeometry?.modelContext?.selectedLevel]);
   const [view, setView] = useState<WorkspaceView>("model");

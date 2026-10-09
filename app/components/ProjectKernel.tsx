@@ -500,6 +500,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           planRevision: sourceRevision,
           selectedLevel: geometry.selectedLevel,
           floorPlates: geometry.floorPlates,
+          ...(plan.floorCoordination === undefined ? {} : { floorCoordination: plan.floorCoordination }),
           geometrySource: geometry.geometrySource,
           fullBuildingAnalysis: geometry.fullBuildingAnalysis,
           elementCount: elements.length,
