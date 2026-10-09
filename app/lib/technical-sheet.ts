@@ -14,6 +14,13 @@ export type TechnicalSheetPolyline = {
   closed?: boolean;
 };
 
+export type TechnicalCalculationTable = {
+  title: string;
+  context: string;
+  headers: string[];
+  rows: string[][];
+};
+
 export type TechnicalSheetInput = {
   projectName: string;
   projectCode: string;
@@ -31,6 +38,7 @@ export type TechnicalSheetInput = {
   contentDigest?: string;
   sourceContext?: Parameters<typeof createDocumentIdentity>[0]["sourceContext"];
   traceability?: unknown;
+  calculationTables?: TechnicalCalculationTable[];
   preparedBy?: string;
   checkedBy?: string;
   reviewBanner?: string;
@@ -426,5 +434,30 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
   page.drawText(identity.references.status === "unsupported" ? "Hesap / eleman kaynak baglari eksik: izlenebilir teknik teslim desteklenmiyor." : "Beyan edilen hesap / eleman baglari ayrica dogrulanmalidir.", { x: 42, y: 17, size: 5.3, font: regular, color: COLORS.copper });
   page.drawText("ARKEM-TS / 3.0", { x: 1060, y: 27, size: 5.5, font: bold, color: COLORS.copper });
 
+  for (const table of input.calculationTables ?? []) {
+    // Repeat column headings and source identity on every continuation page.
+    const rowsPerPage = 26;
+    for (let offset = 0; offset < Math.max(1, table.rows.length); offset += rowsPerPage) {
+      const resultPage = document.addPage([PAGE.width, PAGE.height]);
+      const width = PAGE.width - 84, cellWidth = width / table.headers.length;
+      resultPage.drawText("ARKEMX · Lineer 3B hesap tabloları", { x: 42, y: 795, size: 20, font: bold, color: COLORS.navy });
+      resultPage.drawText(clean(input.reviewBanner, "Teknik onay bekliyor"), { x: 42, y: 765, size: 11, font: bold, color: COLORS.warning });
+      drawMultiline(resultPage, clean(table.title), { x: 42, y: 728, width, font: bold, size: 15, color: COLORS.navy, maxLines: 2, leading: 18 });
+      resultPage.drawText(clean(table.context), { x: 42, y: 680, size: 10, font: regular, color: COLORS.slate });
+      const drawRow = (values: string[], y: number, heading = false) => {
+        resultPage.drawRectangle({ x: 42, y: y - 7, width, height: 21, color: heading ? COLORS.navy : COLORS.paper });
+        values.forEach((value, i) => {
+          const text = clean(value), font = heading ? bold : regular;
+          resultPage.drawText(text, { x: 48 + i * cellWidth, y, size: fitSize(font, text, 10, cellWidth - 12, 5), font, color: heading ? COLORS.white : COLORS.navy });
+        });
+      };
+      drawRow(table.headers, 642, true);
+      table.rows.slice(offset, offset + rowsPerPage).forEach((row, i) => drawRow(row, 613 - i * 20));
+      resultPage.drawText(`Satırlar: ${table.rows.length ? offset + 1 : 0}–${Math.min(offset + rowsPerPage, table.rows.length)} / ${table.rows.length}`, { x: 42, y: 65, size: 9, font: regular, color: COLORS.slate });
+      resultPage.drawText("Prizmatik lineer elastik çerçeve; kapasite, deprem ve resmî teknik onay içermez.", { x: 42, y: 46, size: 9, font: regular, color: COLORS.warning });
+      resultPage.drawText((input.calculationIds ?? []).join(" · "), { x: 42, y: 28, size: 8, font: regular, color: COLORS.slate });
+      resultPage.drawText(`Sayfa ${document.getPageCount()}`, { x: PAGE.width - 100, y: 65, size: 9, font: bold, color: COLORS.navy });
+    }
+  }
   return document.save({ useObjectStreams: false });
 }

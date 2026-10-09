@@ -1,6 +1,22 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {registerHooks} from 'node:module';
 registerHooks({resolve(s,c,next){if(s.startsWith('.')&&!path.extname(s)){const u=new URL(s+'.ts',c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
 const {createFrameExample,FRAME_EXAMPLE}=await import('../app/lib/frame-example.ts');const {prepareFloorFrame,recordFloorFrame,verifyFloorFrame}=await import('../app/lib/floor-frame.ts');const {prepareFrameDocument,commonFrameDxf}=await import('../app/lib/frame-documents.ts');
+const {frameCalculationTables}=await import('../app/lib/frame-report.ts');
+test('PDF continuation pages retain all 53 rows and geometry-only export stays one page',async()=>{
+ const {createCorporateTechnicalPdf}=await import('../app/lib/technical-sheet.ts'),{PDFDocument}=await import('pdf-lib');
+ const assets={regularFont:fs.readFileSync(new URL('../public/fonts/ArkemSans-Regular.ttf',import.meta.url)),boldFont:fs.readFileSync(new URL('../public/fonts/ArkemSans-Bold.ttf',import.meta.url)),logo:fs.readFileSync(new URL('../public/brand/arkem-a-mark.png',import.meta.url))};
+ const input={projectName:'Örnek',projectCode:'TEST',module:'B06',drawingTitle:'Örnek',polylines:[]};
+ assert.equal((await PDFDocument.load(await createCorporateTechnicalPdf(input,assets))).getPageCount(),1);
+ const table={title:'Yükler',context:'Küresel eksenler',headers:['Düğüm','Fx (kN)'],rows:Array.from({length:53},(_,i)=>[`N${i}`,String(i)])};
+ assert.equal((await PDFDocument.load(await createCorporateTechnicalPdf({...input,calculationTables:[table]},assets))).getPageCount(),4);
+});
+test('Visible PDF tables preserve Q/H loads, restrained reactions and every displacement component',async()=>{
+ const {project,input}=createFrameExample(7,10),record=await recordFloorFrame(prepareFloorFrame(project,input).content),tables=frameCalculationTables(record);
+ assert.equal(tables.length,12);assert.deepEqual(frameCalculationTables(null),[]);
+ const q=tables.find(t=>t.title==='Q — Mesnet reaksiyonları');assert.deepEqual(q.rows.map(r=>r[0]),['A0','B0']);assert.equal(q.rows.reduce((s,r)=>s+Number(r[3]),0),2100);
+ const h=tables.find(t=>t.title==='H — Uygulanan düğüm yükleri');assert.equal(Number(h.rows[0][1]),10);
+ for(const c of record.content.result.cases){const t=tables.find(t=>t.title===`${c.id} — Düğüm ötelenmeleri ve dönmeleri`);assert.equal(t.rows.length,record.content.model.nodes.length);assert.ok(t.rows.every(r=>r.length===7));assert.ok(t.headers[4].includes('rad'));}
+});
 test('Example has two distinct plates, declared sources and balanced synthetic loads',()=>{const {project,input}=createFrameExample(),p=prepareFloorFrame(project,input);assert.deepEqual(p.issues,[]);assert.equal(p.content.example,FRAME_EXAMPLE);assert.equal(p.content.source.floorStudy.totals.grossArea,300);for(const [id,total] of [['G',2205],['Q',1050],['S',150]])assert.ok(Math.abs(p.content.result.cases.find(c=>c.id===id).nodes.reduce((s,n)=>s+n.reactions[2],0)-total)<1e-7);});
 test('Example changing Q changes actual reactions and invalidates earlier records',async()=>{const a=createFrameExample(),b=createFrameExample(7,10),r=await recordFloorFrame(prepareFloorFrame(a.project,a.input).content);assert.equal(await verifyFloorFrame(r,b.project,b.input),false);const c=prepareFloorFrame(b.project,b.input).content;assert.ok(Math.abs(c.result.cases.find(c=>c.id==='Q').nodes.reduce((s,n)=>s+n.reactions[2],0)-2100)<1e-7);assert.ok(Math.abs(c.result.cases.find(c=>c.id==='H').nodes.reduce((s,n)=>s+n.reactions[0],0)+10)<1e-7);});
 test('Example identity appears in calculation and geometry/analysis document contents',async()=>{const {project,input}=createFrameExample(),r=await recordFloorFrame(prepareFloorFrame(project,input).content);for(const record of [null,r]){const m=await prepareFrameDocument(project,input,record,'DXF');assert.equal(m.content.example,FRAME_EXAMPLE);assert.ok(commonFrameDxf(m).includes(FRAME_EXAMPLE));assert.equal(m.technicalApproval,false);}const altered=structuredClone(project);delete altered.modules['plan-editor'].example;assert.equal(prepareFloorFrame(altered,input).content,null);});
