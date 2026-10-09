@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
+import { stripVTControlCharacters } from 'node:util';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const port = Number(process.env.ARKEMX_E2E_PORT ?? 5187);
@@ -33,7 +34,7 @@ try {
   for (let attempt = 0; attempt < 120; attempt++) {
     if (serverError) throw serverError;
     if (server.exitCode !== null) throw new Error(`G05 server exited (${server.exitCode}); see ${output}/server.log`);
-    if (!startupOutput.includes(baseUrl)) { await delay(500); continue; }
+    if (!stripVTControlCharacters(startupOutput).includes(baseUrl)) { await delay(500); continue; }
     try {
       const response = await fetch(`${baseUrl}/tasiyici-on-tasarim`, { signal: AbortSignal.timeout(2000) });
       await response.body?.cancel();
@@ -44,6 +45,9 @@ try {
   if (!ready) throw new Error(`G05 server readiness timeout; see ${output}/server.log`);
   await run('tests/g05-reload-smoke.mjs');
   await run('tests/g05-review-browser.mjs');
+} catch (error) {
+  console.error(fs.readFileSync(path.join(output, 'server.log'), 'utf8').slice(-12000));
+  throw error;
 } finally {
   if (server.exitCode === null) {
     const stopped = new Promise(resolve => server.once('exit', resolve));
