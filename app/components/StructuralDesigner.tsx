@@ -19,6 +19,7 @@ import { createStructuralDocument, prepareStructuralCalculation, recordStructura
 import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, structuralAnalysisBlockers } from "../lib/source-reference-integrity";
 import { projectIntegrityIssues } from "../lib/project-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
+import { FloorPlateStudy } from "./FloorPlateStudy";
 
 type Props = { home?: boolean; compactKernel?: boolean };
 type WorkspaceView = "model" | "alternatives" | "loads" | "checks" | "quantities";
@@ -547,13 +548,14 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
 
   if (analysisBlocked) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
     {traceError && <p role="alert">{traceError}</p>}
-    <p role="alert" data-testid="nonuniform-floor-warning">Kaynak veya kat geometrisi mevcut uniform kat motoruyla analiz edilemiyor; kaynak doğrulaması veya kat bazlı analiz gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
+    <p role="alert" data-testid="nonuniform-floor-warning">Kaynak veya kat geometrisi mevcut tek tip kat motoruyla bütün yapı olarak analiz edilemiyor. Bütün yapı hesabı ve teknik sonuç aktarımı engellendi. Kaynakları geçerliyse aşağıdaki kat bazlı ön çalışma kullanılabilir.</p>
     <ProjectKernelBar module="STRUCTURAL" moduleKey="structural-concept" confidence="Kat bazlı analiz bekleniyor" compact={compactKernel} />
     <h2>Kayıtlı kaynak</h2>
     {invalidSource ? <p>Kaynak ölçüleri doğrulanmadı; geometri sonucu gösterilmiyor.</p> : <><p>Seçili kat: K{sourceGeometry?.modelContext?.selectedLevel} · {width} × {depth} m</p>
     <ul>{floorGeometry.map(plate => <li key={plate.level}>K{plate.level}: {plate.width} × {plate.depth} m</li>)}</ul></>}
     <a href="/plan-ve-aks">Plan ve aks ekranına dön</a>
     <button type="button" onClick={exportJson}>Girdileri ve analiz sınırını indir</button>
+    {modelHydrated && <FloorPlateStudy input={input} />}
   </section>;
   return <section className={`structural-designer engineering-workbench${home ? " home-designer" : ""}`} data-testid="structural-designer">
     {traceError && <p role="alert">{traceError}</p>}
