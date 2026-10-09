@@ -15,6 +15,7 @@ import {
 import { createCorporateTechnicalPdf, type TechnicalSheetPolyline } from "../lib/technical-sheet";
 import { createStructuralStudio } from "../lib/structural-studio";
 import { createDocumentIdentity } from "../lib/document-identity";
+import { createStructuralDocument, prepareStructuralCalculation, recordStructuralCalculation, sealStructuralDocument, traceJson, type StructuralCalculationRecord } from "../lib/structural-traceability";
 import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, structuralAnalysisBlockers } from "../lib/source-reference-integrity";
 import { projectIntegrityIssues } from "../lib/project-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
@@ -154,6 +155,36 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const alternatives = useMemo(() => structuralStudio?.alternatives ?? [], [structuralStudio]);
   const activeAlternative = alternatives.find((alternative) => alternative.system === system) ?? alternatives[0];
   const checkCounts = useMemo(() => result?.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }) ?? { pass: 0, review: 0, block: 0 }, [result]);
+  const calculationOptions = useMemo(() => ({ designBasis, soilClass, repetition, transportDistance, fireRating }), [designBasis, soilClass, repetition, transportDistance, fireRating]);
+  const calculationContent = useMemo(() => prepareStructuralCalculation(project, input, calculationOptions), [project, input, calculationOptions]);
+  const calculationKey = calculationContent ? traceJson(calculationContent) : "";
+  const [calculation, setCalculation] = useState<{ key: string; record: StructuralCalculationRecord } | null>(null);
+  const [traceError, setTraceError] = useState("");
+  const latestTraceContext = useRef({ project, input, calculationOptions, calculationKey });
+  useEffect(() => { latestTraceContext.current = { project, input, calculationOptions, calculationKey }; }, [project, input, calculationOptions, calculationKey]);
+  const registryKey = traceJson((project.modules["structural-concept"] as { calculationRegistry?: unknown } | undefined)?.calculationRegistry ?? {});
+  useEffect(() => {
+    if (!hydrated || !modelHydrated) return;
+    let cancelled = false;
+    if (!calculationKey) {
+      patchModule("structural-concept", { calculationId: null, referenceStatus: "pending-calculation" });
+      return;
+    }
+    recordStructuralCalculation(JSON.parse(calculationKey)).then(record => {
+      if (cancelled || latestTraceContext.current.calculationKey !== calculationKey) return;
+      const existing = (JSON.parse(registryKey) as Record<string, unknown>)[record.id];
+      if (existing && traceJson(existing) !== traceJson(record)) throw new Error("Calculation registry conflict");
+      setTraceError("");
+      setCalculation({ key: calculationKey, record });
+      patchModule("structural-concept", { calculationId: record.id, referenceStatus: "linked-concept-calculation", calculationRegistry: { [record.id]: record } });
+    }).catch(() => {
+      if (cancelled) return;
+      setCalculation(null);
+      setTraceError("Hesap kaynak kaydı oluşturulamadı; izlenebilir çıktı hazır değil.");
+      patchModule("structural-concept", { calculationId: null, referenceStatus: "pending-calculation" });
+    });
+    return () => { cancelled = true; };
+  }, [calculationKey, registryKey, hydrated, modelHydrated, patchModule]);
 
   useEffect(() => {
     if (!hydrated || !modelHydrated) return;
@@ -266,13 +297,47 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     };
   }, [baysX, baysY, beamDepth, columnSize, depth, floorHeight, floors, showLoads, showSlabs, slabThickness, system, width]);
 
-  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({
+  const exportTrace = async (format: "JSON" | "PDF" | "DXF" | "CSV") => {
+    if (!calculationContent) return null;
+    const record = calculation?.key === calculationKey ? calculation.record : await recordStructuralCalculation(calculationContent);
+    const existing = (JSON.parse(registryKey) as Record<string, unknown>)[record.id];
+    if (existing && traceJson(existing) !== traceJson(record)) throw new Error("Calculation registry conflict");
+    const manifest = await createStructuralDocument(record, project, input, calculationOptions, format);
+    return { calculationRecord: record, documentManifest: manifest };
+  };
+  const saveDownload = async (name: string, bytes: string | Uint8Array, mime: string, trace: Awaited<ReturnType<typeof exportTrace>>) => {
+    const assertCurrent = () => {
+      const latest = latestTraceContext.current;
+      if (latest.project.id !== project.id || latest.project.revision !== project.revision || latest.calculationKey !== calculationKey) throw new Error("Project changed during export");
+    };
+    assertCurrent();
+    // CSV downloads include a UTF-8 BOM for Excel. Hash the delivered bytes,
+    // including that BOM, rather than the pre-download string.
+    const payload = typeof bytes === "string" && mime.includes("csv") && !bytes.startsWith("\uFEFF") ? `\uFEFF${bytes}` : bytes;
+    if (trace) {
+      const documentRecord = await sealStructuralDocument(trace.documentManifest, name, payload);
+      assertCurrent();
+      patchModule("structural-concept", { calculationId: trace.calculationRecord.id, calculationRegistry: { [trace.calculationRecord.id]: trace.calculationRecord }, documentRegistry: { [documentRecord.id]: documentRecord } });
+    }
+    downloadTextFile(name, payload, mime);
+  };
+  const exportJson = async () => {
+    try {
+    const trace = await exportTrace("JSON");
+    const bytes = JSON.stringify({
     schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, units: sourceGeometry?.units ?? null,
-    documentIdentity: createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: sourceElementIds } }),
+    documentIdentity: trace?.documentManifest.identity ?? createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: sourceElementIds } }),
+    traceability: trace,
     sourceReferenceValidation: inspectStructuralSourceReferences(project), designBasis, soilClass, input, result: analysisBlocked ? null : result, structuralStudio: analysisBlocked ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString(),
-  }, null, 2), "application/json");
-  const exportCsv = () => { if (analysisBlocked) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; } return downloadTextFile("arkem-v114-on-boyutlandirma.csv", [
-    "system,score,status,column,beam,floor,relative_cost,duration_weeks,carbon_proxy_kgco2e,factory_share,mass_index",
+    }, null, 2);
+    await saveDownload("arkem-v114-tasiyici-sistem-studyosu.json", bytes, "application/json", trace);
+    } catch { setTraceError("JSON kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
+  };
+  const exportCsv = async () => { if (analysisBlocked) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
+    try {
+    const trace = await exportTrace("CSV");
+    const bytes = [
+    "system,score,status,column,beam,floor,relative_cost,duration_weeks,carbon_proxy_kgco2e,factory_share,mass_index,project_id,revision,calculation_id,document_reference,source_element_ids",
     ...alternatives.map((alternative) => [
       alternative.label,
       alternative.score.toFixed(1),
@@ -285,9 +350,17 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
       alternative.indices.embodiedCarbonProxy.toFixed(0),
       alternative.indices.factoryShare.toFixed(0),
       alternative.indices.massIndex.toFixed(1),
+      project.id, project.revision, trace?.calculationRecord.id ?? "", trace?.documentManifest.identity.reference ?? "", JSON.stringify(trace?.documentManifest.elementIds ?? []),
     ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")),
-  ].join("\n"), "text/csv;charset=utf-8"); };
-  const exportDxf = () => downloadTextFile("arkem-kurumsal-aks-plani.dxf", createGridDxf(width, depth, baysX, baysY, {
+    ].join("\n");
+    await saveDownload("arkem-v114-on-boyutlandirma.csv", bytes, "text/csv;charset=utf-8", trace);
+    } catch { setTraceError("CSV kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
+  };
+  const exportDxf = async () => {
+    if (analysisBlocked) return;
+    try {
+    const trace = await exportTrace("DXF");
+    const bytes = createGridDxf(width, depth, baysX, baysY, {
     projectName: project.name,
     projectCode: project.id,
     module: "STR / YAPISAL ON TASARIM",
@@ -298,10 +371,16 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     coordinateSystem: project.coordinateReference,
     scale: "MODEL 1:1",
     preparedBy: "ARKEMX",
-    checkedBy: "YETKILI MUHENDIS",
-  }), "application/dxf");
+    checkedBy: "MUHENDIS DOGRULAMASI GEREKLI",
+    traceability: trace,
+    });
+    await saveDownload("arkem-kurumsal-aks-plani.dxf", bytes, "application/dxf", trace);
+    } catch { setTraceError("DXF kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
+  };
   const exportPdf = async () => {
     if (analysisBlocked) { setSyncStatus("PDF reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
+    try {
+    const trace = await exportTrace("PDF");
     const gridLines: TechnicalSheetPolyline[] = [];
     for (let x = 0; x <= baysX; x += 1) {
       const px = width / Math.max(1, baysX) * x;
@@ -323,6 +402,8 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
       scale: "OTOMATIK / METRE",
       coordinateSystem: project.coordinateReference,
       checkedBy: "Yetkili mühendis doğrulaması gerekli",
+      ...(trace ? trace.documentManifest.identityInput : {}),
+      traceability: trace,
       polylines: [
         ...gridLines,
         { role: "primary", points: [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: depth }, { x: 0, y: depth }] },
@@ -347,7 +428,8 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
       ],
       legend: [["Yapı oturumu", "primary"], ["Aks sistemi", "grid"]],
     });
-    downloadTextFile("arkem-yapisal-on-tasarim-kurumsal-pafta.pdf", pdf, "application/pdf");
+    await saveDownload("arkem-yapisal-on-tasarim-kurumsal-pafta.pdf", pdf, "application/pdf", trace);
+    } catch { setTraceError("PDF kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
   };
   const importUpstream = useCallback(() => {
     const source = thread.canonical;
@@ -464,6 +546,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   };
 
   if (analysisBlocked) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
+    {traceError && <p role="alert">{traceError}</p>}
     <p role="alert" data-testid="nonuniform-floor-warning">Kaynak veya kat geometrisi mevcut uniform kat motoruyla analiz edilemiyor; kaynak doğrulaması veya kat bazlı analiz gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
     <ProjectKernelBar module="STRUCTURAL" moduleKey="structural-concept" confidence="Kat bazlı analiz bekleniyor" compact={compactKernel} />
     <h2>Kayıtlı kaynak</h2>
@@ -473,6 +556,8 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     <button type="button" onClick={exportJson}>Girdileri ve analiz sınırını indir</button>
   </section>;
   return <section className={`structural-designer engineering-workbench${home ? " home-designer" : ""}`} data-testid="structural-designer">
+    {traceError && <p role="alert">{traceError}</p>}
+    <p role="status" data-testid="structural-trace-status">{calculation?.key === calculationKey && calculationKey ? "Eleman ve hesap kaynakları bağlı · kavramsal ön değerlendirme" : "Hesap kaynak bağlantısı bekleniyor · izlenebilir teknik teslim henüz hazır değil"}</p>
     {analysisBlocked ? <p role="alert" data-testid="nonuniform-floor-warning">Katlara göre değişen geometri korunuyor; bu ön hesap motoru farklı kat plakalarını analiz edemiyor. Görüntü kavramsaldır; hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p> : null}
     <ProjectKernelBar moduleKey="structural-concept" module="STRUCTURAL CONCEPT STUDIO 2.0" confidence="Beş sistem / ön boyutlandırma" compact={compactKernel} />
     <div className="designer-head"><div><p className="eyebrow">V114 / Taşıyıcı Sistem Stüdyosu 2.0</p><h2>Aynı geometriyi kurun.<br/><em>Beş sistemi ölçerek karşılaştırın.</em></h2></div><p>Betonarme, Betonarme Prefabrik, yapısal çelik, hafif çelik ve karma sistemi aynı aks, yük ve mimari şema üzerinde ön boyutlandırın. Maliyet, süre, karbon, kütle ve üretilebilirlik göstergelerini birlikte okuyun; sonuç nihai statik analiz veya uygulama projesi değildir.</p><div className="engineering-sync"><span>DİJİTAL DEVİR TESLİM</span><b>{syncStatus}</b><button onClick={importUpstream}>V113 / Plan / program verisini aktar ↘</button></div></div>
