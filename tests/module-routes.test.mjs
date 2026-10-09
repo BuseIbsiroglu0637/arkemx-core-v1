@@ -16,11 +16,11 @@ const selectors = {
   'model-library-review':'sketchfab-library',
   'demolition-screening':'demolition-decision-studio',
 };
-for (const module of PROJECT_MODULES) test(module.code+' '+module.label+' opens its working module route',async()=>{
+for (const moduleEntry of PROJECT_MODULES) test(moduleEntry.code+' '+moduleEntry.label+' opens its working module route',async()=>{
   const {default:worker}=await import('../dist/server/index.js');
-  const response=await worker.fetch(new Request('http://localhost'+module.route,{headers:{accept:'text/html'}}),{ASSETS:{fetch:async()=>new Response('Not found',{status:404})}},{waitUntil(){},passThroughOnException(){}});
-  assert.equal(response.status,200,module.route);
+  const response=await worker.fetch(new Request('http://localhost'+moduleEntry.route,{headers:{accept:'text/html'}}),{ASSETS:{fetch:async()=>new Response('Not found',{status:404})}},{waitUntil(){},passThroughOnException(){}});
+  assert.equal(response.status,200,moduleEntry.route);
   const html=await response.text();
-  assert.ok(html.includes(selectors[module.id]), module.route+' must mount the working tool');
+  assert.ok(html.includes(selectors[moduleEntry.id]), moduleEntry.route+' must mount the working tool');
 });
 

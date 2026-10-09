@@ -22,12 +22,12 @@ async function open(route) {
  await page.locator('main').first().waitFor();
 }
 try {
- for (const module of PROJECT_MODULES) {
+ for (const moduleEntry of PROJECT_MODULES) {
    await seed({});
-   await open(module.route);
+   await open(moduleEntry.route);
    await page.waitForFunction(key=>Boolean(localStorage.getItem(key)),PROJECT_STORAGE_KEY);
-   assert.ok((await page.locator('main').first().innerText()).length>80,module.label);
-   console.log('PASS module route '+module.code+' '+module.label);
+   assert.ok((await page.locator('main').first().innerText()).length>80,moduleEntry.label);
+   console.log('PASS module route '+moduleEntry.code+' '+moduleEntry.label);
  }
  const cases=[
  {key:'decision-assistant',route:'/proje-karar-asistani',module:{input:{goal:'konut',stage:'on-proje',system:'celik',location:'Kastamonu / Merkez',area:'1777',documents:['arsa'],priorities:['butce']}},selector:'.decision-fields input[placeholder="Örn. 450 m²"]',value:'1777',field:'area'},
