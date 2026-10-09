@@ -13,7 +13,8 @@ export function planGeometrySnapshot(value: unknown) {
   const p = data(value);
   return { level: p.level, floorCount: p.floorCount, baysX: p.baysX, baysY: p.baysY, spanX: p.spanX, spanY: p.spanY,
     floorPlates: Array.isArray(p.floorPlates) ? [...p.floorPlates].sort((a,b) => Number(data(a).level) - Number(data(b).level)) : p.floorPlates ?? [],
-    ...(p.floorCoordination === undefined ? {} : { floorCoordination: p.floorCoordination }) };
+    ...(p.floorCoordination === undefined ? {} : { floorCoordination: p.floorCoordination }),
+    ...(p.floorFrame === undefined ? {} : { floorFrame: p.floorFrame }) };
 }
 
 // Consistency of the actual local source only. This is not a calculation registry,
@@ -68,7 +69,7 @@ export function inspectStructuralSourceReferences(project: unknown) {
 
 export function structuralAnalysisBlockers(value: unknown) {
   const structure = data(value), context = data(structure.modelContext), issues: string[] = [];
-  if (context.floorCoordination !== undefined || data(structure.inputGeometrySnapshot).floorCoordination !== undefined) issues.push("floor coordination whole-building analysis unsupported");
+  if (context.floorCoordination !== undefined || data(structure.inputGeometrySnapshot).floorCoordination !== undefined || data(structure.inputGeometrySnapshot).floorFrame !== undefined) issues.push("floor coordination whole-building analysis unsupported");
   if (String(data(structure.geometrySupport).status).startsWith("unsupported")) issues.push("structural analysis explicitly unsupported");
   const plates = context.floorPlates;
   if (plates !== undefined && plates !== null && !Array.isArray(plates)) issues.push("floor plate collection unsupported");

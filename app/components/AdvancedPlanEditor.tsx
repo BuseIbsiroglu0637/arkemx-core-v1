@@ -8,6 +8,7 @@ import { expandProgramSpaces, buildProgramPlanElements, coordinateProgramAxes, d
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { PLAN_UNITS } from "../lib/project-integrity";
 import { FloorCoordinationPanel } from "./FloorCoordinationPanel";
+import { FrameWorkbench } from "./FrameWorkbench";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
 type View = "architectural" | "structural" | "loads" | "coordination";
@@ -1092,6 +1093,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
     </section> : null}
     {!issueFocus && modelHydrated && <FloorCoordinationPanel editable/>}
+    {!issueFocus && modelHydrated && <FrameWorkbench editable/>}
   </section>;
 }
 
