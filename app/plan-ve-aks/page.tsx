@@ -30,6 +30,7 @@ export default function PlanAndGridPage() {
         <p>Mimari programdan devralınan mahal, plaka ve kat verilerini plan ve aks düzenine bağlayın. Bu çalışma tamamlandığında Mimari adımı kapanır ve Sistem seçimine geçilir.</p>
       </div>
       <section className="arx-workspace-editor" aria-label="Plan ve aks çalışma alanı">
+        <p>Proje dosyanız yoksa <Link href="/ornek-kat-modeli">iki katlı örnek modelle çalışın</Link>.</p>
         <AdvancedPlanEditor compactKernel />
       </section>
     </div>
