@@ -158,6 +158,7 @@ try {
  await draft.getByLabel('Kat adedi',{exact:true}).fill('3');
  await draft.getByLabel('Kat yüksekliği (m)',{exact:true}).fill('3.2');
  await draft.getByLabel('100 m² başına park',{exact:true}).fill('1.5');
+ await draft.getByLabel('100 m² başına park',{exact:true}).press('Tab');
  await page.waitForFunction(key=>{const g=JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'];return g?.buildingWidth===18&&g.buildingDepth===24&&g.floors===3&&g.floorHeight===3.2&&g.usage==='Tarımsal Yapı'&&g.planning?.parkingPer100===1.5;},PROJECT_STORAGE_KEY);
  const draftGeo=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'],PROJECT_STORAGE_KEY);
  assert.deepEqual(draftGeo.zoning,zoningBeforeDraft);assert.equal(draftGeo.parcelRecord.projectEligible,false);assert.equal(draftGeo.massingModel.source.authoritative,false);

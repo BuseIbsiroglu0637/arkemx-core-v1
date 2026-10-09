@@ -660,7 +660,7 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     <div>
       <span>ARAZİ TASLAĞI GÜNCELLENDİ</span>
       <b>Mimari Program ile güncel Yapı Yerleşimi aynı değil.</b>
-      <p>Mimari: {targetGross.toLocaleString("tr-TR")} m² · {floors} kat{floorHeight > 0 ? ` · ${floorHeight.toFixed(1)} m` : ""} / Arazi: {geoDraftGross.toLocaleString("tr-TR")} m² · {geoDraftFloors} kat{geoDraftFloorHeight > 0 ? ` · ${geoDraftFloorHeight.toFixed(1)} m` : ""}. Plan &amp; Aks&apos;a geçmeden önce aynı kaynağa bağlayın.</p>
+      <p>Mimari: {targetGross.toLocaleString("tr-TR")} m² · {floors} kat{floorHeight > 0 ? ` · ${floorHeight.toFixed(1)} m` : ""} / Arazi: {geoDraftGross.toLocaleString("tr-TR")} m² · {geoDraftFloors} kat{geoDraftFloorHeight > 0 ? ` · ${geoDraftFloorHeight.toFixed(1)} m` : ""}. {"Plan & Aks'a geçmeden önce aynı kaynağa bağlayın."}</p>
     </div>
     <div className="arx-program-requirement-actions">
       <button type="button" className="primary" onClick={syncFromGeoDraft}>Arazi taslağını yeniden aktar</button>
