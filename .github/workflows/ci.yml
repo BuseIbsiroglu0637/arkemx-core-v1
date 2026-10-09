@@ -2,7 +2,7 @@ name: ARKEMX CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/prototip-final-2026-10-06]
   push:
     branches: [main]
 
@@ -18,10 +18,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node 22
+      - name: Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: "22.13.0"
+          node-version: "24.19.0"
           cache: npm
 
       - name: Install
@@ -32,3 +32,24 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  g05:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - run: npm ci
+      - name: G05 integrity regression
+        run: npm run test:g05
+      - run: npx playwright install --with-deps chromium
+      - name: G05 browser regression with repository fixtures
+        run: npm run test:g05:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: g05-browser-evidence
+          path: test-artifacts/g05/
