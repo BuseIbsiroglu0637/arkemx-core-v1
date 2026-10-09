@@ -4,12 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {chromium} from 'playwright';
 import {encodeProjectEnvelope} from '../app/lib/project-storage.ts';
-const out=path.resolve(process.env.ARKEMX_G05_EVIDENCE_DIR);
-const fixture=JSON.parse(fs.readFileSync('../../output/G05_Kalan_Isler_2026-10-09/browser_result.json')).finalProject;
+import {createG05ReviewFixture} from './fixtures/g05-review-project.mjs';
+const out=path.resolve(process.env.ARKEMX_G05_EVIDENCE_DIR ?? 'test-artifacts/g05');
+fs.mkdirSync(out,{recursive:true});
+const fixture=createG05ReviewFixture();
 const browser=await chromium.launch({headless:true,executablePath:process.env.ARKEMX_E2E_BROWSER});
 const context=await browser.newContext(), page=await context.newPage();
 const reports=[], errors=[]; page.on('pageerror',error=>errors.push(String(error)));
-const root='http://127.0.0.1:5173';
+const root=process.env.ARKEMX_E2E_BASE_URL ?? 'http://127.0.0.1:5173';
 async function seed(p,url){await page.goto(root);await page.evaluate(raw=>{localStorage.clear();sessionStorage.clear();localStorage.setItem('arkem-project-kernel-v2',raw);},encodeProjectEnvelope(p));await page.goto(root+url);}
 async function stored(){return page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload);}
 async function check(name,fn){errors.length=0;try{await fn();assert.deepEqual(errors,[]);reports.push({name,pass:true});}catch(error){reports.push({name,pass:false,error:String(error),pageErrors:errors.slice(),body:await page.locator('body').innerText()});await page.screenshot({path:path.join(out,'review-failure-'+reports.length+'.png'),fullPage:true});}}
@@ -51,6 +53,6 @@ try{
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload.modules['project-os'].workItems.some(i=>i.sourceGuid==='A'&&i.revision==='P03'&&i.status==='open'));
   assert.equal((await stored()).modules['project-os'].workItems.find(i=>i.sourceGuid==='A').id,priorId);
  });
-}finally{await browser.close();fs.writeFileSync(path.join(out,'review-browser-result.json'),JSON.stringify({clientDate:'2026-10-09',fixture:'synthetic',reports,technicalApproval:false},null,2));}
+}finally{await browser.close();fs.writeFileSync(path.join(out,'review-browser-result.json'),JSON.stringify({executedAt:new Date().toISOString(),fixture:'synthetic',reports,technicalApproval:false},null,2));}
 console.log(JSON.stringify({pass:reports.filter(r=>r.pass).length,fail:reports.filter(r=>!r.pass).length}));
 if(reports.some(r=>!r.pass))process.exitCode=1;
