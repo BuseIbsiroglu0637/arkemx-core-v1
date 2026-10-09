@@ -9,6 +9,12 @@ function canonical(v: unknown, depth = 0): unknown {
   return v;
 }
 
+export function planGeometrySnapshot(value: unknown) {
+  const p = data(value);
+  return { level: p.level, floorCount: p.floorCount, baysX: p.baysX, baysY: p.baysY, spanX: p.spanX, spanY: p.spanY,
+    floorPlates: Array.isArray(p.floorPlates) ? [...p.floorPlates].sort((a,b) => Number(data(a).level) - Number(data(b).level)) : p.floorPlates ?? [] };
+}
+
 // Consistency of the actual local source only. This is not a calculation registry,
 // document graph, cryptographic hash or engineering approval.
 export function inspectStructuralSourceReferences(project: unknown) {
@@ -35,10 +41,25 @@ export function inspectStructuralSourceReferences(project: unknown) {
     else if (!Array.isArray(snapshot)) issues.push("source snapshot unsupported");
     else {
       const recorded = snapshot.map(data), recordedIds = recorded.map(element => element.id);
+      if (byId.size !== ids.length) issues.push("source element set changed");
       if (!validIds(recordedIds) || recordedIds.length !== ids.length || ids.some(id => !recordedIds.includes(id))) issues.push("snapshot and input element identities conflict");
       try {
         for (const element of recorded) if (byId.has(element.id) && JSON.stringify(canonical(element)) !== JSON.stringify(canonical(byId.get(element.id)))) issues.push("source element content changed: " + element.id);
       } catch { issues.push("source content unsupported"); }
+    }
+    const geometry = structure.inputGeometrySnapshot;
+    try {
+      const actualPlates = planGeometrySnapshot(plan).floorPlates;
+      const contextPlates = planGeometrySnapshot({ floorPlates: data(structure.modelContext).floorPlates }).floorPlates;
+      if (JSON.stringify(canonical(actualPlates)) !== JSON.stringify(canonical(contextPlates))) issues.push("structural context conflicts with current source floor geometry");
+    } catch { issues.push("current source floor geometry unsupported"); }
+    if (geometry === undefined || geometry === null) pending.push("source geometry snapshot unavailable");
+    else {
+      try {
+        if (JSON.stringify(canonical(planGeometrySnapshot(geometry))) !== JSON.stringify(canonical(planGeometrySnapshot(plan)))) issues.push("source plan geometry changed");
+        const contextPlates = planGeometrySnapshot({ floorPlates: data(structure.modelContext).floorPlates }).floorPlates;
+        if (JSON.stringify(canonical(contextPlates)) !== JSON.stringify(canonical(data(geometry).floorPlates))) issues.push("structural context conflicts with source floor geometry");
+      } catch { issues.push("source geometry content unsupported"); }
     }
   }
   return { status: issues.length ? "invalid" as const : pending.length ? "pending" as const : "consistent" as const, issues, pending, calculationVerification: false, technicalApproval: false };
@@ -51,7 +72,7 @@ export function structuralAnalysisBlockers(value: unknown) {
   if (plates !== undefined && plates !== null && !Array.isArray(plates)) issues.push("floor plate collection unsupported");
   if (Array.isArray(plates) && plates.length) {
     const rows = plates.map(data);
-    if (rows.some(p => typeof p.width !== "number" || !Number.isFinite(p.width) || p.width <= 0 || typeof p.depth !== "number" || !Number.isFinite(p.depth) || p.depth <= 0 || !Number.isInteger(p.level)) || new Set(rows.map(p => p.level)).size !== rows.length) issues.push("floor plate geometry invalid");
+    if (rows.some(p => typeof p.width !== "number" || !Number.isFinite(p.width) || p.width <= 0 || typeof p.depth !== "number" || !Number.isFinite(p.depth) || p.depth <= 0 || !Number.isInteger(p.level) || Number(p.level) < 1) || new Set(rows.map(p => p.level)).size !== rows.length) issues.push("floor plate geometry invalid");
     if (new Set(rows.map(p => `${p.width}/${p.depth}`)).size > 1) issues.push("nonuniform floor analysis unsupported");
   }
   return issues;

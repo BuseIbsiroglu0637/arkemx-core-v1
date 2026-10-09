@@ -16,6 +16,7 @@ import { createCorporateTechnicalPdf, type TechnicalSheetPolyline } from "../lib
 import { createStructuralStudio } from "../lib/structural-studio";
 import { createDocumentIdentity } from "../lib/document-identity";
 import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, structuralAnalysisBlockers } from "../lib/source-reference-integrity";
+import { projectIntegrityIssues } from "../lib/project-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Props = { home?: boolean; compactKernel?: boolean };
@@ -88,10 +89,15 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
   const { patchModule, thread, project, hydrated } = useProjectKernel();
-  const sourceGeometry = project.modules["structural-concept"] as { sourceRevision?: string | null; inputElementIds?: string[] | null; modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
-  const floorGeometry = useMemo(() => sourceGeometry?.modelContext?.floorPlates ?? [], [sourceGeometry?.modelContext?.floorPlates]);
-  const nonuniformFloors = structuralAnalysisBlockers({ modelContext: { floorPlates: floorGeometry } }).length > 0;
-  const geometrySupport = useMemo(() => ({ status: nonuniformFloors ? new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1 ? "unsupported-nonuniform-floor-analysis" : "unsupported-invalid-floor-geometry" : "uniform-concept-only", floorPlates: floorGeometry, selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, nonuniformFloors, sourceGeometry?.modelContext?.selectedLevel]);
+  const sourceGeometry = project.modules["structural-concept"] as { units?: unknown; sourceRevision?: string | null; inputElementIds?: string[] | null; modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
+  const planSourceElements = (project.modules["plan-editor"] as { elements?: Array<{ id: string }> } | undefined)?.elements;
+  const sourceElementIds = Array.isArray(planSourceElements) ? planSourceElements.filter(element => element && typeof element.id === "string").map(element => element.id) : [];
+  const floorSource = sourceGeometry?.modelContext?.floorPlates;
+  const floorGeometry = useMemo(() => Array.isArray(floorSource) ? floorSource.filter(plate => !!plate && typeof plate === "object" && !Array.isArray(plate)) : [], [floorSource]);
+  const invalidSource = projectIntegrityIssues(project).some(issue => issue.startsWith("structural-concept:") || (sourceGeometry?.sourceRevision && issue.startsWith("plan-editor:")));
+  const invalidFloors = structuralAnalysisBlockers(sourceGeometry).length > 0;
+  const analysisBlocked = invalidSource || invalidFloors;
+  const geometrySupport = useMemo(() => ({ status: analysisBlocked ? invalidFloors ? new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1 ? "unsupported-nonuniform-floor-analysis" : "unsupported-invalid-floor-geometry" : "unsupported-source-integrity" : "uniform-concept-only", floorPlates: floorSource ?? [], selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, floorSource, analysisBlocked, invalidFloors, sourceGeometry?.modelContext?.selectedLevel]);
   const [view, setView] = useState<WorkspaceView>("model");
   const [webglState, setWebglState] = useState<"checking" | "ready" | "fallback">("checking");
   const [system, setSystem] = useState<StructuralSystem>("concrete");
@@ -132,27 +138,27 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     concreteStrength, steelYield,
   }), [basicWindSpeed, baysX, baysY, beamDepth, behaviorFactor, columnSize, concreteStrength, depth, floorHeight, floors, importance, liveLoad, roofSnowLoad, sds, sd1, slabThickness, steelYield, superDeadLoad, system, usage, width]);
   // Unsupported geometry returns before result consumers render; no uniform engine is invoked.
-  const result = useMemo(() => runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorGeometry } }, () => calculateStructuralConcept(input)), [floorGeometry, input])!;
+  const result = useMemo(() => analysisBlocked ? null : runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorSource } }, () => calculateStructuralConcept(input)), [analysisBlocked, floorSource, input])!;
   const architecturalScheme = useMemo(() => {
     const architecture = project.modules["architectural-program"] as { architecturalScheme?: unknown } | undefined;
     return architecture?.architecturalScheme;
   }, [project.modules]);
-  const structuralStudio = useMemo(() => runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorGeometry } }, () => createStructuralStudio({
+  const structuralStudio = useMemo(() => analysisBlocked ? null : runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorSource } }, () => createStructuralStudio({
     reference: project.id,
     input,
     architecturalScheme,
     repetition,
     transportDistance,
     fireRating,
-  })), [architecturalScheme, fireRating, floorGeometry, input, project.id, repetition, transportDistance])!;
+  })), [analysisBlocked, architecturalScheme, fireRating, floorSource, input, project.id, repetition, transportDistance])!;
   const alternatives = useMemo(() => structuralStudio?.alternatives ?? [], [structuralStudio]);
   const activeAlternative = alternatives.find((alternative) => alternative.system === system) ?? alternatives[0];
   const checkCounts = useMemo(() => result?.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }) ?? { pass: 0, review: 0, block: 0 }, [result]);
 
   useEffect(() => {
     if (!hydrated || !modelHydrated) return;
-    patchModule("structural-concept", { schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", input, designBasis, soilClass, result: nonuniformFloors ? null : result, alternatives: nonuniformFloors ? [] : alternatives, structuralStudio: nonuniformFloors ? null : structuralStudio, geometrySupport, architectureContext: { architecturalScheme }, mcdaShortlist, status: nonuniformFloors ? "Katlara göre değişen geometri analizi desteklenmiyor; hesap aktarımı engellendi" : "v114-preliminary-system-comparison" });
-  }, [alternatives, architecturalScheme, designBasis, hydrated, input, mcdaShortlist, modelHydrated, patchModule, result, soilClass, structuralStudio, nonuniformFloors, geometrySupport]);
+    patchModule("structural-concept", { schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", input, designBasis, soilClass, result: analysisBlocked ? null : result, alternatives: analysisBlocked ? [] : alternatives, structuralStudio: analysisBlocked ? null : structuralStudio, geometrySupport, architectureContext: { architecturalScheme }, mcdaShortlist, status: analysisBlocked ? "Katlara göre değişen geometri analizi desteklenmiyor; hesap aktarımı engellendi" : "v114-preliminary-system-comparison" });
+  }, [alternatives, architecturalScheme, designBasis, hydrated, input, mcdaShortlist, modelHydrated, patchModule, result, soilClass, structuralStudio, analysisBlocked, geometrySupport]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -260,8 +266,12 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     };
   }, [baysX, baysY, beamDepth, columnSize, depth, floorHeight, floors, showLoads, showSlabs, slabThickness, system, width]);
 
-  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({ schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, documentIdentity: createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: ((project.modules["plan-editor"] as { elements?: Array<{ id: string }> } | undefined)?.elements ?? []).map(element => element.id) } }), sourceReferenceValidation: inspectStructuralSourceReferences(project), designBasis, soilClass, input, result: nonuniformFloors ? null : result, structuralStudio: nonuniformFloors ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString() }, null, 2), "application/json");
-  const exportCsv = () => { if (nonuniformFloors) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; } return downloadTextFile("arkem-v114-on-boyutlandirma.csv", [
+  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({
+    schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, units: sourceGeometry?.units ?? null,
+    documentIdentity: createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: sourceElementIds } }),
+    sourceReferenceValidation: inspectStructuralSourceReferences(project), designBasis, soilClass, input, result: analysisBlocked ? null : result, structuralStudio: analysisBlocked ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString(),
+  }, null, 2), "application/json");
+  const exportCsv = () => { if (analysisBlocked) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; } return downloadTextFile("arkem-v114-on-boyutlandirma.csv", [
     "system,score,status,column,beam,floor,relative_cost,duration_weeks,carbon_proxy_kgco2e,factory_share,mass_index",
     ...alternatives.map((alternative) => [
       alternative.label,
@@ -291,7 +301,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     checkedBy: "YETKILI MUHENDIS",
   }), "application/dxf");
   const exportPdf = async () => {
-    if (nonuniformFloors) { setSyncStatus("PDF reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
+    if (analysisBlocked) { setSyncStatus("PDF reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
     const gridLines: TechnicalSheetPolyline[] = [];
     for (let x = 0; x <= baysX; x += 1) {
       const px = width / Math.max(1, baysX) * x;
@@ -453,17 +463,17 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     setSlabThickness(alternative.preliminary.numeric.slabThickness);
   };
 
-  if (nonuniformFloors) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
-    <p role="alert" data-testid="nonuniform-floor-warning">Kat ölçüleri korundu. Bu geometri mevcut uniform kat motoruyla analiz edilemiyor; kat bazlı analiz veya geometri doğrulaması gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
+  if (analysisBlocked) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
+    <p role="alert" data-testid="nonuniform-floor-warning">Kaynak veya kat geometrisi mevcut uniform kat motoruyla analiz edilemiyor; kaynak doğrulaması veya kat bazlı analiz gerekiyor. Hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p>
     <ProjectKernelBar module="STRUCTURAL" moduleKey="structural-concept" confidence="Kat bazlı analiz bekleniyor" compact={compactKernel} />
-    <h2>Kayıtlı kat geometrisi</h2>
-    <p>Seçili kat: K{sourceGeometry?.modelContext?.selectedLevel} · {width} × {depth} m</p>
-    <ul>{floorGeometry.map(plate => <li key={plate.level}>K{plate.level}: {plate.width} × {plate.depth} m</li>)}</ul>
+    <h2>Kayıtlı kaynak</h2>
+    {invalidSource ? <p>Kaynak ölçüleri doğrulanmadı; geometri sonucu gösterilmiyor.</p> : <><p>Seçili kat: K{sourceGeometry?.modelContext?.selectedLevel} · {width} × {depth} m</p>
+    <ul>{floorGeometry.map(plate => <li key={plate.level}>K{plate.level}: {plate.width} × {plate.depth} m</li>)}</ul></>}
     <a href="/plan-ve-aks">Plan ve aks ekranına dön</a>
     <button type="button" onClick={exportJson}>Girdileri ve analiz sınırını indir</button>
   </section>;
   return <section className={`structural-designer engineering-workbench${home ? " home-designer" : ""}`} data-testid="structural-designer">
-    {nonuniformFloors ? <p role="alert" data-testid="nonuniform-floor-warning">Katlara göre değişen geometri korunuyor; bu ön hesap motoru farklı kat plakalarını analiz edemiyor. Görüntü kavramsaldır; hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p> : null}
+    {analysisBlocked ? <p role="alert" data-testid="nonuniform-floor-warning">Katlara göre değişen geometri korunuyor; bu ön hesap motoru farklı kat plakalarını analiz edemiyor. Görüntü kavramsaldır; hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p> : null}
     <ProjectKernelBar moduleKey="structural-concept" module="STRUCTURAL CONCEPT STUDIO 2.0" confidence="Beş sistem / ön boyutlandırma" compact={compactKernel} />
     <div className="designer-head"><div><p className="eyebrow">V114 / Taşıyıcı Sistem Stüdyosu 2.0</p><h2>Aynı geometriyi kurun.<br/><em>Beş sistemi ölçerek karşılaştırın.</em></h2></div><p>Betonarme, Betonarme Prefabrik, yapısal çelik, hafif çelik ve karma sistemi aynı aks, yük ve mimari şema üzerinde ön boyutlandırın. Maliyet, süre, karbon, kütle ve üretilebilirlik göstergelerini birlikte okuyun; sonuç nihai statik analiz veya uygulama projesi değildir.</p><div className="engineering-sync"><span>DİJİTAL DEVİR TESLİM</span><b>{syncStatus}</b><button onClick={importUpstream}>V113 / Plan / program verisini aktar ↘</button></div></div>
     <div className="v114-source-band" data-state={structuralStudio.source.architecturalSchemeConnected ? structuralStudio.source.authoritativeGeometry ? "verified" : "derived" : "missing"}><div><span>V114 / TAŞIYICI SİSTEM STÜDYOSU 2.0</span><b>{structuralStudio.source.architecturalSchemeConnected ? "V113 mekânsal şeması bağlı" : "V113 mekânsal şeması bulunamadı"}</b><small>{structuralStudio.geometry.width.toFixed(1)} × {structuralStudio.geometry.depth.toFixed(1)} m · {structuralStudio.geometry.floors} kat · {structuralStudio.geometry.maximumSpan.toFixed(1)} m en büyük açıklık</small></div><div><span>{mcdaShortlist.length ? "MCDA KISA LİSTE BAŞLANGICI" : "ÖNERİLEN ÖN İNCELEME"}</span><b>{mcdaShortlist[0]?.name ?? structuralStudio.recommendation.label}</b><small>{mcdaShortlist[0] ? mcdaShortlist[0].score.toFixed(1) + " / 100 · kullanıcı kısa listesi" : structuralStudio.recommendation.score.toFixed(1) + " / 100 · sistem kararı değildir"}</small></div><div><span>AKTİF ÖN BOYUTLANDIRMA</span><b>{activeAlternative.preliminary.column}</b><small>{activeAlternative.preliminary.beam}</small></div></div>

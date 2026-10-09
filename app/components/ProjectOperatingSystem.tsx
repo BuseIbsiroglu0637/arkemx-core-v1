@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
-import { createProjectOperatingModel, restoreOperatingWorkStates, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
+import { createProjectOperatingModel, restoreOperatingWorkStates, operatingWorkStateKey, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
@@ -110,8 +110,8 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const workItems = useMemo(() => operatingModel.workItems.map((item) => ({
     ...item,
     status: item.sourceGuid && item.priority === "critical"
-      ? (workStates[item.id] ?? restoredStates[item.id]) === "in-review" ? "in-review" as const : "blocked" as const
-      : workStates[item.id] ?? restoredStates[item.id] ?? item.status,
+      ? (workStates[operatingWorkStateKey(item)] ?? restoredStates[item.id]) === "in-review" ? "in-review" as const : "blocked" as const
+      : workStates[operatingWorkStateKey(item)] ?? restoredStates[item.id] ?? item.status,
   })), [operatingModel.workItems, workStates, restoredStates]);
   const currentModule = modules.find((item) => item.id === active) ?? modules[0];
   const filteredDocuments = docFilter === "Tümü" ? documents : documents.filter((item) => item.status === docFilter);
@@ -170,7 +170,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
                 <h3>{item.title}</h3>
                 <p>{item.owner} · {item.dueDate} · {item.scheduleImpact}</p>
               </div>
-              <button type="button" data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={() => setWorkStates((values) => ({ ...values, [item.id]: item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "blocked" : "in-review" : item.status === "in-review" ? "closed" : "in-review" }))}>
+              <button type="button" data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={() => setWorkStates((values) => ({ ...values, [operatingWorkStateKey(item)]: item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "blocked" : "in-review" : item.status === "in-review" ? "closed" : "in-review" }))}>
                 {item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "İşareti kaldır" : "İncelemeye al" : item.status === "in-review" ? "Kapat" : "İncele"}
               </button>
             </article>)}
@@ -271,7 +271,7 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
 
         {active === "work" && <div className="v116-workspace">
           <div className="os-tool-row"><div><span>Koordinasyondan gelen işler</span><b>Sorumlu ve hedef tarih olmadan iş açılmaz</b></div><span className="os-capture-time">{workItems.filter((item)=>item.status!=="closed").length} AÇIK KAYIT</span></div>
-          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner} · {item.dueDate}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={()=>setWorkStates((values)=>({...values,[item.id]:item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"blocked":"in-review" : item.status==="in-review"?"closed":"in-review"}))}>{item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"İnceleme işaretini kaldır":"İncelemeye al · kapatılamaz" : item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
+          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner} · {item.dueDate}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={()=>setWorkStates((values)=>({...values,[operatingWorkStateKey(item)]:item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"blocked":"in-review" : item.status==="in-review"?"closed":"in-review"}))}>{item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"İnceleme işaretini kaldır":"İncelemeye al · kapatılamaz" : item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
           <p className="os-inline-note"><b>Kaynak sürekliliği:</b> V115 BCF uyumlu issue GUID’i, model konumu, disiplinler ve revizyon bilgisi görev kapanana kadar korunur.</p>
         </div>}
 

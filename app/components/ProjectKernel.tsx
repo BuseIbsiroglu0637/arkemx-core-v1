@@ -18,7 +18,7 @@ import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
-import { structuralAnalysisBlockers } from "../lib/source-reference-integrity";
+import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -475,10 +475,14 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       modules["structural-concept"] = {
         ...target,
         result: null,
+        alternatives: [],
+        structuralStudio: null,
+        geometrySupport: { status: structuralAnalysisBlockers({ modelContext: { floorPlates: geometry.floorPlates } }).length ? "unsupported-nonuniform-floor-analysis" : "uniform-concept-only", fullBuildingAnalysis: false, technicalApproval: false },
         units: declaredModuleUnits("structural-concept"),
         sourceRevision,
         inputElementIds,
         inputElementSnapshot: inputElementIds ? JSON.parse(JSON.stringify(elements)) : null,
+        inputGeometrySnapshot: JSON.parse(JSON.stringify(planGeometrySnapshot(plan))),
         calculationId: null,
         referenceStatus: sourceRevision && inputElementIds ? "pending-calculation" : "unsupported-source",
         input: {

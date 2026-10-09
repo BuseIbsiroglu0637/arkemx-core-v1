@@ -51,6 +51,49 @@ test("B08 ambiguous and old-revision saved states never transfer",()=>{const ite
 test("B02 conflicting federation revision is rejected",()=>assert.throws(()=>createCoordinationPackage({projectId:"TEST",projectRevision:"P02",bimCoordination:{federation:{commonRevision:"P01"}},topics:[]}),/revision/i));
 test("B04 invalid declared references remain unsupported",()=>{const doc=createDocumentIdentity({projectCode:"TEST",module:"STR",revision:"P02",sourceRevision:"P01",elementIds:["E-A","E-A"],calculationIds:[""]});assert.equal(doc.references.status,"unsupported");assert.equal(doc.references.elementIds,null);assert.equal(doc.references.calculationIds,null);});
 function linkedProject(){const p=project();const out=synchronizeModules(p.modules,["H-03"],p);p.modules["structural-concept"]=stamp("structural-concept",out.modules["structural-concept"]);return JSON.parse(JSON.stringify(p));}
+test("Review: adding a source element invalidates a complete H03 source set",()=>{
+  const p=linkedProject(); assert.equal(isPortalProject(p),true);
+  p.modules["plan-editor"].elements.push({...p.modules["plan-editor"].elements[0],id:"E-B",load:8});
+  assert.equal(isPortalProject(p),false);
+});
+test("Review: same-revision floor geometry change invalidates source context",()=>{
+  const p=linkedProject(); assert.equal(isPortalProject(p),true);
+  p.modules["plan-editor"].floorPlates[1].width=25;
+  assert.equal(isPortalProject(p),false);
+});
+test("Review: structural context cannot replace nonuniform source plates with uniform plates",()=>{
+  for(const legacy of [false,true]){
+  const p=linkedProject(); assert.equal(isPortalProject(p),true);
+  if(legacy)delete p.modules["structural-concept"].inputGeometrySnapshot;
+  p.modules["structural-concept"].modelContext.floorPlates=[{level:1,width:10,depth:10},{level:2,width:10,depth:10}];
+  p.modules["structural-concept"].result={geometry:{totalArea:200}};
+  assert.equal(isPortalProject(p),false); assert.deepEqual(synchronizeModules(p.modules,["H-05"],p).applied,[]);
+  }
+});
+test("Review: malformed floor collection must never fall back to grid geometry",async()=>{
+  const {resolvePlanHandoffGeometry}=await import("../app/lib/project-integrity.ts");
+  for(const floorPlates of [{},"bad"])assert.throws(()=>resolvePlanHandoffGeometry({...project().modules["plan-editor"],floorPlates}),/floor/i);
+});
+test("Review: zero and negative floor levels never invoke analysis",async()=>{
+  const {runSupportedStructuralAnalysis}=await import("../app/lib/source-reference-integrity.ts");
+  let calls=0;
+  for(const level of [0,-1])assert.equal(runSupportedStructuralAnalysis({modelContext:{floorPlates:[{level,width:10,depth:10}]}},()=>{calls++;return 200;}),null);
+  assert.equal(calls,0);
+});
+test("Review: H03 clears old comparison outputs and unsupported flag on fresh uniform input",()=>{
+  const p=linkedProject(); p.modules["plan-editor"].floorPlates[1].width=10;
+  p.modules["structural-concept"].geometrySupport={status:"unsupported-nonuniform-floor-analysis"};
+  p.modules["structural-concept"].alternatives=[{old:true}]; p.modules["structural-concept"].structuralStudio={old:true};
+  const refreshed=synchronizeModules(p.modules,["H-03"],p).modules["structural-concept"];
+  assert.equal(refreshed.result,null); assert.deepEqual(refreshed.alternatives,[]); assert.equal(refreshed.structuralStudio,null);
+  assert.equal(refreshed.geometrySupport.status,"uniform-concept-only");
+  p.modules["structural-concept"]=stamp("structural-concept",refreshed); p.modules["structural-concept"].result={geometry:{totalArea:200}};
+  assert.deepEqual(synchronizeModules(p.modules,["H-05"],p).applied,["H-05"]);
+});
+test("Review: source validation and program adapter agree on whitespace identity",()=>{
+  const p=project(); p.modules["architectural-program"]=stamp("architectural-program",{units:{...units,coordinates:"m"},spaces:[{id:"A"},{id:" A "}]});
+  assert.equal(isPortalProject(p),false);
+});
 test("B04 current real source references accepted, unknown element ID rejected",()=>{const p=linkedProject();assert.equal(isPortalProject(p),true);p.modules["structural-concept"].inputElementIds=["MISSING"];assert.equal(isPortalProject(p),false);});
 test("B04 source revision conflict rejected independently of module stamp",()=>{const p=linkedProject();assert.equal(isPortalProject(p),true);p.modules["structural-concept"].sourceRevision="P01";assert.equal(isPortalProject(p),false);});
 test("B04 same-revision element content edit invalidates recorded source snapshot",()=>{const p=linkedProject();assert.equal(isPortalProject(p),true);p.modules["plan-editor"].elements[0].load=6;assert.equal(isPortalProject(p),false);});

@@ -55,6 +55,10 @@ function text(value: unknown, fallback: string) {
 }
 
 // Legacy sequential RFI numbers are display labels, never source identities.
+export function operatingWorkStateKey(item: Pick<ProjectOperatingWorkItem, "id" | "revision">) {
+  return `${item.id}@${encodeURIComponent(item.revision)}`;
+}
+
 export function restoreOperatingWorkStates(saved: unknown[], current: ProjectOperatingWorkItem[]) {
   const states: Record<string, ProjectOperatingWorkStatus> = {};
   const rows = saved.filter((v): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v));
