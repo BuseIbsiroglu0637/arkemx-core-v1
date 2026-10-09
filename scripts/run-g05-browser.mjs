@@ -6,6 +6,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+const suites = ['g05-reload-smoke', 'g05-review-browser', 'ui-contracts-browser', 'b04-traceability-browser', 'b06-floor-study-browser', 'b06-coordination-browser'];
+const selection = process.argv.find(arg => arg.startsWith('--suite='))?.slice('--suite='.length);
+if (selection && !suites.includes(selection)) throw new Error('Unknown G05 browser suite');
 const port = Number(process.env.ARKEMX_E2E_PORT ?? 5187);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Invalid G05 test port');
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -43,11 +46,7 @@ try {
     await delay(500);
   }
   if (!ready) throw new Error(`G05 server readiness timeout; see ${output}/server.log`);
-  await run('tests/g05-reload-smoke.mjs');
-  await run('tests/g05-review-browser.mjs');
-  await run('tests/ui-contracts-browser.mjs');
-  await run('tests/b04-traceability-browser.mjs');
-  await run('tests/b06-floor-study-browser.mjs');
+  for (const suite of suites.filter(suite => !selection || suite === selection)) await run(`tests/${suite}.mjs`);
 } catch (error) {
   console.error(fs.readFileSync(path.join(output, 'server.log'), 'utf8').slice(-12000));
   throw error;
