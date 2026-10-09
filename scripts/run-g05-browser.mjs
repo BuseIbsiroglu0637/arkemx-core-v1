@@ -47,6 +47,7 @@ try {
   await run('tests/g05-review-browser.mjs');
   await run('tests/ui-contracts-browser.mjs');
   await run('tests/b04-traceability-browser.mjs');
+  await run('tests/b06-floor-study-browser.mjs');
 } catch (error) {
   console.error(fs.readFileSync(path.join(output, 'server.log'), 'utf8').slice(-12000));
   throw error;
