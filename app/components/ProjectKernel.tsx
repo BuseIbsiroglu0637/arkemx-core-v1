@@ -274,7 +274,7 @@ function mergeModuleValue(previous: unknown, incoming: unknown) {
   const incomingModule = record(incoming);
   if (!Object.keys(incomingModule).length) return incoming;
   const merged: UnknownRecord = { ...previousModule, ...incomingModule };
-  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination", "calculationRegistry", "documentRegistry", "floorStudyRegistry", "floorDocumentRegistry"].forEach((key) => {
+  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination", "calculationRegistry", "documentRegistry", "floorStudyRegistry", "floorDocumentRegistry", "frameRegistry", "frameDocumentRegistry"].forEach((key) => {
     if (incomingModule[key] && typeof incomingModule[key] === "object" && !Array.isArray(incomingModule[key])) {
       merged[key] = { ...record(previousModule[key]), ...record(incomingModule[key]) };
     }

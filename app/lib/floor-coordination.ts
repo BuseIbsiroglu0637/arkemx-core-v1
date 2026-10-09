@@ -13,7 +13,7 @@ export type FloorCoordinationSource = { schema: "ARKEM-FLOOR-COORDINATION/1.0"; 
 // Ignore the coordination itself and UI-selected floor in its source binding.
 export function floorCoordinationBasis(value: unknown) {
   const plan = data(value);
-  const { level: _level, ...geometry } = planGeometrySnapshot({ ...plan, floorCoordination: undefined });
+  const { level: _level, ...geometry } = planGeometrySnapshot({ ...plan, floorCoordination: undefined, floorFrame: undefined });
   void _level;
   return traceJson({ projectId: data(plan._kernel).projectId, revision: data(plan._kernel).projectRevision, units: plan.units, geometry, elements: rows(plan.elements).sort(byId) });
 }

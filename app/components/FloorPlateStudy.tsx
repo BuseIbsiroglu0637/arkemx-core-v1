@@ -7,6 +7,7 @@ import { calculateFloorPlateStudy, floorStudyDocument, recordFloorStudy, sealFlo
 import { traceJson } from "../lib/structural-traceability";
 import { useProjectKernel } from "./ProjectKernel";
 import { FloorCoordinationPanel } from "./FloorCoordinationPanel";
+import { FrameWorkbench } from "./FrameWorkbench";
 
 export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
   const { project, patchModule } = useProjectKernel();
@@ -77,12 +78,13 @@ export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
   return <section className="engineering-panel" data-testid="floor-plate-study">
     <header><div><span>KAT BAZLI ÖN ÇALIŞMA</span><h2>Her katın kendi plakası ve yükü</h2></div></header>
     <p>Toplam brüt alan: <b data-testid="floor-study-total-area">{formatNumber(study.totals.grossArea)} m²</b>. Plakalar ayrı hesaplanır; seçili kat tüm katlara kopyalanmaz.</p>
-    <p>Bu çalışma kat alanı, yük ve brüt plaka miktarı içindir. Taşıyıcı sürekliliği, transfer katı ve üç boyutlu yapı analizi henüz yoktur.</p>
+    <p>Bu bölüm kat alanı, yük ve brüt plaka miktarı içindir. Ortak koordinatlar ve açık eleman modeli aşağıdaki bölümlerde ayrıca değerlendirilir; bu alan tablosu tek başına yapı analizi değildir.</p>
     {error && <p role="alert">{error}</p>}
     <table><caption>Katlara göre alan ve yük tablosu</caption><thead><tr><th>Kat</th><th>Boyut (m)</th><th>Alan (m²)</th><th>G (kN)</th><th>Q (kN)</th><th>Brüt plaka betonu (m³)</th></tr></thead><tbody>{study.floors.map(item => <tr key={item.level} data-testid={`floor-study-row-${item.level}`}><th scope="row">K{item.level}</th><td>{item.width} × {item.depth}</td><td>{formatNumber(item.area)}</td><td>{formatNumber(item.loads.permanentTotal)}</td><td>{formatNumber(item.loads.liveTotal)}</td><td>{formatNumber(item.quantities.grossSlabConcreteVolume)}</td></tr>)}</tbody></table>
     <label>Çizim katı <select value={floor.level} onChange={event => setSelectedLevel(Number(event.target.value))}>{study.floors.map(item => <option key={item.level} value={item.level}>K{item.level}</option>)}</select></label>
     <svg viewBox="0 0 420 270" role="img" aria-label={`K${floor.level} bağımsız plaka şeması: ${floor.width} × ${floor.depth} metre`} style={{ maxWidth: 480, width: "100%" }}><rect x="30" y="30" width={floor.width * plotScale} height={floor.depth * plotScale} fill="none" stroke="currentColor" strokeWidth="2"/><text x="30" y="240" fill="currentColor">K{floor.level} · {floor.width} × {floor.depth} m · {formatNumber(floor.area)} m²</text></svg>
     <FloorCoordinationPanel/>
+    <FrameWorkbench input={input}/>
     <ul>{study.limitations.map(note => <li key={note}>{note}</li>)}</ul>
     <p role="status">{ready ? "Kat çalışması kaynaklarıyla kaydedildi." : "Kat çalışması kaynak kaydı bekleniyor."}</p>
     <div className="engineering-export-actions">{([

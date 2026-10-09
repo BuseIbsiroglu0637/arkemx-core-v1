@@ -30,7 +30,7 @@ async function check(name, fn) {
   catch (error) { reports.push({ name, pass: false, error: String(error), pageErrors: errors, body: await page.locator('body').innerText() }); await page.screenshot({ path: path.join(out, `b06-failure-${reports.length}.png`), fullPage: true }); }
   finally { await context.close(); }
 }
-async function ready(page) { await page.getByRole('button', { name: 'Kat bazlı ön çalışmayı indir (JSON)', exact: true }).waitFor(); await page.waitForFunction(() => document.querySelector('[data-testid="floor-plate-study"] button')?.disabled === false); }
+async function ready(page) { await page.getByRole('button', { name: 'Kat bazlı ön çalışmayı indir (JSON)', exact: true }).waitFor(); await page.waitForFunction(() => document.querySelector('[aria-label="Kat bazlı ön çalışmayı indir (JSON)"]')?.disabled === false); }
 async function download(page, name, format) {
   const event = page.waitForEvent('download'); await page.getByRole('button', { name, exact: true }).click();
   const file = await event, bytes = fs.readFileSync(await file.path()); fs.writeFileSync(path.join(out, file.suggestedFilename()), bytes);
