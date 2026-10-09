@@ -249,6 +249,7 @@ export type DxfSheetMeta = {
   scale?: string;
   preparedBy?: string;
   checkedBy?: string;
+  traceability?: unknown;
 };
 
 function dxfAscii(value: string) {
@@ -528,7 +529,7 @@ export function createLayeredDxf(input: {
 }
 
 export function createGridDxf(width: number, depth: number, baysX: number, baysY: number, sheet?: DxfSheetMeta) {
-  return createLayeredDxf({
+  const drawing = createLayeredDxf({
     title: "ARKEM AKS VE ON BOYUTLANDIRMA PLANI",
     width,
     depth,
@@ -537,4 +538,6 @@ export function createGridDxf(width: number, depth: number, baysX: number, baysY
     notes: [`AKS DUZENI: ${baysX} x ${baysY}`],
     sheet,
   });
+  // DXF 999 comments carry the full machine-readable link without changing CAD geometry.
+  return sheet?.traceability ? `999\nARKEMX_TRACEABILITY ${JSON.stringify(sheet.traceability)}\n${drawing}` : drawing;
 }

@@ -20,7 +20,7 @@
     "typecheck": "npm run types:cloudflare && tsc --noEmit",
     "test:geo:e2e": "node tests/geo-browser-smoke.mjs",
     "test:project:e2e": "node tests/project-continuity-smoke.mjs",
-    "test:g05": "node --experimental-strip-types --test tests/g05-integrity.test.mjs",
+    "test:g05": "node --experimental-strip-types --test tests/g05-integrity.test.mjs tests/structural-traceability.test.mjs",
     "test:g05:e2e": "node scripts/run-g05-browser.mjs",
     "build:local": "vite build --config vite.local.config.mjs",
     "test:local:ui": "npm run build:local && node --experimental-strip-types --test tests/current-ui-smoke.mjs tests/bim-section-strategy.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-zoning.test.mjs tests/project-storage-reconciliation.test.mjs tests/technical-export-review.test.mjs",

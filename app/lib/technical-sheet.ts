@@ -28,6 +28,9 @@ export type TechnicalSheetInput = {
   sourceRevision?: string;
   elementIds?: string[];
   calculationIds?: string[];
+  contentDigest?: string;
+  sourceContext?: Parameters<typeof createDocumentIdentity>[0]["sourceContext"];
+  traceability?: unknown;
   preparedBy?: string;
   checkedBy?: string;
   reviewBanner?: string;
@@ -202,12 +205,13 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
   ]);
   const page = document.addPage([PAGE.width, PAGE.height]);
   const identity = createDocumentIdentity(input);
+  if (input.traceability) await document.attach(new TextEncoder().encode(JSON.stringify(input.traceability, null, 2)), "arkemx-traceability.json", { mimeType: "application/json", description: "Concept calculation and source/document manifest; not technical approval" });
   document.setTitle(`${clean(input.projectCode)} - ${clean(input.drawingTitle)}`);
   document.setAuthor("Arkem Yapı Sistemleri");
   document.setCreator("ARKEMX Teknik Çıktı Motoru");
   document.setProducer("ARKEMX / Kurumsal Pafta Standardı 2.0");
   document.setSubject(clean(input.module));
-  document.setKeywords(["Arkem", "ARKEMX", "teknik pafta", clean(input.projectCode), clean(input.sheetNo)]);
+  document.setKeywords(["Arkem", "ARKEMX", "teknik pafta", clean(input.projectCode), clean(input.sheetNo), identity.reference, ...(input.calculationIds ?? [])]);
 
   page.drawRectangle({ x: 0, y: 0, width: PAGE.width, height: PAGE.height, color: COLORS.pale });
   page.drawRectangle({ x: 18, y: 18, width: PAGE.width - 36, height: PAGE.height - 36, color: COLORS.white, borderColor: COLORS.navy, borderWidth: 1.25 });

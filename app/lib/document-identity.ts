@@ -17,7 +17,8 @@ export function createDocumentIdentity(input: {
   elementIds?: string[];
   calculationIds?: string[];
   sourceRevision?: string;
-  sourceContext?: { projectId: string; revision: string; elementIds?: string[]; calculationIds?: string[] };
+  contentDigest?: string;
+  sourceContext?: { projectId: string; revision: string; elementIds?: string[]; calculationIds?: string[]; calculationBindings?: Array<{ id: string; projectId: string; revision: string; elementIds: string[] }> };
 }) {
   const validReferences = (ids: string[] | undefined) => !!ids?.length && ids.every(id => typeof id === "string" && !!id.trim()) && new Set(ids).size === ids.length;
   const issues: string[] = [], pending: string[] = [];
@@ -30,6 +31,16 @@ export function createDocumentIdentity(input: {
     else for (const id of input.elementIds ?? []) if (!context.elementIds.includes(id)) issues.push("unknown element reference: " + id);
     if (!context.calculationIds) pending.push("calculation registry unavailable");
     else for (const id of input.calculationIds ?? []) if (!context.calculationIds.includes(id)) issues.push("unknown calculation reference: " + id);
+    if (!context.calculationBindings?.length) pending.push("calculation source bindings unavailable");
+    else for (const id of input.calculationIds ?? []) {
+      const matches = context.calculationBindings.filter(binding => binding.id === id);
+      if (matches.length !== 1) issues.push("calculation binding missing or duplicated: " + id);
+      else {
+        const binding = matches[0];
+        if (binding.projectId !== input.projectCode || binding.revision !== input.sourceRevision) issues.push("calculation source identity conflict: " + id);
+        if (!validReferences(binding.elementIds) || binding.elementIds.length !== input.elementIds?.length || binding.elementIds.some(elementId => !input.elementIds?.includes(elementId))) issues.push("calculation element binding conflict: " + id);
+      }
+    }
   }
   if (!validReferences(input.elementIds)) pending.push("valid element references unavailable");
   if (!validReferences(input.calculationIds)) pending.push("valid calculation references unavailable");
@@ -43,6 +54,7 @@ export function createDocumentIdentity(input: {
     input.sourceRevision,
     input.elementIds?.slice().sort().join(","),
     input.calculationIds?.slice().sort().join(","),
+    ...(input.contentDigest ? [input.contentDigest] : []),
   ]);
   return {
     schema: "ARKEM-DOCUMENT-IDENTITY/2.0",
