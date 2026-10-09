@@ -11,7 +11,7 @@ export function LandCandidateContext() {
   const candidate = research?.shortlist.find(c => c.id === research.selectedId);
   const [detailNotice, setDetailNotice] = useState("");
   const latestResearch = useRef(research);
-  latestResearch.current = research;
+  useEffect(() => { latestResearch.current = research; }, [research]);
   const url = candidate?.url;
   const identity = candidate?.parcelIdentity;
   const zoningDeclaration = candidate?.zoningDeclaration;

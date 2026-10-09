@@ -434,7 +434,7 @@ export function SimpleProjectCenter() {
               <button type="button" onClick={() => { void startAnotherProject(); }} disabled={newProjectBusy}>
                 {newProjectBusy ? "Mevcut proje kaydediliyor…" : "+ Yeni Proje Başlat"}
               </button>
-              <Link href="/hesabim" onClick={() => setProjectsOpen(false)}>Tüm projeleri Hesabım'da gör →</Link>
+              <Link href="/hesabim" onClick={() => setProjectsOpen(false)}>Tüm projeleri Hesabım&apos;da gör →</Link>
             </footer>
           </div> : null}
         </div> : null}

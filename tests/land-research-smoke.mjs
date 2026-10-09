@@ -6,11 +6,13 @@ import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {encodeProjectEnvelope,PROJECT_STORAGE_KEY} from '../app/lib/project-storage.ts';
 import {landCriteriaKey} from '../app/lib/land-research.ts';
+import {stampProjectModule} from '../app/lib/project-core.ts';
 const root=process.env.ARKEMX_E2E_URL || 'http://127.0.0.1:5173';
 const project={schema:'ARKEM-PROJECT/1.0',id:'ARK-LAND-TEST',name:'Sentetik agent testi',revision:'P01',phase:'Ön fizibilite',coordinateReference:'WGS84 / EPSG:4326',updatedAt:new Date().toISOString(),experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''},events:[],modules:{'decision-assistant':{input:{name:'Sentetik agent testi',projectType:'new',usage:'industrial',location:'Kastamonu Merkez',parcelStatus:'unknown',targetArea:1200,floors:2,floorHeight:4,system:'undecided',priorities:['cost'],budget:'undecided',timeline:'flexible',documents:[],experienceMode:'guided'}}}};
+project.modules['decision-assistant']=stampProjectModule(project.modules['decision-assistant'],{projectId:project.id,projectRevision:project.revision,sourceModule:'decision-assistant',recordedAt:project.updatedAt,action:'created'});
 const url='https://www.emlakjet.com/ilan/sentetik-arsa-12345678';
 const candidate={id:url,url,title:'Sentetik arsa test adayı',source:'Sentetik test kaynağı',province:'Kastamonu',district:'Merkez',tenure:'sale',areaM2:3000,priceTRY:9000000,use:'industrial',description:'Yalnız otomatik test verisi',retrievedAt:new Date().toISOString(),basis:'browser-listing'};
-const browser=await chromium.launch();
+const browser=await chromium.launch({executablePath:process.env.ARKEMX_E2E_BROWSER || undefined});
 const context=await browser.newContext({viewport:{width:1366,height:900}});
 await context.addCookies([{name:'arkemx_prototype_session',value:'1',url:root}]);
 await context.addInitScript(({key,envelope})=>{if(!sessionStorage.getItem('land-test-seeded')){localStorage.clear();localStorage.setItem(key,envelope);sessionStorage.setItem('land-test-seeded','1');}}, {key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(project)});
@@ -90,7 +92,7 @@ try {
 
 
 
- await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye al'}).isDisabled(),true);
+ await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye uygun değil',exact:true}).isDisabled(),true);
  await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS conflicting criteria return project to research');
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('10000000');mode='empty';await search();await research().getByText('Bu aramada gösterilecek aday bulunamadı.').waitFor();assert.equal(await shortlist().locator('article').count(),1);
  mode='error';await search();await research().getByText('Sentetik bağlantı hatası',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Erişim engellendi',{exact:true}).waitFor();await research().getByText('Araştırma tamamlanamadığı için ilanlar okunamadı.',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),1);console.log('PASS empty/error responses preserve shortlist');
@@ -99,10 +101,11 @@ try {
  await mkdir('test-artifacts',{recursive:true});
  for(const width of [1366,390]){await page.setViewportSize({width,height:900});for(const theme of ['light','dark']){await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow');await page.screenshot({path:`test-artifacts/land-${width}-${theme}.png`,fullPage:true});}}
  console.log('PASS mobile/desktop widths');
- const other={...project,id:'ARK-LAND-OTHER',name:'İkinci sentetik proje',updatedAt:new Date().toISOString()};
+ const other=structuredClone({...project,id:'ARK-LAND-OTHER',name:'İkinci sentetik proje',updatedAt:new Date().toISOString()});
+ other.modules['decision-assistant']=stampProjectModule(other.modules['decision-assistant'],{projectId:other.id,projectRevision:other.revision,sourceModule:'decision-assistant',recordedAt:other.updatedAt,action:'created'});
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(other)});
  await page.reload();await research().getByText('İkinci sentetik proje',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),0);console.log('PASS projects keep separate shortlists');
- const sizingProject={...other,modules:{'decision-assistant':{input:{...other.modules['decision-assistant'].input,targetArea:1000,floors:10}}}};
+ const sizingProject={...other,modules:{'decision-assistant':stampProjectModule({input:{...other.modules['decision-assistant'].input,targetArea:1000,floors:10}},{projectId:other.id,projectRevision:other.revision,sourceModule:'decision-assistant',recordedAt:other.updatedAt,action:'created'})}};
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(sizingProject)});
  await page.reload(); await research().getByText('700 m²',{exact:true}).waitFor();
  assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'700');
@@ -129,6 +132,7 @@ try {
  // Migrate the previous cached missing-detail result shown in the user's screenshot.
  detailMode='partial';
  const partialProject=structuredClone(project);partialProject.id='ARK-LAND-PARTIAL';
+ partialProject.modules['decision-assistant']=stampProjectModule(partialProject.modules['decision-assistant'],{projectId:partialProject.id,projectRevision:partialProject.revision,sourceModule:'decision-assistant',recordedAt:partialProject.updatedAt,action:'created'});
  partialProject.modules['decision-assistant'].landResearch={schema:'ARKEM-LAND-RESEARCH/1.0',criteria:{province:'Kastamonu',district:'Merkez',tenure:'sale',minArea:2000,maxArea:5000,maxPrice:10000000,use:'industrial',needs:[]},shortlist:[{...candidate,parcelIdentity:null,listingDetailVersion:2}],selectedId:url};
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(partialProject)});
  const callsBeforePartial=officialCalls;
@@ -136,7 +140,7 @@ try {
  await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
  assert.equal(await page.getByPlaceholder('Ada numarası',{exact:true}).inputValue(),'');
  assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'');
- await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).getByText('İlanda ada/parsel bilgisi eksik; mahalle/köy aktarılır, eksik numaralar boş bırakılır.',{exact:true}).waitFor();
+ await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).getByText('İlanda ada ve parsel bilgisi eksik; mahalle/köy aktarılır, eksik numaralar boş bırakılır.',{exact:true}).waitFor();
  await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.neighborhood==='Göcen Köyü',PROJECT_STORAGE_KEY);
  const partialGeo=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'],PROJECT_STORAGE_KEY);
  assert.equal(partialGeo.parcel.length,0);assert.equal(partialGeo.parcelRecord.projectEligible,false);assert.equal(officialCalls,callsBeforePartial);
@@ -188,6 +192,7 @@ try {
  const planProject=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload,PROJECT_STORAGE_KEY);
  planProject.modules['architectural-program']={input:{targetGross:143/.9,floors:1,netRatio:90,aspect:1.45,programRequirementsConfirmed:true},spaces:planSpaces,relationships:[],result:{grossDemand:143/.9,liveLoad:3.5},siteReview:{status:'pending'}};
  planProject.modules['plan-editor']={level:1,floorCount:1,baysX:16,baysY:16,spanX:planPlates[0].width/16,spanY:planPlates[0].depth/16,floorPlates:planPlates,elements:planSeed};
+ for(const key of ['architectural-program','plan-editor'])planProject.modules[key]=stampProjectModule({...planProject.modules[key],units:{schema:'ARKEM-UNITS/1.0',length:'m',area:'m2',force:'kN',surfaceLoad:'kN/m2',coordinates:key==='plan-editor'?'grid-bay':'m'}},{projectId:planProject.id,projectRevision:planProject.revision,sourceModule:key,recordedAt:new Date().toISOString(),action:'created'});
  await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:PROJECT_STORAGE_KEY,value:encodeProjectEnvelope(planProject)});
  await page.goto(root+'/plan-ve-aks');
  const completion=page.locator('.cad-plan-completion');
@@ -242,5 +247,3 @@ try {
 
  assert.deepEqual(errors,[]);
 }catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
-
-

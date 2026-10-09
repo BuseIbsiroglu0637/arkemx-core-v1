@@ -65,7 +65,7 @@ test('B04 a new explicitly linked revision gets its own calculation and document
   const { p, input, options, record } = await linked();
   const previous = await createStructuralDocument(record, p, input, options, 'JSON');
   p.revision = 'P03';
-  for (const module of Object.values(p.modules)) module._kernel.projectRevision = 'P03';
+  for (const moduleEntry of Object.values(p.modules)) moduleEntry._kernel.projectRevision = 'P03';
   p.modules['structural-concept'].sourceRevision = 'P03';
   p.modules['structural-concept'].modelContext.planRevision = 'P03';
   const next = await recordStructuralCalculation(prepareStructuralCalculation(p, input, options));
