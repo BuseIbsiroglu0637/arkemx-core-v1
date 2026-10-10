@@ -1,4 +1,4 @@
-import { prepareShellSource, type ShellSource } from "./shell-source.ts";
+import { prepareShellSource, prepareRectangularShellModel, rectangularShellPhysical, type RectangularShellPhysical, type ShellSource } from "./shell-source.ts";
 import { traceJson, traceSha256 } from "./structural-traceability.ts";
 
 export const SHELL_ENGINE = "ARKEM-RECT-MITC4/1.0";
@@ -105,7 +105,17 @@ export function factorShellBand(matrix:Float64Array,n:number,band:number) {
 }
 
 export function solveShell(source:ShellSource, options:{drillingFactor?:number;signal?:AbortSignal}={}) {
-  const started=performance.now(), prepared=prepareShellSource(source), s=prepared.source, {nodes,elements,supports}=prepared.model;
+  const prepared=prepareShellSource(source);
+  return {schema:"ARKEM-SHELL-CALCULATION/1.0" as const,...solvePreparedRectangularShell(rectangularShellPhysical(prepared.source),prepared,options),prepared};
+}
+
+/** Physical numerical kernel only. This does not grant project binding or technical approval. */
+export function solveRectangularShell(physical:RectangularShellPhysical,options:{drillingFactor?:number;signal?:AbortSignal}={}) {
+  const prepared=prepareRectangularShellModel(physical);
+  return solvePreparedRectangularShell(physical,prepared,options);
+}
+function solvePreparedRectangularShell(s:RectangularShellPhysical,prepared:ReturnType<typeof prepareRectangularShellModel>,options:{drillingFactor?:number;signal?:AbortSignal}) {
+  const started=performance.now(), {nodes,elements,supports}=prepared.model;
   const alpha=options.drillingFactor??1;
   const checkAbort=()=>{if(options.signal?.aborted)throw Error("Kabuk çözümü iptal edildi.");};
   checkAbort();
@@ -185,7 +195,7 @@ export function solveShell(source:ShellSource, options:{drillingFactor?:number;s
       equilibrium,freeResidual:q===0?0:freeResidual,freeForceResidual:q===0?0:freeForceResidual,freeMomentResidual:q===0?0:freeMomentResidual,
     };
   });
-  return {schema:"ARKEM-SHELL-CALCULATION/1.0" as const,engine:SHELL_ENGINE,formulation:{...SHELL_FORMULATION,units:{...SHELL_FORMULATION.units},resultants:[...SHELL_FORMULATION.resultants],drillingFactor:alpha},prepared,cases,
+  return {engine:SHELL_ENGINE,formulation:{...SHELL_FORMULATION,units:{...SHELL_FORMULATION.units},resultants:[...SHELL_FORMULATION.resultants],drillingFactor:alpha},cases,
     diagnostics:{freeDofs:free,bandWidth:band,factorStorageBytes:factorBytes,minScaledPivot:factor.minPivot,elapsedMs:performance.now()-started},
     status:"solved-pilot-awaiting-independent-validation" as const,fullBuildingAnalysis:false as const,technicalApproval:false as const};
 }

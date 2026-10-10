@@ -53,6 +53,20 @@ export function validateRectangularShellPhysical(value:unknown,refined=false):as
 export function prepareShellSource(value: unknown) {
   validateShellSource(value);
   const source = JSON.parse(traceJson(value)) as ShellSource;
+  return {schema:"ARKEM-SHELL-PREPARED-SOURCE/1.0" as const,source,
+    scope:"independent-flat-rectangular-shell-source" as const,status:"source-ready-analysis-pending" as const,
+    ...prepareRectangularShellModel(rectangularShellPhysical(source))};
+}
+
+/** Extract only physical inputs; never invent a synthetic fixture or project provenance. */
+export function rectangularShellPhysical(source:RectangularShellPhysical):RectangularShellPhysical {
+  return {units:source.units,plate:source.plate,material:source.material,mesh:source.mesh,supports:source.supports,loads:source.loads};
+}
+
+/** Shared bounded mesh/load preparation. Source authorization belongs to each caller's contract. */
+export function prepareRectangularShellModel(value:RectangularShellPhysical) {
+  validateRectangularShellPhysical(value,true);
+  const source=JSON.parse(traceJson(value)) as RectangularShellPhysical;
   const { plate: p, mesh, material: m } = source;
   const area = p.width * p.depth, dx = p.width / mesh.nx, dy = p.depth / mesh.ny;
   const nodes: ShellNode[] = [], elements: Array<{id:string; sourcePlateId:string; nodeIds:[string,string,string,string]; materialId:string; thickness:number}> = [], supports: ShellSupport[] = [];
@@ -79,9 +93,6 @@ export function prepareShellSource(value: unknown) {
   const G = m.E/(2*(1+m.nu)), elementArea = dx*dy;
   if (![area,dx,dy,elementArea,G,slab,...cases.flatMap(c=>[c.areaLoad,c.totalVerticalForce])].every(finite) || area<=0 || elementArea<=0 || G<=0 || (source.loads.slabSelfWeight && slab<=0) || cases.some(c=>c.areaLoad>0 && c.totalVerticalForce>=0)) throw Error("Ağ veya yük türevleri sonlu ve pozitif değil.");
   return {
-    schema:"ARKEM-SHELL-PREPARED-SOURCE/1.0" as const,source,
-    scope:"independent-flat-rectangular-shell-source" as const,
-    status:"source-ready-analysis-pending" as const,
     conventions:{plane:"XY",surface:"mid-surface",normal:[0,0,1],dofOrder:["ux","uy","uz","rx","ry","rz"],rotation:"physical-right-hand",areaLoadMagnitude:"nonnegative-downward"} as const,
     area,model:{nodes,elements,supports,material:{...m,G},loadComponents:components,loadCases:cases},
     loadPolicy:{frameAllowance:"excluded",frameLoads:"excluded",G:"derived-case-not-additional-component"} as const,
