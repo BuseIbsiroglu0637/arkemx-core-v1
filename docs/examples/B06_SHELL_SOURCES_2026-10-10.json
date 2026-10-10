@@ -1,0 +1,98 @@
+[
+  {
+    "schema": "ARKEM-SHELL-SOURCE/1.0",
+    "projectId": "ARKEMX-ORNEK-SHELL-B06",
+    "revision": "ORNEK-SHELL-01",
+    "fixture": "synthetic",
+    "units": {
+      "length": "m",
+      "force": "kN",
+      "stress": "kN/m²",
+      "areaLoad": "kN/m²",
+      "unitWeight": "kN/m³",
+      "rotation": "rad"
+    },
+    "plate": {
+      "id": "P1",
+      "sourceLevel": 1,
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "width": 10,
+      "depth": 10,
+      "thickness": 0.16
+    },
+    "material": {
+      "id": "M-PLATE",
+      "name": "Örnek izotrop elastik malzeme",
+      "E": 30000000,
+      "nu": 0.2,
+      "unitWeight": 25
+    },
+    "mesh": {
+      "nx": 8,
+      "ny": 8
+    },
+    "supports": {
+      "preset": "SS-H"
+    },
+    "loads": {
+      "slabSelfWeight": true,
+      "superDeadLoad": 2.2,
+      "liveLoad": 3.5,
+      "benchmarkLoad": 1
+    },
+    "fullBuildingAnalysis": false,
+    "technicalApproval": false
+  },
+  {
+    "schema": "ARKEM-SHELL-SOURCE/1.0",
+    "projectId": "ARKEMX-ORNEK-SHELL-B06",
+    "revision": "ORNEK-SHELL-01",
+    "fixture": "synthetic",
+    "units": {
+      "length": "m",
+      "force": "kN",
+      "stress": "kN/m²",
+      "areaLoad": "kN/m²",
+      "unitWeight": "kN/m³",
+      "rotation": "rad"
+    },
+    "plate": {
+      "id": "P2",
+      "sourceLevel": 2,
+      "origin": [
+        0,
+        0,
+        3.4
+      ],
+      "width": 20,
+      "depth": 10,
+      "thickness": 0.16
+    },
+    "material": {
+      "id": "M-PLATE",
+      "name": "Örnek izotrop elastik malzeme",
+      "E": 30000000,
+      "nu": 0.2,
+      "unitWeight": 25
+    },
+    "mesh": {
+      "nx": 16,
+      "ny": 8
+    },
+    "supports": {
+      "preset": "SS-H"
+    },
+    "loads": {
+      "slabSelfWeight": true,
+      "superDeadLoad": 2.2,
+      "liveLoad": 3.5,
+      "benchmarkLoad": 1
+    },
+    "fullBuildingAnalysis": false,
+    "technicalApproval": false
+  }
+]
