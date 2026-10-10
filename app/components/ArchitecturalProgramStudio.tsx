@@ -187,6 +187,11 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     };
     if (forceGeoDraft) {
       applyGeoDraft();
+      // Consume the navigation request once, including the Kernel fallback when
+      // sessionStorage is unavailable. Reload must restore the user's saved edits.
+      const restoredUrl = new URL(window.location.href);
+      restoredUrl.searchParams.delete("from");
+      window.history.replaceState(window.history.state, "", `${restoredUrl.pathname}${restoredUrl.search}${restoredUrl.hash}`);
       return;
     }
     if (input) {
