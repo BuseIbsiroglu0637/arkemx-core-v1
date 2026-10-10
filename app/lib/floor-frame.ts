@@ -1,6 +1,6 @@
 import { inspectFloorCoordination, floorCoordinationBasis } from "./floor-coordination.ts";
 import { calculateFloorPlateStudy } from "./floor-plate-study.ts";
-import { type StructuralConceptInput } from "./engineering.ts";
+import { permanentAreaLoadComponents, type StructuralConceptInput } from "./engineering.ts";
 import { type FrameModel, type FrameCase, validateFrameModel, solveLinearFrame, frameSelfWeightLoads } from "./linear-frame.ts";
 import { traceJson, traceSha256 } from "./structural-traceability.ts";
 
@@ -59,10 +59,28 @@ export function prepareFloorFrame(project:unknown,input:StructuralConceptInput){
   const p=data(project),plan=data(data(p.modules)["plan-editor"]),source=inspectFloorFrame(plan),floor=calculateFloorPlateStudy(project,input);
   try{
     if(!source.model||!source.shares||!floor.study)throw Error([...source.issues,...floor.issues].join(" "));
-    const loadCases:FrameCase[]=(["G","Q","S"] as const).map(id=>({id,loads:source.shares!.map(share=>{const f=floor.study!.floors.find(f=>f.level===share.level)!;const force=id==="G"?f.loads.permanentTotal:id==="Q"?f.loads.liveTotal:f.loads.roofSnowTotal;return {nodeId:share.nodeId,values:[0,0,-force*share.fraction,0,0,0] as [number,number,number,number,number,number]};})}));
+    const components=permanentAreaLoadComponents(input);
+    const loadAccounting=source.selfWeight?{
+      schema:"ARKEM-FRAME-GRAVITY-ACCOUNTING/1.0",
+      mode:"explicit-members-replace-frame-allowance",
+      floors:floor.study.floors.map(f=>({
+        level:f.level,area:f.area,
+        slabSelfWeight:components.slabSelfWeight*f.area,
+        superDeadLoad:components.superDeadLoad*f.area,
+        omittedFrameAllowance:components.frameAllowance*f.area,
+        appliedAreaLoad:(components.slabSelfWeight+components.superDeadLoad)*f.area,
+      })),
+      members:source.model.members.map(m=>{
+        const a=source.model!.nodes.find(n=>n.id===m.start)!,b=source.model!.nodes.find(n=>n.id===m.end)!;
+        const material=source.model!.materials.find(v=>v.id===m.materialId)!,section=source.model!.sections.find(v=>v.id===m.sectionId)!;
+        const length=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+        return {id:m.id,sourceId:m.sourceId,materialId:m.materialId,unitWeight:material.unitWeight!,area:section.A,length,weight:material.unitWeight!*section.A*length};
+      }),
+    }:undefined;
+    const loadCases:FrameCase[]=(["G","Q","S"] as const).map(id=>({id,loads:source.shares!.map(share=>{const f=floor.study!.floors.find(f=>f.level===share.level)!;const force=id==="G"?(loadAccounting?.floors.find(row=>row.level===f.level)?.appliedAreaLoad??f.loads.permanentTotal):id==="Q"?f.loads.liveTotal:f.loads.roofSnowTotal;return {nodeId:share.nodeId,values:[0,0,-force*share.fraction,0,0,0] as [number,number,number,number,number,number]};})}));
     if(source.selfWeight)loadCases[0].memberLoads=frameSelfWeightLoads(source.model);
     const model={...source.model,cases:[...loadCases,...source.model.cases]},result=solveLinearFrame(model);
-    const content={schema:"ARKEM-FLOOR-FRAME-CONTENT/1.0",projectId:p.id,revision:p.revision,scope:"linear-static-rigid-prismatic-space-frame",...(plan.example==="ARKEM-SYNTHETIC-B06/1.0"?{example:plan.example}:{}),source:{basis:floorFrameBasis(plan),frame:plan.floorFrame,floorStudy:floor.study},model,result,fullBuildingAnalysis:false,technicalApproval:false};
+    const content={schema:loadAccounting?"ARKEM-FLOOR-FRAME-CONTENT/1.1":"ARKEM-FLOOR-FRAME-CONTENT/1.0",projectId:p.id,revision:p.revision,scope:"linear-static-rigid-prismatic-space-frame",...(plan.example==="ARKEM-SYNTHETIC-B06/1.0"?{example:plan.example}:{}),source:{basis:floorFrameBasis(plan),frame:plan.floorFrame,floorStudy:floor.study},...(loadAccounting?{loadAccounting}:{}),model,result,fullBuildingAnalysis:false,technicalApproval:false};
     return {content:JSON.parse(traceJson(content)) as typeof content,issues:[]};
   }catch(error){return {content:null,issues:[error instanceof Error?error.message:"3B çözüm oluşturulamadı."]};}
 }

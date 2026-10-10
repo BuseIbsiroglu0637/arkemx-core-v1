@@ -2,17 +2,54 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 registerHooks({resolve(s,c,next){if(s.startsWith('.')&&!path.extname(s)){const u=new URL(s+'.ts',c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
 const {createFrameExample,FRAME_EXAMPLE}=await import('../app/lib/frame-example.ts');const {prepareFloorFrame,recordFloorFrame,verifyFloorFrame}=await import('../app/lib/floor-frame.ts');const {prepareFrameDocument,commonFrameDxf}=await import('../app/lib/frame-documents.ts');
 const {frameCalculationTables}=await import('../app/lib/frame-report.ts');
-test('Opt-in self weight adds 147.5 kN only to G, survives document verification and rejects missing density',async()=>{
+test('Opt-in member self weight replaces 345 kN allowance with 147.5 kN only in G and remains source bound',async()=>{
  const example=createFrameExample(3.5,5,25),prepared=prepareFloorFrame(example.project,example.input);
  assert.deepEqual(prepared.issues,[]);const content=prepared.content;
- const g=content.result.cases.find(c=>c.id==='G');assert.ok(Math.abs(g.nodes.reduce((s,n)=>s+n.reactions[2],0)-(2205+147.5))<1e-7);
+ const g=content.result.cases.find(c=>c.id==='G');assert.ok(Math.abs(g.nodes.reduce((s,n)=>s+n.reactions[2],0)-(1200+660+147.5))<1e-7);
+ assert.equal(content.schema,'ARKEM-FLOOR-FRAME-CONTENT/1.1');
+ const accounting=content.loadAccounting;assert.equal(accounting.mode,'explicit-members-replace-frame-allowance');
+ assert.ok(Math.abs(accounting.floors.reduce((s,f)=>s+f.omittedFrameAllowance,0)-345)<1e-9);
+ assert.equal(accounting.floors.reduce((s,f)=>s+f.appliedAreaLoad,0),1860);
+ assert.ok(Math.abs(accounting.members.reduce((s,m)=>s+m.weight,0)-147.5)<1e-9);
  assert.equal(content.model.cases.find(c=>c.id==='G').memberLoads.length,6);
  assert.equal(content.model.cases.find(c=>c.id==='Q').memberLoads,undefined);
  const record=await recordFloorFrame(content);assert.equal(await verifyFloorFrame(record,example.project,example.input),true);
  const table=frameCalculationTables(record).find(t=>t.title==='G — Düzgün yayılı eleman yükleri');assert.equal(table.rows.length,6);assert.match(table.headers[1],/kN\/m/);
+ const ledger=frameCalculationTables(record).find(t=>t.title==='G — Sabit yük bileşenleri');
+ assert.deepEqual(ledger.rows.find(r=>r[0]==='Götürü taşıyıcı payı').slice(1),['3.45000e+2','Hariç']);
+ assert.equal(Number(ledger.rows.find(r=>r[0]==='Uygulanan toplam G')[1]),2007.5);
  delete example.project.modules['plan-editor'].floorFrame.model.materials[0].unitWeight;
  assert.equal(prepareFloorFrame(example.project,example.input).content,null);assert.equal(await verifyFloorFrame(record,example.project,example.input),false);
  assert.throws(()=>createFrameExample(3.5,5,0),/pozitif/);
+});
+test('Gravity accounting follows density and additional dead load without altering Q/S/H; opt-out preserves old results',async()=>{
+ const total=(c,id)=>c.result.cases.find(v=>v.id===id).nodes.reduce((s,n)=>s+n.reactions[2],0);
+ const off=createFrameExample(),low=createFrameExample(3.5,5,25),high=createFrameExample(3.5,5,50);
+ const base=prepareFloorFrame(off.project,off.input).content,a=prepareFloorFrame(low.project,low.input).content,b=prepareFloorFrame(high.project,high.input).content;
+ assert.equal(base.schema,'ARKEM-FLOOR-FRAME-CONTENT/1.0');assert.equal(base.loadAccounting,undefined);
+ assert.ok(Math.abs(total(base,'G')-2205)<1e-7);assert.ok(Math.abs(total(b,'G')-2155)<1e-7);
+ for(const id of ['Q','S','H'])assert.deepEqual(a.result.cases.find(c=>c.id===id),base.result.cases.find(c=>c.id===id));
+ const changed=prepareFloorFrame(low.project,{...low.input,superDeadLoad:0}).content;
+ assert.ok(Math.abs(total(changed,'G')-1347.5)<1e-7);
+ const record=await recordFloorFrame(a);assert.equal(await verifyFloorFrame(record,high.project,high.input),false);
+ low.project.modules['plan-editor'].floorFrame.selfWeight=false;
+ assert.ok(Math.abs(total(prepareFloorFrame(low.project,low.input).content,'G')-2205)<1e-7);
+ assert.equal(await verifyFloorFrame(record,low.project,low.input),false);
+});
+test('A sealed legacy weighted result with the duplicated allowance is retained but cannot be exported as current',async()=>{
+ const {solveLinearFrame}=await import('../app/lib/linear-frame.ts');
+ const example=createFrameExample(3.5,5,25),content=prepareFloorFrame(example.project,example.input).content,legacy=structuredClone(content);
+ delete legacy.loadAccounting;legacy.schema='ARKEM-FLOOR-FRAME-CONTENT/1.0';
+ const loads=legacy.model.cases.find(c=>c.id==='G').loads;
+ example.project.modules['plan-editor'].floorFrame.floorShares.forEach((share,i)=>{loads[i].values[2]-=1.15*(share.level===1?100:200)*share.fraction;});
+ legacy.result=solveLinearFrame(legacy.model);
+ assert.ok(Math.abs(legacy.result.cases.find(c=>c.id==='G').nodes.reduce((s,n)=>s+n.reactions[2],0)-2352.5)<1e-7);
+ const record=await recordFloorFrame(legacy),snapshot=JSON.stringify(record);
+ assert.equal(await verifyFloorFrame(record,example.project,example.input),false);
+ await assert.rejects(()=>prepareFrameDocument(example.project,example.input,record,'PDF'),/güncel kaynak/);
+ assert.equal(JSON.stringify(record),snapshot);
+ const fake=structuredClone(content);fake.loadAccounting.floors[0].omittedFrameAllowance=0;
+ assert.equal(await verifyFloorFrame(await recordFloorFrame(fake),example.project,example.input),false);
 });
 test('PDF continuation pages retain all 53 rows and geometry-only export stays one page',async()=>{
  const {createCorporateTechnicalPdf}=await import('../app/lib/technical-sheet.ts'),{PDFDocument}=await import('pdf-lib');
