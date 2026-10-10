@@ -52,13 +52,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pinned independent frame reference
+      - name: Install pinned independent structural reference
         run: |
           sudo apt-get update
           sudo apt-get install -y libblas3 liblapack3 libgfortran5
           python -m pip install -r tests/frame-reference-requirements.txt
       - name: Compare frame solver with independent OpenSees
         run: node --experimental-strip-types tests/frame-reference.mjs
+      - name: Compare shell solver with independent OpenSees and analytic plate
+        run: node --experimental-strip-types tests/shell-reference.mjs
       - run: npx playwright install --with-deps chromium
       - name: G05 and UI contract browser regression with repository fixtures
         run: npm run test:g05:e2e

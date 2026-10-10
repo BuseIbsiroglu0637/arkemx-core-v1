@@ -2,7 +2,7 @@ import { traceJson, traceSha256 } from "./structural-traceability.ts";
 
 export const SHELL_UNITS = Object.freeze({ length: "m", force: "kN", stress: "kN/m²", areaLoad: "kN/m²", unitWeight: "kN/m³", rotation: "rad" } as const);
 export type ShellSource = {
-  schema: "ARKEM-SHELL-SOURCE/1.0";
+  schema: "ARKEM-SHELL-SOURCE/1.0" | "ARKEM-SHELL-SOURCE/1.1";
   projectId: string; revision: string; fixture: "synthetic";
   units: typeof SHELL_UNITS;
   plate: { id: string; sourceLevel: number; origin: [number, number, number]; width: number; depth: number; thickness: number };
@@ -27,7 +27,7 @@ function object(value: unknown, keys: string[], label: string): Record<string, u
 /** Only declarations for the isolated rectangular pilot. No stiffness solve or engineering approval. */
 export function validateShellSource(value: unknown): asserts value is ShellSource {
   const s = object(value, ["schema", "projectId", "revision", "fixture", "units", "plate", "material", "mesh", "supports", "loads", "fullBuildingAnalysis", "technicalApproval"], "Kabuk kaynağı");
-  if (s.schema !== "ARKEM-SHELL-SOURCE/1.0" || s.fixture !== "synthetic" || !identifier(s.projectId) || !identifier(s.revision) || s.fullBuildingAnalysis !== false || s.technicalApproval !== false) throw Error("Yalnız açık proje/revizyonlu sentetik kaynak; analiz veya teknik onay beyan edilemez.");
+  if (!["ARKEM-SHELL-SOURCE/1.0","ARKEM-SHELL-SOURCE/1.1"].includes(s.schema as string) || s.fixture !== "synthetic" || !identifier(s.projectId) || !identifier(s.revision) || s.fullBuildingAnalysis !== false || s.technicalApproval !== false) throw Error("Yalnız açık proje/revizyonlu sentetik kaynak; analiz veya teknik onay beyan edilemez.");
   const units = object(s.units, Object.keys(SHELL_UNITS), "Birimler");
   if (traceJson(units) !== traceJson(SHELL_UNITS)) throw Error("Kabuk birimleri m / kN / kN/m² / kN/m³ / rad olmalı.");
   const p = object(s.plate, ["id", "sourceLevel", "origin", "width", "depth", "thickness"], "Plaka");
@@ -35,7 +35,8 @@ export function validateShellSource(value: unknown): asserts value is ShellSourc
   const m = object(s.material, ["id", "name", "E", "nu", "unitWeight"], "Malzeme");
   if (!identifier(m.id) || !identifier(m.name) || !positive(m.E) || !finite(m.nu) || m.nu < 0 || m.nu >= .5 || !positive(m.unitWeight)) throw Error("Malzeme: pozitif E/γ ve 0≤ν<0,5 gerekiyor; G bunlardan türetilir.");
   const mesh = object(s.mesh, ["nx", "ny"], "Ağ");
-  if (!finite(mesh.nx) || !finite(mesh.ny) || !Number.isInteger(mesh.nx) || !Number.isInteger(mesh.ny) || mesh.nx < 2 || mesh.ny < 2 || mesh.nx > 32 || mesh.ny > 32 || mesh.nx * mesh.ny > 512 || (mesh.nx + 1) * (mesh.ny + 1) > 561) throw Error("Pilot ağ sınırı: her yönde 2–32; en fazla 512 dörtgen ve 561 düğüm.");
+  const refined=s.schema==="ARKEM-SHELL-SOURCE/1.1", maxSide=refined?64:32,maxCells=refined?2048:512,maxNodes=refined?2145:561;
+  if (!finite(mesh.nx) || !finite(mesh.ny) || !Number.isInteger(mesh.nx) || !Number.isInteger(mesh.ny) || mesh.nx < 2 || mesh.ny < 2 || mesh.nx > maxSide || mesh.ny > maxSide || mesh.nx * mesh.ny > maxCells || (mesh.nx + 1) * (mesh.ny + 1) > maxNodes) throw Error("Pilot ağ sınırı aşıldı: kaynak 1.0 / 1.1 sınırını kontrol edin.");
   const supports = object(s.supports, ["preset"], "Mesnet");
   if (supports.preset !== "SS-H" && supports.preset !== "CL") throw Error("Açık SS-H veya CL kenar mesneti gerekiyor; noktasal kolon desteği bu pilotta yok.");
   const loads = object(s.loads, ["slabSelfWeight", "superDeadLoad", "liveLoad", "benchmarkLoad"], "Yük bileşenleri");
