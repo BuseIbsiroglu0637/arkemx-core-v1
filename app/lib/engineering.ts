@@ -92,6 +92,13 @@ const floorSelfWeight: Record<StructuralSystem, number> = {
   hybrid: 2.1,
 };
 
+export function permanentAreaLoadComponents(input: StructuralConceptInput) {
+  const slabSelfWeight = input.system === "concrete" || input.system === "hybrid"
+    ? input.slabThickness * 25
+    : floorSelfWeight[input.system];
+  return { slabSelfWeight, superDeadLoad: input.superDeadLoad, frameAllowance: frameAllowance[input.system] };
+}
+
 function round(value: number, digits = 2) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -105,10 +112,9 @@ export function calculateStructuralConcept(input: StructuralConceptInput) {
   const spanY = input.depth / Math.max(1, input.baysY);
   const maxSpan = Math.max(spanX, spanY);
   const columnsPerFloor = (input.baysX + 1) * (input.baysY + 1);
-  const slabSelfWeight = input.system === "concrete" || input.system === "hybrid"
-    ? input.slabThickness * 25
-    : floorSelfWeight[input.system];
-  const permanentLoad = slabSelfWeight + input.superDeadLoad + frameAllowance[input.system];
+  const permanentComponents = permanentAreaLoadComponents(input);
+  const { slabSelfWeight } = permanentComponents;
+  const permanentLoad = slabSelfWeight + permanentComponents.superDeadLoad + permanentComponents.frameAllowance;
   const variableLoad = input.liveLoad;
   const ulsAreaLoad = 1.4 * permanentLoad + 1.6 * variableLoad;
   const serviceAreaLoad = permanentLoad + variableLoad;

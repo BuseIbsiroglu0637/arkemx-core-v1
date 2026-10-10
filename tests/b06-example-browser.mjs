@@ -21,7 +21,7 @@ await check('Example Q/H edits produce fresh results; empty input cannot become 
  await page.getByRole('button',{name:'Lineer 3B modeli çöz',exact:true}).click();await page.getByTestId('frame-results').waitFor();const m=JSON.parse(await download(page,'JSON')),c=m.content.calculation.content.result.cases;assert.ok(Math.abs(c.find(c=>c.id==='Q').nodes.reduce((s,n)=>s+n.reactions[2],0)-2100)<1e-7);assert.ok(Math.abs(c.find(c=>c.id==='H').nodes.reduce((s,n)=>s+n.reactions[0],0)+10)<1e-7);
  await page.reload();await page.getByTestId('frame-example-label').waitFor();assert.equal(await page.getByLabel('Örnek hareketli yük Q (kN/m²)',{exact:true}).inputValue(),'3.5');assert.equal(await page.getByTestId('frame-results').count(),0);
 });
-await check('Explicit self weight enters G, preserves Q and is visible in the verified PDF and JSON',async page=>{
+await check('Explicit self weight replaces the allowance, preserves Q and is visible in the verified UI PDF and JSON',async page=>{
  await page.goto(root+'/ornek-kat-modeli');
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2'))?.payload);
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload);
@@ -34,9 +34,13 @@ await check('Explicit self weight enters G, preserves Q and is visible in the ve
  await page.getByRole('button',{name:'Lineer 3B modeli çöz',exact:true}).click();await page.getByTestId('frame-results').waitFor();
  const manifest=JSON.parse(await download(page,'JSON')),record=manifest.content.calculation,example=createFrameExample(3.5,5,25);
  assert.equal(await verifyFloorFrame(record,example.project,example.input),true);
- const cases=record.content.result.cases;assert.ok(Math.abs(cases.find(c=>c.id==='G').nodes.reduce((s,n)=>s+n.reactions[2],0)-2352.5)<1e-7);
+ const cases=record.content.result.cases;assert.ok(Math.abs(cases.find(c=>c.id==='G').nodes.reduce((s,n)=>s+n.reactions[2],0)-2007.5)<1e-7);
+ assert.ok(Math.abs(record.content.loadAccounting.floors.reduce((s,f)=>s+f.omittedFrameAllowance,0)-345)<1e-9);
+ const ledger=page.getByTestId('frame-gravity-accounting');
+ assert.match(await ledger.getByRole('row').filter({hasText:'Götürü taşıyıcı payı'}).innerText(),/345.*Hariç/);
+ assert.match(await ledger.getByRole('row').filter({hasText:'Uygulanan toplam G'}).innerText(),/2\.007,5/);
  assert.ok(Math.abs(cases.find(c=>c.id==='Q').nodes.reduce((s,n)=>s+n.reactions[2],0)-1050)<1e-7);
- const pdf=await PDFDocument.load(await download(page,'PDF'));assert.equal(pdf.getPageCount(),14);
+ const pdf=await PDFDocument.load(await download(page,'PDF'));assert.equal(pdf.getPageCount(),15);
  const names=pdf.catalog.lookup(PDFName.of('Names'),PDFDict).lookup(PDFName.of('EmbeddedFiles'),PDFDict).lookup(PDFName.of('Names'),PDFArray),stream=names.lookup(1,PDFDict).lookup(PDFName.of('EF'),PDFDict).lookup(PDFName.of('F'),PDFRawStream);
  assert.deepEqual(JSON.parse(new TextDecoder().decode(decodePDFRawStream(stream).decode())).content.calculation,record);
  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload),before);
