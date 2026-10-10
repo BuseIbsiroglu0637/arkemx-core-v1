@@ -1,8 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {solveLinearFrame} from '../app/lib/linear-frame.ts';
+import {solveLinearFrame,frameSelfWeightLoads} from '../app/lib/linear-frame.ts';
 const close=(a,b,tol=1e-8)=>assert.ok(Math.abs(a-b)<=tol*Math.max(1,Math.abs(b)),`${a} != ${b}`);
 export function cantilever(){return {nodes:[{id:'A',x:0,y:0,z:0},{id:'B',x:4,y:0,z:0}],materials:[{id:'M',name:'synthetic steel',E:200e6,G:80e6}],sections:[{id:'S',name:'synthetic prismatic',A:.02,Iy:.0002,Iz:.0004,J:.0001}],members:[{id:'AB',sourceId:'SOURCE',kind:'beam',start:'A',end:'B',materialId:'M',sectionId:'S',localZ:[0,0,1]}],supports:[{nodeId:'A',fixed:[true,true,true,true,true,true]}],cases:[{id:'LOAD',loads:[{nodeId:'B',values:[100,50,-30,12,0,0]}]}]};}
+
+test('Uniform cantilever load matches axial and both bending closed forms, including fixed-end moments',()=>{
+ const m=cantilever();m.cases=[{id:'U',loads:[],memberLoads:[{memberId:'AB',values:[10,20,-30]}]}];
+ const r=solveLinearFrame(m).cases[0],tip=r.nodes[1].displacements,base=r.nodes[0].reactions;
+ close(tip[0],10*4**2/(2*200e6*.02));close(tip[1],20*4**4/(8*200e6*.0004));close(tip[2],-30*4**4/(8*200e6*.0002));
+ close(base[0],-40);close(base[1],-80);close(base[2],120);close(base[4],-240);close(base[5],-160);
+ r.members[0].localEndForces.slice(6).forEach(v=>close(v,0));r.globalBalance.forEach(v=>close(v,0));
+});
+test('Self weight requires explicit density and projects global gravity correctly for inclined members',()=>{
+ const m=cantilever();assert.throws(()=>frameSelfWeightLoads(m),/birim ağırlığı/);
+ m.materials[0].unitWeight=25;m.nodes[1]={id:'B',x:3,y:0,z:4};
+ const loads=frameSelfWeightLoads(m);m.cases=[{id:'G',loads:[],memberLoads:loads}];
+ const r=solveLinearFrame(m).cases[0];close(r.nodes[0].reactions[2],25*.02*5);close(r.nodes[0].reactions[4],-25*.02*5*1.5);
+ close(r.nodes[0].reactions[0],0);r.globalBalance.forEach(v=>close(v,0));
+ m.materials[0].unitWeight=NaN;assert.throws(()=>solveLinearFrame(m),/birim ağırlık/);
+});
 test('3D frame cantilever matches independent axial, two bending and torsion closed forms',()=>{
  const m=cantilever(),r=solveLinearFrame(m),tip=r.cases[0].nodes[1],d=tip.displacements;
  close(d[0],100*4/(200e6*.02));close(d[1],50*4**3/(3*200e6*.0004));close(d[2],-30*4**3/(3*200e6*.0002));close(d[3],12*4/(80e6*.0001));close(d[4],30*4**2/(2*200e6*.0002));close(d[5],50*4**2/(2*200e6*.0004));

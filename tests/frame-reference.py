@@ -22,6 +22,10 @@ for case in model["cases"]:
     ops.pattern("Plain", 1, 1)
     for load in case["loads"]:
         ops.load(node_tags[load["nodeId"]], *load["values"])
+    for load in case.get("memberLoads", []):
+        tag = next(i + 1 for i, member in enumerate(model["members"]) if member["id"] == load["memberId"])
+        qx, qy, qz = load["values"]
+        ops.eleLoad("-ele", tag, "-type", "-beamUniform", qy, qz, qx)
     ops.constraints("Plain")
     ops.numberer("RCM")
     ops.system("BandSPD")

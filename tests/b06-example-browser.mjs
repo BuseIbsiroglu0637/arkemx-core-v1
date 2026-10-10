@@ -21,4 +21,25 @@ await check('Example Q/H edits produce fresh results; empty input cannot become 
  await page.getByRole('button',{name:'Lineer 3B modeli çöz',exact:true}).click();await page.getByTestId('frame-results').waitFor();const m=JSON.parse(await download(page,'JSON')),c=m.content.calculation.content.result.cases;assert.ok(Math.abs(c.find(c=>c.id==='Q').nodes.reduce((s,n)=>s+n.reactions[2],0)-2100)<1e-7);assert.ok(Math.abs(c.find(c=>c.id==='H').nodes.reduce((s,n)=>s+n.reactions[0],0)+10)<1e-7);
  await page.reload();await page.getByTestId('frame-example-label').waitFor();assert.equal(await page.getByLabel('Örnek hareketli yük Q (kN/m²)',{exact:true}).inputValue(),'3.5');assert.equal(await page.getByTestId('frame-results').count(),0);
 });
+await check('Explicit self weight enters G, preserves Q and is visible in the verified PDF and JSON',async page=>{
+ await page.goto(root+'/ornek-kat-modeli');
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2'))?.payload);
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload);
+ await page.getByLabel('Kolon ve kiriş öz ağırlığını G yüküne ekle',{exact:true}).check();
+ const density=page.getByLabel('Örnek malzeme birim ağırlığı (kN/m³)',{exact:true});
+ await density.fill('');await page.getByRole('button',{name:'Örnek yüklerini uygula',exact:true}).click();
+ assert.match(await page.getByTestId('frame-example').getByRole('alert').innerText(),/pozitif/);
+ await density.fill('25');await page.getByRole('button',{name:'Örnek yüklerini uygula',exact:true}).click();
+ assert.match(await page.getByTestId('frame-self-weight-status').innerText(),/G durumuna düzgün yayılı/);
+ await page.getByRole('button',{name:'Lineer 3B modeli çöz',exact:true}).click();await page.getByTestId('frame-results').waitFor();
+ const manifest=JSON.parse(await download(page,'JSON')),record=manifest.content.calculation,example=createFrameExample(3.5,5,25);
+ assert.equal(await verifyFloorFrame(record,example.project,example.input),true);
+ const cases=record.content.result.cases;assert.ok(Math.abs(cases.find(c=>c.id==='G').nodes.reduce((s,n)=>s+n.reactions[2],0)-2352.5)<1e-7);
+ assert.ok(Math.abs(cases.find(c=>c.id==='Q').nodes.reduce((s,n)=>s+n.reactions[2],0)-1050)<1e-7);
+ const pdf=await PDFDocument.load(await download(page,'PDF'));assert.equal(pdf.getPageCount(),14);
+ const names=pdf.catalog.lookup(PDFName.of('Names'),PDFDict).lookup(PDFName.of('EmbeddedFiles'),PDFDict).lookup(PDFName.of('Names'),PDFArray),stream=names.lookup(1,PDFDict).lookup(PDFName.of('EF'),PDFDict).lookup(PDFName.of('F'),PDFRawStream);
+ assert.deepEqual(JSON.parse(new TextDecoder().decode(decodePDFRawStream(stream).decode())).content.calculation,record);
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload),before);
+ await page.reload();assert.equal(await page.getByLabel('Kolon ve kiriş öz ağırlığını G yüküne ekle',{exact:true}).isChecked(),false);
+});
 }finally{await browser.close();fs.writeFileSync(path.join(out,'b06-example-result.json'),JSON.stringify({executedAt:new Date().toISOString(),fixture:'synthetic',reports,technicalApproval:false},null,2));}console.log(JSON.stringify({suite:'b06-example',pass:reports.filter(r=>r.pass).length,fail:reports.filter(r=>!r.pass).length}));if(reports.some(r=>!r.pass))process.exitCode=1;

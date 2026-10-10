@@ -7,6 +7,9 @@ const cantilever={nodes:[{id:'A',x:0,y:0,z:0},{id:'B',x:4,y:0,z:0}],materials:[{
 models.push({name:'cantilever',model:cantilever});const skew=structuredClone(cantilever);skew.nodes[1]={id:'B',x:3,y:4,z:5};models.push({name:'skew-3d',model:skew});
 models.push({name:'two-distinct-floor-plates',model:prepareFloorFrame(fixture,frameInput(fixture)).content.model});
 const publicExample=createFrameExample();models.push({name:'public-two-floor-example',model:prepareFloorFrame(publicExample.project,publicExample.input).content.model});
+const weightedExample=createFrameExample(3.5,5,25);models.push({name:'public-example-with-self-weight',model:prepareFloorFrame(weightedExample.project,weightedExample.input).content.model});
+const uniform=structuredClone(cantilever);uniform.cases=[{id:'uniform',loads:[],memberLoads:[{memberId:'AB',values:[10,20,-30]}]}];models.push({name:'uniform-cantilever',model:uniform});
+const inclined=structuredClone(uniform);inclined.nodes[1]={id:'B',x:3,y:4,z:5};models.push({name:'uniform-inclined-frame',model:inclined});
 const transfer=structuredClone(cantilever);transfer.nodes=[{id:'A',x:0,y:0,z:0},{id:'C',x:2,y:0,z:0},{id:'B',x:4,y:0,z:0}];transfer.members=[{...transfer.members[0],id:'AC',end:'C'},{...transfer.members[0],id:'CB',start:'C'}];transfer.supports=[{nodeId:'A',fixed:[true,true,true,true,false,false]},{nodeId:'B',fixed:[false,true,true,false,false,false]}];transfer.cases[0].loads=[{nodeId:'C',values:[0,0,-100,0,0,0]}];models.push({name:'segmented-transfer-beam',model:transfer});
 const reports=[];
 const close=(a,b)=>assert.ok(Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=1e-10+Math.abs(b)*1e-7,`${a} differs from OpenSees ${b}`);

@@ -1,12 +1,12 @@
 import { inspectFloorCoordination, floorCoordinationBasis } from "./floor-coordination.ts";
 import { calculateFloorPlateStudy } from "./floor-plate-study.ts";
 import { type StructuralConceptInput } from "./engineering.ts";
-import { type FrameModel, validateFrameModel, solveLinearFrame } from "./linear-frame.ts";
+import { type FrameModel, type FrameCase, validateFrameModel, solveLinearFrame, frameSelfWeightLoads } from "./linear-frame.ts";
 import { traceJson, traceSha256 } from "./structural-traceability.ts";
 
 type Data=Record<string,unknown>;
 const data=(v:unknown):Data=>v&&typeof v==="object"&&!Array.isArray(v)?v as Data:{};
-export type FloorFrameSource={schema:"ARKEM-FLOOR-FRAME-SOURCE/1.0";basis:string;model:FrameModel;floorShares:Array<{level:number;nodeId:string;fraction:number}>};
+export type FloorFrameSource={schema:"ARKEM-FLOOR-FRAME-SOURCE/1.0";basis:string;model:FrameModel;floorShares:Array<{level:number;nodeId:string;fraction:number}>;selfWeight?:boolean};
 export function floorFrameBasis(value:unknown){const plan=data(value);return traceJson({plan:floorCoordinationBasis(plan),coordination:plan.floorCoordination??null,...(plan.example===undefined?{}:{example:plan.example})});}
 export function frameDraft(value:unknown){
   const plan=data(value),g=inspectFloorCoordination(plan).geometry;
@@ -50,14 +50,17 @@ export function inspectFloorFrame(value:unknown){
     if(shares.some(s=>!g.floors.some(f=>f.level===s.level)||typeof s.fraction!=="number"||!Number.isFinite(s.fraction)||s.fraction<=0||s.fraction>1||!model.nodes.some(n=>n.id===s.nodeId))||new Set(shares.map(s=>`${s.level}\u0000${s.nodeId}`)).size!==shares.length)throw Error("Yük payı kat/düğüm bağlantıları geçersiz veya tekrarlı.");
     for(const f of g.floors){const rows=shares.filter(s=>s.level===f.level);if(Math.abs(rows.reduce((s,r)=>s+r.fraction,0)-1)>1e-8||!rows.length||rows.some(s=>Math.abs(model.nodes.find(n=>n.id===s.nodeId)!.z-f.z)>1e-8))throw Error(`K${f.level}: yük payları toplamı 1 olmalı ve kendi kat kotundaki düğümlere bağlanmalı.`);}
     if(model.cases.some(c=>["G","Q","S"].includes(c.id)))throw Error("G/Q/S kat yük durumları ayrılmıştır; ek durumlara farklı kimlik verin.");
-    return {status:"declared-model" as const,issues:[],model,shares,geometry:g,fullBuildingAnalysis:false,technicalApproval:false};
+    if(source.selfWeight !== undefined && typeof source.selfWeight !== "boolean")throw Error("Öz ağırlık seçimi açık boolean olmalı.");
+    if(source.selfWeight === true)frameSelfWeightLoads(model);
+    return {status:"declared-model" as const,issues:[],model,shares,selfWeight:source.selfWeight===true,geometry:g,fullBuildingAnalysis:false,technicalApproval:false};
   }catch(error){return {status:"pending" as const,issues:[error instanceof Error?error.message:"3B model kaynağı geçersiz."],model:null,shares:null,geometry:null,fullBuildingAnalysis:false,technicalApproval:false};}
 }
 export function prepareFloorFrame(project:unknown,input:StructuralConceptInput){
   const p=data(project),plan=data(data(p.modules)["plan-editor"]),source=inspectFloorFrame(plan),floor=calculateFloorPlateStudy(project,input);
   try{
     if(!source.model||!source.shares||!floor.study)throw Error([...source.issues,...floor.issues].join(" "));
-    const loadCases=(["G","Q","S"] as const).map(id=>({id,loads:source.shares!.map(share=>{const f=floor.study!.floors.find(f=>f.level===share.level)!;const force=id==="G"?f.loads.permanentTotal:id==="Q"?f.loads.liveTotal:f.loads.roofSnowTotal;return {nodeId:share.nodeId,values:[0,0,-force*share.fraction,0,0,0] as [number,number,number,number,number,number]};})}));
+    const loadCases:FrameCase[]=(["G","Q","S"] as const).map(id=>({id,loads:source.shares!.map(share=>{const f=floor.study!.floors.find(f=>f.level===share.level)!;const force=id==="G"?f.loads.permanentTotal:id==="Q"?f.loads.liveTotal:f.loads.roofSnowTotal;return {nodeId:share.nodeId,values:[0,0,-force*share.fraction,0,0,0] as [number,number,number,number,number,number]};})}));
+    if(source.selfWeight)loadCases[0].memberLoads=frameSelfWeightLoads(source.model);
     const model={...source.model,cases:[...loadCases,...source.model.cases]},result=solveLinearFrame(model);
     const content={schema:"ARKEM-FLOOR-FRAME-CONTENT/1.0",projectId:p.id,revision:p.revision,scope:"linear-static-rigid-prismatic-space-frame",...(plan.example==="ARKEM-SYNTHETIC-B06/1.0"?{example:plan.example}:{}),source:{basis:floorFrameBasis(plan),frame:plan.floorFrame,floorStudy:floor.study},model,result,fullBuildingAnalysis:false,technicalApproval:false};
     return {content:JSON.parse(traceJson(content)) as typeof content,issues:[]};
