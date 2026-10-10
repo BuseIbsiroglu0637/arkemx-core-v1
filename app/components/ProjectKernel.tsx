@@ -16,6 +16,7 @@ import {
 import { deriveProjectThread, type ProjectThread, type ProjectModuleKey } from "../lib/project-graph";
 import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
+import { reconcileFloorPlateIds } from "../lib/floor-plate-identity";
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
 import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
@@ -274,7 +275,7 @@ function mergeModuleValue(previous: unknown, incoming: unknown) {
   const incomingModule = record(incoming);
   if (!Object.keys(incomingModule).length) return incoming;
   const merged: UnknownRecord = { ...previousModule, ...incomingModule };
-  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination", "calculationRegistry", "documentRegistry", "floorStudyRegistry", "floorDocumentRegistry", "frameRegistry", "frameDocumentRegistry"].forEach((key) => {
+  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination", "calculationRegistry", "documentRegistry", "floorStudyRegistry", "floorDocumentRegistry", "frameRegistry", "frameDocumentRegistry", "projectShellSources"].forEach((key) => {
     if (incomingModule[key] && typeof incomingModule[key] === "object" && !Array.isArray(incomingModule[key])) {
       merged[key] = { ...record(previousModule[key]), ...record(incomingModule[key]) };
     }
@@ -402,7 +403,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const floors = numeric(architectureInput.floors) || thread.canonical.architecture.floors || 1;
       const aspect = Math.max(.5, numeric(architectureInput.aspect, 1.45));
       const netRatio = numeric(architectureInput.netRatio, 78);
-      const floorPlates = deriveProgramFloorPlates(spaces, relationships, floors, netRatio, aspect, numeric(architectureResult.liveLoad, 3.5));
+      const floorPlates = reconcileFloorPlateIds(deriveProgramFloorPlates(spaces, relationships, floors, netRatio, aspect, numeric(architectureResult.liveLoad, 3.5)), Array.isArray(target.floorPlates) ? target.floorPlates as Array<{ level: number; id?: string }> : []);
       const largestPlate = floorPlates.reduce((best, item) => item.grossArea > best.grossArea ? item : best, floorPlates[0] ?? { level: 1, netArea: 0, grossArea: targetGross / Math.max(1, floors), width: 0, depth: 0 });
       const fallbackFloorArea = targetGross / Math.max(1, floors);
       const fallbackDepth = numeric(schemePlate.depth) || numeric(architectureResult.plateDepth) || Math.sqrt(Math.max(fallbackFloorArea, 1) / aspect);

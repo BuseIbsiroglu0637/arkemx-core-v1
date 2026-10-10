@@ -9,6 +9,8 @@ import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { PLAN_UNITS } from "../lib/project-integrity";
 import { FloorCoordinationPanel } from "./FloorCoordinationPanel";
 import { FrameWorkbench } from "./FrameWorkbench";
+import { migrateFloorPlateIds, reconcileFloorPlateIds } from "../lib/floor-plate-identity";
+import { ProjectShellSourcePanel } from "./ProjectShellSourcePanel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
 type View = "architectural" | "structural" | "loads" | "coordination";
@@ -77,6 +79,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
   const [spanX, setSpanX] = useState(4.5);
   const [spanY, setSpanY] = useState(4.2);
   const [floorPlates, setFloorPlates] = useState<ProgramFloorPlate[]>([]);
+  const setCreatedFloorPlates = useCallback((plates: ProgramFloorPlate[]) => setFloorPlates(previous => reconcileFloorPlateIds(plates, previous)), []);
   const [orientation, setOrientation] = useState<"x" | "y">("x");
   const [elements, setElements] = useState<PlanElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -140,8 +143,10 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (!hydrated || transferApplied.current) return;
     transferApplied.current = true;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; floorPlates: ProgramFloorPlate[]; elements: PlanElement[] }> | undefined;
+    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; floorPlates: ProgramFloorPlate[]; elements: PlanElement[]; handoff: { synchronizedAt?: string } }> | undefined;
     if (saved) {
+      // A restored historical handoff is not a new source observation.
+      handoffSeen.current = saved.handoff?.synchronizedAt ?? "";
       const savedFloorCount = typeof saved.floorCount === "number" ? Math.max(1, Math.min(30, saved.floorCount)) : Math.max(1, thread.canonical.architecture.floors || 1);
       const savedBaysX = typeof saved.baysX === "number" ? Math.max(2, Math.min(16, saved.baysX)) : baysX;
       const savedBaysY = typeof saved.baysY === "number" ? Math.max(2, Math.min(16, saved.baysY)) : baysY;
@@ -154,11 +159,11 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       if (Array.isArray(saved.floorPlates) && saved.floorPlates.length) {
         setFloorPlates(saved.floorPlates);
       } else if (recommendedFloorPlates.length === savedFloorCount) {
-        setFloorPlates(recommendedFloorPlates);
+        setCreatedFloorPlates(recommendedFloorPlates);
       } else {
         const fallbackSpanX = typeof saved.spanX === "number" ? saved.spanX : spanX;
         const fallbackSpanY = typeof saved.spanY === "number" ? saved.spanY : spanY;
-        setFloorPlates(Array.from({ length: savedFloorCount }, (_, index) => ({
+        setCreatedFloorPlates(Array.from({ length: savedFloorCount }, (_, index) => ({
           level: index + 1,
           netArea: 0,
           grossArea: savedBaysX * fallbackSpanX * savedBaysY * fallbackSpanY,
@@ -182,13 +187,13 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (nextBaysY > 0) setBaysY(Math.max(2, Math.min(16, nextBaysY)));
     if (width > 0 && nextBaysX > 0) setSpanX(Math.max(2, Math.min(12, width / nextBaysX)));
     if (depth > 0 && nextBaysY > 0) setSpanY(Math.max(2, Math.min(12, depth / nextBaysY)));
-    if (recommendedFloorPlates.length === sourceFloorCount) setFloorPlates(recommendedFloorPlates);
-    else if (width > 0 && depth > 0) setFloorPlates(Array.from({ length: sourceFloorCount }, (_, index) => ({ level: index + 1, netArea: 0, grossArea: width * depth, width, depth })));
+    if (recommendedFloorPlates.length === sourceFloorCount) setCreatedFloorPlates(recommendedFloorPlates);
+    else if (width > 0 && depth > 0) setCreatedFloorPlates(Array.from({ length: sourceFloorCount }, (_, index) => ({ level: index + 1, netArea: 0, grossArea: width * depth, width, depth })));
     setStatus(source.architecture.grossArea > 0 ? "Mimari programdan kat bazlı plaka hedefleri aktarıldı" : "Yeni proje şeması hazır");
     setModelHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [baysX, baysY, floorCount, hydrated, project.modules, recommendedFloorPlates, spanX, spanY, thread.canonical]);
+  }, [baysX, baysY, floorCount, hydrated, project.modules, recommendedFloorPlates, setCreatedFloorPlates, spanX, spanY, thread.canonical]);
 
   const visible = useMemo(() => elements.filter((element) => element.level === level), [elements, level]);
   const activeFloorPlate = floorPlates.find((item) => item.level === level);
@@ -393,7 +398,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
 
   const applyRecommendedFloorPlates = () => {
     if (recommendedFloorPlates.length !== floorCount) return;
-    setFloorPlates(recommendedFloorPlates);
+    setCreatedFloorPlates(recommendedFloorPlates);
     setStatus(`Kat plakaları programa göre dağıtıldı · ${recommendedFloorPlates.map((item) => `K${item.level} ${item.grossArea.toFixed(0)} m²`).join(" · ")}`);
   };
 
@@ -638,7 +643,7 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     const confirmed = window.confirm("Mimari Program kaynak kabul edilerek mahal, çekirdek ve kat plaka yerleşimi yeniden oluşturulacak. Zorunlu komşuluklar mümkünse merkez mahalin farklı kenarlarında fiziksel temasla çözülecek. Mevcut manuel mahal/çekirdek yerleşimleri değiştirilecek. Devam edilsin mi?");
     if (!confirmed) return;
     const platesForBuild = recommendedFloorPlates.length === floorCount ? recommendedFloorPlates : floorPlates;
-    if (platesForBuild.length === floorCount) setFloorPlates(platesForBuild);
+    if (platesForBuild.length === floorCount) setCreatedFloorPlates(platesForBuild);
     const axes = coordinateProgramAxes(platesForBuild, baysX, baysY);
     setBaysX(axes.baysX);
     setBaysY(axes.baysY);
@@ -760,21 +765,21 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
     if (typeof saved?.spanY === "number") setSpanY(saved.spanY); else if (targetDepth > 0) setSpanY(Number((targetDepth / nextBaysY).toFixed(3)));
     const nextFloorCount = typeof saved?.floorCount === "number" ? saved.floorCount : source.architecture.floors;
     if (nextFloorCount > 0) { const safeFloorCount = Math.max(1, Math.min(30, nextFloorCount)); setFloorCount(safeFloorCount); setLevel((current) => Math.min(current, safeFloorCount)); }
-    if (recommendedFloorPlates.length === nextFloorCount) setFloorPlates(recommendedFloorPlates);
+    if (recommendedFloorPlates.length === nextFloorCount) setCreatedFloorPlates(recommendedFloorPlates);
     else if (Array.isArray(saved?.floorPlates) && saved.floorPlates.length) setFloorPlates(saved.floorPlates);
     if (Array.isArray(saved?.elements) && saved.elements.length) setElements(saved.elements);
     else setElements((current) => current.filter((element) => element.x <= nextBaysX && element.y <= nextBaysY));
     setStatus(Array.isArray(saved?.elements) && saved.elements.length ? "Mevcut plan korundu; Mimari Program bağlantısı güncellendi" : targetWidth > 0 || targetDepth > 0 ? "Mimari program / parsel geometrisi aks modeline aktarıldı" : "Aktarılacak mimari program veya parsel kütlesi bulunamadı");
-  }, [baysX, baysY, project.modules, recommendedFloorPlates, thread.canonical]);
+  }, [baysX, baysY, project.modules, recommendedFloorPlates, setCreatedFloorPlates, thread.canonical]);
 
   useEffect(() => {
-    if (!hydrated || !project.experience.autoHandoff) return;
+    if (!hydrated || !modelHydrated || !project.experience.autoHandoff) return;
     const saved = project.modules["plan-editor"] as { handoff?: { synchronizedAt?: string } } | undefined;
     const synchronizedAt = saved?.handoff?.synchronizedAt ?? "";
     if (!synchronizedAt || handoffSeen.current === synchronizedAt) return;
     handoffSeen.current = synchronizedAt;
     importUpstream();
-  }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
+  }, [hydrated, importUpstream, modelHydrated, project.experience.autoHandoff, project.modules]);
 
   const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.1", units: PLAN_UNITS, projectId: project.id, revision: project.revision, floorCount, baysX, baysY, floorPlates, activeFloor: { level, spanX: activeSpanX, spanY: activeSpanY }, elements, metrics }, null, 2), "application/json");
   const exportCsv = () => {
@@ -1092,7 +1097,17 @@ export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }
       {!planGatePass && upstreamReady && (!areaRepresentationPass || !axisReady) ? <button type="button" onClick={rebuildFromArchitecturalProgram}>Mahal alanlarını ve aksları yeniden kur</button> : null}
       {planGatePass ? <Link href="/sistem-karsilastirma">Sistem ve Yöntemi Seç <i>→</i></Link> : null}
     </section> : null}
+    {!issueFocus && modelHydrated && <section className="engineering-panel" data-testid="floor-plate-identities">
+      <h2>Döşeme kimlikleri</h2>
+      <ul>{floorPlates.map(plate => <li key={plate.level}>K{plate.level} · {plate.id ?? "Kalıcı kimlik henüz yok"}</li>)}</ul>
+      <button disabled={!hydrated || !floorPlates.length || floorPlates.every(plate => plate.id)} onClick={() => {
+        try { setFloorPlates(migrateFloorPlateIds(floorPlates, project.id)); setStatus("Kalıcı döşeme kimlikleri oluşturuldu; kat konumlarını yeniden inceleyip kaydedin."); }
+        catch (error) { setStatus(error instanceof Error ? error.message : "Döşeme kimlikleri oluşturulamadı."); }
+      }}>Eski döşemelere kalıcı kimlik ver</button>
+      <p>Eski planlar kendiliğinden değiştirilmez. Kimlik geçişinden sonra kayıtlı kat konumları ve kaynak hesapları yeniden doğrulanmalıdır.</p>
+    </section>}
     {!issueFocus && modelHydrated && <FloorCoordinationPanel editable/>}
+    {!issueFocus && modelHydrated && <ProjectShellSourcePanel key={project.id + ":" + project.revision}/>}
     {!issueFocus && modelHydrated && <FrameWorkbench editable/>}
   </section>;
 }
