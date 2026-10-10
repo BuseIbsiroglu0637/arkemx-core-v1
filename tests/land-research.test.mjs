@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {parseLandCriteria,normalizeLandCandidate,assessLandCandidate,readLandResearch,landCriteriaKey,safeListingUrl} from '../app/lib/land-research.ts';
-import {searchLandCandidates,landProviderStatus,LandProviderError} from '../app/lib/land-candidate-provider.ts';
+import {searchLandCandidates,LandProviderError} from '../app/lib/land-candidate-provider.ts';
 import {buildLandAgentRequest,readLandAgentCandidates} from '../app/lib/land-research-agent.ts';
 import {LAND_QUOTA_TABLE,LAND_QUOTA_RESERVATION} from '../app/lib/land-search-quota.ts';
 import {deriveProjectThread} from '../app/lib/project-graph.ts';

@@ -1,4 +1,5 @@
 "use client";
+import { ContentImage } from "./ContentImage";
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -281,7 +282,7 @@ export function ThreeModelViewer({ modelUrl, title = "Etkileşimli taşıyıcı 
     <div className="model-viewer" ref={hostRef}>
       <div className="model-viewer-status"><span className={loading ? "is-loading" : ""}></span>{notice}</div>
       {!modelUrl&&!webglUnavailable&&<div className="model-viewer-presets" aria-label="Temsili yapı modeli seçimi">{(Object.keys(presetLabels) as ModelPreset[]).map((preset)=><button type="button" key={preset} aria-pressed={activePreset===preset} onClick={()=>selectPreset(preset)}>{presetLabels[preset]}</button>)}</div>}
-      {webglUnavailable&&<div className="model-viewer-fallback"><img src="/portfolio/bim-engineering.webp" alt="BIM ve taşıyıcı sistem modelinin temsili görünümü"/><div><b>3B görünüm kullanılamıyor</b><p>Bu tarayıcı WebGL özelliğini kapatmış. Model desteklenen telefon ve bilgisayar tarayıcılarında etkileşimli olarak açılır.</p></div></div>}
+      {webglUnavailable&&<div className="model-viewer-fallback"><ContentImage src="/portfolio/bim-engineering.webp" alt="BIM ve taşıyıcı sistem modelinin temsili görünümü"/><div><b>3B görünüm kullanılamıyor</b><p>Bu tarayıcı WebGL özelliğini kapatmış. Model desteklenen telefon ve bilgisayar tarayıcılarında etkileşimli olarak açılır.</p></div></div>}
       {!webglUnavailable&&<><div className="model-viewer-controls" aria-label="3B model kontrolleri">
         <button type="button" onClick={resetView}>Görünümü sıfırla</button>
         <button type="button" onClick={toggleRotate} aria-pressed={autoRotate}>{autoRotate ? "Döndürmeyi durdur" : "Otomatik döndür"}</button>

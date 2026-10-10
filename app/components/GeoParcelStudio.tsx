@@ -391,14 +391,11 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       }
       if (requestedFocus === "taks" || requestedFocus === "kaks" || requestedFocus === "hmax" || requestedFocus === "source") {
         setZoningFocus(requestedFocus);
+        setZoningPanel(requestedFocus === "source" ? "source" : "conditions");
       }
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
-  useEffect(() => {
-    if (zoningFocus === "source") setZoningPanel("source");
-    else if (zoningFocus === "taks" || zoningFocus === "kaks" || zoningFocus === "hmax") setZoningPanel("conditions");
-  }, [zoningFocus]);
   const [showSources, setShowSources] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -501,7 +498,10 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
   useEffect(() => { currentZoning.current = zoning; }, [zoning]);
   useEffect(() => { currentOfficialZoning.current = officialZoningResult; }, [officialZoningResult]);
 
-  useEffect(() => {
+  const buildingInputSource = `${buildingWidth}/${buildingDepth}/${floors}/${floorHeight}/${parkingPer100}`;
+  const [draftBuildingSource, setDraftBuildingSource] = useState(buildingInputSource);
+  if (draftBuildingSource !== buildingInputSource) {
+    setDraftBuildingSource(buildingInputSource);
     setDraftBuildingInputs({
       width: String(buildingWidth),
       depth: String(buildingDepth),
@@ -509,7 +509,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       floorHeight: String(floorHeight),
       parking: String(parkingPer100),
     });
-  }, [buildingWidth, buildingDepth, floors, floorHeight, parkingPer100]);
+  }
 
   const commitDraftBuildingInput = (field: keyof typeof draftBuildingInputs) => {
     const parsed = Number(draftBuildingInputs[field].replace(",", "."));
@@ -860,10 +860,14 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
               : "Proje başlangıç konumu aktarıldı. İl, ilçe, mahalle/köy, ada ve parsel seçimini tamamlayın.");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, patchModule, project.id, project.modules]);
+  }, [hydrated, patchModule, project.id, project.modules, simple]);
 
   useEffect(() => {
     if (!parcelHydrated || !selectedCandidateId || !listingIdentitySource || listingIdentitySource.sourceUrl === selectedCandidateId) return;
+
+    // Apply an external listing change as one cancellable hydration transaction,
+    // consistently with the listing prefill effects below.
+    const timer = window.setTimeout(() => {
 
     // A newly selected research candidate must never inherit identity fields
     // that were auto-filled from the previous listing. Preserve user/official
@@ -899,6 +903,8 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setMaxHeight(-1);
     }
     setFileNotice("Yeni ilan adayı seçildi. Önceki ilandan otomatik taşınan mahalle/köy, ada, parsel ve ilan-imar beyanları temizlendi; yeni adayın detayları okunuyor.");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [parcelHydrated, selectedCandidateId, listingIdentitySource, parcel.length, officialBoundaryEvidence]);
 
   useEffect(() => {
@@ -917,7 +923,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setFileNotice(listingIdentity.block && listingIdentity.parcelNo ? "Mahalle/köy, ada ve parsel ilandan otomatik dolduruldu. TKGM sorgusuyla parsel sınırını doğrulayın." : "İlanda bulunan mahalle/köy bilgisi otomatik dolduruldu. İlanda belirtilmeyen ada/parsel numaraları boş bırakıldı.");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [administrativeSource, neighborhoodId, parcelHydrated, listingIdentity?.sourceUrl, listingIdentity?.retrievedAt, province, district, neighborhood, block, parcelNo, parcel]);
+  }, [administrativeSource, neighborhoodId, parcelHydrated, listingIdentity, province, district, neighborhood, block, parcelNo, parcel]);
 
   useEffect(() => {
     if (!parcelHydrated || !listingZoning) return;
@@ -937,7 +943,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setFileNotice("İlanda açıkça belirtilen imar değerleri otomatik dolduruldu. Kaynak ilan beyanıdır; resmî plan ve uzman doğrulaması bekleniyor.");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [parcelHydrated, listingZoning?.sourceUrl, listingZoning?.retrievedAt, listingIdentity?.block, listingIdentity?.parcelNo, province, district, neighborhood, block, parcelNo, parcel, zoning]);
+  }, [parcelHydrated, listingZoning, listingIdentity, province, district, neighborhood, block, parcelNo, parcel, zoning]);
 
   const officialZoningEligible = parcelHydrated && administrativeSource === "official"
     && province === "Kastamonu" && /^\d+$/.test(neighborhoodId) && /^\d+$/.test(block) && /^\d+$/.test(parcelNo)

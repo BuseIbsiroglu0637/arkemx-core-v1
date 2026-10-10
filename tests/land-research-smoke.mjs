@@ -2,12 +2,16 @@
 import assert from 'node:assert/strict';
 import {PROJECT_MODULES} from '../app/lib/project-graph.ts';
 import {deriveProgramFloorPlates,buildProgramPlanElements} from '../app/lib/plan-program.ts';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
 import {chromium} from 'playwright';
 import {encodeProjectEnvelope,PROJECT_STORAGE_KEY} from '../app/lib/project-storage.ts';
 import {landCriteriaKey} from '../app/lib/land-research.ts';
 import {stampProjectModule} from '../app/lib/project-core.ts';
-const root=process.env.ARKEMX_E2E_URL || 'http://127.0.0.1:5173';
+const root=process.env.ARKEMX_E2E_BASE_URL || process.env.ARKEMX_E2E_URL || 'http://127.0.0.1:5173';
+const checkpoints=[];
+const checkpoint=name=>{checkpoints.push(name);console.log('PASS '+name);};
+let testError=null;
 const project={schema:'ARKEM-PROJECT/1.0',id:'ARK-LAND-TEST',name:'Sentetik agent testi',revision:'P01',phase:'Ön fizibilite',coordinateReference:'WGS84 / EPSG:4326',updatedAt:new Date().toISOString(),experience:{mode:'guided',autoHandoff:false,lastSynchronizedAt:''},events:[],modules:{'decision-assistant':{input:{name:'Sentetik agent testi',projectType:'new',usage:'industrial',location:'Kastamonu Merkez',parcelStatus:'unknown',targetArea:1200,floors:2,floorHeight:4,system:'undecided',priorities:['cost'],budget:'undecided',timeline:'flexible',documents:[],experienceMode:'guided'}}}};
 project.modules['decision-assistant']=stampProjectModule(project.modules['decision-assistant'],{projectId:project.id,projectRevision:project.revision,sourceModule:'decision-assistant',recordedAt:project.updatedAt,action:'created'});
 const url='https://www.emlakjet.com/ilan/sentetik-arsa-12345678';
@@ -49,14 +53,14 @@ async function open(){await page.goto(root+'/arsa-arastirma');await research().g
 async function search(){assert.equal(await research().locator('form').evaluate(f=>f.checkValidity()),true,'research form defaults and constraints must allow submission');const button=research().getByRole('button',{name:'Adayları getir',exact:true});await page.waitForFunction(()=>!document.querySelector('.land-criteria button[type=submit]')?.disabled);await button.click();}
 async function saved(){await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key))?.payload?.modules?.['decision-assistant']?.landResearch?.shortlist?.length===1,PROJECT_STORAGE_KEY);}
 try {
- await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS unknown land starts research');
+ await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();checkpoint('unknown land starts research');
  await open();assert.equal(await research().getByLabel('İl',{exact:true}).inputValue(),'Kastamonu');
- assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'2000'); console.log('PASS minimum land area defaults from project gross area and floors');
+ assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'2000'); checkpoint('minimum land area defaults from project gross area and floors');
  await research().getByLabel('En az arsa alanı').fill('2000');await research().getByLabel('En fazla arsa alanı').fill('5000');await research().getByLabel('Arsa satın alma bütçesi').fill('10000000');
  await search();await research().getByText('Tarayıcıda okunan ilan kartı',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Arama tamamlandı',{exact:true}).waitFor();assert.equal(await research().locator('option[value="rent"]').evaluate(option=>option.disabled),true);await research().getByRole('button',{name:'Kısa listeye al',exact:true}).click();await saved();
  await shortlist().getByRole('button',{name:'İncelemeye al',exact:true}).click();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();
- await page.reload();await shortlist().getByText('Sentetik arsa test adayı',{exact:false}).first().waitFor();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();console.log('PASS shortlist and selection survive reload');
- await research().getByRole('link',{name:'Parsel incelemesine geç'}).click();await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).waitFor();console.log('PASS candidate remains unverified on parcel screen');const parcelPageUrl=page.url();
+ await page.reload();await shortlist().getByText('Sentetik arsa test adayı',{exact:false}).first().waitFor();await research().getByRole('link',{name:'Parsel incelemesine geç'}).waitFor();checkpoint('shortlist and selection survive reload');
+ await research().getByRole('link',{name:'Parsel incelemesine geç'}).click();await page.getByRole('complementary',{name:'İncelemeye alınan arsa adayı'}).waitFor();checkpoint('candidate remains unverified on parcel screen');const parcelPageUrl=page.url();
  await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
  assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
  await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields select')?.value==='37');
@@ -65,13 +69,13 @@ try {
  assert.equal(geo.neighborhood,'Kuzyaka Köyü'); assert.equal(geo.parcel.length,0); assert.equal(geo.metrics.area,0); assert.equal(geo.parcelRecord.projectEligible,false);
  await page.reload(); await page.waitForFunction(()=>document.querySelector('input[placeholder="Ada numarası"]')?.value==='143');
  assert.equal(detailCalls,1); assert.equal(await page.getByPlaceholder('Parsel numarası',{exact:true}).inputValue(),'11');
- console.log('PASS automatic ada/parsel prefill persists, keeps listing area out of engineering calculations');
+ checkpoint('automatic ada/parsel prefill persists, keeps listing area out of engineering calculations');
  await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel']?.zoning?.taks===0.4,PROJECT_STORAGE_KEY);
  const transferred=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules['geo-parcel'].zoning,PROJECT_STORAGE_KEY);
  assert.equal(transferred.kaks,0.8);assert.equal(transferred.hmax,7.5);assert.equal(transferred.sourceUrl,url);assert.equal(transferred.verification,'user-declared');assert.equal(transferred.expertReviewStatus,'not-reviewed');
  await page.getByRole('button',{name:/^03 İmar bilgileri/}).click();
  assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.4');assert.equal(await page.getByPlaceholder('KAKS / emsal girin',{exact:true}).inputValue(),'0.8');assert.equal(await page.getByPlaceholder('Hmax girin',{exact:true}).inputValue(),'7.5');
- console.log('PASS explicit listing zoning fields auto-transfer and differ from land search assumptions');
+ checkpoint('explicit listing zoning fields auto-transfer and differ from land search assumptions');
  await page.getByLabel('Resmî imar sorgusu').getByText('Bu parsel için kaynakta konut imar kaydı bulunamadı.',{exact:true}).waitFor();
  assert.ok(officialCalls>0);officialMode='found';
  await page.getByRole('button',{name:'Resmî imar kaynağını yeniden sorgula',exact:true}).click();
@@ -88,23 +92,23 @@ try {
  const conditionsPanel=page.locator('details.geo-zoning-primary-block');
  await conditionsPanel.waitFor();if(await conditionsPanel.getAttribute('open')===null)await conditionsPanel.locator('summary').click();
  await page.getByPlaceholder('TAKS girin',{exact:true}).waitFor();assert.equal(await page.getByPlaceholder('TAKS girin',{exact:true}).inputValue(),'0.25');assert.equal(officialCalls,callsBeforeReload);
- console.log('PASS automatic official zoning query, source-bound transfer and cache survive reload without approved rights');
+ checkpoint('automatic official zoning query, source-bound transfer and cache survive reload without approved rights');
 
 
 
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('1000');await research().getByRole('button',{name:'Kriterleri kaydet'}).click();assert.equal(await research().getByRole('link',{name:'Parsel incelemesine geç'}).count(),0);assert.equal(await shortlist().getByRole('button',{name:'İncelemeye uygun değil',exact:true}).isDisabled(),true);
- await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();console.log('PASS conflicting criteria return project to research');
+ await page.goto(root+'/dijital-proje-merkezi');await page.locator('a[href="/arsa-arastirma"]').first().waitFor();checkpoint('conflicting criteria return project to research');
  await open();await research().getByLabel('Arsa satın alma bütçesi').fill('10000000');mode='empty';await search();await research().getByText('Bu aramada gösterilecek aday bulunamadı.').waitFor();assert.equal(await shortlist().locator('article').count(),1);
- mode='error';await search();await research().getByText('Sentetik bağlantı hatası',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Erişim engellendi',{exact:true}).waitFor();await research().getByText('Araştırma tamamlanamadığı için ilanlar okunamadı.',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),1);console.log('PASS empty/error responses preserve shortlist');
- mode='delayed';await search();await research().getByLabel('İl',{exact:true}).fill('Ankara');await page.waitForTimeout(1000);assert.equal(await page.locator('.land-results article').count(),0);console.log('PASS stale searches do not populate revised criteria');
- ready=false;await page.reload();await research().getByRole('heading',{name:'Canlı araştırma bağlantısı bekleniyor'}).waitFor();assert.equal(await research().getByRole('button',{name:'Adayları getir',exact:true}).isDisabled(),true);assert.equal(await shortlist().locator('article').count(),1);console.log('PASS missing API access is explicit');
+ mode='error';await search();await research().getByText('Sentetik bağlantı hatası',{exact:true}).waitFor();await research().getByText('Hepsiemlak: Erişim engellendi',{exact:true}).waitFor();await research().getByText('Araştırma tamamlanamadığı için ilanlar okunamadı.',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),1);checkpoint('empty/error responses preserve shortlist');
+ mode='delayed';await search();await research().getByLabel('İl',{exact:true}).fill('Ankara');await page.waitForTimeout(1000);assert.equal(await page.locator('.land-results article').count(),0);checkpoint('stale searches do not populate revised criteria');
+ ready=false;await page.reload();await research().getByRole('heading',{name:'Canlı araştırma bağlantısı bekleniyor'}).waitFor();assert.equal(await research().getByRole('button',{name:'Adayları getir',exact:true}).isDisabled(),true);assert.equal(await shortlist().locator('article').count(),1);checkpoint('missing API access is explicit');
  await mkdir('test-artifacts',{recursive:true});
  for(const width of [1366,390]){await page.setViewportSize({width,height:900});for(const theme of ['light','dark']){await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow');await page.screenshot({path:`test-artifacts/land-${width}-${theme}.png`,fullPage:true});}}
- console.log('PASS mobile/desktop widths');
+ checkpoint('mobile/desktop widths');
  const other=structuredClone({...project,id:'ARK-LAND-OTHER',name:'İkinci sentetik proje',updatedAt:new Date().toISOString()});
  other.modules['decision-assistant']=stampProjectModule(other.modules['decision-assistant'],{projectId:other.id,projectRevision:other.revision,sourceModule:'decision-assistant',recordedAt:other.updatedAt,action:'created'});
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(other)});
- await page.reload();await research().getByText('İkinci sentetik proje',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),0);console.log('PASS projects keep separate shortlists');
+ await page.reload();await research().getByText('İkinci sentetik proje',{exact:true}).waitFor();assert.equal(await shortlist().locator('article').count(),0);checkpoint('projects keep separate shortlists');
  const sizingProject={...other,modules:{'decision-assistant':stampProjectModule({input:{...other.modules['decision-assistant'].input,targetArea:1000,floors:10}},{projectId:other.id,projectRevision:other.revision,sourceModule:'decision-assistant',recordedAt:other.updatedAt,action:'created'})}};
  await page.evaluate(({key,envelope})=>{localStorage.clear();localStorage.setItem(key,envelope);},{key:PROJECT_STORAGE_KEY,envelope:encodeProjectEnvelope(sizingProject)});
  await page.reload(); await research().getByText('700 m²',{exact:true}).waitFor();
@@ -128,7 +132,7 @@ try {
  await research().getByText('Arsa hesabı varsayımlarını düzenle',{exact:true}).click();
  await research().getByLabel('Varsayılan emsal',{exact:true}).fill('1');
  assert.equal(await research().getByLabel('En az arsa alanı').inputValue(),'3000');
- console.log('PASS sizing auto-updates after brief revisions, preserves manual limits and accepts changed assumptions');
+ checkpoint('sizing auto-updates after brief revisions, preserves manual limits and accepts changed assumptions');
  // Migrate the previous cached missing-detail result shown in the user's screenshot.
  detailMode='partial';
  const partialProject=structuredClone(project);partialProject.id='ARK-LAND-PARTIAL';
@@ -147,7 +151,7 @@ try {
  const afterPartial=detailCalls;await page.reload();
  await page.waitForFunction(()=>document.querySelector('.geo-cascade-fields label:nth-of-type(3) select')?.value==='2');
  assert.equal(detailCalls,afterPartial);assert.equal(await page.getByPlaceholder('Ada numarası',{exact:true}).inputValue(),'');
- console.log('PASS cached missing detail is refreshed; village fills independently without invented parcel or zoning rights');
+ checkpoint('cached missing detail is refreshed; village fills independently without invented parcel or zoning rights');
  await page.getByRole('button',{name:/^04 Yapı yerleşimi/}).click();
  const draft=page.getByRole('region',{name:'Taslak yapı bilgileri'});
  await draft.waitFor();
@@ -169,7 +173,7 @@ try {
  assert.equal(await draft.getByLabel('Yapı genişliği (m)',{exact:true}).inputValue(),'18');
  assert.equal(await draft.getByLabel('Kat adedi',{exact:true}).inputValue(),'3');
  assert.equal(await draft.getByLabel('Kat yüksekliği (m)',{exact:true}).inputValue(),'3.2');
- console.log('PASS building draft inputs work without zoning, persist after reload and do not grant placement approval');
+ checkpoint('building draft inputs work without zoning, persist after reload and do not grant placement approval');
  await page.getByRole('link',{name:'Taslak olarak mimariye devam et →',exact:true}).click();
  const architecture=page.getByTestId('architectural-program-studio');
  await architecture.waitFor();
@@ -185,7 +189,7 @@ try {
  assert.equal(await target.inputValue(),'1400');
  const afterHandoff=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules,PROJECT_STORAGE_KEY);
  assert.deepEqual(afterHandoff['geo-parcel'].zoning,zoningBeforeDraft);assert.equal(afterHandoff['architectural-program'].siteReview.status,'pending');assert.equal(afterHandoff['geo-parcel'].parcelRecord.projectEligible,false);
- console.log('PASS draft link opens editable architecture, preserves draft after reload and keeps zoning/placement review pending');
+ checkpoint('draft link opens editable architecture, preserves draft after reload and keeps zoning/placement review pending');
 
  const planSpaces=[100,40,3].map((unitArea,index)=>({id:`plan-test-${index}`,name:`Sentetik mahal ${index+1}`,code:`T-${index+1}`,zone:'Test',unitArea,count:1}));
  const planPlates=deriveProgramFloorPlates(planSpaces,[],1,90,1.45);
@@ -201,14 +205,16 @@ try {
  await completion.getByText(/Aks geometrisi/).waitFor();
  page.once('dialog',dialog=>dialog.accept());
  await completion.getByRole('button',{name:'Mahal alanlarını ve aksları yeniden kur',exact:true}).click();
- await page.locator('.cad-plan-completion[data-state="pass"]').waitFor();
+ await completion.getByText('Taslak plan ve aks çalışması tamamlandı',{exact:true}).waitFor();
+ assert.equal(await completion.getAttribute('data-state'),'review');
  await completion.getByRole('link',{name:/Sistem ve Yöntemi Seç/}).waitFor();
  await page.reload();
- await page.locator('.cad-plan-completion[data-state="pass"]').waitFor();
+ await completion.getByText('Taslak plan ve aks çalışması tamamlandı',{exact:true}).waitFor();
+ assert.equal(await completion.getAttribute('data-state'),'review');
  const repaired=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).payload.modules,PROJECT_STORAGE_KEY);
  assert.deepEqual(repaired['geo-parcel'].zoning,zoningBeforeDraft);
  assert.equal(repaired['geo-parcel'].parcelRecord.projectEligible,false);
- console.log('PASS plan repair restores room areas and valid axes, persists after reload without granting zoning approval');
+ checkpoint('plan repair restores room areas and valid axes, persists after reload without granting zoning approval');
 
 
  await page.goto(root+'/tasiyici-on-tasarim');
@@ -222,7 +228,7 @@ try {
  await coordination.click();
  await page.waitForURL('**/bim-koordinasyon');
  assert.equal(await page.locator('h1').first().innerText(),'BIM koordinasyon');
- console.log('PASS structural concept continues to BIM coordination with its model saved');
+ checkpoint('structural concept continues to BIM coordination with its model saved');
 
  await page.goto(root+'/araclar');
  const moduleTools=page.getByTestId('project-module-tools');
@@ -244,7 +250,11 @@ try {
  await page.waitForFunction(()=>document.querySelectorAll('.arx-module-status[data-state="empty"]').length===13);
  assert.equal(await moduleCards.count(),13);
  assert.equal(await page.getByRole('link',{name:/Yeni proje/}).count(),1);
- console.log('PASS all 13 module cards show project states, remain available with no project and fit mobile');
+ checkpoint('all 13 module cards show project states, remain available with no project and fit mobile');
 
  assert.deepEqual(errors,[]);
-}catch(error){console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await research().innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{await browser.close();}
+}catch(error){testError=String(error);console.error('UI DIAGNOSTIC',JSON.stringify({errors,text:await page.locator('body').innerText().catch(()=>''),forms:await page.locator('.land-criteria input').evaluateAll(es=>es.map(e=>({label:e.closest('label')?.textContent,value:e.value})))},null,2));throw error;}finally{
+ const out=path.resolve(process.env.ARKEMX_G05_EVIDENCE_DIR??'test-artifacts/g05');await mkdir(out,{recursive:true});
+ await writeFile(path.join(out,'land-research-result.json'),JSON.stringify({executedAt:new Date().toISOString(),fixture:'synthetic',technicalApproval:false,pass:checkpoints.length,fail:testError?1:0,error:testError,checkpoints},null,2));
+ await browser.close();
+}

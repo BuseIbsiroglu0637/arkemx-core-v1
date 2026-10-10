@@ -27,6 +27,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Repository lint (no errors or warnings)
+        run: node node_modules/eslint/bin/eslint.js . --max-warnings 0
+
       - name: Local UI regression suite
         run: npm run test:local:ui
 

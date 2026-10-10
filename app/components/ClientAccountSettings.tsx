@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { deriveProjectThread } from "../lib/project-graph";
 import { formatProjectDateTime } from "../lib/date-format";
@@ -151,7 +151,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     setProfileStatus("idle");
   };
 
-  const load = async (finalMessage = "Hesabınız ve proje kayıtlarınız güncel.") => {
+  const load = useCallback(async (finalMessage = "Hesabınız ve proje kayıtlarınız güncel.") => {
     const response = await fetch("/api/customer-workspace", { cache: "no-store" });
     const body = await response.json() as WorkspaceData & { error?: string };
     if (!response.ok) {
@@ -184,9 +184,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       // Account/project data remains usable if draft sync is temporarily unavailable.
     }
     setMessage(finalMessage);
-  };
+  }, [project.id]);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
     try {
       const raw = window.localStorage.getItem(ACCOUNT_SYNC_SUPPRESSION_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
@@ -198,12 +199,10 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
       setSuppressedProjectIds([]);
     }
     setSuppressionReady(true);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void load(); }, 0);
+    void load();
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     if (!suppressionReady || !data || !hasActiveProject || !project.id || !accountCopyNeedsUpdate || suppressedProjectIdsRef.current.has(project.id)) return;
@@ -249,6 +248,7 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
     hasActiveProject,
     suppressionReady,
     project,
+    load,
     project.id,
     project.name,
     project.phase,

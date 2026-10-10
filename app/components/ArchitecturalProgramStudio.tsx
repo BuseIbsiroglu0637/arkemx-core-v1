@@ -255,9 +255,10 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
     setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, project.modules, thread.canonical]);
+  }, [hydrated, project.id, project.modules, thread.canonical]);
 
   const geoDraft = objectValue(project.modules["geo-parcel"]);
+  const geoParcelSource = project.modules["geo-parcel"];
   const geoDraftUse = programUseFromValue(geoDraft.usage || thread.canonical.architecture.use);
   const geoDraftFloors = typeof geoDraft.floors === "number" && geoDraft.floors > 0 ? clamp(geoDraft.floors, 1, 30) : 0;
   const geoDraftWidth = typeof geoDraft.buildingWidth === "number" ? geoDraft.buildingWidth : 0;
@@ -348,8 +349,8 @@ export function ArchitecturalProgramStudio({ simple = false, issueFocus = false 
   useEffect(() => {
     // Hydrate the stored brief before publishing editable defaults into the shared project.
     if (!hydrated || !transferReady) return;
-    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", siteReview: { status: placementPending ? "pending" : "precheck-complete" }, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext: architectureSiteContext(project.modules["geo-parcel"], siteContext), programRequirementsConfirmed }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
-  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, hydrated, netRatio, patchModule, placementPending, programRequirementsConfirmed, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
+    patchModule("architectural-program", { schema: "ARKEM-ARCH-PROGRAM/3.0", previousSchema: "ARKEM-ARCH-PROGRAM/2.0", siteReview: { status: placementPending ? "pending" : "precheck-complete" }, input: { use, targetGross, netRatio, floors, floorHeight, aspect, corridorWidth, targetTravel, stairs, elevators, wwr, southShading, coreStrategy, siteContext: architectureSiteContext(geoParcelSource, siteContext), programRequirementsConfirmed }, spaces, relationships, selectedStrategy, result, architecturalScheme, checks, status: "architectural-scheme-draft" });
+  }, [architecturalScheme, aspect, checks, coreStrategy, corridorWidth, elevators, floorHeight, floors, geoParcelSource, hydrated, netRatio, patchModule, placementPending, programRequirementsConfirmed, relationships, result, selectedStrategy, siteContext, southShading, spaces, stairs, targetGross, targetTravel, transferReady, use, wwr]);
 
   const loadTemplate = () => {
     setProgramRequirementsConfirmed(false);
