@@ -2,12 +2,13 @@
 // kN, m, rad; E/G kN/m²; A m²; Iy/Iz/J m⁴. Rigid end connections.
 // No shell, shear deformation, releases, P-delta, dynamics or design checks.
 export type FrameNode = { id: string; x: number; y: number; z: number };
-export type FrameMaterial = { id: string; name: string; E: number; G: number };
+export type FrameMaterial = { id: string; name: string; E: number; G: number; unitWeight?: number };
 export type FrameSection = { id: string; name: string; A: number; Iy: number; Iz: number; J: number };
 export type FrameMember = { id: string; sourceId: string; kind: "column" | "beam"; start: string; end: string; materialId: string; sectionId: string; localZ: [number, number, number] };
 export type FrameSupport = { nodeId: string; fixed: [boolean, boolean, boolean, boolean, boolean, boolean] };
 export type FrameLoad = { nodeId: string; values: [number, number, number, number, number, number] };
-export type FrameCase = { id: string; loads: FrameLoad[] };
+export type FrameUniformLoad = { memberId: string; values: [number, number, number] }; // local x/y/z, kN/m
+export type FrameCase = { id: string; loads: FrameLoad[]; memberLoads?: FrameUniformLoad[] };
 export type FrameModel = { nodes: FrameNode[]; materials: FrameMaterial[]; sections: FrameSection[]; members: FrameMember[]; supports: FrameSupport[]; cases: FrameCase[] };
 const matrix = (n: number) => Array.from({ length: n }, () => Array(n).fill(0) as number[]);
 const dot = (a: number[], b: number[]) => a.reduce((s, x, i) => s + x * b[i], 0);
@@ -19,18 +20,25 @@ export function validateFrameModel(model: FrameModel) {
   if(!model||typeof model!=="object")throw Error("3B model nesnesi gerekiyor.");
   if(Array.isArray(model)||Object.keys(model).some(k=>!["nodes","materials","sections","members","supports","cases"].includes(k)))throw Error("Modelde desteklenmeyen alan var; yalnız açık düğüm/eleman/mesnet/yük sözleşmesi kullanılabilir.");
   const fields=(rows:unknown,keys:string[],label:string)=>{if(!Array.isArray(rows)||rows.some(r=>!r||typeof r!=="object"||Array.isArray(r)||Object.keys(r).some(k=>!keys.includes(k))))throw Error(`${label}: desteklenmeyen alan veya nesne; uç serbestliği/öteleme/kabuk bu modelde yok.`);};
-  fields(model.nodes,["id","x","y","z"],"Düğüm");fields(model.materials,["id","name","E","G"],"Malzeme");fields(model.sections,["id","name","A","Iy","Iz","J"],"Kesit");fields(model.members,["id","sourceId","kind","start","end","materialId","sectionId","localZ"],"Eleman");fields(model.supports,["nodeId","fixed"],"Mesnet");fields(model.cases,["id","loads"],"Yük durumu");
+  fields(model.nodes,["id","x","y","z"],"Düğüm");fields(model.materials,["id","name","E","G","unitWeight"],"Malzeme");fields(model.sections,["id","name","A","Iy","Iz","J"],"Kesit");fields(model.members,["id","sourceId","kind","start","end","materialId","sectionId","localZ"],"Eleman");fields(model.supports,["nodeId","fixed"],"Mesnet");fields(model.cases,["id","loads","memberLoads"],"Yük durumu");
   for (const [rows, label] of [[model.nodes,"Düğüm"],[model.materials,"Malzeme"],[model.sections,"Kesit"],[model.members,"Eleman"],[model.cases,"Yük durumu"]] as const) unique(rows,label);
   if (model.nodes.length < 2 || model.nodes.length > 60 || !model.members.length || model.members.length > 150 || !model.cases.length || model.cases.length > 12) throw Error("Lineer çözüm sınırı: 2–60 düğüm, 1–150 eleman ve 1–12 yük durumu.");
   if (model.nodes.some(n => ![n.x,n.y,n.z].every(v=>typeof v === "number" && Number.isFinite(v)))) throw Error("Düğüm koordinatları sonlu sayı olmalı.");
   for(let i=0;i<model.nodes.length;i++)for(let j=0;j<i;j++){const a=model.nodes[i],b=model.nodes[j];if(Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)<=1e-8)throw Error("Aynı konumdaki rijit bağlantılar aynı düğüm kimliğini kullanmalı.");}
   if (model.materials.some(m=>typeof m.name!=="string"||!m.name.trim()||!positive(m.E)||!positive(m.G)||m.G >= m.E)) throw Error("Malzeme adı ve pozitif E/G gerekiyor; bu izotrop modelde G < E olmalı.");
+  if (model.materials.some(m=>m.unitWeight !== undefined && !positive(m.unitWeight))) throw Error("Beyan edilmiş birim ağırlık pozitif ve sonlu kN/m³ olmalı.");
   if (model.sections.some(s=>typeof s.name!=="string"||!s.name.trim()||![s.A,s.Iy,s.Iz,s.J].every(positive))) throw Error("Kesit adı ve pozitif A/Iy/Iz/J gerekiyor.");
   const ids = new Set(model.nodes.map(n=>n.id));
   for (const m of model.members) if (!ids.has(m.start)||!ids.has(m.end)||m.start===m.end||!model.materials.some(a=>a.id===m.materialId)||!model.sections.some(s=>s.id===m.sectionId)||!Array.isArray(m.localZ)||m.localZ.length!==3||!m.localZ.every(Number.isFinite)||!["column","beam"].includes(m.kind)||typeof m.sourceId!=="string") throw Error(`${m.id}: düğüm, malzeme, kesit veya yerel eksen bağlantısı geçersiz.`);
   if(new Set(model.members.map(m=>[m.start,m.end].sort().join("\u0000"))).size!==model.members.length)throw Error("Aynı düğüm çifti için eleman tekrarlanamaz.");
   if (!Array.isArray(model.supports)||!model.supports.length||new Set(model.supports.map(s=>s.nodeId)).size!==model.supports.length||model.supports.some(s=>!ids.has(s.nodeId)||!Array.isArray(s.fixed)||s.fixed.length!==6||s.fixed.some(v=>typeof v!=="boolean")||!s.fixed.some(Boolean))) throw Error("Mesnetler altı açık boolean kısıtla ve gerçek düğüm kimliğiyle tanımlanmalı.");
-  for (const c of model.cases) {fields(c.loads,["nodeId","values"],"Düğüm yükü");if (!c.loads.length||c.loads.some(l=>!ids.has(l.nodeId)||!Array.isArray(l.values)||l.values.length!==6||l.values.some(v=>typeof v!=="number"||!Number.isFinite(v)))) throw Error(`${c.id}: sonlu altı bileşenli düğüm yükleri gerekiyor.`);}
+  for (const c of model.cases) {
+    fields(c.loads,["nodeId","values"],"Düğüm yükü");
+    if (c.memberLoads !== undefined) fields(c.memberLoads,["memberId","values"],"Yayılı eleman yükü");
+    const distributed = c.memberLoads ?? [];
+    if ((!c.loads.length && !distributed.length)||c.loads.some(l=>!ids.has(l.nodeId)||!Array.isArray(l.values)||l.values.length!==6||l.values.some(v=>typeof v!=="number"||!Number.isFinite(v)))) throw Error(`${c.id}: sonlu altı bileşenli düğüm yükleri gerekiyor.`);
+    if (new Set(distributed.map(l=>l.memberId)).size !== distributed.length || distributed.some(l=>!model.members.some(m=>m.id===l.memberId)||!Array.isArray(l.values)||l.values.length!==3||l.values.some(v=>typeof v!=="number"||!Number.isFinite(v)))) throw Error(`${c.id}: yayılı yük gerçek eleman kimliği ve sonlu yerel x/y/z bileşenleriyle tanımlanmalı.`);
+  }
   const used = new Set(model.members.flatMap(m=>[m.start,m.end]));
   if (model.nodes.some(n=>!used.has(n.id))) throw Error("Bağlantısız düğüm var.");
   const reached = new Set(model.supports.map(s=>s.nodeId));
@@ -84,17 +92,38 @@ export function solveLinearFrame(model: FrameModel) {
   const cases=model.cases.map(c=>{
     const F=Array(size).fill(0),U=Array(size).fill(0);
     for(const l of c.loads){const n=model.nodes.findIndex(n=>n.id===l.nodeId);for(let i=0;i<6;i++)F[6*n+i]+=l.values[i];}
+    const equivalent = new Map<string, number[]>();
+    for (const load of c.memberLoads ?? []) {
+      const e = elements.find(e=>e.member.id===load.memberId)!;
+      const [qx,qy,qz]=load.values,L=e.L;
+      // Consistent nodal loads from the Euler–Bernoulli shape functions.
+      // End moments retain bending from a distributed load; point-load lumping does not.
+      const local=[qx*L/2,qy*L/2,qz*L/2,0,-qz*L*L/12,qy*L*L/12,qx*L/2,qy*L/2,qz*L/2,0,qz*L*L/12,-qy*L*L/12];
+      equivalent.set(load.memberId,local);
+      for(let i=0;i<12;i++) F[e.dofs[i]]+=e.T.reduce((sum,row,j)=>sum+row[i]*local[j],0);
+    }
     const reduced=solve(F);free.forEach((id,i)=>U[id]=reduced[i]);
     const residual=K.map((row,i)=>dot(row,U)-F[i]);
     const norm=Math.max(1,...F.map(Math.abs)),relativeResidual=Math.max(0,...free.map(i=>Math.abs(residual[i])))/norm;
     if([...U,...residual].some(v=>!Number.isFinite(v))||relativeResidual>1e-7)throw Error("Çözüm sonlu değil veya denge artığı sınırı aşıldı.");
     const nodes=model.nodes.map((n,i)=>({id:n.id,displacements:U.slice(6*i,6*i+6),reactions:residual.slice(6*i,6*i+6).map((v,j)=>fixed.has(6*i+j)?v:0)}));
-    const members=elements.map(e=>{const u=e.T.map(row=>dot(row,e.dofs.map(i=>U[i])));return {id:e.member.id,sourceId:e.member.sourceId,length:e.L,localAxes:e.R,localEndForces:e.k.map(row=>dot(row,u))};});
+    const members=elements.map(e=>{const u=e.T.map(row=>dot(row,e.dofs.map(i=>U[i])));return {id:e.member.id,sourceId:e.member.sourceId,length:e.L,localAxes:e.R,localEndForces:e.k.map((row,i)=>dot(row,u)-(equivalent.get(e.member.id)?.[i]??0))};});
     const balance=Array(6).fill(0);
     model.nodes.forEach((n,i)=>{const f=Array.from({length:6},(_,j)=>F[6*i+j]+nodes[i].reactions[j]);const moment=cross([n.x,n.y,n.z],f.slice(0,3));for(let j=0;j<3;j++){balance[j]+=f[j];balance[j+3]+=f[j+3]+moment[j];}});
     const forceScale=Math.max(1,F.reduce((s,v)=>s+Math.abs(v),0)),momentScale=Math.max(forceScale,...model.nodes.map(n=>forceScale*(1+Math.hypot(n.x,n.y,n.z))));
     if(balance.some((v,i)=>!Number.isFinite(v)||Math.abs(v)>(i<3?forceScale:momentScale)*1e-7))throw Error("Global kuvvet/moment dengesi sağlanmadı; sonuç üretilmedi.");
     return {id:c.id,nodes,members,relativeResidual,globalBalance:balance};
   });
-  return {schema:"ARKEM-LINEAR-SPACE-FRAME/1.0",engine:"Euler-Bernoulli/6DOF-linear-static-1.0",units:{length:"m",force:"kN",moment:"kNm",rotation:"rad"},cases,fullBuildingAnalysis:false,technicalApproval:false,limitations:["Yalnız prizmatik lineer elastik çerçeve ve rijit uç bağlantıları; kullanıcı tanımlı düğüm yükleri.","Döşeme kabuğu, ikinci mertebe, burkulma, plastikleşme, çatlama, deprem/dinamik ve kapasite hesabı yok.","Eleman öz ağırlığı kendiliğinden eklenmez; yüklerde açıkça tanımlanmalı."]};
+  const distributed=model.cases.some(c=>c.memberLoads?.length);
+  return {schema:"ARKEM-LINEAR-SPACE-FRAME/1.0",engine:distributed?"Euler-Bernoulli/6DOF-linear-static-1.1":"Euler-Bernoulli/6DOF-linear-static-1.0",units:{length:"m",force:"kN",moment:"kNm",rotation:"rad"},cases,fullBuildingAnalysis:false,technicalApproval:false,limitations:[distributed?"Yalnız prizmatik lineer elastik çerçeve ve rijit uç bağlantıları; düğüm ve düzgün yayılı eleman yükleri.":"Yalnız prizmatik lineer elastik çerçeve ve rijit uç bağlantıları; kullanıcı tanımlı düğüm yükleri.","Döşeme kabuğu, ikinci mertebe, burkulma, plastikleşme, çatlama, deprem/dinamik ve kapasite hesabı yok.",distributed?"Öz ağırlık yalnız açık seçim ve her malzemenin beyan edilmiş birim ağırlığıyla eklenir; döşeme G yükünde aynı eleman ağırlığını ikinci kez saymayın.":"Eleman öz ağırlığı kendiliğinden eklenmez; yüklerde açıkça tanımlanmalı."]};
+}
+
+export function frameSelfWeightLoads(model: FrameModel): FrameUniformLoad[] {
+  return model.members.map(member=>{
+    const material=model.materials.find(m=>m.id===member.materialId);
+    if(!material||!positive(material.unitWeight))throw Error(`${member.materialId}: öz ağırlık için açık kN/m³ birim ağırlığı gerekiyor.`);
+    const e=element(model,member),section=model.sections.find(s=>s.id===member.sectionId)!;
+    const gravity=[0,0,-material.unitWeight!*section.A];
+    return {memberId:member.id,values:e.R.map(axis=>dot(axis,gravity)) as [number,number,number]};
+  });
 }

@@ -2,6 +2,18 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 registerHooks({resolve(s,c,next){if(s.startsWith('.')&&!path.extname(s)){const u=new URL(s+'.ts',c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
 const {createFrameExample,FRAME_EXAMPLE}=await import('../app/lib/frame-example.ts');const {prepareFloorFrame,recordFloorFrame,verifyFloorFrame}=await import('../app/lib/floor-frame.ts');const {prepareFrameDocument,commonFrameDxf}=await import('../app/lib/frame-documents.ts');
 const {frameCalculationTables}=await import('../app/lib/frame-report.ts');
+test('Opt-in self weight adds 147.5 kN only to G, survives document verification and rejects missing density',async()=>{
+ const example=createFrameExample(3.5,5,25),prepared=prepareFloorFrame(example.project,example.input);
+ assert.deepEqual(prepared.issues,[]);const content=prepared.content;
+ const g=content.result.cases.find(c=>c.id==='G');assert.ok(Math.abs(g.nodes.reduce((s,n)=>s+n.reactions[2],0)-(2205+147.5))<1e-7);
+ assert.equal(content.model.cases.find(c=>c.id==='G').memberLoads.length,6);
+ assert.equal(content.model.cases.find(c=>c.id==='Q').memberLoads,undefined);
+ const record=await recordFloorFrame(content);assert.equal(await verifyFloorFrame(record,example.project,example.input),true);
+ const table=frameCalculationTables(record).find(t=>t.title==='G — Düzgün yayılı eleman yükleri');assert.equal(table.rows.length,6);assert.match(table.headers[1],/kN\/m/);
+ delete example.project.modules['plan-editor'].floorFrame.model.materials[0].unitWeight;
+ assert.equal(prepareFloorFrame(example.project,example.input).content,null);assert.equal(await verifyFloorFrame(record,example.project,example.input),false);
+ assert.throws(()=>createFrameExample(3.5,5,0),/pozitif/);
+});
 test('PDF continuation pages retain all 53 rows and geometry-only export stays one page',async()=>{
  const {createCorporateTechnicalPdf}=await import('../app/lib/technical-sheet.ts'),{PDFDocument}=await import('pdf-lib');
  const assets={regularFont:fs.readFileSync(new URL('../public/fonts/ArkemSans-Regular.ttf',import.meta.url)),boldFont:fs.readFileSync(new URL('../public/fonts/ArkemSans-Bold.ttf',import.meta.url)),logo:fs.readFileSync(new URL('../public/brand/arkem-a-mark.png',import.meta.url))};
