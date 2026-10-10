@@ -30,6 +30,8 @@ export function projectIntegrityIssues(value: unknown): string[] {
       if (ids.some(id => typeof id !== "string" || !id.trim() || id !== id.trim()) || new Set(ids).size !== ids.length) issues.push(key + ": program identity missing or duplicated");
     }
     if (key === "plan-editor") {
+      const plateIds = Array.isArray(moduleValue.floorPlates) ? moduleValue.floorPlates.map(record).filter(f => f.id !== undefined).map(f => f.id) : [];
+      if (plateIds.some(id => typeof id !== "string" || !id.trim() || id !== id.trim()) || new Set(plateIds).size !== plateIds.length) issues.push(key + ": floor plate identity invalid or duplicated");
       try { resolvePlanHandoffGeometry(moduleValue); } catch (error) { issues.push(key + ": " + (error instanceof Error ? error.message : "floor geometry unsupported")); }
     }
     if (key === "project-os") {

@@ -19,6 +19,7 @@ export type ProgramRelationship = {
 };
 
 export type ProgramFloorPlate = {
+  id?: string;
   level: number;
   netArea: number;
   grossArea: number;
