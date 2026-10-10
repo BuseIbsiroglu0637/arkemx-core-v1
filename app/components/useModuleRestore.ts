@@ -12,8 +12,11 @@ export function useModuleRestore(key: string, restore: (saved: Record<string, un
   const restoreInitial = useRef(restore);
   useEffect(() => {
     if (!hydrated || restoredProject === project.id) return;
-    restoreInitial.current(moduleRecord(project.modules[key]));
-    setRestoredProject(project.id);
+    const timer = window.setTimeout(() => {
+      restoreInitial.current(moduleRecord(project.modules[key]));
+      setRestoredProject(project.id);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [hydrated, key, project.id, project.modules, restoredProject]);
   return hydrated && restoredProject === project.id;
 }

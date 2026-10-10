@@ -1,3 +1,4 @@
+import { ContentImage } from "../components/ContentImage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -50,7 +51,7 @@ export default function StructuralSystemsPage() {
 
     <section className="system-hub-list section"><div className="shell">
       {primaryStructuralSystems.map((system, index) => <article key={system.id} className="system-hub-card">
-        <Link className="system-hub-card-image" href={`/yapi-sistemleri/${system.slug}`}><img src={system.image} alt={system.imageAlt}/><span>{String(index + 1).padStart(2, "0")}</span></Link>
+        <Link className="system-hub-card-image" href={`/yapi-sistemleri/${system.slug}`}><ContentImage src={system.image} alt={system.imageAlt}/><span>{String(index + 1).padStart(2, "0")}</span></Link>
         <div>
           <p className="eyebrow">{system.eyebrow}</p>
           <h2>{system.name}</h2>

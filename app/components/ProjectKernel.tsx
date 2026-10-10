@@ -709,6 +709,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       skipNextPersistenceRef.current = false;
       return;
     }
+    let cancelled = false;
     try {
       // Persist in the same committed effect. A route change must not be able
       // to cancel a queued timer and leave the next screen without the active project.
@@ -718,20 +719,28 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       } catch {
         // Same-tab recovery is optional when session storage is unavailable.
       }
-      if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
-        skipNextPersistenceRef.current = true;
-        setProject(result.payload);
-      }
-      setPersistence({
-        state: result.reconciled ? "recovered" : "device-saved",
-        integrity: "verified",
-        lastSavedAt: result.savedAt,
-        backupAvailable: result.backupAvailable,
-        cloud: "not-configured",
+      // Disk is written synchronously before navigation. Publish its readback
+      // after this commit; discard a stale readback if the project changed.
+      queueMicrotask(() => {
+        if (cancelled) return;
+        if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
+          skipNextPersistenceRef.current = true;
+          setProject(result.payload);
+        }
+        setPersistence({
+          state: result.reconciled ? "recovered" : "device-saved",
+          integrity: "verified",
+          lastSavedAt: result.savedAt,
+          backupAvailable: result.backupAvailable,
+          cloud: "not-configured",
+        });
       });
     } catch {
-      setPersistence((current) => ({ ...current, state: "unavailable" }));
+      queueMicrotask(() => {
+        if (!cancelled) setPersistence((current) => ({ ...current, state: "unavailable" }));
+      });
     }
+    return () => { cancelled = true; };
   }, [hydrated, project]);
 
   useEffect(() => {

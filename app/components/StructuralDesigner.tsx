@@ -74,7 +74,11 @@ function StructuralFallback({ input }: { input: StructuralConceptInput }) {
 
 function NumericField({ label, value, min, max, step, unit, onChange }: { label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (value: number) => void }) {
   const [draft, setDraft] = useState(String(value));
-  useEffect(() => { setDraft(String(value)); }, [value]);
+  const [draftSource, setDraftSource] = useState(value);
+  if (draftSource !== value) {
+    setDraftSource(value);
+    setDraft(String(value));
+  }
   const commit = () => {
     if (!draft.trim()) { setDraft(String(value)); return; }
     const parsed = Number(draft);
@@ -537,7 +541,7 @@ export function StructuralDesigner({ home = false, compactKernel = false }: Prop
     setModelHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, importUpstream, project.modules]);
+  }, [hydrated, importUpstream, project.id, project.modules]);
 
   const activateAlternative = (alternative: (typeof alternatives)[number]) => {
     setSystem(alternative.system);

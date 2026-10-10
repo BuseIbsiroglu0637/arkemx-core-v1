@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { assessLandCandidate, LAND_NEEDS, LAND_USES, landCriteriaKey, normalizeLandCandidate, object, parseLandCriteria, readLandResearch, readLandSourceStatus, type LandSourceStatus, type LandCandidate, type LandCriteria, type LandResearch, type LandSearchResponse } from "../lib/land-research";
 import { DEFAULT_LAND_AREA_SIZING, estimateMinimumLandArea, type LandAreaSizing } from "../lib/land-area-sizing";
 import { useProjectKernel } from "./ProjectKernel";
@@ -40,13 +40,14 @@ function LandResearchWorkspace({ name, targetArea, floors, initial, saved, onSav
   const selectedAssessment = selected ? assessLandCandidate(selected, criteria) : null;
   const canInspect = Boolean(selected && selectedAssessment?.mismatch.length === 0);
   const shortlisted = useMemo(() => new Set(shortlist.map(c => c.id)), [shortlist]);
+  const cancelPendingSearch = useEffectEvent(() => { controller.current?.abort(); sequence.current++; });
   useEffect(() => {
     const abort = new AbortController();
     fetch("/api/land-candidates", { cache: "no-store", signal: abort.signal }).then(async response => {
       if (!response.ok) throw Error();
       const data = object(await response.json()); setConnection(data.ready === true ? "ready" : "missing"); setBrowserMode(data.mode === "local-browser"); setBrowserProvider(typeof data.provider === "string" ? data.provider : "Tarayıcı araştırması");
     }).catch(() => { if (!abort.signal.aborted) setConnection("error"); });
-    return () => { abort.abort(); controller.current?.abort(); sequence.current++; };
+    return () => { abort.abort(); cancelPendingSearch(); };
   }, []);
   function persist(next: { criteria?: LandCriteria; shortlist?: LandCandidate[]; selectedId?: string | null; searchedAt?: string } = {}) {
     onSave({ schema: "ARKEM-LAND-RESEARCH/1.0", areaSizing, criteria: next.criteria ?? criteria,

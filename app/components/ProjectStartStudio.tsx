@@ -287,12 +287,12 @@ export function ProjectStartStudio({
   useEffect(() => {
     if (!hydrated || summaryMode || newProjectMode || !hasActiveProject || activeBriefLoaded || creatingNewProject) return;
     const storedIntake = intakeFromProjectModule(project.modules["decision-assistant"]);
-    if (!storedIntake) {
-      setDraftReady(true);
-      setActiveBriefLoaded(true);
-      return;
-    }
     const timer = window.setTimeout(() => {
+      if (!storedIntake) {
+        setDraftReady(true);
+        setActiveBriefLoaded(true);
+        return;
+      }
       setIntake(storedIntake);
       setNumericDrafts({
         targetArea: String(storedIntake.targetArea),
