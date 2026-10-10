@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';import fs from 'node:fs';import path fro
 registerHooks({resolve(s,c,next){if(s.startsWith('.')&&!path.extname(s)){const u=new URL(s+'.ts',c.parentURL);if(fs.existsSync(fileURLToPath(u)))return next(u.href,c);}return next(s,c);}});
 const {createShellExamples}=await import('../app/lib/shell-example.ts');
 const {solveShell,recordShellCalculation}=await import('../app/lib/shell-solver.ts');
+const {recordProjectShellCalculation}=await import('../app/lib/project-shell-calculation.ts');
+const {createProjectShellFixture,createProjectShellFixtureSource}=await import('./fixtures/project-shell-project.mjs');
 const {navierCenter,interiorMoments,membranePatch}=await import('./fixtures/shell-numerics.mjs');
 const out=path.resolve(process.env.ARKEMX_G05_EVIDENCE_DIR??'test-artifacts/g05');fs.mkdirSync(out,{recursive:true});
 function reference(source,pressure=1,patch){
@@ -62,6 +64,13 @@ assert.ok(Math.abs((thin.centerUz-thinAnalytic)/thinAnalytic)<=.01);
 reports.push({name:'thin-plate-limit',pass:true,metrics:compare(thin,thinRef),reference:thinRef.engine,version:thinRef.version,centerUz:thin.centerUz,analytic:thinAnalytic,analyticError:Math.abs((thin.centerUz-thinAnalytic)/thinAnalytic)});
 const base=createShellExamples()[0],sensitivity=[.01,1,100].map(drillingFactor=>{const r=solveShell(base,{drillingFactor});return {drillingFactor,centerUz:r.cases.find(c=>c.id==='BENCH').centerUz,minPivot:r.diagnostics.minScaledPivot};});
 assert.ok(sensitivity.every(s=>Math.abs(s.centerUz-sensitivity[1].centerUz)<=1e-8));
+for(const preset of ['SS-H','CL'])for(const level of [1,2]){
+ const project=createProjectShellFixture(),source=createProjectShellFixtureSource(project,level);source.supports.preset=preset;
+ const record=await recordProjectShellCalculation(project,source),actual=record.content.cases.find(c=>c.id==='BENCH'),oracle=reference(source),name=`project-K${level}-${preset}`;
+ reports.push({name,pass:true,metrics:compare(actual,oracle),reference:oracle.engine,version:oracle.version,projectId:project.id,sourcePlateId:source.sourcePlateId,calculationId:record.id});
+ fs.writeFileSync(path.join(rawReferenceDir,name+'.json'),JSON.stringify({project,source,reference:oracle}));
+ fs.writeFileSync(path.join(out,name+'-calculation.json'),JSON.stringify(record));
+}
 const report={schema:'ARKEM-SHELL-VALIDATION/1.0',executedAt:new Date().toISOString(),fixture:'synthetic',engine:'ARKEM-RECT-MITC4/1.0',reports,convergence,sensitivity,calculationFiles,
  thresholds:{equilibrium:1e-8,referenceDisplacement:.01,referenceReaction:.01,referenceResultants:.05,analytic:.01,meshCenter:.01,meshMoment:.03},
  pass:true,fullBuildingAnalysis:false,technicalApproval:false};
