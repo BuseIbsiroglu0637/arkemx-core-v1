@@ -635,6 +635,10 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
           : (blockedBy.length ? 0 : 20);
     const worked = active && (definition.id === "engineering-coordination"
       ? Object.keys(record(moduleData.result)).length > 0
+      : definition.id === "system-comparison"
+        ? Array.isArray(moduleData.ranking) && moduleData.ranking.length > 0
+        : definition.id === "structural-concept"
+          ? Object.keys(record(moduleData.result)).length > 0 || Object.keys(record(moduleData.structuralStudio)).length > 0
       : definition.id === "project-os"
         ? moduleData.trackingDataStatus === "project-record"
         : active);

@@ -54,3 +54,23 @@ test('worked coordination and tracking are visible despite upstream gates, seede
  const worked=derive(thread);assert.equal(worked.workingIndex,5);assert.equal(worked.achieved[4],true);assert.equal(worked.achieved[5],true);assert.equal(worked.completed[4],false);assert.equal(worked.completed[5],false);
  thread.nodes[1].worked=false;thread.nodes[2].worked=false;assert.equal(derive(thread).workingIndex,1);
 });
+
+test('system and structural input handoffs do not count as work, real results do',()=>{
+ const seeded={'system-comparison':{input:{area:800}},'structural-concept':{input:{width:20},result:null,structuralStudio:null}};
+ const worked=(m,id)=>deriveProjectThread(m).nodes.find(n=>n.id===id).worked;
+ assert.equal(worked(seeded,'system-comparison'),false);assert.equal(worked(seeded,'structural-concept'),false);
+ seeded['system-comparison'].ranking=[{id:'steel',score:80}];assert.equal(worked(seeded,'system-comparison'),true);
+ seeded['structural-concept'].result={totalArea:800};assert.equal(worked(seeded,'structural-concept'),true);
+});
+
+test('generated draft refresh preserves manual objects, room edits, grid edits and legacy plans',async()=>{
+ const {canRefreshGeneratedPlan,generatedPlanGeometry}=await import('../app/lib/program-plan-refresh.ts');
+ const p={elements:[{id:'room',x:1,sourceUnitArea:38}],floorCount:2,baysX:5,baysY:3,spanX:5,spanY:5,floorPlates:[{id:'plate',width:25,depth:15}]};
+ assert.equal(canRefreshGeneratedPlan(p),false);
+ p.programContext={generatedPlanSnapshot:{elements:structuredClone(p.elements),geometry:structuredClone(generatedPlanGeometry(p))}};
+ assert.equal(canRefreshGeneratedPlan(p),true);
+ p.elements[0].x=2;assert.equal(canRefreshGeneratedPlan(p),false);p.elements[0].x=1;
+ p.baysX=6;assert.equal(canRefreshGeneratedPlan(p),false);p.baysX=5;
+ p.floorPlates[0].width=30;assert.equal(canRefreshGeneratedPlan(p),false);p.floorPlates[0].width=25;
+ p.elements.push({id:'manual-wall'});assert.equal(canRefreshGeneratedPlan(p),false);
+});

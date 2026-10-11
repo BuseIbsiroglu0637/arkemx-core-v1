@@ -75,9 +75,6 @@ export function SimpleProjectCenter() {
     || Boolean(planEditor?.floorCount && planEditor.floorCount > 0)
   ) workedJourneyIndices.add(2);
 
-  const systemComparison = project.modules["system-comparison"] as { ranking?: unknown[] } | undefined;
-  if (Boolean(systemComparison?.ranking?.length) || project.modules["structural-concept"]) workedJourneyIndices.add(3);
-
   const currentJourneyStep = PROJECT_JOURNEY[workingJourneyIndex];
   const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
   const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);

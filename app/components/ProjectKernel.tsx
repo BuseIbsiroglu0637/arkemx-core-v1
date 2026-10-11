@@ -17,6 +17,7 @@ import { deriveProjectThread, type ProjectThread, type ProjectModuleKey } from "
 import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
 import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
 import { reconcileFloorPlateIds } from "../lib/floor-plate-identity";
+import { canRefreshGeneratedPlan, generatedPlanGeometry } from "../lib/program-plan-refresh";
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
 import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
@@ -157,7 +158,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
       return Boolean(node("architectural-program")?.active || node("plan-editor")?.active);
     }
     if (step.short === "Sistem") {
-      return Boolean(node("system-comparison")?.active || node("structural-concept")?.active);
+      return Boolean(node("system-comparison")?.worked || node("structural-concept")?.worked);
     }
     if (step.short === "Koordinasyon") {
       return Boolean(node("engineering-coordination")?.worked);
@@ -186,7 +187,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
     Boolean(node("architectural-program")?.milestoneComplete || node("plan-editor")?.active),
     // Structural predesign still belongs to the System stage. Merely seeded
     // downstream modules must not pull the visible journey forward.
-    Boolean(node("system-comparison")?.milestoneComplete || node("structural-concept")?.active),
+    Boolean(node("system-comparison")?.worked || node("structural-concept")?.worked),
     Boolean(node("engineering-coordination")?.worked),
     Boolean(node("project-os")?.worked),
     Boolean(node("digital-delivery-scope")?.milestoneComplete || node("model-library-review")?.milestoneComplete),
@@ -415,7 +416,11 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const baysX = Math.max(2, Math.min(16, Math.round(plateWidth / 5)));
       const baysY = Math.max(2, Math.min(16, Math.round(plateDepth / 5)));
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
-      const generatedElements = existingElements.length
+      const previousContext = record(target.programContext);
+      // Only regenerate an untouched generated draft. Legacy and edited plans
+      // require the editor's explicit rebuild action instead of losing work.
+      const regenerateDraft = canRefreshGeneratedPlan(target);
+      const generatedElements = !regenerateDraft
         ? existingElements
         : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY, relationships, floorPlates);
       modules["plan-editor"] = {
@@ -428,16 +433,21 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
         spanY: Number((plateDepth / baysY).toFixed(3)),
         floorPlates,
         elements: generatedElements,
+        metrics: regenerateDraft ? undefined : target.metrics,
         programContext: {
           spaces,
           relationships: architecture.relationships,
           architecturalScheme: architecture.architecturalScheme,
           checks: architecture.checks,
           siteContext: architectureInput.siteContext,
-          generatedElementCount: existingElements.length ? 0 : generatedElements.length,
+          generatedElementCount: regenerateDraft ? generatedElements.length : 0,
+          generatedPlanSnapshot: regenerateDraft ? { elements: generatedElements, geometry: generatedPlanGeometry({
+            floorCount: floors, baysX, baysY, spanX: Number((plateWidth / baysX).toFixed(3)),
+            spanY: Number((plateDepth / baysY).toFixed(3)), floorPlates,
+          }) } : previousContext.generatedPlanSnapshot,
         },
         handoff: { id: handoffId, source: "architectural-program", target: "plan-editor", synchronizedAt, payload: ["mahal listesi", "zonlar", "komşuluk", "dolaşım", "çekirdek", "günışığı", "kaçış", "plaka", "kat", "aks başlangıcı"], state: "synchronized" },
-        status: existingElements.length ? "Mimari program mevcut plan modeline bağlandı" : "Mimari programdan düzenlenebilir başlangıç planı üretildi",
+        status: !regenerateDraft ? "Mimari program mevcut plan modeline bağlandı; mahal eşleşmesi editörde doğrulanmalı" : "Mimari programdan düzenlenebilir başlangıç planı üretildi",
       };
       if (modules["system-comparison"]) {
         const comparison = record(modules["system-comparison"]);
