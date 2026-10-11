@@ -46,7 +46,7 @@ export function validateFrameModel(model: FrameModel) {
   if (model.nodes.some(n=>!reached.has(n.id))) throw Error("Mesnete ulaşmayan eleman/yük yolu var.");
 }
 
-function element(model: FrameModel, member: FrameMember) {
+export function frameElement(model: FrameModel, member: FrameMember) {
   const a=model.nodes.find(n=>n.id===member.start)!,b=model.nodes.find(n=>n.id===member.end)!,s=model.sections.find(s=>s.id===member.sectionId)!,m=model.materials.find(m=>m.id===member.materialId)!;
   const vector=[b.x-a.x,b.y-a.y,b.z-a.z],L=Math.hypot(...vector);
   if(!Number.isFinite(L)||L <= .001) throw Error(`${member.id}: eleman boyu 1 mm’den büyük olmalı.`);
@@ -64,6 +64,11 @@ function element(model: FrameModel, member: FrameMember) {
   if(global.some(r=>r.some(v=>!Number.isFinite(v))))throw Error("Eleman rijitliği sonlu değil.");
   const dofs=[member.start,member.end].flatMap(id=>{const n=model.nodes.findIndex(n=>n.id===id);return Array.from({length:6},(_,i)=>6*n+i);});
   return {member,L,R,T,k,global,dofs};
+}
+
+export function frameConsistentUniformLoad(length: number, values: [number, number, number]) {
+  const [qx,qy,qz]=values,L=length;
+  return [qx*L/2,qy*L/2,qz*L/2,0,-qz*L*L/12,qy*L*L/12,qx*L/2,qy*L/2,qz*L/2,0,qz*L*L/12,-qy*L*L/12];
 }
 
 // Symmetric diagonal scaling and Cholesky: reject mechanisms/near singularity.
@@ -84,7 +89,7 @@ function factor(K:number[][],free:number[]) {
 }
 export function solveLinearFrame(model: FrameModel) {
   validateFrameModel(model);
-  const elements=model.members.map(m=>element(model,m)),size=6*model.nodes.length,K=matrix(size);
+  const elements=model.members.map(m=>frameElement(model,m)),size=6*model.nodes.length,K=matrix(size);
   for(const e of elements)for(let i=0;i<12;i++)for(let j=0;j<12;j++)K[e.dofs[i]][e.dofs[j]]+=e.global[i][j];
   const fixed=new Set(model.supports.flatMap(s=>s.fixed.flatMap((v,i)=>v?[model.nodes.findIndex(n=>n.id===s.nodeId)*6+i]:[]))),free=Array.from({length:size},(_,i)=>i).filter(i=>!fixed.has(i));
   if(!free.length)throw Error("Modelde serbest hareket yok; kısıtlar gözden geçirilmeli.");
@@ -95,10 +100,9 @@ export function solveLinearFrame(model: FrameModel) {
     const equivalent = new Map<string, number[]>();
     for (const load of c.memberLoads ?? []) {
       const e = elements.find(e=>e.member.id===load.memberId)!;
-      const [qx,qy,qz]=load.values,L=e.L;
       // Consistent nodal loads from the Euler–Bernoulli shape functions.
       // End moments retain bending from a distributed load; point-load lumping does not.
-      const local=[qx*L/2,qy*L/2,qz*L/2,0,-qz*L*L/12,qy*L*L/12,qx*L/2,qy*L/2,qz*L/2,0,qz*L*L/12,-qy*L*L/12];
+      const local=frameConsistentUniformLoad(e.L,load.values);
       equivalent.set(load.memberId,local);
       for(let i=0;i<12;i++) F[e.dofs[i]]+=e.T.reduce((sum,row,j)=>sum+row[i]*local[j],0);
     }
@@ -122,7 +126,7 @@ export function frameSelfWeightLoads(model: FrameModel): FrameUniformLoad[] {
   return model.members.map(member=>{
     const material=model.materials.find(m=>m.id===member.materialId);
     if(!material||!positive(material.unitWeight))throw Error(`${member.materialId}: öz ağırlık için açık kN/m³ birim ağırlığı gerekiyor.`);
-    const e=element(model,member),section=model.sections.find(s=>s.id===member.sectionId)!;
+    const e=frameElement(model,member),section=model.sections.find(s=>s.id===member.sectionId)!;
     const gravity=[0,0,-material.unitWeight!*section.A];
     return {memberId:member.id,values:e.R.map(axis=>dot(axis,gravity)) as [number,number,number]};
   });

@@ -6,7 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const suites = ['g05-reload-smoke', 'g05-review-browser', 'ui-contracts-browser', 'b04-traceability-browser', 'b06-floor-study-browser', 'b06-coordination-browser', 'b06-frame-browser', 'b06-example-browser', 'architecture-restore-browser', 'shell-worker-browser', 'shell-example-browser', 'project-shell-source-browser', 'project-shell-calculation-browser', 'project-shell-storage-browser', 'project-shell-documents-browser', 'land-research-smoke'];
+const suites = ['g05-reload-smoke', 'g05-review-browser', 'ui-contracts-browser', 'b04-traceability-browser', 'b06-floor-study-browser', 'b06-coordination-browser', 'b06-frame-browser', 'b06-example-browser', 'architecture-restore-browser', 'shell-worker-browser', 'shell-example-browser', 'coupled-example-browser', 'project-shell-source-browser', 'project-shell-calculation-browser', 'project-shell-storage-browser', 'project-shell-documents-browser', 'land-research-smoke'];
 const selection = process.argv.find(arg => arg.startsWith('--suite='))?.slice('--suite='.length);
 if (selection && !suites.includes(selection)) throw new Error('Unknown G05 browser suite');
 const port = Number(process.env.ARKEMX_E2E_PORT ?? 5187);
