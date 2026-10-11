@@ -15,6 +15,11 @@ const methods: { id: MethodId; title: string; copy: string; strengths: string[] 
 const gateLabels = ["Arşiv proje + güncel rölöve", "Malzeme / donatı doğrulaması", "Tehlikeli madde envanteri", "Aktif altyapı izolasyonu", "Komşu yapı durum tespiti", "Zemin / bodrum / temel bilgisi", "İzin ve kurum ön görüşmesi", "Yetkili yöntem + izleme planı"];
 
 export function DemolitionDecisionStudio() {
+  const { project } = useProjectKernel();
+  return <DemolitionDecisionStudioSession key={project.id} />;
+}
+
+function DemolitionDecisionStudioSession() {
   const { patchModule } = useProjectKernel();
   const [height, setHeight] = useState(38);
   const [floors, setFloors] = useState(11);

@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
-import { createProjectOperatingModel, restoreOperatingWorkStates, operatingWorkStateKey, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
+import { createProjectOperatingModel, operatingHealthGates, restoreOperatingWorkStates, operatingWorkStateKey, type ProjectOperatingWorkStatus } from "../lib/project-os-2";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { restoreModuleValue, useModuleRestore } from "./useModuleRestore";
+
+import { restoreProjectTracking } from "../lib/project-tracking";
 
 type Module = "overview" | "work" | "program" | "documents" | "decisions" | "revisions" | "cost" | "quality" | "supply" | "handover";
 type Status = "Onaylı" | "İncelemede" | "Revizyon";
@@ -68,25 +70,34 @@ function StatusPill({ value }: { value: string }) {
   return <span className={`os-status ${tone}`}>{value}</span>;
 }
 
-export function ProjectOperatingSystem({ compact = false }: { compact?: boolean }) {
+export function ProjectOperatingSystem(props: { compact?: boolean; demo?: boolean } = {}) {
+  const { project } = useProjectKernel();
+  return <ProjectOperatingSystemSession key={project.id} {...props} />;
+}
+
+function ProjectOperatingSystemSession({ compact = false, demo = false }: { compact?: boolean; demo?: boolean }) {
   const { patchModule, project, thread } = useProjectKernel();
   const [active, setActive] = useState<Module>("overview");
-  const [week, setWeek] = useState(17);
-  const [documents, setDocuments] = useState(initialDocuments);
+  const [week, setWeek] = useState(demo ? 17 : 0);
+  const [documents, setDocuments] = useState(demo ? initialDocuments : []);
   const [docFilter, setDocFilter] = useState<"Tümü" | Status>("Tümü");
-  const [decisions, setDecisions] = useState(initialDecisions);
-  const [qualityOpen, setQualityOpen] = useState([true, true, true, false]);
-  const [handover, setHandover] = useState([true, true, true, false, false, false]);
+  const [decisions, setDecisions] = useState(demo ? initialDecisions : []);
+  const [qualityOpen, setQualityOpen] = useState<boolean[]>(demo ? [true, true, true, false] : []);
+  const [handover, setHandover] = useState<boolean[]>(demo ? [true, true, true, false, false, false] : Array(6).fill(false));
   const [copilot, setCopilot] = useState("risk");
   const [workStates, setWorkStates] = useState<Record<string, ProjectOperatingWorkStatus>>({});
   const [savedWorkItems, setSavedWorkItems] = useState<unknown[]>([]);
   const [operatingGeneratedAt] = useState(() => project.updatedAt);
+  const [legacyTrackingSnapshot, setLegacyTrackingSnapshot] = useState<unknown>(null);
   const draftReady = useModuleRestore("project-os", (saved) => {
-    setWeek(restoreModuleValue(saved.week, week));
-    setDocuments(restoreModuleValue(saved.documents, documents));
-    setDecisions(restoreModuleValue(saved.decisions, decisions));
-    setQualityOpen(restoreModuleValue(saved.qualityOpen, qualityOpen));
-    setHandover(restoreModuleValue(saved.handover, handover));
+    if (demo) return;
+    const tracking = restoreProjectTracking(saved);
+    setWeek(tracking.week);
+    setDocuments(restoreModuleValue(tracking.documents, documents));
+    setDecisions(restoreModuleValue(tracking.decisions, decisions));
+    setQualityOpen(restoreModuleValue(tracking.qualityOpen, qualityOpen));
+    setHandover(tracking.handover);
+    setLegacyTrackingSnapshot(tracking.legacyTrackingSnapshot);
     setSavedWorkItems(Array.isArray(saved.workItems) ? saved.workItems : []);
     setWorkStates({});
   });
@@ -117,11 +128,13 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
   const filteredDocuments = docFilter === "Tümü" ? documents : documents.filter((item) => item.status === docFilter);
   const completion = Math.round((handover.filter(Boolean).length / handover.length) * 100);
   const projectHealth = useMemo(() => {
+    if (!demo) return null;
     const openDecisions = decisions.filter((item) => item.state !== "Yanıtlandı").length;
     const openQuality = qualityOpen.filter(Boolean).length;
     return Math.max(45, 92 - openDecisions * 3 - openQuality * 2 - thread.metrics.critical * 4 - thread.metrics.review);
-  }, [decisions, qualityOpen, thread.metrics.critical, thread.metrics.review]);
+  }, [demo, decisions, qualityOpen, thread.metrics.critical, thread.metrics.review]);
   const earnedValue = useMemo(() => {
+    if (!demo) return null;
     const budget = 48.6;
     const planned = 48;
     const actual = 43;
@@ -131,25 +144,27 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     const spi = earned / plannedValue;
     const cpi = earned / actualCost;
     return { budget, planned, actual, actualCost, earned, spi, cpi, eac: budget / cpi };
-  }, []);
+  }, [demo]);
 
-  useEffect(() => { if (!draftReady) return;
+  const currentOperatingModel = { ...operatingModel, workItems, healthGates: operatingHealthGates(workItems, operatingModel.source.coordinationConnected) };
+  useEffect(() => { if (!draftReady || demo) return;
     if (operatingSource.error) return;
-    patchModule("project-os", { schema: operatingModel.schema, operatingModel, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
-  }, [draftReady, decisions, documents, earnedValue, handover, operatingModel, operatingSource.error, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
+    patchModule("project-os", { schema: operatingModel.schema, operatingModel: { ...operatingModel, workItems, healthGates: operatingHealthGates(workItems, operatingModel.source.coordinationConnected) }, trackingDataStatus: "project-record", legacyTrackingSnapshot, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
+  }, [draftReady, demo, legacyTrackingSnapshot, decisions, documents, earnedValue, handover, operatingModel, operatingSource.error, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
 
   const approveDocument = (code: string) => setDocuments((items) => items.map((item) => item.code === code ? { ...item, status: "Onaylı" } : item));
   const closeDecision = (id: string) => setDecisions((items) => items.map((item) => item.id === id ? { ...item, state: "Yanıtlandı", due: "Kapandı" } : item));
-  const exportRegister = () => downloadTextFile("arkem-project-os-register.json", JSON.stringify({ ...operatingModel, workItems, week, documents, decisions, supplyItems, qualityOpen, handover, earnedValue }, null, 2), "application/json");
+  const exportRegister = () => downloadTextFile("arkem-project-os-register.json", JSON.stringify({ ...currentOperatingModel, trackingDataStatus: demo ? "demo" : "project-record", week, documents, decisions, supplyItems: demo ? supplyItems : [], qualityOpen, handover, earnedValue }, null, 2), "application/json");
 
-  if (compact) {
+  if (!demo) {
     const openWork = workItems.filter((item) => item.status !== "closed");
     const openDecisions = decisions.filter((item) => item.state !== "Yanıtlandı");
     const currentDocs = documents.slice(0, 5);
 
     return <section className="arx-tracking-tool" data-testid="project-operating-system">
-      {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Aşağıdaki görevler örnek veridir; kaynak kaydı değiştirilmedi.</p> : null}
+      {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Aşağıdaki kaynak verisi eksiktir; kaynak kaydı değiştirilmedi.</p> : null}
       <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
+      {legacyTrackingSnapshot ? <details data-testid="legacy-tracking"><summary>Önceki sürümün takip verisi — doğrulanacak</summary><p>Örnek verilerle karışmış eski kayıt ayrı saklandı; güncel ilerleme veya onay olarak kullanılmıyor.</p><button type="button" onClick={() => downloadTextFile("legacy-project-tracking.json", JSON.stringify(legacyTrackingSnapshot, null, 2), "application/json")}>Eski takip kaydını indir</button></details> : null}
       <div className="arx-track-grid">
         <section className="arx-track-panel" aria-labelledby="arx-track-work-title">
           <header className="arx-track-head">
@@ -158,10 +173,10 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
           </header>
           {issueGate?.blocked ? <p className="arx-track-warning" data-testid="project-os-issue-gate">{issueGate.activeCriticalClashes ?? 0} aktif kritik BIM çakışması nedeniyle 4B/5B onay kapısı blokeli. İnceleme işareti teknik çözüm değildir.</p> : null}
           <div className="arx-track-kpis">
-            <article><span>PROJE SAĞLIĞI</span><b>%{projectHealth}</b><small>karar ve saha verisine göre</small></article>
+            <article><span>PROJE SAĞLIĞI</span><b>—</b><small>Gerçek ilerleme verisi bekleniyor</small></article>
             <article><span>AÇIK İŞ</span><b>{openWork.length}</b><small>{workItems.filter((item) => item.status === "blocked").length} bloke</small></article>
             <article><span>AÇIK KARAR</span><b>{openDecisions.length}</b><small>RFI ve karar kaydı</small></article>
-            <article><span>SPI / CPI</span><b className={earnedValue.spi < .95 ? "risk" : ""}>{earnedValue.spi.toFixed(2)} / {earnedValue.cpi.toFixed(2)}</b><small>kavramsal program / maliyet</small></article>
+            <article><span>SPI / CPI</span><b>— / —</b><small>Onaylı program ve maliyet verisi yok</small></article>
           </div>
           <div className="arx-track-list">
             {openWork.slice(0, 5).map((item) => <article className={`arx-track-item ${item.status === "blocked" ? "blocked" : ""}`} key={item.id}>
@@ -197,9 +212,9 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
             </div>
           </details>
           <details className="arx-track-detail">
-            <summary>4B program özeti · hafta {week}</summary>
-            <div className="arx-track-program">
-              {schedule.map((item) => <article key={item.name}>
+            <summary>4B program özeti · veri bekleniyor</summary>
+            <div className="arx-track-program"><p>Onaylı iş programı henüz bağlanmadı.</p>
+              {[].map((item: typeof schedule[number]) => <article key={item.name}>
                 <span>{item.name}</span>
                 <i aria-hidden="true"><b style={{ width: item.progress + "%" }} /></i>
                 <small>%{item.progress} · {item.owner}</small>
@@ -215,10 +230,10 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
               <div><dt>Bağlı proje verisi</dt><dd>{thread.metrics.activeCount} / {thread.metrics.totalCount}</dd></div>
               <div><dt>Kritik konu</dt><dd>{thread.metrics.critical}</dd></div>
               <div><dt>İnceleme konusu</dt><dd>{thread.metrics.review}</dd></div>
-              <div><dt>Fiziksel ilerleme</dt><dd>%43</dd></div>
-              <div><dt>Hafta</dt><dd>{week} / 36</dd></div>
-              <div><dt>Program göstergesi</dt><dd>SPI {earnedValue.spi.toFixed(2)}</dd></div>
-              <div><dt>Maliyet göstergesi</dt><dd>CPI {earnedValue.cpi.toFixed(2)}</dd></div>
+              <div><dt>Fiziksel ilerleme</dt><dd>Veri yok</dd></div>
+              <div><dt>Hafta</dt><dd>{week > 0 ? week : "Veri yok"}</dd></div>
+              <div><dt>Program göstergesi</dt><dd>Veri yok</dd></div>
+              <div><dt>Maliyet göstergesi</dt><dd>Veri yok</dd></div>
             </dl>
           </section>
           <section className="arx-track-panel arx-track-handover">
@@ -238,9 +253,11 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
     </section>;
   }
 
+  if (!earnedValue) return null;
   return <section className={`project-os-app${compact ? " compact" : ""}`}>
-    {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Görevler örnek veridir; kaynak kaydı değiştirilmedi.</p> : null}
-    <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="V116 · kaynak ve sorumlu izli" />
+    {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Kaynak verisi eksiktir; kaynak kaydı değiştirilmedi.</p> : null}
+    <p role="status">Örnek gösterim — bu veriler aktif proje kaydına yazılmaz.</p>
+    <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Örnek gösterim" />
     <header className="project-os-topbar">
       <div className="os-project-id"><span>V116 / PROJECT OS 2.0</span><b>Endüstriyel Yapı · Dijital Proje Merkezi</b></div>
       <div className="os-live" data-issue-gate={issueGate?.blocked ? "blocked" : "conceptual"}><i></i><span>{issueGate?.blocked ? "KRİTİK BIM BLOKAJI" : operatingModel.source.coordinationConnected ? "V115 BAĞLI" : "ÖRNEK VERİ"}</span><b>{issueGate?.blocked ? `${issueGate.activeCriticalClashes ?? 0} kritik çakışma · 4B/5B onay kapısı kapalı` : operatingModel.source.coordinationConnected ? "Koordinasyon issue’ları aktarıldı" : "Kaynak bağlantısı bekleniyor"}</b></div>
@@ -292,8 +309,8 @@ export function ProjectOperatingSystem({ compact = false }: { compact?: boolean 
         </div>}
 
         {active === "revisions" && <div className="v116-revisions">
-          <div className="os-tool-row"><div><span>Revizyon kaydı</span><b>Güncel, eski ve yerini alan bilgi açıkça ayrılır</b></div><span className="os-capture-time">CDE DURUM KODU + KAYNAK</span></div>
-          <div className="v116-revision-grid">{operatingModel.revisions.map((item)=><article key={`${item.code}-${item.title}`} className={item.status}><span>{item.status === "current" ? "GÜNCEL" : "ESKİ / KULLANMAYIN"}</span><strong>{item.code}</strong><div><h4>{item.title}</h4><p>{item.source}</p></div><b>{item.status === "current" ? "Yayımlanmış çalışma kaydı" : `${item.supersededBy} ile değiştirildi`}</b></article>)}</div>
+          <div className="os-tool-row"><div><span>Revizyon kaydı</span><b>Yalnız kayıtlı revizyonlar gösterilir</b></div><span className="os-capture-time">CDE DURUM KODU + KAYNAK</span></div>
+          <div className="v116-revision-grid">{operatingModel.revisions.map((item)=><article key={`${item.code}-${item.title}`} className={item.status}><span>{item.status === "current" ? "GÜNCEL" : "ESKİ / KULLANMAYIN"}</span><strong>{item.code}</strong><div><h4>{item.title}</h4><p>{item.source}</p></div><b>{item.status === "current" ? "Yayımlanmış çalışma kaydı" : "Revizyon geçmişi kayıtlı değil"}</b></article>)}</div>
           <div className="v116-source-note"><b>Yetki sınırı</b><p>Bu görünüm Project Kernel içindeki proje zincirini açıklar. Sözleşmesel yayımlama, erişim yetkisi ve kalıcı belge geçmişi için kurumsal CDE yapılandırması gerekir.</p></div>
         </div>}
 

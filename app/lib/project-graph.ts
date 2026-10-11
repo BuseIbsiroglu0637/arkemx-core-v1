@@ -33,6 +33,7 @@ export type ProjectGraphNode = ProjectModuleDefinition & {
   blockedBy: ProjectModuleKey[];
   status: string;
   milestoneComplete: boolean;
+  worked?: boolean;
 };
 
 export type ProjectThreadIssue = {
@@ -217,7 +218,10 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 
   const planWidth = number(plan.baysX) * number(plan.spanX);
   const planDepth = number(plan.baysY) * number(plan.spanY);
-  const planGross = number(planMetrics.floorArea) * number(plan.floorCount);
+  const plates = Array.isArray(plan.floorPlates) ? plan.floorPlates.map(record) : [];
+  const planGross = plates.length
+    ? plates.reduce((sum, plate) => sum + number(plate.width) * number(plate.depth), 0)
+    : number(planMetrics.floorArea) * number(plan.floorCount);
   const geoGross = number(geoMetrics.gross);
   const architectureGross = number(architectureResult.grossDemand) || number(architectureInput.targetGross);
   const structuralGross = number(structureGeometry.totalArea);
@@ -292,7 +296,9 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
       plateWidth: number(architectureResult.plateWidth) || width,
       plateDepth: number(architectureResult.plateDepth) || depth,
       daylightCoverage: number(architectureResult.daylightCoverage),
-      travelDistance: number(architectureResult.travelDistance),
+      travelDistance: typeof record(record(architecture.architecturalScheme).circulation).maximumTravelDistance === "number"
+        ? number(record(record(architecture.architecturalScheme).circulation).maximumTravelDistance)
+        : number(architectureResult.travelDistance),
       targetTravel: number(architectureInput.targetTravel),
     },
     structure: {
@@ -452,6 +458,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
   if (canonical.structure.eccentricityRatio > 10 && eccentricityEvaluable) push({ id: "BIM-052", severity: "critical", discipline: "Mimari + Statik", title: "KM–KR dışmerkezlik göstergesi yüksek", evidence: `%${canonical.structure.eccentricityRatio.toFixed(1)} plan boyuna göre kavramsal gösterge · tanımlı kütle ve rijitlik noktaları`, action: "Perde/çerçeve dağılımı ile kütle yerleşimini yeniden değerlendirin.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR yerleşimini incele" });
   if (number(planMetrics.floorArea) > 0 && !eccentricityEvaluable) push({ id: "BIM-053", severity: "review", discipline: "Mimari + Statik", title: "KM–KR ön kontrolü için kaynak nesneler eksik", evidence: !rigidityBasis ? "Aktif katta kolon/perde bulunmuyor; plaka geometrik merkezi gerçek rijitlik merkezi değildir." : "Aktif katta temsilî kütle/mahal veya yük bölgeleri bulunmuyor; kütle merkezi doğrulanamadı.", action: "Aktif kat için temsilî kütle bölgelerini ve kolon/perde yerleşimini tanımlayın; kavramsal merkezi yeniden hesaplayın.", route: "/tasarim-calismalari/km-kr-kaynaklari", routeLabel: "KM/KR kaynaklarını tamamla" });
   if (canonical.architecture.travelDistance > 0 && canonical.architecture.targetTravel > 0 && canonical.architecture.travelDistance > canonical.architecture.targetTravel) push({ id: "FIR-061", severity: "review", discipline: "Mimari + Yangın", title: "Kaçış mesafesi ön göstergesi hedefi aşıyor", evidence: `${canonical.architecture.travelDistance.toFixed(1)} m gösterge / ${canonical.architecture.targetTravel.toFixed(1)} m hedef`, action: "Çekirdek, koridor ve çıkış yerleşimini yetkili yangın tasarımıyla doğrulayın.", route: "/mimari-program-studyosu" });
+  const coordinationHeight = number(record(coordination.input).floorHeight);
+  if (floorHeight > 0 && coordinationHeight > 0 && Math.abs(coordinationHeight - floorHeight) > .01) push({
+    id: "MEP-072", severity: "review", discipline: "Mimari + MEP", title: "Kat yüksekliği koordinasyon senaryosunda farklı",
+    evidence: `${floorHeight.toFixed(2)} m proje kaynağı / ${coordinationHeight.toFixed(2)} m koordinasyon girdisi`,
+    action: "Senaryo değerini proje kat yüksekliğiyle eşleştirin veya farklılık gerekçesini doğrulayın.", route: "/bim-koordinasyon",
+  });
   if (canonical.coordination.clearHeight > 0 && canonical.coordination.clearHeight < 2.4) push({ id: "MEP-071", severity: "critical", discipline: "Mimari + Statik + MEP", title: "Net tavan kotu koordinasyon hedefinin altında", evidence: `${canonical.coordination.clearHeight.toFixed(2)} m net yükseklik`, action: "Kiriş, servis zonu ve tavan paketini kesitte yeniden çözün.", route: "/muhendislik-koordinasyon" });
 
   const completedControls: CompletedControl[] = [];
@@ -621,7 +633,12 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
         : active
           ? (blockedBy.length ? 68 : 100)
           : (blockedBy.length ? 0 : 20);
-    return { ...definition, active, readiness, blockedBy, status, milestoneComplete };
+    const worked = active && (definition.id === "engineering-coordination"
+      ? Object.keys(record(moduleData.result)).length > 0
+      : definition.id === "project-os"
+        ? moduleData.trackingDataStatus === "project-record"
+        : active);
+    return { ...definition, active, readiness, blockedBy, status, milestoneComplete, worked };
   });
   const handoffDefinitions: Omit<ProjectHandoff, "state">[] = [
     { id: "H-01", source: "geo-parcel", target: "architectural-program", label: "Parsel → mimari program", payload: ["izin girdileri", "kütle", "kat", "kullanım"] },

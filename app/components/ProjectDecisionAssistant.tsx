@@ -53,6 +53,11 @@ const priorityOptions = [
 const labelOf = (options: readonly (readonly [string, string])[], value: string) => options.find(([key]) => key === value)?.[1] || "Belirtilmedi";
 
 export function ProjectDecisionAssistant() {
+  const { project } = useProjectKernel();
+  return <ProjectDecisionAssistantSession key={project.id} />;
+}
+
+function ProjectDecisionAssistantSession() {
   const { patchModule } = useProjectKernel();
   const [goal, setGoal] = useState("");
   const [stage, setStage] = useState("");

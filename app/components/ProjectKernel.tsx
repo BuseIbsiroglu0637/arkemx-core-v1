@@ -141,6 +141,7 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
         && coordinationNode?.milestoneComplete
       );
     }
+    if (step.short === "Planlama") return Boolean(thread.nodes.find(node => node.id === "project-os")?.milestoneComplete);
     return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
   });
 
@@ -159,8 +160,9 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
       return Boolean(node("system-comparison")?.active || node("structural-concept")?.active);
     }
     if (step.short === "Koordinasyon") {
-      return Boolean(node("engineering-coordination")?.milestoneComplete);
+      return Boolean(node("engineering-coordination")?.worked);
     }
+    if (step.short === "Planlama") return Boolean(node("project-os")?.worked);
     return false;
   });
 
@@ -185,8 +187,8 @@ export function deriveProjectJourneyState(thread: ProjectThread) {
     // Structural predesign still belongs to the System stage. Merely seeded
     // downstream modules must not pull the visible journey forward.
     Boolean(node("system-comparison")?.milestoneComplete || node("structural-concept")?.active),
-    Boolean(node("engineering-coordination")?.milestoneComplete),
-    Boolean(node("project-os")?.milestoneComplete),
+    Boolean(node("engineering-coordination")?.worked),
+    Boolean(node("project-os")?.worked),
     Boolean(node("digital-delivery-scope")?.milestoneComplete || node("model-library-review")?.milestoneComplete),
   ];
   const furthestWorkingIndex = workingSignals.reduce((furthest, started, index) => started ? Math.max(furthest, index) : furthest, 0);
@@ -653,8 +655,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
             ...parsed,
             name: normalizeProjectName(parsed.name || current.name),
             experience: { ...current.experience, ...record(parsed.experience) },
-            events: [...(Array.isArray(parsed.events) ? parsed.events : []), ...current.events].slice(-80),
-            modules: ensureProjectModuleStamps({ ...current.modules, ...parsed.modules }, {
+            events: (Array.isArray(parsed.events) ? parsed.events : []).slice(-80),
+            modules: ensureProjectModuleStamps(parsed.modules, {
               projectId: parsed.id,
               projectRevision: parsed.revision || "P01",
               recordedAt: parsed.updatedAt || stored.savedAt || new Date().toISOString(),
@@ -782,6 +784,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const patchModule = useCallback((key: string, moduleValue: unknown) => {
     if (!hydrated) return;
     setProject((current) => {
+      // Ignore pending writes from an editor belonging to a previous project.
+      if (current.id !== project.id) return current;
       // Opening a legacy/stale draft is not a new source observation.
       if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":"))) return current;
       const incoming = record(moduleValue);
@@ -824,7 +828,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
         events: [...current.events, event, ...handoffEvents].slice(-80),
       };
     });
-  }, [hydrated]);
+  }, [hydrated, project.id]);
   const applyHandoff = useCallback((handoffId: string) => {
     const preview = synchronizeModules(project.modules, [handoffId], project);
     if (!preview.applied.length) return false;

@@ -20,6 +20,11 @@ const priorities = {
 } as const;
 
 export function DigitalInnovationLab() {
+  const { project } = useProjectKernel();
+  return <DigitalInnovationLabSession key={project.id} />;
+}
+
+function DigitalInnovationLabSession() {
   const { patchModule, thread } = useProjectKernel();
   const [type, setType] = useState<keyof typeof systems>("sanayi");
   const [area, setArea] = useState(4200);

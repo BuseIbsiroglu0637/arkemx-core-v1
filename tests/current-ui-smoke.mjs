@@ -411,7 +411,7 @@ test("project centre separates the actual working stage from earlier incomplete 
   assert.match(kernel, /firstIncompleteIndex/);
   assert.match(kernel, /furthestWorkingIndex/);
   assert.match(kernel, /Structural predesign still belongs to the System stage/);
-  assert.match(kernel, /Boolean\(node\("engineering-coordination"\)\?\.milestoneComplete\)/);
+  assert.match(kernel, /Boolean\(node\("engineering-coordination"\)\?\.worked\)/);
   assert.match(kernel, /const achieved = rawCompleted\.map/);
   assert.match(kernel, /node\("plan-editor"\)\?\.active/);
   assert.match(kernel, /achieved,/);

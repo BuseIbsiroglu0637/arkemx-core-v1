@@ -2683,7 +2683,7 @@ test("V116 turns coordination issues into accountable project controls and resto
   assert.ok(model.workItems.every((item) => item.owner && item.dueDate && item.revision && item.source));
   assert.ok(model.healthGates.some((gate) => gate.code === "OS-116-OWNER-DUE"));
   assert.ok(model.revisions.some((item) => item.status === "current"));
-  assert.ok(model.revisions.some((item) => item.status === "obsolete"));
+  assert.equal(model.revisions.some((item) => item.status === "obsolete"), false);
   assert.equal(model.links.schedule4D.connected, true);
   assert.equal(model.links.cost5D.connected, true);
   assert.deepEqual(Object.keys(model.views), ["customer", "manager", "discipline", "field"]);

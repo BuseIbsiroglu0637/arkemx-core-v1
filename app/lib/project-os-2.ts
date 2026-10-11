@@ -106,49 +106,6 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
 
   const workItems: ProjectOperatingWorkItem[] = [
     ...clashWork,
-    {
-      id: "TASK-116-01",
-      type: "task",
-      title: "Cephe paneli teknik onay paketini tamamla",
-      owner: "Mimari Koordinatör",
-      dueDate: addDays(generatedAt, 3),
-      status: "in-review",
-      priority: "high",
-      revision,
-      source: "PKG-04 tedarik paketi",
-      disciplines: ["ARC", "PROC"],
-      scheduleImpact: "Montaj başlangıcı +4 gün riski",
-      costImpact: "Eşdeğer ürün karşılaştırması açık",
-    },
-    {
-      id: "NCR-116-02",
-      type: "ncr",
-      title: "Aks C ankraj düşeylik toleransını doğrula",
-      owner: "Saha Kalite Mühendisi",
-      dueDate: addDays(generatedAt, 1),
-      status: "open",
-      priority: "critical",
-      revision,
-      source: "360° saha kalite kaydı",
-      location: "Aks C / temel kotu",
-      disciplines: ["STR", "FIELD"],
-      scheduleImpact: "Kolon montajı öncesi kapatılmalı",
-      costImpact: "Düzeltme yöntemi bekleniyor",
-    },
-    {
-      id: "DEC-116-03",
-      type: "decision",
-      title: "Yükleme kapısı ürün ve termin kararını kilitle",
-      owner: "İşveren Temsilcisi",
-      dueDate: addDays(generatedAt, 4),
-      status: "open",
-      priority: "high",
-      revision,
-      source: "PKG-09 karar kaydı",
-      disciplines: ["CLIENT", "PROC"],
-      scheduleImpact: "Uzun terminli paket",
-      costImpact: "Teklif karşılaştırması açık",
-    },
   ];
 
   const completeOwnership = workItems.every((item) => Boolean(item.owner && item.dueDate && item.revision && item.source));
@@ -160,13 +117,11 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
     source: {
       coordinationConnected,
       coordinationSchema: coordination.schema ?? "missing",
-      dataStatus: "project-kernel-derived" as const,
+      dataStatus: coordinationConnected ? "project-kernel-derived" as const : "missing" as const,
     },
     workItems,
     revisions: [
       { code: revision, title: "Koordinasyon ve proje kontrolü güncel çalışma kaydı", status: "current" as const, source: "Project Kernel", publishedAt: generatedAt },
-      { code: "P03", title: "Önceki koordinasyon ve karar kaydı", status: "obsolete" as const, source: "CDE revizyon geçmişi", supersededBy: revision },
-      { code: "R05", title: "Çelik genel yerleşim", status: "current" as const, source: "V115 federasyon manifestosu", publishedAt: generatedAt },
     ],
     healthGates: [
       { code: "OS-116-OWNER-DUE", label: "Sorumlu ve hedef tarih", status: completeOwnership ? "passed" as const : "blocked" as const, count: workItems.length },
@@ -190,4 +145,16 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
       "Hesap bağlantısı yoksa kayıt bu cihazda tutulur; kurumsal sunucu ve yetkilendirme ayrıca yapılandırılmalıdır.",
     ],
   };
+}
+
+/** Recompute gates after restored/user work states, using the displayed rows. */
+export function operatingHealthGates(items: ProjectOperatingWorkItem[], coordinationConnected: boolean) {
+  const owned = items.every(item => Boolean(item.owner && item.dueDate && item.revision && item.source));
+  const critical = items.filter(item => item.priority === "critical" && item.status !== "closed").length;
+  return [
+    { code: "OS-116-OWNER-DUE", label: "Sorumlu ve hedef tarih", status: items.length && owned ? "passed" : "attention", count: items.length },
+    { code: "OS-116-CRITICAL", label: "Kritik açık işler", status: critical ? "attention" : "passed", count: critical },
+    { code: "OS-116-REVISION", label: "Güncel revizyon ayrımı", status: "passed", count: 1 },
+    { code: "OS-116-EVIDENCE", label: "Kaynak ve kanıt izi", status: coordinationConnected ? "passed" : "attention", count: items.filter(item => item.sourceGuid).length },
+  ];
 }

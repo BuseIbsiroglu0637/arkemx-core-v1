@@ -51,7 +51,12 @@ function formatDate(value?: string) {
   return new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
-export function SketchfabModelLibrary({ compact = false }: { compact?: boolean }) {
+export function SketchfabModelLibrary(props: Parameters<typeof SketchfabModelLibrarySession>[0] = {}) {
+  const { project } = useProjectKernel();
+  return <SketchfabModelLibrarySession key={project.id} {...props} />;
+}
+
+function SketchfabModelLibrarySession({ compact = false }: { compact?: boolean }) {
   const { patchModule } = useProjectKernel();
   const [models, setModels] = useState<SketchfabModel[]>([fallbackModel]);
   const [selectedId, setSelectedId] = useState(fallbackModel.uid);

@@ -92,7 +92,12 @@ function programUseFromValue(value: unknown): ProgramUse {
   return "industrial";
 }
 
-export function ArchitecturalProgramStudio({ simple = false, issueFocus = false }: { simple?: boolean; issueFocus?: "kaks" | "plan-sync" | false } = {}) {
+export function ArchitecturalProgramStudio(props: { simple?: boolean; issueFocus?: "kaks" | "plan-sync" | false } = {}) {
+  const { project } = useProjectKernel();
+  return <ArchitecturalProgramStudioSession key={project.id} {...props} />;
+}
+
+function ArchitecturalProgramStudioSession({ simple = false, issueFocus = false }: { simple?: boolean; issueFocus?: "kaks" | "plan-sync" | false } = {}) {
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const transferApplied = useRef(false);
   const [transferReady, setTransferReady] = useState(false);

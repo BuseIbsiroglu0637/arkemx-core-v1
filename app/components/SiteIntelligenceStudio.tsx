@@ -21,6 +21,11 @@ const systemFactors = {
 } as const;
 
 export function SiteIntelligenceStudio() {
+  const { project } = useProjectKernel();
+  return <SiteIntelligenceStudioSession key={project.id} />;
+}
+
+function SiteIntelligenceStudioSession() {
   const { patchModule } = useProjectKernel();
   const [width, setWidth] = useState(46);
   const [depth, setDepth] = useState(72);

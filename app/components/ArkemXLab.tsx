@@ -27,6 +27,11 @@ const systems: Record<System, { a1a3: number; mass: number; construction: number
 const assetFields = ["Model konumu / GUID", "Üretici ve ürün kodu", "EPD / malzeme kaydı", "Montaj ve test belgesi", "Garanti ve bakım planı", "Söküm / yeniden kullanım", "Yetkili sorumlu", "Revizyon geçmişi"];
 
 export function ArkemXLab() {
+  const { project } = useProjectKernel();
+  return <ArkemXLabSession key={project.id} />;
+}
+
+function ArkemXLabSession() {
   const { patchModule, thread } = useProjectKernel();
   const [tab, setTab] = useState<Tab>("brief");
   const [area, setArea] = useState(2400);

@@ -75,7 +75,7 @@ export function mcdaSourceMatches(
     first.usage === second.usage
     && first.floors === second.floors
     && Math.abs(first.span - second.span) <= .01
-    && Math.abs(first.area - second.area) <= .2
+    && Math.abs(first.area - second.area) <= Math.max(.2, second.area * .001)
   );
 }
 
@@ -89,6 +89,6 @@ export function mcdaInputMatchesSource(
     && mcdaUsageFromProject(input.usage) === source.usage
     && finite(input.floors) === source.floors
     && Math.abs(finite(input.span) - source.span) <= .01
-    && Math.abs(finite(input.area) - source.area) <= .2
+    && Math.abs(finite(input.area) - source.area) <= Math.max(.2, source.area * .001)
   );
 }

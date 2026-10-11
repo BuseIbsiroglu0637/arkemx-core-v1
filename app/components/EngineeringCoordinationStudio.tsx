@@ -16,7 +16,12 @@ function clamp(value: number, min: number, max: number) { return Math.min(max, M
 function record(value: unknown): UnknownRecord { return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : {}; }
 function numeric(value: unknown, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 
-export function EngineeringCoordinationStudio({ simple = false }: { simple?: boolean } = {}) {
+export function EngineeringCoordinationStudio(props: { simple?: boolean } = {}) {
+  const { project } = useProjectKernel();
+  return <EngineeringCoordinationStudioSession key={project.id} {...props} />;
+}
+
+function EngineeringCoordinationStudioSession({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [view, setView] = useState<View>("federation");

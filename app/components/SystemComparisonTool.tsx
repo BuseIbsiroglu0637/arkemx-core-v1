@@ -39,7 +39,12 @@ const formatArea = (value: number) => value.toLocaleString("tr-TR", { maximumFra
 const formatSpan = (value: number) => value.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatScore = (value: number) => value.toLocaleString("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-export function SystemComparisonTool({ simple = false }: { simple?: boolean } = {}) {
+export function SystemComparisonTool(props: Parameters<typeof SystemComparisonToolSession>[0] = {}) {
+  const { project } = useProjectKernel();
+  return <SystemComparisonToolSession key={project.id} {...props} />;
+}
+
+function SystemComparisonToolSession({ simple = false }: { simple?: boolean } = {}) {
   const transferApplied = useRef(false);
   const [transferReady, setTransferReady] = useState(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();

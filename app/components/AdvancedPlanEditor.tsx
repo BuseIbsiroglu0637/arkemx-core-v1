@@ -65,7 +65,12 @@ function splitPlanLabel(label: string) {
   return second ? [first, second] : [first];
 }
 
-export function AdvancedPlanEditor({ compactKernel = false, issueFocus = false }: { compactKernel?: boolean; issueFocus?: "taks" | "kmkr" | "program-area" | false } = {}) {
+export function AdvancedPlanEditor(props: { compactKernel?: boolean; issueFocus?: "taks" | "kmkr" | "program-area" | false } = {}) {
+  const { project } = useProjectKernel();
+  return <AdvancedPlanEditorSession key={project.id} {...props} />;
+}
+
+function AdvancedPlanEditorSession({ compactKernel = false, issueFocus = false }: { compactKernel?: boolean; issueFocus?: "taks" | "kmkr" | "program-area" | false } = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");

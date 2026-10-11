@@ -90,7 +90,12 @@ function NumericField({ label, value, min, max, step, unit, onChange }: { label:
   return <label className="engineering-number-field"><span>{label}</span><div><input type="number" min={min} max={max} step={step} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><b>{unit}</b></div></label>;
 }
 
-export function StructuralDesigner({ home = false, compactKernel = false }: Props) {
+export function StructuralDesigner(props: Parameters<typeof StructuralDesignerSession>[0] = {}) {
+  const { project } = useProjectKernel();
+  return <StructuralDesignerSession key={project.id} {...props} />;
+}
+
+function StructuralDesignerSession({ home = false, compactKernel = false }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
