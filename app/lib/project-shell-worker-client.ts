@@ -6,3 +6,8 @@ export function calculateProjectShellInWorker(project:unknown,source:unknown,opt
   validateProjectShellSource(project,source);
   return runShellWorker({operation:"project-calculate",project,source,drillingFactor:options.drillingFactor??1},"record",options);
 }
+
+export function verifyProjectShellInWorker(project:unknown,source:unknown,record:unknown,options:{signal?:AbortSignal;timeoutMs?:number}={}):Promise<boolean> {
+  validateProjectShellSource(project,source);
+  return runShellWorker({operation:"project-verify",project,source,record},"record",options);
+}

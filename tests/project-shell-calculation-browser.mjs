@@ -7,12 +7,13 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.AR
 async function seed(page){const p=createProjectShellFixture();p.modules['plan-editor'].projectShellSources=Object.fromEntries([1,2].map(l=>{const s=createProjectShellFixtureSource(p,l);return[s.sourcePlateId,s];}));await page.goto(base);await page.evaluate(raw=>{localStorage.clear();sessionStorage.clear();localStorage.setItem('arkem-project-kernel-v2',raw);},encodeProjectEnvelope(p));await page.goto(base+'/plan-ve-aks');await page.getByTestId('project-shell-calculation').waitFor();return p;}
 async function check(name,fn){const context=await browser.newContext(),page=await context.newPage(),errors=[];page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(String(e)));try{await fn(page);assert.deepEqual(errors,[]);reports.push({name,pass:true});}catch(e){reports.push({name,pass:false,error:String(e),pageErrors:errors,body:await page.locator('body').innerText()});await page.screenshot({path:path.join(out,'project-shell-calculation-failure-'+reports.length+'.png'),fullPage:true});}finally{await context.close();}}
 try{
-await check('S4-A02 UI solves each selected plate and hides stale/session-only results without writing raw data to project storage',async page=>{
+await check('S4-A02/A03 UI solves each selected plate and restores verified results without writing raw data to project storage',async page=>{
  const p=await seed(page),sources=p.modules['plan-editor'].projectShellSources,ids=[];
  for(const source of Object.values(sources)){
   await page.getByLabel('Kabuk kaynak döşemesi',{exact:true}).selectOption(source.sourcePlateId);
   await page.getByRole('button',{name:'Proje döşemesinin kabuk hesabını çalıştır',exact:true}).click();
   await page.getByTestId('project-shell-calculation-id').waitFor();
+  await page.waitForFunction(()=>document.querySelector('[data-testid="project-shell-storage-status"]')?.textContent.includes('Cihaza kaydedildi'));
   const id=await page.getByTestId('project-shell-calculation-id').innerText();ids.push(id);assert.ok(id.includes(source.sourcePlateId)&&id.includes('PROJECT-SHELL-CALC-')&&id.includes('PROJECT-SHELL-SOURCE-'));
   assert.match(await page.getByTestId('project-shell-calculation').innerText(),new RegExp(`Alan: ${source.plate.width*source.plate.depth} m²`));
   await page.getByTestId('project-shell-calculation').screenshot({path:path.join(out,`project-shell-calculation-K${source.plate.sourceLevel}.png`)});
@@ -20,7 +21,8 @@ await check('S4-A02 UI solves each selected plate and hides stale/session-only r
  assert.notEqual(ids[0],ids[1]);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload);
  assert.deepEqual(saved.modules['plan-editor'].projectShellSources,sources);assert.equal(saved.modules['plan-editor'].projectShellCalculations,undefined);assert.equal(saved.modules['structural-concept'].result,null);
- await page.reload();await page.getByTestId('project-shell-calculation').waitFor();assert.equal(await page.getByTestId('project-shell-calculation-id').count(),0);
+ await page.reload();await page.getByTestId('project-shell-calculation-id').waitFor();
+ assert.ok(ids.includes(await page.getByTestId('project-shell-calculation-id').innerText()));
  await page.getByRole('button',{name:'Proje döşemesinin kabuk hesabını çalıştır',exact:true}).click();await page.getByTestId('project-shell-calculation-id').waitFor();
  await page.getByLabel('X açıklığı').first().fill('11');
  await page.waitForFunction(()=>!document.querySelector('[data-testid="project-shell-calculation"]'));
@@ -57,7 +59,7 @@ await check('S4-A02 bounded maximum mesh remains responsive and abort/error/sour
  await page.getByRole('button',{name:'Proje döşemesinin kabuk hesabını çalıştır',exact:true}).click();
  await page.getByLabel('Kabuk kaynak döşemesi',{exact:true}).selectOption(p.modules['plan-editor'].floorPlates[1].id);
  assert.equal(await page.getByTestId('project-shell-calculation-id').count(),0);
- assert.match(await page.getByTestId('project-shell-calculation-status').innerText(),/geçerli proje kabuk hesabı yok/);
+ await page.waitForFunction(()=>document.querySelector('[data-testid="project-shell-calculation-status"]')?.textContent.includes('geçerli proje kabuk hesabı yok'));
 });
 }finally{await browser.close();fs.writeFileSync(path.join(out,'project-shell-calculation-result.json'),JSON.stringify({executedAt:new Date().toISOString(),fixture:'synthetic-project',reports,technicalApproval:false,fullBuildingAnalysis:false},null,2));}
 console.log(JSON.stringify({suite:'project-shell-calculation',pass:reports.filter(r=>r.pass).length,fail:reports.filter(r=>!r.pass).length}));if(reports.some(r=>!r.pass))process.exitCode=1;

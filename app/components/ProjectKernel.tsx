@@ -74,7 +74,7 @@ type ProjectKernelContextValue = {
   importProject: (value: unknown) => boolean;
   startProject: (intake: ProjectIntake) => void;
   reset: () => void;
-  clearLocalProject: () => void;
+  clearLocalProject: () => Promise<void>;
 };
 
 const STORAGE_KEY = "arkem-project-kernel-v1";
@@ -631,6 +631,8 @@ const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(nul
 
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
+  const currentProjectId = useRef(project.id);
+  useEffect(()=>{currentProjectId.current=project.id;},[project.id]);
   const [hydrated, setHydrated] = useState(false);
   const skipNextPersistenceRef = useRef(false);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
@@ -1046,7 +1048,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     setHydrated(true);
   }, []);
   const reset = useCallback(() => setProject(createActiveProject()), []);
-  const clearLocalProject = useCallback(() => {
+  const clearLocalProject = useCallback(async () => {
+    const {clearProjectShellStorage}=await import("../lib/project-shell-storage");
+    await clearProjectShellStorage(project.id);
+    if(currentProjectId.current!==project.id)throw Error("Aktif proje değişti; yeni projenin çalışma kaydı silinmedi.");
     try {
       clearProjectStorage(window.localStorage, STORAGE_KEY);
     } catch {
@@ -1067,7 +1072,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       cloud: "not-configured",
     });
     setHydrated(true);
-  }, []);
+  }, [project.id]);
   const thread = useMemo(() => deriveProjectThread(project.modules), [project.modules]);
   const core = useMemo(() => deriveProjectCore(project, thread), [project, thread]);
 

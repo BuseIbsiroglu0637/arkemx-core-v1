@@ -323,15 +323,20 @@ export function SimpleProjectCenter() {
       JSON.stringify(project, null, 2),
       "application/json",
     );
-    setNotice("Tam proje yedeği indirildi.");
+    setNotice("Proje verileri yedeği indirildi. Büyük kabuk hesap kayıtları bu dosyada yok; bu cihazın tarayıcı deposunda tutuluyor.");
     setOperationsOpen(false);
   }
 
-  function removeLocalWorkingCopy() {
-    clearLocalProject();
-    setDeleteOpen(false);
-    setOperationsOpen(false);
-    setNotice("Bu tarayıcıdaki çalışma kaydı silindi. Hesabınıza kaydedilmiş proje etkilenmedi.");
+  async function removeLocalWorkingCopy() {
+    if(deleteBusy)return;
+    setDeleteBusy(true);
+    try{
+      await clearLocalProject();
+      setDeleteOpen(false);
+      setOperationsOpen(false);
+      setNotice("Bu tarayıcıdaki çalışma ve kabuk hesap kayıtları silindi. Hesabınıza kaydedilmiş proje etkilenmedi.");
+    }catch(e){setNotice("Yerel kayıt silinemedi: "+(e instanceof Error?e.message:"depo hatası"));}
+    finally{setDeleteBusy(false);}
   }
 
   async function removeEverywhere() {
@@ -347,7 +352,8 @@ export function SimpleProjectCenter() {
         setNotice(body.error || "Hesaptaki proje kaydı silinemedi. Yerel çalışma kaydı korunuyor.");
         return;
       }
-      clearLocalProject();
+      try{await clearLocalProject();}
+      catch(e){setNotice("Hesap kaydı silindi; bu cihazdaki silme tamamlanamadı: "+(e instanceof Error?e.message:"depo hatası"));return;}
       setDeleteOpen(false);
       setOperationsOpen(false);
       setNotice("Proje hem bu tarayıcıdaki çalışma alanından hem de hesabınızdaki proje listesinden silindi.");
@@ -468,7 +474,7 @@ export function SimpleProjectCenter() {
           <span>PROJEYİ SİL</span>
           <b>{project.name}</b>
           <small>{project.id} · {project.revision}</small>
-          <p>Bu işlem proje modüllerindeki mevcut çalışmayı kaldırır. Önce yedek indirmek isterseniz “Proje yedeğini indir” işlemini kullanın.</p>
+          <p>Bu işlem proje modüllerindeki çalışmayı ve bu cihazdaki kabuk hesap kayıtlarını kaldırır. “Proje yedeğini indir” dosyası büyük kabuk hesap sonuçlarını içermez.</p>
         </div>
         <div className="arx-center-delete-actions">
           <article>
