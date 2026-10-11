@@ -4,6 +4,7 @@ import {useProjectKernel} from "./ProjectKernel";
 import {createProjectShellDraft,inspectProjectShellSource} from "../lib/project-shell-source";
 import {traceJson} from "../lib/structural-traceability";
 import {ProjectShellCalculationPanel} from "./ProjectShellCalculationPanel";
+import {ProjectShellPackageRestore} from "./ProjectShellPackageRestore";
 export function ProjectShellSourcePanel(){
  const {project,patchModule,hydrated}=useProjectKernel(),[selected,setSelected]=useState(""),[text,setText]=useState(""),[message,setMessage]=useState("");
  const plan=(project.modules["plan-editor"]??{}) as {floorPlates?:Array<{id?:string;level:number}>;projectShellSources?:Record<string,unknown>},plates=plan.floorPlates??[],plateId=plates.some(p=>p.id===selected)?selected:plates.find(p=>p.id)?.id??"";
@@ -22,5 +23,6 @@ export function ProjectShellSourcePanel(){
   <label>Proje kabuk kaynağı JSON<textarea aria-label="Proje kabuk kaynağı JSON" rows={12} value={text} onChange={e=>{readVersion.current++;setText(e.target.value);setMessage("");}} style={{width:"100%",fontFamily:"monospace"}}/></label>
   <button disabled={!hydrated||!text.trim()} onClick={save}>Kabuk kaynağını doğrula ve kaydet</button>{message&&<p data-testid="project-shell-message">{message}</p>}
   {report?.source&&<ProjectShellCalculationPanel key={traceJson(report.source)} source={report.source}/>}
+  <ProjectShellPackageRestore key={project.id+":"+project.revision}/>
  </section>;
 }

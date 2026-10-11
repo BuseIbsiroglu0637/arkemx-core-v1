@@ -3,6 +3,16 @@ import { recordShellCalculation } from "./shell-solver.ts";
 declare const self: DedicatedWorkerGlobalScope;
 self.onmessage=async (event:MessageEvent) => {
   try {
+    if(event.data.operation==="project-export") {
+      const {createProjectShellArtifact}=await import("./project-shell-documents.ts");
+      const artifact=await createProjectShellArtifact(event.data.project,event.data.source,event.data.record,event.data.format,event.data.view);
+      self.postMessage({ok:true,artifact});return;
+    }
+    if(event.data.operation==="project-package") {
+      const {readProjectShellPackage}=await import("./project-shell-documents.ts");
+      const record=await readProjectShellPackage(event.data.text,event.data.project,event.data.source);
+      self.postMessage({ok:true,record});return;
+    }
     if(event.data.operation==="project-verify") {
       const {verifyProjectShellCalculation}=await import("./project-shell-calculation.ts");
       const record=await verifyProjectShellCalculation(event.data.record,event.data.project,event.data.source);

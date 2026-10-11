@@ -323,7 +323,7 @@ export function SimpleProjectCenter() {
       JSON.stringify(project, null, 2),
       "application/json",
     );
-    setNotice("Proje verileri yedeği indirildi. Büyük kabuk hesap kayıtları bu dosyada yok; bu cihazın tarayıcı deposunda tutuluyor.");
+    setNotice("Proje verileri yedeği indirildi. Büyük kabuk hesap kayıtları bu dosyada yok. Plan ve Aks ekranından her döşemenin Proje kabuk JSON paketini ayrıca indirin.");
     setOperationsOpen(false);
   }
 

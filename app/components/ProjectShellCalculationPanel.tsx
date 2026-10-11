@@ -6,6 +6,7 @@ import {readProjectShellStorage,saveProjectShellStorage} from "../lib/project-sh
 import type {ShellStorageSession} from "../lib/project-shell-storage";
 import type {ProjectShellCalculationRecord} from "../lib/project-shell-calculation";
 import type {ProjectShellSource} from "../lib/project-shell-source";
+import {ProjectShellDocumentsPanel} from "./ProjectShellDocumentsPanel";
 
 /** The parent remounts whenever the validated source changes; stale workers and writes are aborted. */
 export function ProjectShellCalculationPanel({source}:{source:ProjectShellSource}) {
@@ -69,6 +70,7 @@ export function ProjectShellCalculationPanel({source}:{source:ProjectShellSource
       <p>Ağ: {prepared.meshCounts.nodes} düğüm / {prepared.meshCounts.elements} eleman · Alan: {prepared.area} m²</p>
       <div style={{overflowX:"auto"}}><table><caption>Kaynağa bağlı yük durumu özetleri</caption><thead><tr><th>Durum</th><th>Alan yükü (kN/m²)</th><th>Merkez uz (m)</th><th>Maksimum |uz| (m)</th><th>Kuvvet / moment denge artığı</th></tr></thead><tbody>{content.cases.map(c=><tr key={c.id}><th scope="row">{c.id}</th><td>{c.areaLoad}</td><td>{c.centerUz.toExponential(6)}</td><td>{c.maxAbsUz.toExponential(6)}</td><td>{c.equilibrium.forceResidual.toExponential(3)} / {c.equilibrium.momentResidual.toExponential(3)}</td></tr>)}</tbody></table></div>
     </>}
-    <p>Hesaplar bu cihazın tarayıcı deposunda saklanır. Yenilemede güncel proje kaynağı ve yeniden hesaplanan sonuç doğrulanır. Tarayıcı verileri silinirse kayıtlar kaybolur; bu depo bulut yedeği değildir. Mevcut proje JSON yedeği büyük hesap kayıtlarını içermez. Proje belge akışı sonraki adımda tamamlanacak.</p>
+    {record&&<ProjectShellDocumentsPanel key={record.id} source={source} record={record}/>}
+    <p>Hesaplar bu cihazın tarayıcı deposunda saklanır. Yenilemede güncel proje kaynağı ve yeniden hesaplanan sonuç doğrulanır. Tarayıcı verileri silinirse kayıtlar kaybolur. Genel proje JSON yedeği büyük hesap kayıtlarını içermez; her döşeme için yukarıdaki proje kabuk JSON paketini ayrıca indirin.</p>
   </section>;
 }
