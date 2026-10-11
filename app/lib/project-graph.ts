@@ -1,3 +1,4 @@
+import { planGrossArea } from "./plan-area.ts";
 import { buildMcdaProjectSnapshot, mcdaInputMatchesSource, mcdaSourceKey, mcdaSourceMatches, type McdaSourceSnapshot } from "./mcda-source.ts";
 import { assessLandCandidate, readLandResearch } from "./land-research.ts";
 
@@ -218,10 +219,7 @@ export function deriveProjectThread(modules: Record<string, unknown>) {
 
   const planWidth = number(plan.baysX) * number(plan.spanX);
   const planDepth = number(plan.baysY) * number(plan.spanY);
-  const plates = Array.isArray(plan.floorPlates) ? plan.floorPlates.map(record) : [];
-  const planGross = plates.length
-    ? plates.reduce((sum, plate) => sum + number(plate.width) * number(plate.depth), 0)
-    : number(planMetrics.floorArea) * number(plan.floorCount);
+  const planGross = planGrossArea(plan);
   const geoGross = number(geoMetrics.gross);
   const architectureGross = number(architectureResult.grossDemand) || number(architectureInput.targetGross);
   const structuralGross = number(structureGeometry.totalArea);

@@ -685,15 +685,15 @@ test("local build renders the focused BIM coordination workspace", async () => {
   assert.doesNotMatch(html, /class="project-guided-journey/);
 });
 
-test("local build renders the focused project tracking workspace", async () => {
+test("local build waits for the local project before rendering editable tracking records", async () => {
   const response = await render("/proje-takibi");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<h1>Proje takibi<\/h1>/);
   assert.match(html, /data-testid="project-operating-system"/);
-  assert.match(html, /Proje durumu ve açık işler/);
-  assert.match(html, /Teslim hazırlığı/);
-  assert.match(html, /Kararlar ve RFI/);
+  assert.match(html, /Proje takip kaydı yükleniyor/);
+  assert.match(html, /data-ready="false"/);
+  assert.doesNotMatch(html, /Görev kaydet/);
   assert.match(html, /href="\/dijital-proje-merkezi"/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(html, /class="os-page-hero/);

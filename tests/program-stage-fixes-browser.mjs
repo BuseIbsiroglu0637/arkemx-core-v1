@@ -29,11 +29,16 @@ try {
   const area=e.widthBays*plate.width/plan.baysX*e.heightBays*plate.depth/plan.baysY;
   assert.ok(Math.abs(area-e.sourceUnitArea)/e.sourceUnitArea<.03,`${e.id}: ${area}/${e.sourceUnitArea}`);
  }
+ await page.goto(base+'/plan-ve-aks');
+ await page.getByText('Mimari program verileri otomatik devralındı',{exact:true}).waitFor();
+ assert.equal(await page.locator('.cad-plan-handoff').getAttribute('data-approved'),'false');
+ await page.getByText('İhtiyaç programı onayı bekleniyor',{exact:true}).waitFor();
  await page.getByRole('link',{name:'Proje Çalışma Alanı',exact:true}).click();
  await page.getByRole('link',{name:'Sistem Henüz başlanmadı',exact:true}).waitFor();
  await page.reload();await page.getByRole('link',{name:'Sistem Henüz başlanmadı',exact:true}).waitFor();
- await page.goto(base+'/proje-takibi');await page.getByTestId('project-operating-system').waitFor();
+ await page.goto(base+'/proje-takibi');await page.locator('[data-testid="project-operating-system"][data-ready="true"]').waitFor();
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('arkem-project-kernel-v2')).payload.modules['project-os']?.trackingDataStatus==='project-record');
  await page.getByRole('link',{name:'Proje merkezi',exact:true}).click();
  await page.getByRole('link',{name:'Sistem Eksik kontrol var',exact:true}).waitFor();
- assert.deepEqual(errors,[]);fs.writeFileSync('test-artifacts/program-stage-fixes-browser.json',JSON.stringify({passed:true,projectId:project.id,checks:['scaled program metadata and geometric areas match for every generated room','unvisited System stage remains not started','reload preserves unvisited System stage'],errors},null,2));
-} finally {await browser.close();}
+ assert.deepEqual(errors,[]);fs.writeFileSync('test-artifacts/program-stage-fixes-browser.json',JSON.stringify({passed:true,projectId:project.id,checks:['scaled program metadata and geometric areas match for every generated room','unvisited System stage remains not started','reload preserves unvisited System stage','architectural data transfer and requirements approval shown independently'],errors},null,2));
+} catch(error) {console.log(await page.locator('body').innerText());throw error;} finally {await browser.close();}

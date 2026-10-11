@@ -54,6 +54,8 @@ export function ClientTechnicalProjectRoom() {
   const demolition = safeRecord(project.modules["demolition-screening"]);
   const projectOs = safeRecord(project.modules["project-os"]);
   const earnedValue = safeRecord(projectOs.earnedValue);
+  const numericLabel = (value: unknown, digits = 2) => typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "Veri yok";
+  const progressLabel = (key: string) => typeof earnedValue[key] === "number" && Number.isFinite(earnedValue[key]) ? `%${Number(earnedValue[key]).toFixed(0)}` : "Veri yok";
   const demolitionInput = safeRecord(demolition.input);
   const demolitionAnalysis = safeRecord(demolition.analysis);
   const demolitionGates = Array.isArray(demolition.gates) ? demolition.gates.map(safeRecord) : [];
@@ -320,14 +322,14 @@ export function ClientTechnicalProjectRoom() {
           <footer><span>Canlı: kullanıcı koordinatı ve dosyası</span><span>TKGM: kurumsal protokol gerektirir</span><Link href="/arsa-fizibilite-studyosu">Parsel çalışma alanını açın ↗</Link></footer>
         </section>
         <section className="four-five-d-summary">
-          <header><div><span>V70 / 4B–5B YÖNETİCİ ÖZETİ</span><h4>Zaman, maliyet ve karar tek göstergede.</h4></div><Link href="/proje-os">Proje OS’i açın ↗</Link></header>
+          <header><div><span>V70 / 4B–5B YÖNETİCİ ÖZETİ</span><h4>Zaman, maliyet ve karar tek göstergede.</h4></div><Link href="/proje-takibi">Proje takibini açın ↗</Link></header>
           <div>
-            <article><span>Simülasyon haftası</span><b>{safeNumber(projectOs.week) || "—"}</b><small>36 haftalık demo ekseni</small></article>
+            <article><span>Rapor haftası</span><b>{projectOs.progress ? numericLabel(projectOs.week, 0) : "Veri yok"}</b><small>Beyan edilen proje kaydı</small></article>
             <article><span>Proje sağlığı</span><b>{safeNumber(projectOs.projectHealth) ? `%${safeNumber(projectOs.projectHealth)}` : "—"}</b><small>Karar + saha + teslim verisi</small></article>
-            <article><span>SPI / CPI</span><b>{safeNumber(earnedValue.spi) ? `${safeNumber(earnedValue.spi).toFixed(2)} / ${safeNumber(earnedValue.cpi).toFixed(2)}` : "—"}</b><small>Program / maliyet verimi</small></article>
+            <article><span>SPI / CPI</span><b>{numericLabel(earnedValue.spi)} / {numericLabel(earnedValue.cpi)}</b><small>Program / maliyet verimi</small></article>
             <article><span>Tamamlanma tahmini</span><b>{safeNumber(earnedValue.eac) ? `₺${safeNumber(earnedValue.eac).toFixed(1)}M` : "—"}</b><small>Mevcut CPI sürerse</small></article>
           </div>
-          <footer><i style={{ width: `${Math.min(100, Math.max(0, safeNumber(earnedValue.actual)))}%` }}></i><span>Gerçekleşen %{safeNumber(earnedValue.actual).toFixed(0) || 0}</span><span>Plan %{safeNumber(earnedValue.planned).toFixed(0) || 0}</span><small>Temsili Proje OS veri seti gerçek program ve bütçe bağlanana kadar “demo” olarak etiketlenir.</small></footer>
+          <footer><i style={{ width: `${Math.min(100, Math.max(0, safeNumber(earnedValue.actual)))}%` }}></i><span>Gerçekleşen {progressLabel("actual")}</span><span>Plan {progressLabel("planned")}</span><small>Program ve maliyet göstergeleri kayıtlı proje girdilerinden hesaplanır; eksik değerler veri yok olarak gösterilir.</small></footer>
         </section>
         <div className="client-journey">{completedJourney.map((step, index) => <Link className={step.done ? "done" : ""} href={step.href} key={step.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{step.short}</b><small>{step.done ? "Kayıt var" : step.output}</small></Link>)}</div>
         <button className="portal-sync" onClick={() => synchronizeProject()}>Tüm bağlı modülleri şimdi eşitleyin <span>↻</span></button>

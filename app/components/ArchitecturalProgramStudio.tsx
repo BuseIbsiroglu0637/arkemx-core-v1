@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { planGrossArea } from "../lib/plan-area";
 import { architecturePlacementPending, architectureSiteContext } from "../lib/architecture-draft";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createArchitecturalScheme, type ArchitecturalCoreStrategy } from "../lib/architectural-scheme";
@@ -427,7 +428,7 @@ function ArchitecturalProgramStudioSession({ simple = false, issueFocus = false 
   const planMetrics = objectValue(planModule.metrics);
   const planFloorArea = typeof planMetrics.floorArea === "number" ? planMetrics.floorArea : 0;
   const planFloorCount = typeof planModule.floorCount === "number" ? planModule.floorCount : 0;
-  const planGross = planFloorArea * planFloorCount;
+  const planGross = planGrossArea(planModule);
   const planSyncDelta = programGross - planGross;
   const planSyncPass = programGross > 0 && planGross > 0 && Math.abs(planSyncDelta) / programGross <= .1;
   const planSyncScale = programGross > 0 && planGross > 0 ? planGross / programGross : 1;

@@ -7,6 +7,9 @@ import { createProjectOperatingModel, operatingHealthGates, restoreOperatingWork
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
+import { TrackingRegisterForm, TrackingActionForm, TrackingEvidenceView, TrackingPhaseForm, TrackingProgressForm } from "./TrackingRegisterForms";
+import { createTrackingWork, earnedValueFromProgress, restoreRegisterRows, type TrackingPhase, type TrackingProgress, type TrackingDocument, type TrackingDecision, type TrackingWork, type TrackingEvidence, type RegisterDraft } from "../lib/tracking-register";
+
 import { restoreProjectTracking } from "../lib/project-tracking";
 
 type Module = "overview" | "work" | "program" | "documents" | "decisions" | "revisions" | "cost" | "quality" | "supply" | "handover";
@@ -79,13 +82,20 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
   const { patchModule, project, thread } = useProjectKernel();
   const [active, setActive] = useState<Module>("overview");
   const [week, setWeek] = useState(demo ? 17 : 0);
-  const [documents, setDocuments] = useState(demo ? initialDocuments : []);
+  const [documents, setDocuments] = useState<TrackingDocument[]>(demo ? initialDocuments : []);
   const [docFilter, setDocFilter] = useState<"Tümü" | Status>("Tümü");
-  const [decisions, setDecisions] = useState(demo ? initialDecisions : []);
+  const [decisions, setDecisions] = useState<TrackingDecision[]>(demo ? initialDecisions : []);
   const [qualityOpen, setQualityOpen] = useState<boolean[]>(demo ? [true, true, true, false] : []);
   const [handover, setHandover] = useState<boolean[]>(demo ? [true, true, true, false, false, false] : Array(6).fill(false));
   const [copilot, setCopilot] = useState("risk");
   const [workStates, setWorkStates] = useState<Record<string, ProjectOperatingWorkStatus>>({});
+  const [phases, setPhases] = useState<TrackingPhase[]>([]);
+  const [progress, setProgress] = useState<TrackingProgress | null>(null);
+  const [progressHistory, setProgressHistory] = useState<TrackingProgress[]>([]);
+  const [manualWorkItems, setManualWorkItems] = useState<TrackingWork[]>([]);
+  const [workClosures, setWorkClosures] = useState<Record<string, TrackingEvidence>>({});
+  const [showClosedWork, setShowClosedWork] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ kind: "document" | "decision" | "work"; id: string; title: string; revision: string } | null>(null);
   const [savedWorkItems, setSavedWorkItems] = useState<unknown[]>([]);
   const [operatingGeneratedAt] = useState(() => project.updatedAt);
   const [legacyTrackingSnapshot, setLegacyTrackingSnapshot] = useState<unknown>(null);
@@ -93,8 +103,15 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
     if (demo) return;
     const tracking = restoreProjectTracking(saved);
     setWeek(tracking.week);
-    setDocuments(restoreModuleValue(tracking.documents, documents));
-    setDecisions(restoreModuleValue(tracking.decisions, decisions));
+    if (tracking.current) {
+      setPhases(restoreRegisterRows<TrackingPhase>(saved.phases));
+      setProgress(restoreModuleValue(saved.progress, null as TrackingProgress | null));
+      setProgressHistory(restoreRegisterRows<TrackingProgress>(saved.progressHistory));
+      setManualWorkItems(restoreRegisterRows<TrackingWork>(saved.manualWorkItems));
+      setWorkClosures(saved.workClosures && typeof saved.workClosures === "object" && !Array.isArray(saved.workClosures) ? saved.workClosures as Record<string, TrackingEvidence> : {});
+    }
+    setDocuments(restoreRegisterRows<TrackingDocument>(tracking.documents));
+    setDecisions(restoreRegisterRows<TrackingDecision>(tracking.decisions));
     setQualityOpen(restoreModuleValue(tracking.qualityOpen, qualityOpen));
     setHandover(tracking.handover);
     setLegacyTrackingSnapshot(tracking.legacyTrackingSnapshot);
@@ -115,15 +132,16 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
     catch (error) { return { model: createProjectOperatingModel({ ...input, bimCoordination: undefined }), error: error instanceof Error ? error.message : "Coordination source unsupported" }; }
   }, [handedOffCoordination, operatingGeneratedAt, project.id, project.revision]);
   const operatingModel = operatingSource.model;
-  const restoredStates = useMemo(() => restoreOperatingWorkStates(savedWorkItems, operatingModel.workItems), [savedWorkItems, operatingModel.workItems]);
+  const restoredStates = useMemo(() => restoreOperatingWorkStates(savedWorkItems, [...operatingModel.workItems, ...manualWorkItems]), [savedWorkItems, operatingModel.workItems, manualWorkItems]);
   // A project manager may acknowledge a critical BIM issue, but cannot close
   // a still-active rule without a verified revised model / authorized approval.
-  const workItems = useMemo(() => operatingModel.workItems.map((item) => ({
+  const workItems = useMemo(() => [...operatingModel.workItems, ...manualWorkItems].map((item) => ({
     ...item,
+    closure: workClosures[operatingWorkStateKey(item)] ?? (item as TrackingWork).closure,
     status: item.sourceGuid && item.priority === "critical"
       ? (workStates[operatingWorkStateKey(item)] ?? restoredStates[item.id]) === "in-review" ? "in-review" as const : "blocked" as const
       : workStates[operatingWorkStateKey(item)] ?? restoredStates[item.id] ?? item.status,
-  })), [operatingModel.workItems, workStates, restoredStates]);
+  })), [operatingModel.workItems, manualWorkItems, workClosures, workStates, restoredStates]);
   const currentModule = modules.find((item) => item.id === active) ?? modules[0];
   const filteredDocuments = docFilter === "Tümü" ? documents : documents.filter((item) => item.status === docFilter);
   const completion = Math.round((handover.filter(Boolean).length / handover.length) * 100);
@@ -134,7 +152,9 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
     return Math.max(45, 92 - openDecisions * 3 - openQuality * 2 - thread.metrics.critical * 4 - thread.metrics.review);
   }, [demo, decisions, qualityOpen, thread.metrics.critical, thread.metrics.review]);
   const earnedValue = useMemo(() => {
-    if (!demo) return null;
+    if (!demo) {
+      try { return earnedValueFromProgress(progress); } catch { return null; }
+    }
     const budget = 48.6;
     const planned = 48;
     const actual = 43;
@@ -144,24 +164,62 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
     const spi = earned / plannedValue;
     const cpi = earned / actualCost;
     return { budget, planned, actual, actualCost, earned, spi, cpi, eac: budget / cpi };
-  }, [demo]);
+  }, [demo, progress]);
 
   const currentOperatingModel = { ...operatingModel, workItems, healthGates: operatingHealthGates(workItems, operatingModel.source.coordinationConnected) };
   useEffect(() => { if (!draftReady || demo) return;
     if (operatingSource.error) return;
-    patchModule("project-os", { schema: operatingModel.schema, operatingModel: { ...operatingModel, workItems, healthGates: operatingHealthGates(workItems, operatingModel.source.coordinationConnected) }, trackingDataStatus: "project-record", legacyTrackingSnapshot, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
-  }, [draftReady, demo, legacyTrackingSnapshot, decisions, documents, earnedValue, handover, operatingModel, operatingSource.error, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
+    patchModule("project-os", { schema: operatingModel.schema, operatingModel: { ...operatingModel, workItems, healthGates: operatingHealthGates(workItems, operatingModel.source.coordinationConnected) }, trackingDataStatus: "project-record", manualWorkItems, workClosures, phases, progress, progressHistory, legacyTrackingSnapshot, week, documents, decisions, workItems, qualityOpen, handover, projectHealth, earnedValue, digitalThread: thread.metrics, status: "v116-project-os-2" });
+  }, [draftReady, demo, manualWorkItems, workClosures, phases, progress, progressHistory, legacyTrackingSnapshot, decisions, documents, earnedValue, handover, operatingModel, operatingSource.error, patchModule, projectHealth, qualityOpen, thread.metrics, week, workItems]);
 
-  const approveDocument = (code: string) => setDocuments((items) => items.map((item) => item.code === code ? { ...item, status: "Onaylı" } : item));
-  const closeDecision = (id: string) => setDecisions((items) => items.map((item) => item.id === id ? { ...item, state: "Yanıtlandı", due: "Kapandı" } : item));
-  const exportRegister = () => downloadTextFile("arkem-project-os-register.json", JSON.stringify({ ...currentOperatingModel, trackingDataStatus: demo ? "demo" : "project-record", week, documents, decisions, supplyItems: demo ? supplyItems : [], qualityOpen, handover, earnedValue }, null, 2), "application/json");
+  const indicator = (value: number | null | undefined) => typeof value === "number" ? value.toFixed(2) : "Veri yok";
+  const saveProgress = (value: TrackingProgress) => { setProgress(value); setWeek(value.week); setProgressHistory(items => [...items, value]); };
+  const approveDocument = (code: string) => {
+    const item = documents.find(item => item.code === code);
+    if (item) setPendingAction({ kind: "document", id: code, title: `Belge onayı: ${item.title}`, revision: item.rev });
+  };
+  const closeDecision = (id: string) => {
+    const item = decisions.find(item => item.id === id);
+    if (item) setPendingAction({ kind: "decision", id, title: `Karar kapanışı: ${item.title}`, revision: project.revision });
+  };
+  const saveAction = (evidence: TrackingEvidence) => {
+    if (!pendingAction) return;
+    const { kind, id } = pendingAction;
+    if (kind === "document") setDocuments(items => items.map(item => item.code === id ? { ...item, status: "Onaylı", approval: evidence } : item));
+    if (kind === "decision") setDecisions(items => items.map(item => item.id === id ? { ...item, state: "Yanıtlandı", resolution: evidence } : item));
+    if (kind === "work") {
+      const item = workItems.find(item => item.id === id);
+      if (!item || (item.sourceGuid && item.priority === "critical")) return;
+      const key = operatingWorkStateKey(item);
+      setWorkClosures(values => ({ ...values, [key]: evidence }));
+      setWorkStates(values => ({ ...values, [key]: "closed" }));
+    }
+    setPendingAction(null);
+  };
+  const changeWork = (item: TrackingWork) => {
+    if (item.status === "in-review" && !(item.sourceGuid && item.priority === "critical")) {
+      setPendingAction({ kind: "work", id: item.id, title: `Görev kapanışı: ${item.title}`, revision: item.revision });
+    } else setWorkStates(values => ({ ...values, [operatingWorkStateKey(item)]: item.status === "in-review" ? "blocked" : "in-review" }));
+  };
+  const addDocument = (draft: RegisterDraft) => {
+    if (documents.some(item => item.code === draft.code)) throw new Error("Bu belge kodu zaten kayıtlı.");
+    setDocuments(items => [...items, { code: draft.code, title: draft.title, discipline: draft.discipline, rev: draft.revision, status: "İncelemede", date: draft.due, source: draft.source }]);
+  };
+  const addDecision = (draft: RegisterDraft) => setDecisions(items => [...items, { id: `DEC-${crypto.randomUUID()}`, title: draft.title, owner: draft.owner, due: draft.due, impact: `${draft.impact || "Etki değerlendirilecek"} · ${draft.source} · ${draft.revision}`, state: "Karar gerekli" }]);
+  const addWork = (draft: RegisterDraft) => {
+    const item = createTrackingWork(draft, `TASK-${crypto.randomUUID()}`);
+    setManualWorkItems(items => [...items, item]);
+  };
+  const exportRegister = () => downloadTextFile("arkem-project-os-register.json", JSON.stringify({ ...currentOperatingModel, trackingDataStatus: demo ? "demo" : "project-record", week, documents, decisions, manualWorkItems, workClosures, phases, progress, progressHistory, supplyItems: demo ? supplyItems : [], qualityOpen, handover, earnedValue }, null, 2), "application/json");
+
+  if (!demo && !draftReady) return <section data-testid="project-operating-system" data-ready="false"><p role="status">Proje takip kaydı yükleniyor…</p></section>;
 
   if (!demo) {
     const openWork = workItems.filter((item) => item.status !== "closed");
     const openDecisions = decisions.filter((item) => item.state !== "Yanıtlandı");
-    const currentDocs = documents.slice(0, 5);
+    const displayedWork = showClosedWork ? workItems : openWork;
 
-    return <section className="arx-tracking-tool" data-testid="project-operating-system">
+    return <section className="arx-tracking-tool" data-testid="project-operating-system" data-ready={draftReady ? "true" : "false"}>
       {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Aşağıdaki kaynak verisi eksiktir; kaynak kaydı değiştirilmedi.</p> : null}
       <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Proje takip kaydı" compact />
       {legacyTrackingSnapshot ? <details data-testid="legacy-tracking"><summary>Önceki sürümün takip verisi — doğrulanacak</summary><p>Örnek verilerle karışmış eski kayıt ayrı saklandı; güncel ilerleme veya onay olarak kullanılmıyor.</p><button type="button" onClick={() => downloadTextFile("legacy-project-tracking.json", JSON.stringify(legacyTrackingSnapshot, null, 2), "application/json")}>Eski takip kaydını indir</button></details> : null}
@@ -176,46 +234,53 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
             <article><span>PROJE SAĞLIĞI</span><b>—</b><small>Gerçek ilerleme verisi bekleniyor</small></article>
             <article><span>AÇIK İŞ</span><b>{openWork.length}</b><small>{workItems.filter((item) => item.status === "blocked").length} bloke</small></article>
             <article><span>AÇIK KARAR</span><b>{openDecisions.length}</b><small>RFI ve karar kaydı</small></article>
-            <article><span>SPI / CPI</span><b>— / —</b><small>Onaylı program ve maliyet verisi yok</small></article>
+            <article><span>SPI / CPI</span><b>{indicator(earnedValue?.spi)} / {indicator(earnedValue?.cpi)}</b><small>{earnedValue ? "Beyan edilen proje verisinden" : "Program ve maliyet verisi yok"}</small></article>
           </div>
+          <TrackingRegisterForm kind="Görev" revision={project.revision} onSave={addWork} />
+          <label><input type="checkbox" checked={showClosedWork} onChange={event => setShowClosedWork(event.target.checked)} />Kapalı işleri de göster</label>
+          {pendingAction ? <TrackingActionForm key={`${pendingAction.kind}:${pendingAction.id}`} title={pendingAction.title} revision={pendingAction.revision} onSave={saveAction} onCancel={() => setPendingAction(null)} /> : null}
           <div className="arx-track-list">
-            {openWork.slice(0, 5).map((item) => <article className={`arx-track-item ${item.status === "blocked" ? "blocked" : ""}`} key={item.id}>
+            {displayedWork.map((item) => <article className={`arx-track-item ${item.status === "blocked" ? "blocked" : ""}`} key={item.id}>
               <div>
                 <span>{item.type.toUpperCase()} · {item.id}</span>
                 <h3>{item.title}</h3>
-                <p>{item.owner} · {item.dueDate} · {item.scheduleImpact}</p>
+                <p>{item.owner}{item.ownerSuggested ? " (öneri)" : ""} · {item.dueDate}{item.dueDateSuggested ? " (önerilen tarih)" : ""} · {item.scheduleImpact} · {item.status === "closed" ? "Kapalı" : item.status === "in-review" ? "İncelemede" : item.status === "blocked" ? "Bloke" : "Açık"}</p>
+                {item.status === "closed" ? <TrackingEvidenceView value={item.closure} /> : null}
               </div>
-              <button type="button" data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={() => setWorkStates((values) => ({ ...values, [operatingWorkStateKey(item)]: item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "blocked" : "in-review" : item.status === "in-review" ? "closed" : "in-review" }))}>
+              {item.status !== "closed" ? <button type="button" data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={() => changeWork(item)}>
                 {item.sourceGuid && item.priority === "critical" ? item.status === "in-review" ? "İşareti kaldır" : "İncelemeye al" : item.status === "in-review" ? "Kapat" : "İncele"}
-              </button>
+              </button> : null}
             </article>)}
-            {!openWork.length ? <p className="arx-track-empty">Açık iş bulunmuyor.</p> : null}
+            {!displayedWork.length ? <p className="arx-track-empty">Açık iş bulunmuyor.</p> : null}
           </div>
           <details className="arx-track-detail">
             <summary>Kararlar ve RFI ({openDecisions.length} açık)</summary>
+            <TrackingRegisterForm kind="Karar" revision={project.revision} onSave={addDecision} />
             <div className="arx-track-decisions">
               {decisions.map((item) => <article className="arx-track-decision" key={item.id}>
                 <span>{item.id}</span>
                 <div><b>{item.title}</b><small>{item.impact} · {item.owner} · {item.due}</small></div>
-                {item.state !== "Yanıtlandı" ? <button type="button" onClick={() => closeDecision(item.id)}>Kararı kapat</button> : <small>Kapalı</small>}
+                {item.state !== "Yanıtlandı" ? <button type="button" onClick={() => closeDecision(item.id)}>Kararı kapat</button> : <TrackingEvidenceView value={item.resolution} />}
               </article>)}
             </div>
           </details>
           <details className="arx-track-detail">
-            <summary>Güncel dokümanlar</summary>
+            <summary>Dokümanlar ({documents.length})</summary>
+            <TrackingRegisterForm kind="Belge" revision={project.revision} onSave={addDocument} />
             <div className="arx-track-docs">
-              {currentDocs.map((item) => <article className="arx-track-doc" key={item.code}>
+              {documents.map((item) => <article className="arx-track-doc" key={item.code}>
                 <span>{item.code}</span>
-                <div><b>{item.title}</b><small>{item.discipline} · {item.rev} · {item.status}</small></div>
-                {item.status !== "Onaylı" ? <button type="button" onClick={() => approveDocument(item.code)}>Onayla</button> : <small>Güncel</small>}
+                <div><b>{item.title}</b><small>{item.discipline} · {item.rev} · {item.status} · {item.source || "Kaynak doğrulanacak"}</small></div>
+                {item.status !== "Onaylı" ? <button type="button" onClick={() => approveDocument(item.code)}>Onayla</button> : <TrackingEvidenceView value={item.approval} />}
               </article>)}
             </div>
           </details>
           <details className="arx-track-detail">
-            <summary>4B program özeti · veri bekleniyor</summary>
-            <div className="arx-track-program"><p>Onaylı iş programı henüz bağlanmadı.</p>
-              {[].map((item: typeof schedule[number]) => <article key={item.name}>
-                <span>{item.name}</span>
+            <summary>4B program özeti · {phases.length ? `${phases.length} aktivite` : "veri bekleniyor"}</summary>
+            <TrackingPhaseForm revision={project.revision} onSave={phase => setPhases(items => [...items, phase])} />
+            <div className="arx-track-program"><p>Beyan edilen program kaydı; program onayı ayrıca doğrulanmalı.</p>
+              {phases.map((item) => <article key={item.id}>
+                <span>{item.name} · {item.start}–{item.end} · {item.source} · {item.revision}</span>
                 <i aria-hidden="true"><b style={{ width: item.progress + "%" }} /></i>
                 <small>%{item.progress} · {item.owner}</small>
               </article>)}
@@ -226,14 +291,16 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
         <aside className="arx-track-side">
           <section className="arx-track-panel arx-track-summary">
             <h2>Takip özeti</h2>
+            <TrackingProgressForm revision={project.revision} value={progress} onSave={saveProgress} />
+            {progress ? <TrackingEvidenceView value={progress.evidence} /> : null}
             <dl>
               <div><dt>Bağlı proje verisi</dt><dd>{thread.metrics.activeCount} / {thread.metrics.totalCount}</dd></div>
               <div><dt>Kritik konu</dt><dd>{thread.metrics.critical}</dd></div>
               <div><dt>İnceleme konusu</dt><dd>{thread.metrics.review}</dd></div>
-              <div><dt>Fiziksel ilerleme</dt><dd>Veri yok</dd></div>
-              <div><dt>Hafta</dt><dd>{week > 0 ? week : "Veri yok"}</dd></div>
-              <div><dt>Program göstergesi</dt><dd>Veri yok</dd></div>
-              <div><dt>Maliyet göstergesi</dt><dd>Veri yok</dd></div>
+              <div><dt>Fiziksel ilerleme</dt><dd>{earnedValue ? `%${earnedValue.actual}` : "Veri yok"}</dd></div>
+              <div><dt>Hafta</dt><dd>{progress ? week : week > 0 ? week : "Veri yok"}</dd></div>
+              <div><dt>Program göstergesi</dt><dd>{indicator(earnedValue?.spi)}</dd></div>
+              <div><dt>Maliyet göstergesi</dt><dd>{indicator(earnedValue?.cpi)}</dd></div>
             </dl>
           </section>
           <section className="arx-track-panel arx-track-handover">
@@ -253,9 +320,10 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
     </section>;
   }
 
-  if (!earnedValue) return null;
+  if (!earnedValue || earnedValue.spi === null || earnedValue.cpi === null || earnedValue.eac === null) return null;
   return <section className={`project-os-app${compact ? " compact" : ""}`}>
     {operatingSource.error ? <p role="alert">Koordinasyon aktarımı reddedildi: {operatingSource.error}. Kaynak verisi eksiktir; kaynak kaydı değiştirilmedi.</p> : null}
+    {pendingAction ? <TrackingActionForm key={`${pendingAction.kind}:${pendingAction.id}`} title={pendingAction.title} revision={pendingAction.revision} onSave={saveAction} onCancel={() => setPendingAction(null)} /> : null}
     <p role="status">Örnek gösterim — bu veriler aktif proje kaydına yazılmaz.</p>
     <ProjectKernelBar moduleKey="project-os" module="PROJECT DELIVERY OS" confidence="Örnek gösterim" />
     <header className="project-os-topbar">
@@ -288,7 +356,7 @@ function ProjectOperatingSystemSession({ compact = false, demo = false }: { comp
 
         {active === "work" && <div className="v116-workspace">
           <div className="os-tool-row"><div><span>Koordinasyondan gelen işler</span><b>Sorumlu ve hedef tarih olmadan iş açılmaz</b></div><span className="os-capture-time">{workItems.filter((item)=>item.status!=="closed").length} AÇIK KAYIT</span></div>
-          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner} · {item.dueDate}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={()=>setWorkStates((values)=>({...values,[operatingWorkStateKey(item)]:item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"blocked":"in-review" : item.status==="in-review"?"closed":"in-review"}))}>{item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"İnceleme işaretini kaldır":"İncelemeye al · kapatılamaz" : item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
+          <div className="v116-work-board">{["blocked","open","in-review","closed"].map((status)=><section key={status}><header><b>{{blocked:"Bloke",open:"Açık","in-review":"İncelemede",closed:"Kapalı"}[status]}</b><span>{workItems.filter((item)=>item.status===status).length}</span></header>{workItems.filter((item)=>item.status===status).map((item)=><article key={item.id} className={item.priority}><div><span>{item.type.toUpperCase()} · {item.id}</span><StatusPill value={item.priority === "critical" ? "Yüksek" : item.status}/></div><h4>{item.title}</h4><p>{item.location ?? item.scheduleImpact}</p><dl><div><dt>Sorumlu ve hedef tarih</dt><dd>{item.owner}{item.ownerSuggested ? " (öneri)" : ""} · {item.dueDate}{item.dueDateSuggested ? " (önerilen tarih)" : ""}</dd></div><div><dt>Kaynak / revizyon</dt><dd>{item.sourceGuid ?? item.source} · {item.revision}</dd></div><div><dt>Etki</dt><dd>{item.scheduleImpact}</dd></div></dl>{item.status!=="closed"&&<button data-testid={item.sourceGuid && item.priority === "critical" ? "critical-bim-review-action" : undefined} onClick={()=>setWorkStates((values)=>({...values,[operatingWorkStateKey(item)]:item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"blocked":"in-review" : item.status==="in-review"?"closed":"in-review"}))}>{item.sourceGuid && item.priority === "critical" ? item.status==="in-review"?"İnceleme işaretini kaldır":"İncelemeye al · kapatılamaz" : item.status==="in-review"?"Kanıtla ve kapat":"İncelemeye al"} →</button>}</article>)}</section>)}</div>
           <p className="os-inline-note"><b>Kaynak sürekliliği:</b> V115 BCF uyumlu issue GUID’i, model konumu, disiplinler ve revizyon bilgisi görev kapanana kadar korunur.</p>
         </div>}
 

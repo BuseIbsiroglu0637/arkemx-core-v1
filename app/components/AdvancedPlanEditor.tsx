@@ -366,7 +366,8 @@ function AdvancedPlanEditorSession({ compactKernel = false, issueFocus = false }
   const floorCoveragePass = floorStats.every((floor) => floor.rooms > 0);
   const coreContinuityPass = floorStats.every((floor) => floor.cores > 0);
   const requirementsConfirmed = architectureModule?.input?.programRequirementsConfirmed === true;
-  const upstreamReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0 && requirementsConfirmed;
+  const upstreamDataReady = programGrossTarget > 0 && floorCount > 0 && upstreamSpaceCount > 0;
+  const upstreamReady = upstreamDataReady && requirementsConfirmed;
   const planPlacementReady = programLinkPass && areaRepresentationPass && floorCoveragePass && coreContinuityPass;
   const axisReady = baysX >= 2 && baysY >= 2 && floorPlates.every((item) => item.width / baysX >= 2 && item.depth / baysY >= 2);
   const siteFootprintPass = allSiteFootprintsPass;
@@ -906,11 +907,12 @@ function AdvancedPlanEditorSession({ compactKernel = false, issueFocus = false }
       <div><span>{project.phase}</span><span>{project.revision}</span></div>
     </div> : <>
       <ProjectKernelBar moduleKey="plan-editor" module="PARAMETRIC PLAN AUTHORING" confidence="Mimari plan koordinasyonu" compact={compactKernel} />
-      <section className="cad-plan-handoff" data-ready={upstreamReady ? "true" : "false"}>
+      <section className="cad-plan-handoff" data-ready={upstreamDataReady ? "true" : "false"} data-approved={requirementsConfirmed ? "true" : "false"}>
         <div>
           <span>01 / MİMARİDEN DEVRALINAN VERİ</span>
-          <b>{upstreamReady ? "Mimari program verileri otomatik devralındı" : "Mimari program verisi bekleniyor"}</b>
+          <b>{upstreamDataReady ? "Mimari program verileri otomatik devralındı" : "Mimari program verisi bekleniyor"}</b>
           <small>Bu ekranda tekrar veri aktarımı yapmanız gerekmez. Plan ve aks çalışması aynı proje kaydını kullanır.</small>
+          <small>{requirementsConfirmed ? "İhtiyaç programı onayı kayıtlı" : "İhtiyaç programı onayı bekleniyor"}</small>
         </div>
         <dl>
           <div><dt>Program brüt ihtiyacı</dt><dd>{programGrossDemand > 0 ? `${programGrossDemand.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "—"}</dd></div>
@@ -920,7 +922,7 @@ function AdvancedPlanEditorSession({ compactKernel = false, issueFocus = false }
         </dl>
       </section>
       <div className="cad-plan-flow" aria-label="Plan ve aks çalışma akışı">
-        <div className={upstreamReady ? "done" : "current"}><i>{upstreamReady ? "✓" : "1"}</i><span><b>Veri devri</b><small>{upstreamReady ? "Tamamlandı" : "Bekleniyor"}</small></span></div>
+        <div className={upstreamDataReady ? "done" : "current"}><i>{upstreamDataReady ? "✓" : "1"}</i><span><b>Veri devri</b><small>{upstreamDataReady ? "Tamamlandı" : "Bekleniyor"}</small></span></div>
         <div className={planPlacementReady ? "done" : upstreamReady ? "current" : ""}><i>{planPlacementReady ? "✓" : "2"}</i><span><b>Plan yerleşimi</b><small>{planPlacementReady ? "Mahal + çekirdek hazır" : upstreamReady ? "Şu an buradasın" : "Bekliyor"}</small></span></div>
         <div className={axisReady && floorPlateDistributionPass && totalProgramAreaPass ? "done" : planPlacementReady ? "current" : ""}><i>{axisReady && floorPlateDistributionPass && totalProgramAreaPass ? "✓" : "3"}</i><span><b>Aks + kat plakaları</b><small>{axisReady && floorPlateDistributionPass && totalProgramAreaPass ? "Programla uyumlu" : planPlacementReady ? "Katları koordine et" : "Bekliyor"}</small></span></div>
         <div className={planGatePass ? "done" : axisReady && floorPlateDistributionPass && totalProgramAreaPass ? "current" : ""}><i>{planGatePass ? "✓" : "4"}</i><span><b>Mimari kontrol</b><small>{planGatePass ? "Kontrol kapısı geçti" : axisReady && floorPlateDistributionPass && totalProgramAreaPass ? "Son kontrol" : "Bekliyor"}</small></span></div>

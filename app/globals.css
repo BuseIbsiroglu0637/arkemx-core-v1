@@ -1022,3 +1022,9 @@ html[data-theme="dark"] .arkem-theme-control button[aria-pressed="true"] {
   .cad-issue-summary button { min-height:42px; grid-column:1/-1; }
   .cad-issue-focus .cad-editor-grid { grid-template-columns:1fr; }
 }
+
+.arx-register-form { display: grid; gap: 12px; padding: 16px 0; }
+.arx-register-form label { display: grid; gap: 5px; font-size: 14px; }
+.arx-register-form input, .arx-register-form textarea { width: 100%; min-width: 0; padding: 9px; border: 1px solid #b9c4c7; border-radius: 5px; background: #fff; color: #243538; }
+.arx-register-form button { justify-self: start; padding: 9px 14px; }
+.arx-track-item, .arx-track-doc, .arx-track-decision { overflow-wrap: anywhere; }

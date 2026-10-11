@@ -28,6 +28,8 @@ export type ProjectOperatingWorkItem = {
   type: ProjectOperatingWorkType;
   title: string;
   owner: string;
+  ownerSuggested?: boolean;
+  dueDateSuggested?: boolean;
   dueDate: string;
   status: ProjectOperatingWorkStatus;
   priority: "critical" | "high" | "normal";
@@ -91,6 +93,8 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
       type: "rfi",
       title: text(clash.title, "Koordinasyon issue incelemesi"),
       owner: text(clash.assignee, "BIM Koordinatörü"),
+      ownerSuggested: !text(clash.assignee, ""),
+      dueDateSuggested: true,
       dueDate: addDays(generatedAt, critical ? 2 : 5),
       status: critical ? "blocked" : "open",
       priority: critical ? "critical" : clash.severity === "high" ? "high" : "normal",
@@ -108,7 +112,7 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
     ...clashWork,
   ];
 
-  const completeOwnership = workItems.every((item) => Boolean(item.owner && item.dueDate && item.revision && item.source));
+  const completeOwnership = workItems.every((item) => Boolean(item.owner && item.dueDate && item.revision && item.source && !item.ownerSuggested && !item.dueDateSuggested));
   const criticalOpen = workItems.filter((item) => item.priority === "critical" && item.status !== "closed").length;
 
   return {
@@ -149,7 +153,7 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
 
 /** Recompute gates after restored/user work states, using the displayed rows. */
 export function operatingHealthGates(items: ProjectOperatingWorkItem[], coordinationConnected: boolean) {
-  const owned = items.every(item => Boolean(item.owner && item.dueDate && item.revision && item.source));
+  const owned = items.every(item => Boolean(item.owner && item.dueDate && item.revision && item.source && !item.ownerSuggested && !item.dueDateSuggested));
   const critical = items.filter(item => item.priority === "critical" && item.status !== "closed").length;
   return [
     { code: "OS-116-OWNER-DUE", label: "Sorumlu ve hedef tarih", status: items.length && owned ? "passed" : "attention", count: items.length },
