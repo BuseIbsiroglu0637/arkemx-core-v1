@@ -6,30 +6,34 @@ import {shellCase,shellCellValues,shellFieldValues,shellColor,shellFieldUnit} fr
 export type ShellPdfAssets={regularFont:Uint8Array;boldFont:Uint8Array};
 async function assets(){const rows=await Promise.all(["/fonts/ArkemSans-Regular.ttf","/fonts/ArkemSans-Bold.ttf"].map(async url=>{const r=await fetch(url);if(!r.ok)throw Error("Kabuk raporu yazı tipi yüklenemedi.");return new Uint8Array(await r.arrayBuffer());}));return {regularFont:rows[0],boldFont:rows[1]};}
 export async function shellPdf(manifest:ShellManifest,record:ShellCalculationRecord,supplied?:ShellPdfAssets){
+ return renderShellPdf(manifest,record,{title:"ARKEMX - Örnek kabuk sonuçları",banner:"ÖRNEK MODEL - Gerçek proje, tam bina analizi ve teknik onay değildir.",attachmentName:"arkemx-shell-package.json",package:JSON.stringify(shellPackage(manifest,record)),identityLines:[]},supplied);
+}
+export async function renderShellPdf(manifest:import("./shell-render.ts").ShellRenderManifest,record:import("./shell-render.ts").ShellRenderRecord,context:{title:string;banner:string;attachmentName:string;package:string;identityLines:string[]},supplied?:ShellPdfAssets){
  const document=await PDFDocument.create();document.registerFontkit(fontkit);
  const a=supplied??await assets(),regular=await document.embedFont(a.regularFont,{subset:true}),bold=await document.embedFont(a.boldFont,{subset:true});
- document.setTitle("ARKEMX - Örnek kabuk sonuçları");document.setCreationDate(new Date("2000-01-01T00:00:00Z"));document.setModificationDate(new Date("2000-01-01T00:00:00Z"));
- await document.attach(new TextEncoder().encode(JSON.stringify(shellPackage(manifest,record))),"arkemx-shell-package.json",{mimeType:"application/json",description:"Synthetic shell source and raw calculation; no technical approval"});
+ document.setTitle(context.title);document.setCreationDate(new Date("2000-01-01T00:00:00Z"));document.setModificationDate(new Date("2000-01-01T00:00:00Z"));
+ await document.attach(new TextEncoder().encode(context.package),context.attachmentName,{mimeType:"application/json",description:context.banner});
  const c=shellCase(record,manifest.view),s=manifest.source,p=s.plate,model=record.content.prepared.model,W=841.89,H=595.28;
  const number=(v:number)=>v.toExponential(5);
  function text(page:PDFPage,value:string,x:number,y:number,size=10,font:PDFFont=regular,color=rgb(.1,.2,.25)){
   // Wrap every long line without losing the source/calculation identity.
-  const width=W-72-x+36;let line="",yy=y;
-  for(const word of value.split(" ")){const next=line?line+" "+word:word;if(font.widthOfTextAtSize(next,size)>width&&line){page.drawText(line,{x,y:yy,size,font,color});line=word;yy-=size*1.35;}else line=next;}
+  const width=W-36-x;let line="",yy=y;
+  for(const character of value){if(font.widthOfTextAtSize(line+character,size)>width&&line){page.drawText(line,{x,y:yy,size,font,color});line="";yy-=size*1.35;}line+=character;}
   page.drawText(line,{x,y:yy,size,font,color});return yy-size*1.5;
  }
- function page(title:string){const pg=document.addPage([W,H]);pg.drawRectangle({x:0,y:H-72,width:W,height:72,color:rgb(.08,.18,.24)});text(pg,"ARKEMX | "+title,36,H-38,19,bold,rgb(1,1,1));text(pg,"ÖRNEK MODEL - Gerçek proje, tam bina analizi ve teknik onay değildir.",36,H-95,11,bold,rgb(.65,.24,.12));text(pg,"Hesap: "+record.id,36,28,7);text(pg,"Sayfa "+document.getPageCount(),W-93,28,8);return pg;}
+ function page(title:string){const pg=document.addPage([W,H]);pg.drawRectangle({x:0,y:H-72,width:W,height:72,color:rgb(.08,.18,.24)});text(pg,"ARKEMX | "+title,36,H-38,19,bold,rgb(1,1,1));text(pg,context.banner,36,H-95,11,bold,rgb(.65,.24,.12));text(pg,"Hesap: "+record.id,36,28,7);text(pg,"Sayfa "+document.getPageCount(),W-93,28,8);return pg;}
  function table(title:string,headers:string[],rows:string[][]){
   const per=24,col=(W-72)/headers.length;
   for(let offset=0;offset<Math.max(1,rows.length);offset+=per){
    const pg=page(title),start=H-137;pg.drawRectangle({x:36,y:start-6,width:W-72,height:25,color:rgb(.87,.92,.93)});
    headers.forEach((h,i)=>text(pg,h,42+i*col,start,9,bold));
-   rows.slice(offset,offset+per).forEach((r,j)=>r.forEach((v,i)=>{let size=9;while(size>6&&regular.widthOfTextAtSize(v,size)>col-12)size-=.25;pg.drawText(v,{x:42+i*col,y:start-28-j*15,size,font:regular,color:rgb(.1,.2,.25)});}));
+   rows.slice(offset,offset+per).forEach((r,j)=>r.forEach((v,i)=>{let size=9;while(size>6&&regular.widthOfTextAtSize(v,size)>col-12)size-=.25;let label=v,take=Math.floor(v.length/2);while(regular.widthOfTextAtSize(label,size)>col-12&&take>0){label=v.slice(0,take)+"…"+v.slice(-take);take--;}pg.drawText(label,{x:42+i*col,y:start-28-j*15,size,font:regular,color:rgb(.1,.2,.25)});}));
    text(pg,"Yük: "+c.id+" | Satırlar "+(offset+1)+"-"+Math.min(rows.length,offset+per)+" / "+rows.length,36,55,9);
   }
  }
- const pg=page("Kabuk kaynak ve sonuç özeti");let y=H-125;
+ let pg=page("Kabuk kaynak ve sonuç özeti");let y=H-125;
  const rows=[
+  ...context.identityLines,
   "Kaynak: "+s.projectId+" / "+s.revision+" / "+s.schema,
   "Plaka "+p.id+": "+p.width+" x "+p.depth+" m; h="+p.thickness+" m; orta yüzey Z="+p.origin[2]+" m",
   "Malzeme E="+s.material.E+" kN/m²; nu="+s.material.nu+"; gamma="+s.material.unitWeight+" kN/m³",
@@ -43,9 +47,15 @@ export async function shellPdf(manifest:ShellManifest,record:ShellCalculationRec
   "Formülasyon: "+record.content.engine+"; 2x2 Gauss, MITC kesme, 5/6 düzeltme; drilling alpha="+record.content.formulation.drillingFactor,
   "Bu oturumda bağımsız referans veya ağ yakınsaması çalıştırılmadı. Mühendislik değerlendirmesi ayrıca gerekir.",
   "Tam girdi, mesnetler, düğüm/eleman kimlikleri, beş yük durumunun ham sonuçları gömülü JSON ekindedir.",
+  "Tablolarda uzun kimlikler … ile kısaltılabilir; tam kimlikler gömülü JSON ekindedir.",
   "Kaynak SHA-256: "+manifest.sourceSha256,
  ];
- rows.forEach(row=>{y=text(pg,row,36,y,10);y-=6;});
+ rows.forEach(row=>{
+  let line="";
+  const draw=()=>{if(y<75){pg=page("Kaynak ve sonuç özeti (devam)");y=H-125;}pg.drawText(line,{x:36,y,size:10,font:regular,color:rgb(.1,.2,.25)});y-=15;line="";};
+  for(const char of row){if(regular.widthOfTextAtSize(line+char,10)>W-72&&line)draw();line+=char;}
+  draw();y-=6;
+ });
  const map=page("Seçilen sonuç alanı ve ağ"),values=shellCellValues(c,manifest.view.field,s.mesh.nx),raw=shellFieldValues(c,manifest.view.field),norm=Math.max(...raw.map(Math.abs)),mapFit=Math.min(620/p.width,320/p.depth),dx=p.width*mapFit/s.mesh.nx,dy=p.depth*mapFit/s.mesh.ny,mapLeft=(W-p.width*mapFit)/2;
  values.forEach((v,i)=>{const color=shellColor(v,norm);map.drawRectangle({x:mapLeft+(i%s.mesh.nx)*dx,y:155+Math.floor(i/s.mesh.nx)*dy,width:dx,height:dy,color:rgb(...color),borderColor:rgb(.5,.6,.6),borderWidth:.15});});
  text(map,manifest.view.field+" ("+shellFieldUnit(manifest.view.field)+") | ham min="+number(Math.min(...raw))+" / max="+number(Math.max(...raw)),36,115,10);

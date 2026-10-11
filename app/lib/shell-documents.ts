@@ -34,6 +34,9 @@ export async function verifyShellDocument(doc:ShellDocumentRecord,source:ShellSo
  }catch{return false;}
 }
 export function shellDxf(manifest:ShellManifest,record:ShellCalculationRecord){
+ return renderShellDxf(manifest,record,"SYNTHETIC / NO TECHNICAL APPROVAL");
+}
+export function renderShellDxf(manifest:import("./shell-render.ts").ShellRenderManifest,record:import("./shell-render.ts").ShellRenderRecord,banner:string){
  const c=shellCase(record,manifest.view),model=record.content.prepared.model,byId=new Map(model.nodes.map((n,i)=>[n.id,{...n,index:i}]));
  const lines:string[]=["999","ARKEMX_SHELL_TRACE_BEGIN"];
  // Split on code points with a UTF-8 byte bound, preserving Unicode identifiers.
@@ -60,7 +63,7 @@ export function shellDxf(manifest:ShellManifest,record:ShellCalculationRecord){
  if(manifest.view.field==="Uz")model.nodes.forEach((n,i)=>{lines.push("0","POINT","8","RAW_RESULTS");point(n.x,n.y,n.z);text(n.x,n.y,n.z,n.id+" Uz="+c.nodes[i].displacements[2].toExponential(5));});
  model.supports.forEach(s=>{const n=byId.get(s.nodeId)!;lines.push("0","POINT","8","SUPPORTS");point(n.x,n.y,n.z);text(n.x,n.y,n.z,s.nodeId+" fixed="+s.fixed.map(Number).join(""));});
  const p=manifest.source.plate;
- text(p.origin[0],p.origin[1]-.5,p.origin[2],"SYNTHETIC / NO TECHNICAL APPROVAL / CASE "+manifest.view.caseId+" / FIELD "+manifest.view.field+" / DEFORMATION x"+manifest.view.magnification);
+ text(p.origin[0],p.origin[1]-.5,p.origin[2],banner+" / CASE "+manifest.view.caseId+" / FIELD "+manifest.view.field+" / DEFORMATION x"+manifest.view.magnification);
  lines.push("0","ENDSEC","0","EOF");return lines.join("\r\n")+"\r\n";
 }
 export async function createShellArtifact(source:ShellSource,record:ShellCalculationRecord,format:ShellFormat,view:ShellView,assets?:ShellPdfAssets){

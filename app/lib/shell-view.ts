@@ -1,13 +1,14 @@
 import type { ShellCalculationRecord } from "./shell-solver.ts";
+import type { ShellRenderRecord } from "./shell-render.ts";
 export type ShellCase = ShellCalculationRecord["content"]["cases"][number];
 export const SHELL_FIELDS = ["Uz","Nx","Ny","Nxy","Mxx","Myy","Mxy","Qx","Qy"] as const;
 export type ShellField = typeof SHELL_FIELDS[number];
 export type ShellView = {caseId:string;field:ShellField;magnification:number;elementId:string};
 export function shellFieldUnit(field:ShellField){return field==="Uz"?"m":field.startsWith("M")?"kNm/m":"kN/m";}
-export function validateShellView(record:ShellCalculationRecord,view:ShellView){
+export function validateShellView(record:ShellRenderRecord,view:ShellView){
   if(!record.content.cases.some(c=>c.id===view.caseId)||!SHELL_FIELDS.includes(view.field)||!Number.isFinite(view.magnification)||view.magnification<1||view.magnification>10000||!record.content.prepared.model.elements.some(e=>e.id===view.elementId))throw Error("Geçersiz kabuk sonuç görünümü.");
 }
-export function shellCase(record:ShellCalculationRecord,view:ShellView){validateShellView(record,view);return record.content.cases.find(c=>c.id===view.caseId)!;}
+export function shellCase(record:ShellRenderRecord,view:ShellView){validateShellView(record,view);return record.content.cases.find(c=>c.id===view.caseId)!;}
 export function shellFieldValues(c:ShellCase,field:ShellField){
   return field==="Uz"?c.nodes.map(n=>n.displacements[2]):c.elements.flatMap(e=>e.points.map(p=>p.resultants[SHELL_FIELDS.indexOf(field)-1]));
 }

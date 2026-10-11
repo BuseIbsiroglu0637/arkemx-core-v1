@@ -1,8 +1,8 @@
 "use client";
 import {memo} from "react";
-import type {ShellCalculationRecord} from "../lib/shell-solver";
+import type {ShellRenderRecord} from "../lib/shell-render";
 import {shellCase,shellCellValues,shellFieldValues,shellColor,shellFieldUnit,type ShellView} from "../lib/shell-view";
-export const ShellPlots=memo(function ShellPlots({record,view}:{record:ShellCalculationRecord;view:ShellView}){
+export const ShellPlots=memo(function ShellPlots({record,view}:{record:ShellRenderRecord;view:ShellView}){
  const c=shellCase(record,view),s=record.content.prepared.source,p=s.plate,model=record.content.prepared.model;
  const raw=shellFieldValues(c,view.field),norm=Math.max(...raw.map(Math.abs)),cells=shellCellValues(c,view.field,s.mesh.nx),fit=Math.min(620/p.width,320/p.depth),width=p.width*fit,height=p.depth*fit;
  const projection=(i:number,factor:number)=>{const n=model.nodes[i],u=c.nodes[i].displacements;return {x:n.x-p.origin[0]+factor*u[0]-.35*(n.y-p.origin[1]+factor*u[1]),y:.18*(n.x-p.origin[0]+n.y-p.origin[1]+factor*(u[0]+u[1]))-factor*u[2]};};
