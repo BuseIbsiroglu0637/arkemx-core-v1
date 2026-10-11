@@ -254,6 +254,18 @@ export function saveProjectToStorage<T>(storage: Storage, payload: T, savedAt = 
   let reconciled = reconcileProjectSnapshots(payload, previous.value);
   reconciled = supplementMissingProjectModules(reconciled, recovery.value);
 
+  // Re-reading the result of reconciliation is not a new edit. Avoid writing
+  // identical primaries back and generating storage-event loops across tabs.
+  if (previous.value && JSON.stringify(reconciled) === JSON.stringify(previous.value)) {
+    return {
+      savedAt: previous.savedAt || savedAt,
+      backupAvailable: Boolean(storage.getItem(PROJECT_BACKUP_KEY) || storage.getItem(PROJECT_RECOVERY_KEY)),
+      bytes: new Blob([JSON.stringify(reconciled)]).size,
+      payload: reconciled,
+      reconciled: JSON.stringify(reconciled) !== JSON.stringify(payload),
+    };
+  }
+
   if (previousRaw) storage.setItem(PROJECT_BACKUP_KEY, previousRaw);
   storage.setItem(PROJECT_STORAGE_KEY, encodeProjectEnvelope(reconciled, savedAt));
 

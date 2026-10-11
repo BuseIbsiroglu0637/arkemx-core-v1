@@ -13,14 +13,37 @@ import {
 } from "../app/lib/project-storage.ts";
 
 class MemoryStorage {
+  writes = 0;
   #data = new Map();
   get length() { return this.#data.size; }
   clear() { this.#data.clear(); }
   getItem(key) { return this.#data.has(key) ? this.#data.get(key) : null; }
   key(index) { return [...this.#data.keys()][index] ?? null; }
   removeItem(key) { this.#data.delete(key); }
-  setItem(key, value) { this.#data.set(key, String(value)); }
+  setItem(key, value) { this.writes++; this.#data.set(key, String(value)); }
 }
+
+test("delayed external disk update cannot reopen a newer pending portal closure", () => {
+  const before = '2026-10-11T18:00:00.000Z', after = '2026-10-11T18:00:00.010Z';
+  const oldDisk = project(before, {'client-portal': moduleAt(before, {decisions:[{id:'DEC-001',status:'Açık'}]})});
+  const pending = project(after, {'client-portal': moduleAt(after, {decisions:[{id:'DEC-001',status:'Kapalı'},{id:'DEC-002',status:'Açık'}]})});
+  const merged = reconcileProjectSnapshots(oldDisk, pending);
+  assert.deepEqual(merged.modules['client-portal'].decisions,pending.modules['client-portal'].decisions);
+  const storage=new MemoryStorage();saveProjectToStorage(storage,oldDisk);
+  saveProjectToStorage(storage,merged);
+  assert.deepEqual(loadProjectFromStorage(storage,'legacy').value.modules['client-portal'].decisions,pending.modules['client-portal'].decisions);
+});
+
+test("reconciled readback does not rewrite storage or suppress the following user edit", () => {
+  const storage = new MemoryStorage();
+  const before='2026-10-11T18:00:00.000Z', after='2026-10-11T18:00:00.010Z';
+  const initial=project(before,{'client-portal':moduleAt(before,{status:'Açık'})});
+  const first=saveProjectToStorage(storage,initial,before);const writes=storage.writes;
+  saveProjectToStorage(storage,first.payload,after);assert.equal(storage.writes,writes);
+  const edited=project(after,{'client-portal':moduleAt(after,{status:'Kapalı'})});
+  saveProjectToStorage(storage,edited,after);assert.ok(storage.writes>writes);
+  assert.equal(loadProjectFromStorage(storage,'legacy').value.modules['client-portal'].status,'Kapalı');
+});
 
 function moduleAt(recordedAt, value = {}) {
   return {

@@ -21,7 +21,7 @@ import { canRefreshGeneratedPlan, generatedPlanGeometry } from "../lib/program-p
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
 import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
-import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, supplementMissingProjectModules } from "../lib/project-storage";
+import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, reconcileProjectSnapshots } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -646,7 +646,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const currentProjectId = useRef(project.id);
   useEffect(()=>{currentProjectId.current=project.id;},[project.id]);
   const [hydrated, setHydrated] = useState(false);
-  const skipNextPersistenceRef = useRef(false);
+  const skippedPersistenceSnapshotRef = useRef<ProjectKernelState | null>(null);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
     state: "loading",
     integrity: "missing",
@@ -720,10 +720,9 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!hydrated) return;
-    if (skipNextPersistenceRef.current) {
-      skipNextPersistenceRef.current = false;
-      return;
-    }
+    const skippedSnapshot = skippedPersistenceSnapshotRef.current;
+    skippedPersistenceSnapshotRef.current = null;
+    if (skippedSnapshot === project) return;
     let cancelled = false;
     try {
       // Persist in the same committed effect. A route change must not be able
@@ -739,7 +738,6 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       queueMicrotask(() => {
         if (cancelled) return;
         if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
-          skipNextPersistenceRef.current = true;
           setProject(result.payload);
         }
         setPersistence({
@@ -766,10 +764,9 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       const storedProject = stored.value;
       if (!storedProject) return;
       setProject((current) => {
-        // A storage event means the disk primary was written by another tab.
-        // Treat that primary as authoritative for overlapping modules and keep
-        // only modules that exist exclusively in the current in-memory tab.
-        const merged = supplementMissingProjectModules(storedProject, current);
+        // Another tab may write before our latest committed edit reaches disk.
+        // Compare module timestamps so that pending newer edits are retained.
+        const merged = reconcileProjectSnapshots(storedProject, current);
         return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
       });
       if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
@@ -1076,8 +1073,9 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     } catch {
       // Session storage may be unavailable.
     }
-    skipNextPersistenceRef.current = true;
-    setProject(createActiveProject());
+    const clearedProject = createActiveProject();
+    skippedPersistenceSnapshotRef.current = clearedProject;
+    setProject(clearedProject);
     setPersistence({
       state: "device-saved",
       integrity: "missing",
