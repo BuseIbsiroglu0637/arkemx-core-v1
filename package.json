@@ -26,7 +26,7 @@
     "test:tracking:e2e": "node --experimental-strip-types tests/tracking-register-browser.mjs",
     "test:g05:e2e": "node scripts/run-g05-browser.mjs",
     "build:local": "vite build --config vite.local.config.mjs",
-    "test:local:ui": "npm run build:local && node --experimental-strip-types --test tests/portal-stage-status.test.mjs tests/tracking-register.test.mjs tests/project-workflow-fixes.test.mjs tests/current-ui-smoke.mjs tests/bim-section-strategy.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-zoning.test.mjs tests/project-storage-reconciliation.test.mjs tests/technical-export-review.test.mjs",
+    "test:local:ui": "npm run build:local && node --experimental-strip-types --test tests/portal-records.test.mjs tests/portal-stage-status.test.mjs tests/tracking-register.test.mjs tests/project-workflow-fixes.test.mjs tests/current-ui-smoke.mjs tests/bim-section-strategy.test.mjs tests/delivery-readiness.test.mjs tests/project-graph-zoning.test.mjs tests/project-storage-reconciliation.test.mjs tests/technical-export-review.test.mjs",
     "test:land-research": "node --experimental-strip-types --test tests/land-research.test.mjs",
     "test:land-research:e2e": "node --experimental-strip-types tests/land-research-smoke.mjs",
     "demo:land": "node scripts/start-local-demo.mjs --land-browser",

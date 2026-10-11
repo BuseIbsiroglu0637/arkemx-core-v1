@@ -10,9 +10,9 @@ import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
 import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { portalStageStatus } from "../lib/portal-stage-status";
+import { portalRecords, nextPortalDecisionId, type ApprovalState } from "../lib/portal-records";
 
 type PortalView = "overview" | "engineering" | "approvals" | "deliverables" | "assistant" | "asset" | "review" | "readiness" | "integrations";
-type ApprovalState = "Bekliyor" | "İncelemede" | "Onaylandı";
 
 const primaryPortalViews: Array<[PortalView, string]> = [
   ["overview", "Proje özeti"],
@@ -50,7 +50,7 @@ function safeNumber(value: unknown) {
 }
 
 export function ClientTechnicalProjectRoom() {
-  const { project, thread, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
+  const { project, thread, hydrated, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
   const storedPortal = safeRecord(project.modules["client-portal"]);
   const demolition = safeRecord(project.modules["demolition-screening"]);
   const projectOs = safeRecord(project.modules["project-os"]);
@@ -60,15 +60,9 @@ export function ClientTechnicalProjectRoom() {
   const demolitionInput = safeRecord(demolition.input);
   const demolitionAnalysis = safeRecord(demolition.analysis);
   const demolitionGates = Array.isArray(demolition.gates) ? demolition.gates.map(safeRecord) : [];
-  const storedApprovals = safeRecord(storedPortal.approvals);
+  const { approvals, decisions } = portalRecords(storedPortal);
   const [view, setView] = useState<PortalView>("overview");
   const [role, setRole] = useState("İşveren");
-  const [approvals, setApprovals] = useState<Record<string, ApprovalState>>({
-    scope: (storedApprovals.scope as ApprovalState) || "Bekliyor",
-    system: (storedApprovals.system as ApprovalState) || "Bekliyor",
-    coordination: (storedApprovals.coordination as ApprovalState) || "Bekliyor",
-    delivery: (storedApprovals.delivery as ApprovalState) || "Bekliyor",
-  });
   const [assets, setAssets] = useState({
     model: true,
     warranty: false,
@@ -88,10 +82,6 @@ export function ClientTechnicalProjectRoom() {
   const [handoffMessage, setHandoffMessage] = useState("");
   const [decisionText, setDecisionText] = useState("");
   const [decisionOwner, setDecisionOwner] = useState("İşveren");
-  const [decisions, setDecisions] = useState<Array<{ id: string; text: string; owner: string; status: string; createdAt: string }>>(() => {
-    const values = storedPortal.decisions;
-    return Array.isArray(values) ? values as Array<{ id: string; text: string; owner: string; status: string; createdAt: string }> : [];
-  });
   const [assistantTopic, setAssistantTopic] = useState<"next" | "risk" | "evidence" | "delivery">("next");
   const [reviewMode, setReviewMode] = useState<"desktop" | "vr" | "ar">("desktop");
   const [reviewLanguage, setReviewLanguage] = useState("Türkçe");
@@ -137,7 +127,7 @@ export function ClientTechnicalProjectRoom() {
   };
 
   const saveApprovals = (next: Record<string, ApprovalState>) => {
-    setApprovals(next);
+    if (!hydrated) return;
     patchModule("client-portal", { approvals: next, role, status: "Müşteri portalı etkin" });
   };
 
@@ -171,16 +161,15 @@ export function ClientTechnicalProjectRoom() {
 
   const addDecision = () => {
     const text = decisionText.trim();
-    if (!text) return;
-    const next = [{ id: `DEC-${String(decisions.length + 1).padStart(3, "0")}`, text, owner: decisionOwner, status: "Açık", createdAt: new Date().toISOString() }, ...decisions].slice(0, 20);
-    setDecisions(next);
+    if (!hydrated || !text) return;
+    const next = [{ id: nextPortalDecisionId(decisions), text, owner: decisionOwner, status: "Açık", createdAt: new Date().toISOString() }, ...decisions];
     setDecisionText("");
     patchModule("client-portal", { decisions: next, role, status: "Müşteri karar kaydı etkin" });
   };
 
   const toggleDecision = (id: string) => {
+    if (!hydrated) return;
     const next = decisions.map((decision) => decision.id === id ? { ...decision, status: decision.status === "Açık" ? "Kapalı" : "Açık" } : decision);
-    setDecisions(next);
     patchModule("client-portal", { decisions: next });
   };
 
