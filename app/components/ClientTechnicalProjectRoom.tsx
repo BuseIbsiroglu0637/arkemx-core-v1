@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { validateDeliveryPackage } from "../lib/delivery-package";
 import { createCollaborationAudit } from "../lib/collaboration-audit";
 import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
-import { PROJECT_JOURNEY, useProjectKernel } from "./ProjectKernel";
+import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
+import { portalStageStatus } from "../lib/portal-stage-status";
 
 type PortalView = "overview" | "engineering" | "approvals" | "deliverables" | "assistant" | "asset" | "review" | "readiness" | "integrations";
 type ApprovalState = "Bekliyor" | "İncelemede" | "Onaylandı";
@@ -95,11 +96,9 @@ export function ClientTechnicalProjectRoom() {
   const [reviewMode, setReviewMode] = useState<"desktop" | "vr" | "ar">("desktop");
   const [reviewLanguage, setReviewLanguage] = useState("Türkçe");
 
-  const completedJourney = useMemo(() => PROJECT_JOURNEY.map((step) => ({
-    ...step,
-    done: step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)),
-  })), [thread.nodes]);
   const approvedCount = Object.values(approvals).filter((state) => state === "Onaylandı").length;
+  const portalStatus = portalStageStatus(thread, deriveProjectJourneyState(thread), approvedCount);
+  const completedJourney = PROJECT_JOURNEY.map((step, index) => ({ ...step, ...portalStatus.stages[index] }));
   const deliverables = [
     ["Proje veri paketi", project.events.length ? "Hazır" : "Başlatılmadı", `${project.events.length} denetlenebilir işlem`],
     ["Disiplin kayıtları", thread.metrics.activeCount ? "Hazır" : "Eksik", `${thread.metrics.activeCount}/${thread.metrics.totalCount} modül`],
@@ -115,10 +114,10 @@ export function ClientTechnicalProjectRoom() {
   const stageGates = [
     { code: "G01", label: "Brief", route: "/proje-baslat", ready: thread.nodes.some((node) => node.id === "decision-assistant" && node.active), requirement: "Yatırım hedefi ve başarı ölçütü" },
     { code: "G02", label: "Parsel", route: "/arsa-fizibilite-studyosu", ready: thread.canonical.site.parcelArea > 1 && thread.canonical.site.geometryValid, requirement: "Doğrulanabilir sınır ve koordinat" },
-    { code: "G03", label: "Mimari", route: "/mimari-program-studyosu", ready: thread.canonical.architecture.grossArea > 1, requirement: "Mahal programı ve brüt alan" },
+    { code: "G03", label: "Mimari", route: "/mimari-program-studyosu", ready: portalStatus.architectureReady, requirement: "İhtiyaç onayı, plan ve önceki aşama kontrolleri" },
     { code: "G04", label: "Taşıyıcı", route: "/tasarim-calismalari#tasiyici-on-tasarim", ready: Boolean(thread.canonical.structure.system && thread.canonical.structure.width), requirement: "Sistem, aks ve ön boyut" },
     { code: "G05", label: "Koordinasyon", route: "/muhendislik-koordinasyon", ready: thread.nodes.some((node) => node.id === "engineering-coordination" && node.active) && thread.metrics.critical === 0, requirement: "Kritik issue kapanışı" },
-    { code: "G06", label: "Teslim", route: "/proje-os", ready: approvedCount === 4 && thread.nodes.some((node) => node.id === "project-os" && node.active), requirement: "Onay, indeks ve varlık paketi" },
+    { code: "G06", label: "Teslim", route: "/dijital-proje-merkezi", ready: portalStatus.deliveryReady, requirement: "Önceki kontroller, teslim kapsamı ve kayıtlı onaylar" },
   ];
   const readyGateCount = stageGates.filter((gate) => gate.ready).length;
   const readinessScore = Math.round((thread.metrics.readiness + thread.metrics.quality + approvedCount * 25 + readyGateCount / stageGates.length * 100) / 4);
@@ -331,7 +330,7 @@ export function ClientTechnicalProjectRoom() {
           </div>
           <footer><i style={{ width: `${Math.min(100, Math.max(0, safeNumber(earnedValue.actual)))}%` }}></i><span>Gerçekleşen {progressLabel("actual")}</span><span>Plan {progressLabel("planned")}</span><small>Program ve maliyet göstergeleri kayıtlı proje girdilerinden hesaplanır; eksik değerler veri yok olarak gösterilir.</small></footer>
         </section>
-        <div className="client-journey">{completedJourney.map((step, index) => <Link className={step.done ? "done" : ""} href={step.href} key={step.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{step.short}</b><small>{step.done ? "Kayıt var" : step.output}</small></Link>)}</div>
+        <div className="client-journey">{completedJourney.map((step, index) => <Link className={step.done ? "done" : ""} href={step.href} key={step.short}><span>{String(index + 1).padStart(2, "0")}</span><b>{step.short}</b><small>{step.label}</small></Link>)}</div>
         <button className="portal-sync" onClick={() => synchronizeProject()}>Tüm bağlı modülleri şimdi eşitleyin <span>↻</span></button>
         <section className="project-vault">
           <header><div><span>V61 / PROJE KASASI</span><h4>Revizyon geri dönüş noktaları</h4></div><button onClick={saveSnapshot}>Mevcut durumu kaydet <span>＋</span></button></header>
