@@ -413,7 +413,8 @@ export function ClientAccountSettings({ displayName, email, simple = false }: { 
         return;
       }
       setProjectSyncSuppressed(project.id, false);
-      clearLocalProject();
+      try{await clearLocalProject();}
+      catch(e){setMessage("Hesap kaydı silindi; bu cihazdaki silme tamamlanamadı: "+(e instanceof Error?e.message:"depo hatası"));return;}
       setActiveProjectRemovalId(null);
       await load("Aktif proje hesabınızdan ve bu cihazdaki çalışma alanından silindi.");
     } catch {
