@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
+import { preserveProjectSwitchBackup } from "../lib/project-switch-backup";
 import {
   deriveGuidedProjectRoadmap,
   type GuidedProjectIntake,
@@ -1124,8 +1125,15 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
   const integrityIssues = projectIntegrityIssues(project);
   const integrityWarning = integrityIssues.length ? <p role="alert" data-testid="project-integrity-warning">Kaynak doğrulaması gerekli: {integrityIssues.join("; ")}. Eski veri güncel revizyon veya doğrulanmış kaynak olarak kaydedilemez.</p> : null;
   const [editing, setEditing] = useState(false);
+  const [backupNotice, setBackupNotice] = useState("");
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
-  const exportProject = () => downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
+  const exportProject = () => {
+    try {
+      downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
+      preserveProjectSwitchBackup(window.localStorage, project);
+      setBackupNotice("Yedek indirmesi başlatıldı; geri dönüş kopyası cihazdaki Proje Kasasında doğrulandı. Proje merkezinden yeni proje açabilirsiniz. Büyük kabuk hesap paketlerini ayrıca indirin.");
+    } catch { setBackupNotice("Cihazdaki geri dönüş kopyası doğrulanamadı; yeni projeye geçmeden önce yedeklemeyi tekrar deneyin veya hesabınıza kaydedin."); }
+  };
 
   const normalizedModule = module.toUpperCase();
   const activeJourneyIndex = moduleKey ? MODULE_JOURNEY_INDEX[moduleKey] : Math.max(0, PROJECT_JOURNEY.findIndex((step) => step.modules.some((keyword) => normalizedModule.includes(keyword))));
@@ -1237,11 +1245,13 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
         <button onClick={exportProject}>Proje yedeği</button>
         {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
       </div>
+      {backupNotice && <p role="status">{backupNotice}</p>}
     </div>;
   }
 
   return <><div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
     {integrityWarning}
+    {backupNotice && <p role="status">{backupNotice}</p>}
     <div className="kernel-brand"><span>ARKEMX / {currentModule.code}</span><b>{currentModule.label}</b><small>{module}</small></div>
     <div className="kernel-identity"><span>PROJE</span>{editing ? <input aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : <button onClick={() => setEditing(true)}>{project.name}</button>}<small>{project.id}</small></div>
     <label><span>AŞAMA</span><select value={project.phase} onChange={(event) => setIdentity({ phase: event.target.value as ProjectPhase })}>{["Fikir", "Ön fizibilite", "Avan proje", "Uygulama projesi", "Yapım", "Teslim"].map((phase) => <option key={phase}>{phase}</option>)}</select></label>

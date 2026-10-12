@@ -11,6 +11,7 @@ import { downloadTextFile } from "../lib/engineering";
 import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { PROJECT_MODULES } from "../lib/project-graph";
 import { DigitalProjectHub } from "./DigitalProjectHub";
+import { hasCurrentProjectBackup, preserveProjectSwitchBackup } from "../lib/project-switch-backup";
 
 type CenterAccountProject = {
   id: string;
@@ -241,6 +242,14 @@ export function SimpleProjectCenter() {
       return;
     }
 
+    if (hasCurrentProjectBackup(window.localStorage, project)) {
+      setOperationsOpen(false);
+      setProjectsOpen(false);
+      setNotice("Mevcut projenin güncel geri dönüş kopyası cihazda doğrulandı. Yeni proje formu açılıyor…");
+      router.push("/proje-baslat?new=1&fresh=1");
+      return;
+    }
+
     if (activeProjectIsAccountSuppressed()) {
       setNotice("Aktif proje yalnız bu cihazda tutuluyor. Yeni proje başlatmadan önce Hesabım sayfasından projeyi hesabınıza yeniden ekleyin.");
       setProjectsOpen(false);
@@ -315,12 +324,13 @@ export function SimpleProjectCenter() {
 
   function exportProject() {
     if (!hasProject) return;
-    downloadTextFile(
-      `${project.id}-${project.revision}.arkem.json`,
-      JSON.stringify(project, null, 2),
-      "application/json",
-    );
-    setNotice("Proje verileri yedeği indirildi. Büyük kabuk hesap kayıtları bu dosyada yok. Plan ve Aks ekranından her döşemenin Proje kabuk JSON paketini ayrıca indirin.");
+    try {
+      downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
+      preserveProjectSwitchBackup(window.localStorage, project);
+      setNotice("Yedek indirmesi başlatıldı ve güncel proje kopyası cihazdaki Proje Kasasına kaydedildi. Artık yeni proje başlatabilirsiniz. Büyük kabuk hesap paketlerini Plan ve Aks ekranından ayrıca indirin.");
+    } catch {
+      setNotice("Cihazdaki geri dönüş kopyası doğrulanamadı. Yeni projeye geçmeden önce projeyi hesabınıza kaydedin veya yedeklemeyi tekrar deneyin.");
+    }
     setOperationsOpen(false);
   }
 
