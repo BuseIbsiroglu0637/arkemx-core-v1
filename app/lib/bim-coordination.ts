@@ -105,7 +105,7 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const alternatives = Array.isArray(structure.alternatives) ? structure.alternatives.map(record) : [];
   const architectureConnected = architecture.schema === "ARKEM-ARCH-SCHEME/3.0";
   const structureConnected = structure.schema === "ARKEM-STRUCTURAL-STUDIO/3.0";
-  const selectedSystem = stringValue(recommendation.system, stringValue(structure.activeSystem));
+  const selectedSystem = stringValue(structure.activeSystem, stringValue(recommendation.system));
   const selectedAlternative = alternatives.find((alternative) => stringValue(alternative.system) === selectedSystem) ?? alternatives[0] ?? {};
   const preliminary = record(selectedAlternative.preliminary);
   const preliminaryNumeric = record(preliminary.numeric);
@@ -235,7 +235,7 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const criticalClashes = clashes.filter((clash) => clash.severity === "critical").length;
   const checks = [
     { code: "BIM-115-01", label: "V113 mimari şema bağlantısı", state: architectureConnected ? "pass" as const : "risk" as const, value: architectureConnected ? `${width.toFixed(1)} × ${depth.toFixed(1)} m` : "Bağlantı yok", note: "Kat, çekirdek ve kullanıcı yükü mimari şemadan okunur." },
-    { code: "BIM-115-02", label: "V114 taşıyıcı stüdyo bağlantısı", state: structureConnected ? "pass" as const : "risk" as const, value: structureConnected ? stringValue(recommendation.label, selectedSystem) : "Bağlantı yok", note: "Aks, kesit sınıfı, miktar ve göreli göstergeler taşıyıcı stüdyodan okunur." },
+    { code: "BIM-115-02", label: "V114 taşıyıcı stüdyo bağlantısı", state: structureConnected ? "pass" as const : "risk" as const, value: structureConnected ? stringValue(selectedAlternative.label, selectedSystem) : "Bağlantı yok", note: "Aks, kesit sınıfı, miktar ve göreli göstergeler taşıyıcı stüdyodan okunur." },
     { code: "BIM-115-03", label: "Ortak koordinat referansı", state: coordinateVerified ? "pass" as const : "review" as const, value: coordinateReference, note: "Gerçek IFC yerleşimi için proje baz noktası, kuzey ve düşey datum ayrıca doğrulanır." },
     { code: "BIM-115-04", label: "Aks, plaka ve kat eşleşmesi", state: geometryMatches ? "pass" as const : architectureConnected && structureConnected ? "risk" as const : "review" as const, value: `${baysX}×${baysY} aks · ${floors} kat`, note: "Mimari ve taşıyıcı geometri aynı revizyonda karşılaştırılır." },
     { code: "BIM-115-05", label: "Açık çakışma kapısı", state: criticalClashes ? "risk" as const : clashes.length ? "review" as const : "pass" as const, value: `${clashes.length} açık · ${criticalClashes} kritik`, note: "Kritik issue kapanmadan koordinasyon dondurma kapısı geçmez." },

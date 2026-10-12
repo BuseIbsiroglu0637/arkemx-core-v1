@@ -5,16 +5,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createBimCoordinationModel, type CoordinationSectionStrategy } from "../lib/bim-coordination";
 import { createCoordinationPackage } from "../lib/coordination-package";
+import { bimSourceTransfer } from "../lib/bim-source-transfer";
 import { restoreReviewedIds, summarizeIssueLifecycle } from "../lib/issue-lifecycle";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type View = "federation" | "clashes" | "section" | "foundation" | "delivery" | "issues";
 type LocalIssue = { id: string; severity: "critical" | "review" | "info"; discipline: string; title: string; evidence: string; action: string; assignee?: string; location?: string; type?: string; sourceRefs?: string[] };
-type UnknownRecord = Record<string, unknown>;
 
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min)); }
-function record(value: unknown): UnknownRecord { return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : {}; }
-function numeric(value: unknown, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 
 export function EngineeringCoordinationStudio(props: { simple?: boolean } = {}) {
   const { project } = useProjectKernel();
@@ -41,13 +39,18 @@ function EngineeringCoordinationStudioSession({ simple = false }: { simple?: boo
   const [facadeTolerance, setFacadeTolerance] = useState(20);
   const [reviewed, setReviewed] = useState<string[]>([]);
   const [transferReady, setTransferReady] = useState(false);
-  const [syncMessage, setSyncMessage] = useState("Koordinasyon kesiti varsayılan kabullerle açıldı");
+  const [syncRecord, setSyncRecord] = useState({ key: "", message: "Koordinasyon kesiti varsayılan kabullerle açıldı; kaynak aktarımı yapılmadı." });
 
   const source = thread.canonical;
-  const architectureModule = record(project.modules["architectural-program"]);
-  const structureModule = record(project.modules["structural-concept"]);
-  const architecturalScheme = architectureModule.architecturalScheme;
-  const structuralStudio = structureModule.structuralStudio;
+  const architectureSource = project.modules["architectural-program"];
+  const structureSource = project.modules["structural-concept"];
+  const planSource = project.modules["plan-editor"];
+  const sourceTransfer = useMemo(() => bimSourceTransfer({ id: project.id, revision: project.revision, modules: {
+    "architectural-program": architectureSource, "structural-concept": structureSource, "plan-editor": planSource,
+  } }), [project.id, project.revision, architectureSource, structureSource, planSource]);
+  const syncMessage = syncRecord.key === sourceTransfer.key ? syncRecord.message : syncRecord.key ? "Kaynak veya revizyon değişti; yeniden aktarım bekleniyor." : syncRecord.message;
+  const architecturalScheme = sourceTransfer.architecturalScheme;
+  const structuralStudio = sourceTransfer.structuralStudio;
   const bimCoordination = useMemo(() => createBimCoordinationModel({
     projectId: project.id,
     projectRevision: project.revision,
@@ -129,22 +132,12 @@ function EngineeringCoordinationStudioSession({ simple = false }: { simple?: boo
   }, [activeCriticalClashCount, beamDepth, bimCoordination, ceilingBuildUp, facadeTolerance, floorHeight, hydrated, lifecycle, localIssues, outletCapacity, patchModule, plantArea, rainfallIntensity, raisedFloor, reviewed, reviewedCriticalClashCount, result, sectionStrategy, serviceZone, shaftArea, slabDepth, soilBearing, sprinkler, transferReady]);
 
   const importThread = useCallback(() => {
-    const scheme = record(architecturalScheme);
-    const plate = record(scheme.plate);
-    const studio = record(structuralStudio);
-    const recommendation = record(studio.recommendation);
-    const alternatives = Array.isArray(studio.alternatives) ? studio.alternatives.map(record) : [];
-    const selected = alternatives.find((alternative) => alternative.system === recommendation.system) ?? alternatives[0] ?? {};
-    const preliminary = record(selected.preliminary);
-    const dimensions = record(preliminary.numeric);
-    const nextFloorHeight = numeric(plate.floorHeight, source.architecture.floorHeight);
-    const nextBeamDepth = numeric(dimensions.beamDepth, source.structure.beamDepth);
-    const nextSlabDepth = numeric(dimensions.slabThickness, source.structure.slabThickness);
-    if (nextFloorHeight > 0) setFloorHeight(clamp(nextFloorHeight, 2.6, 10));
-    if (nextBeamDepth > 0) setBeamDepth(clamp(nextBeamDepth, .2, 2));
-    if (nextSlabDepth > 0) setSlabDepth(clamp(nextSlabDepth, .08, .6));
-    setSyncMessage("V113 kat/kot şeması ve V114 taşıyıcı kesitleri ortak BIM modeline yenilendi");
-  }, [architecturalScheme, source.architecture.floorHeight, source.structure.beamDepth, source.structure.slabThickness, structuralStudio]);
+    if (!hydrated) return;
+    if (sourceTransfer.floorHeight !== undefined) setFloorHeight(sourceTransfer.floorHeight);
+    if (sourceTransfer.beamDepth !== undefined) setBeamDepth(sourceTransfer.beamDepth);
+    if (sourceTransfer.slabDepth !== undefined) setSlabDepth(sourceTransfer.slabDepth);
+    setSyncRecord({ key: sourceTransfer.key, message: sourceTransfer.message });
+  }, [hydrated, sourceTransfer]);
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
     const timer = window.setTimeout(() => {
@@ -168,14 +161,14 @@ function EngineeringCoordinationStudioSession({ simple = false }: { simple?: boo
       if (typeof input.sprinkler === "boolean") setSprinkler(input.sprinkler);
       if (typeof input.facadeTolerance === "number") setFacadeTolerance(input.facadeTolerance);
       setReviewed(restoreReviewedIds(saved?.reviewed, saved?.resolved));
-      setSyncMessage("Kayıtlı koordinasyon modeli otomatik açıldı");
+      setSyncRecord({ key: sourceTransfer.key, message: "Kayıtlı koordinasyon girdileri açıldı; V113/V114 kaynakları yeniden aktarılmadı." });
     } else {
       importThread();
     }
     setTransferReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated, importThread, project.modules]);
+  }, [hydrated, importThread, project.modules, sourceTransfer.key]);
   const exportBcf = () => downloadTextFile("arkem-koordinasyon-issues.bcf.json", JSON.stringify(createCoordinationPackage({
     projectId: project.id,
     projectRevision: project.revision,
