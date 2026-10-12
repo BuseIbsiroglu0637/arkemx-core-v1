@@ -794,7 +794,11 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       // Ignore pending writes from an editor belonging to a previous project.
       if (current.id !== project.id) return current;
       // Opening a legacy/stale draft is not a new source observation.
-      if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":"))) return current;
+      // Portal notes and revision-bound review records may be updated for the
+      // new revision; this must not refresh stale engineering source modules.
+      const portalRevisionReview = key === "client-portal" && record(record(current.modules[key])._kernel).projectId === current.id;
+      if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":")
+        && !(portalRevisionReview && issue === key + ": project/revision conflict"))) return current;
       const incoming = record(moduleValue);
       const mergedValue = mergeModuleValue(current.modules[key], {
         ...incoming,

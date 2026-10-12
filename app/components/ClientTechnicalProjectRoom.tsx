@@ -10,7 +10,7 @@ import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
 import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { portalStageStatus } from "../lib/portal-stage-status";
-import { portalRecords, nextPortalDecisionId, type ApprovalState } from "../lib/portal-records";
+import { portalRecords, nextPortalDecisionId, recordPortalApproval, type ApprovalState } from "../lib/portal-records";
 
 type PortalView = "overview" | "engineering" | "approvals" | "deliverables" | "assistant" | "asset" | "review" | "readiness" | "integrations";
 
@@ -50,7 +50,7 @@ function safeNumber(value: unknown) {
 }
 
 export function ClientTechnicalProjectRoom() {
-  const { project, thread, hydrated, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
+  const { project, thread, hydrated, setIdentity, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
   const storedPortal = safeRecord(project.modules["client-portal"]);
   const demolition = safeRecord(project.modules["demolition-screening"]);
   const projectOs = safeRecord(project.modules["project-os"]);
@@ -60,7 +60,7 @@ export function ClientTechnicalProjectRoom() {
   const demolitionInput = safeRecord(demolition.input);
   const demolitionAnalysis = safeRecord(demolition.analysis);
   const demolitionGates = Array.isArray(demolition.gates) ? demolition.gates.map(safeRecord) : [];
-  const { approvals, decisions } = portalRecords(storedPortal);
+  const { approvals, decisions, staleApprovals } = portalRecords(storedPortal, project.revision);
   const [view, setView] = useState<PortalView>("overview");
   const [role, setRole] = useState("İşveren");
   const [assets, setAssets] = useState({
@@ -126,9 +126,10 @@ export function ClientTechnicalProjectRoom() {
     delivery: { title: `Teslim hazırlığı: ${approvedCount}/4 onay`, copy: `Kurumsal PDF, CSV ve JSON canlıdır. Gerçek DWG, CDE ve dijital ikiz bağlantıları lisans veya proje kurulumu gerektirir.`, route: "/proje-os", action: "Teslim kapsamını açın" },
   };
 
-  const saveApprovals = (next: Record<string, ApprovalState>) => {
+  const saveApproval = (id: string, state: ApprovalState) => {
     if (!hydrated) return;
-    patchModule("client-portal", { approvals: next, role, status: "Müşteri portalı etkin" });
+    const next = recordPortalApproval(storedPortal, id, state, project.revision, role, new Date().toISOString());
+    if (next) patchModule("client-portal", { ...next, role, status: "Müşteri portalı etkin" });
   };
 
   const saveSnapshot = () => {
@@ -156,7 +157,7 @@ export function ClientTechnicalProjectRoom() {
   const cycleApproval = (id: string) => {
     const current = approvals[id];
     const nextState: ApprovalState = current === "Bekliyor" ? "İncelemede" : current === "İncelemede" ? "Onaylandı" : "Bekliyor";
-    saveApprovals({ ...approvals, [id]: nextState });
+    saveApproval(id, nextState);
   };
 
   const addDecision = () => {
@@ -180,6 +181,8 @@ export function ClientTechnicalProjectRoom() {
       project: { id: project.id, name: project.name, revision: project.revision, phase: project.phase },
       readiness: thread.metrics,
       approvals,
+      approvalRecords: storedPortal.approvalRecords,
+      approvalHistory: storedPortal.approvalHistory,
       collaboration: createCollaborationAudit({ projectId: project.id, revision: project.revision, decisions, approvals }),
       deliveryValidation: deliveryPackage,
       modules: thread.nodes.map(({ id, code, label, active, readiness }) => ({ id, code, label, active, readiness })),
@@ -333,7 +336,16 @@ export function ClientTechnicalProjectRoom() {
         ["system", "Taşıyıcı sistem kararı", "Alternatif, gerekçe ve ön boyut"],
         ["coordination", "Disiplin koordinasyonu", "Kritik issue ve çözüm sorumlusu"],
         ["delivery", "Dijital teslim paketi", "Model, doküman ve varlık verisi"],
-      ].map(([id, title, copy]) => <button onClick={() => cycleApproval(id)} key={id}><span className={`approval-state state-${approvals[id].toLocaleLowerCase("tr-TR")}`}>{approvals[id]}</span><div><b>{title}</b><small>{copy}</small></div><span>→</span></button>)}</div>
+      ].map(([id, title, copy]) => <button disabled={!hydrated || !project.revision.trim()} onClick={() => cycleApproval(id)} key={id}><span className={`approval-state state-${approvals[id].toLocaleLowerCase("tr-TR")}`}>{approvals[id]}</span><div><b>{title}</b><small>{copy} · {project.revision}</small>{staleApprovals.includes(id) && <small>Önceki kayıt: {String(safeRecord(storedPortal.approvals)[id])} · {String(safeRecord(safeRecord(storedPortal.approvalRecords)[id]).revision || "Revizyon belirsiz")} · Yeniden inceleme gerekli</small>}</div><span>→</span></button>)}</div>
+        <form aria-label="Proje revizyonunu güncelle" onSubmit={event => {
+          event.preventDefault();
+          const revision = String(new FormData(event.currentTarget).get("revision") || "").trim().toUpperCase();
+          if (hydrated && revision) setIdentity({ revision });
+        }}>
+          <label>Proje revizyonu <input key={`${project.id}-${project.revision}`} name="revision" defaultValue={project.revision} maxLength={8} required /></label>
+          <button disabled={!hydrated} type="submit">Revizyonu güncelle</button>
+          <p>Yeni revizyon için önceki onaylar yeniden incelenir.</p>
+        </form>
         <section className="decision-register">
           <header><div><span>Karar / yorum kaydı</span><b>Toplantı notunu sorumlu, zaman ve durumla bağlayın.</b></div><small>Yerel prototip · sunucu tabanlı CDE değildir</small></header>
           <div className="decision-entry"><input value={decisionText} onChange={(event) => setDecisionText(event.target.value)} placeholder="Örn. Güney cephede gölgeleme alternatifi karşılaştırılsın"/><select value={decisionOwner} onChange={(event) => setDecisionOwner(event.target.value)}><option>İşveren</option><option>Mimari</option><option>Statik</option><option>MEP</option><option>Saha</option></select><button onClick={addDecision}>Karar ekle ＋</button></div>
