@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PDFDocument } from "pdf-lib";
 import { downloadTextFile } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
-import { validateDeliveryPackage } from "../lib/delivery-package";
+import { deliveryDigest, deliverySourceKey, inspectDeliveryArtifact, validateDeliveryArtifacts, type DeliveryArtifact, type DeliveryFile } from "../lib/delivery-artifacts";
 import { createCollaborationAudit } from "../lib/collaboration-audit";
 import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
@@ -108,12 +109,35 @@ export function ClientTechnicalProjectRoom() {
     ["Koordinasyon kontrolü", thread.metrics.critical ? "Düzeltme gerekli" : "Kontrollü", `${thread.metrics.critical} kritik issue`],
     ["Müşteri onayları", approvedCount === 4 ? "Tamamlandı" : "Devam ediyor", `${approvedCount}/4 onay`],
   ];
-  const deliveryPackage = validateDeliveryPackage([
-    { name: `${project.id}-pafta.pdf`, format: "PDF", bytes: 1, revision: project.revision, sourceModule: "technical-sheet" },
-    { name: `${project.id}-model.dxf`, format: "DXF", bytes: thread.canonical.site.geometryValid ? 1 : 0, revision: project.revision, coordinateReference: project.coordinateReference, sourceModule: "design-studios" },
-    { name: `${project.id}-index.csv`, format: "CSV", bytes: project.events.length ? 1 : 0, revision: project.revision, sourceModule: "project-kernel" },
-    { name: `${project.id}-manifest.json`, format: "JSON", bytes: 1, revision: project.revision, sourceModule: "client-portal" },
-  ]);
+  const [deliveryArtifacts, setDeliveryArtifacts] = useState<Partial<Record<DeliveryFile["format"], DeliveryArtifact>>>({});
+  const [exportBusy, setExportBusy] = useState<Partial<Record<DeliveryFile["format"], boolean>>>({});
+  const exportLocks = useRef(new Set<string>());
+  const sourceKey = deliverySourceKey(project);
+  const deliveryPackage = validateDeliveryArtifacts([
+    { name: `${project.id}-${project.revision}-yonetici-ozeti.pdf`, format: "PDF", sourceModule: "technical-sheet" },
+    { name: `${project.id}-${project.revision}-model.dxf`, format: "DXF", sourceModule: "design-studios" },
+    { name: `${project.id}-${project.revision}-teslim-indeksi.csv`, format: "CSV", sourceModule: "project-kernel" },
+    { name: `${project.id}-${project.revision}-teslim-manifestosu.json`, format: "JSON", sourceModule: "client-portal" },
+  ], deliveryArtifacts, sourceKey);
+
+  const produceDelivery = async (format: "PDF" | "CSV" | "JSON", name: string, produce: () => Promise<string | Uint8Array> | string | Uint8Array, mime: string) => {
+    if (!hydrated || exportLocks.current.has(format)) return;
+    exportLocks.current.add(format);
+    setExportBusy(current => ({ ...current, [format]: true }));
+    setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey } }));
+    try {
+      const content = await produce();
+      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, content } }));
+      const validation = await inspectDeliveryArtifact(format, content, { projectId: project.id, revision: project.revision, sourceKey, text: typeof content === "string" ? content : undefined });
+      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, content, validation } }));
+      if (validation.valid) downloadTextFile(name, content, mime);
+    } catch (error) {
+      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, error: error instanceof Error ? error.message : "Dosya üretilemedi" } }));
+    } finally {
+      exportLocks.current.delete(format);
+      setExportBusy(current => ({ ...current, [format]: false }));
+    }
+  };
   const stageGates = [
     { code: "G01", label: "Brief", route: "/proje-baslat", ready: thread.nodes.some((node) => node.id === "decision-assistant" && node.active), requirement: "Yatırım hedefi ve başarı ölçütü" },
     { code: "G02", label: "Parsel", route: "/arsa-fizibilite-studyosu", ready: thread.canonical.site.parcelArea > 1 && thread.canonical.site.geometryValid, requirement: "Doğrulanabilir sınır ve koordinat" },
@@ -188,7 +212,7 @@ export function ClientTechnicalProjectRoom() {
   };
 
   const exportManifest = () => {
-    downloadTextFile(`${project.id}-${project.revision}-teslim-manifestosu.json`, JSON.stringify({
+    void produceDelivery("JSON", `${project.id}-${project.revision}-teslim-manifestosu.json`, () => JSON.stringify({
       schema: "ARKEM-DELIVERY/2.0",
       generatedAt: new Date().toISOString(),
       project: { id: project.id, name: project.name, revision: project.revision, phase: project.phase },
@@ -197,7 +221,7 @@ export function ClientTechnicalProjectRoom() {
       approvalRecords: storedPortal.approvalRecords,
       approvalHistory: storedPortal.approvalHistory,
       collaboration: createCollaborationAudit({ projectId: project.id, revision: project.revision, decisions, approvals }),
-      deliveryValidation: deliveryPackage,
+      deliveryValidation: { ...deliveryPackage, checks: deliveryPackage.checks.filter(file => file.format !== "JSON"), summary: undefined, scope: "Önceden üretilmiş diğer dosyaların kontrolü; bu manifest kendi doğrulama sonucunu içermez" },
       modules: thread.nodes.map(({ id, code, label, active, readiness }) => ({ id, code, label, active, readiness })),
       limits: "Ön değerlendirme çıktısıdır; yetkili proje, resmi onay veya uygulama projesi yerine geçmez.",
     }, null, 2), "application/json");
@@ -205,13 +229,14 @@ export function ClientTechnicalProjectRoom() {
 
   const exportCsv = () => {
     const rows = [
-      ["Kod", "Modül", "Aşama", "Durum", "Hazırlık"],
-      ...thread.nodes.map((node) => [node.code, node.label, node.stage, node.active ? "Aktif" : "Bekliyor", `${node.readiness}%`]),
+      ["Proje", "Revizyon", "Kod", "Modül", "Aşama", "Durum", "Hazırlık"],
+      ...thread.nodes.map((node) => [project.id, project.revision, node.code, node.label, node.stage, node.active ? "Aktif" : "Bekliyor", `${node.readiness}%`]),
     ];
-    downloadTextFile(`${project.id}-${project.revision}-teslim-indeksi.csv`, `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\n")}`, "text/csv;charset=utf-8");
+    void produceDelivery("CSV", `${project.id}-${project.revision}-teslim-indeksi.csv`, () => `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\n")}`, "text/csv;charset=utf-8");
   };
 
   const exportPdf = async () => {
+    await produceDelivery("PDF", `${project.id}-${project.revision}-yonetici-ozeti.pdf`, async () => {
     const width = Math.max(12, thread.canonical.structure.width || 30);
     const depth = Math.max(8, thread.canonical.structure.depth || 20);
     const pdf = await createCorporateTechnicalPdf({
@@ -240,7 +265,10 @@ export function ClientTechnicalProjectRoom() {
         "Bu pafta ön değerlendirme ve karar iletişimi içindir; yetkili uygulama projesi değildir.",
       ],
     });
-    downloadTextFile(`${project.id}-${project.revision}-yonetici-ozeti.pdf`, pdf, "application/pdf");
+    const document = await PDFDocument.load(pdf);
+    document.setSubject(JSON.stringify({ projectId: project.id, revision: project.revision, sourceDigest: await deliveryDigest(sourceKey), technicalApproval: false }));
+    return document.save();
+    }, "application/pdf");
   };
 
   const exportReviewBrief = () => {
@@ -415,9 +443,9 @@ export function ClientTechnicalProjectRoom() {
         <div className="client-section-copy"><span>V68 / KURUMSAL TESLİM KALİTE MERKEZİ</span><h4>Okunabilir pafta, açık veri ve izlenebilir indeks.</h4><p>Çıktılar proje kimliği, revizyonu, kurumsal antet ve teknik sınır notlarıyla üretilir.</p></div>
         <div className="delivery-readiness"><article><span>Paket hazırlığı</span><b>%{Math.round((thread.metrics.readiness + thread.metrics.quality + approvedCount * 25) / 3)}</b><small>Modül + kalite + onay bileşik göstergesi</small></article><div>{[["PDF / A3", "Canlı", "Gömülü logo, Unicode font, pafta kimliği"],["CSV", "Canlı", "UTF-8 BOM, başlık ve disiplin indeksi"],["JSON", "Canlı", "Şema, revizyon, modül ve sınır notu"],["DXF", "Modüllerde canlı", "Katmanlı açık CAD değişim formatı"],["DWG", "Lisans bağlantısı", "Gerçek DWG için lisanslı dönüştürücü gerekir"]].map(([format, state, note]) => <article key={format}><b>{format}</b><span>{state}</span><small>{note}</small></article>)}</div></div>
         <div className="delivery-list">{deliverables.map(([title, status, note]) => <article key={title}><div><b>{title}</b><small>{note}</small></div><span>{status}</span></article>)}</div>
-        <section className="delivery-package-v86"><header><div><span>V86 / DOSYA DOĞRULAMA ZİNCİRİ</span><b>Boş dosya, revizyon ve koordinat kontrolü.</b></div><strong>{deliveryPackage.summary.valid}/{deliveryPackage.summary.total} hazır</strong></header><div className="delivery-package-v86-grid">{deliveryPackage.checks.map((file) => <article key={file.name}><b>{file.format} · {file.name}</b><span>{file.valid ? "DOĞRULANDI" : "EKSİK"}</span><small>{file.issues.join(" · ") || `${file.sourceModule} kaynağı · ${file.revision}`}</small></article>)}</div></section>
+        <section className="delivery-package-v86"><header><div><span>V86 / DOSYA DOĞRULAMA ZİNCİRİ</span><b>Gerçek dosya içeriği, proje ve revizyon kontrolü.</b></div><strong>{deliveryPackage.summary.valid}/{deliveryPackage.summary.total} doğrulandı</strong></header><p>Kontrol bu oturumda üretilen dosyalar içindir. Proje değişirse yeniden üretin. Sayfa yenilenince dosyaları tekrar oluşturun. Dosya doğrulaması mühendislik onayı değildir. DXF bu ekranda üretilmez.</p><div className="delivery-package-v86-grid">{deliveryPackage.checks.map((file) => <article key={file.name} data-valid={file.valid}><b>{file.format} · {file.name}</b><span>{exportBusy[file.format] && file.status === "Oluşturulmadı" ? "Üretiliyor" : file.status}</span><small>{file.issues.join(" · ") || `${file.bytes.toLocaleString("tr-TR")} bayt · ${project.revision} · içerik kontrolü geçti`}</small></article>)}</div></section>
         <div className="delivery-checks">{[["Proje kodu", Boolean(project.id)],["Revizyon", Boolean(project.revision)],["Koordinat referansı", Boolean(project.coordinateReference)],["Teknik sınır notu", true],["Kurumsal antet", true],["Müşteri onayı", approvedCount === 4]].map(([label, pass]) => <span className={pass ? "pass" : ""} key={String(label)}>{pass ? "✓" : "○"} {label}</span>)}</div>
-        <div className="portal-export-actions"><button onClick={exportPdf}>Kurumsal PDF <span>↓</span></button><button onClick={exportCsv}>Teslim CSV <span>↓</span></button><button onClick={exportManifest}>Proje JSON <span>↓</span></button></div>
+        <div className="portal-export-actions"><button disabled={!hydrated || exportBusy.PDF} onClick={exportPdf}>Kurumsal PDF <span>↓</span></button><button disabled={!hydrated || exportBusy.CSV} onClick={exportCsv}>Teslim CSV <span>↓</span></button><button disabled={!hydrated || exportBusy.JSON} onClick={exportManifest}>Proje JSON <span>↓</span></button></div>
       </div>}
 
       {view === "assistant" && <div className="client-portal-view">
