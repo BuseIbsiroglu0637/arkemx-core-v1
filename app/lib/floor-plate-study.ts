@@ -4,6 +4,7 @@ import { projectIntegrityIssues } from "./project-integrity.ts";
 import { createDocumentIdentity } from "./document-identity.ts";
 import { traceJson, traceSha256 } from "./structural-traceability.ts";
 import { inspectFloorCoordination } from "./floor-coordination.ts";
+import { floorPlateAreaCheck } from "./floor-plate-precision.ts";
 
 type Data = Record<string, unknown>;
 const data = (value: unknown): Data => value && typeof value === "object" && !Array.isArray(value) ? value as Data : {};
@@ -20,7 +21,7 @@ export function calculateFloorPlateStudy(project: unknown, input: StructuralConc
   const plates = Array.isArray(plan.floorPlates) ? plan.floorPlates.map(data).sort((a, b) => Number(a.level) - Number(b.level)) : [];
   if (typeof plan.floorCount !== "number" || !Number.isInteger(floorCount) || floorCount < 1 || floorCount > 50 || plates.length !== floorCount || plates.some((plate, i) => plate.level !== i + 1)) issues.push("Her kat için tek plaka gerekiyor; kat listesi 1’den kat sayısına kadar eksiksiz olmalı.");
   if (plates.some(plate => typeof plate.width !== "number" || !Number.isFinite(plate.width) || plate.width <= 0 || typeof plate.depth !== "number" || !Number.isFinite(plate.depth) || plate.depth <= 0 || !Number.isFinite(Number(plate.width) * Number(plate.depth)))) issues.push("Kat plaka boyutları geçersiz.");
-  if (plates.some(plate => plate.grossArea !== undefined && (typeof plate.grossArea !== "number" || !Number.isFinite(plate.grossArea) || Math.abs(plate.grossArea - Number(plate.width) * Number(plate.depth)) > .01))) issues.push("Beyan edilen brüt alan plaka boyutlarıyla uyuşmuyor.");
+  if (plates.some(plate => plate.grossArea !== undefined && (typeof plate.grossArea !== "number" || !floorPlateAreaCheck(Number(plate.width), Number(plate.depth), plate.grossArea).valid))) issues.push("Beyan edilen brüt alan plaka boyutlarıyla uyuşmuyor; fark kaynak yuvarlama sınırını aşıyor.");
   if (plates.some(plate => plate.polygon !== undefined || plate.holes !== undefined)) issues.push("Bu kat çalışması yalnız dikdörtgen brüt plakaları destekler.");
   if (!Object.hasOwn(SYSTEM_LABELS, input.system) || !["residential", "office", "industrial", "storage", "assembly"].includes(input.usage) || Object.values(input).some(v => typeof v === "number" && !Number.isFinite(v)) || input.slabThickness <= 0 || input.floorHeight <= 0 || input.superDeadLoad < 0 || input.liveLoad < 0 || input.roofSnowLoad < 0) issues.push("Yük veya malzeme girdileri geçersiz.");
   const elements = Array.isArray(plan.elements) ? plan.elements.map(data).sort((a, b) => String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0) : [];
@@ -38,6 +39,7 @@ export function calculateFloorPlateStudy(project: unknown, input: StructuralConc
       const area = floorInput.width * floorInput.depth;
       return {
         level: Number(plate.level), width: floorInput.width, depth: floorInput.depth, area,
+        ...(typeof plate.grossArea === "number" ? { areaConsistency: floorPlateAreaCheck(floorInput.width, floorInput.depth, plate.grossArea) } : {}),
         baysX: floorInput.baysX, baysY: floorInput.baysY, spanX: result.geometry.spanX, spanY: result.geometry.spanY,
         sourceElementIds: sourceElements.map(element => String(element.id)),
         liveLoadSource: declaredLoads.length ? "maximum-source-element-load" : "global-input",
@@ -49,7 +51,7 @@ export function calculateFloorPlateStudy(project: unknown, input: StructuralConc
     const study = {
       schema: "ARKEM-FLOOR-PLATE-STUDY/1.0", projectId: String(p.id), revision: String(p.revision),
       scope: "independent-rectangular-floor-load-and-slab-study", fullBuildingAnalysis: false, technicalApproval: false,
-      engine: "calculateStructuralConcept/1.0:area-load-expressions-only",
+      engine: "calculateStructuralConcept/1.0:area-load-expressions-only;floor-area-precision/1.0",
       source: { module: "plan-editor", revision: structure.sourceRevision, units: plan.units, geometry: planGeometrySnapshot(plan), elements },
       input, floors,
       ...(plan.floorCoordination === undefined ? {} : { coordination: inspectFloorCoordination(plan) }),

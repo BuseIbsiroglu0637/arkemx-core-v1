@@ -1,3 +1,5 @@
+import { FLOOR_PLATE_LENGTH_DECIMALS, FLOOR_PLATE_AREA_DECIMALS } from "./floor-plate-precision.ts";
+
 export type ProgramSpaceInstance = {
   key: string;
   sourceSpaceId: string;
@@ -182,9 +184,9 @@ export function deriveProgramFloorPlates(
     return {
       level: index + 1,
       netArea: Number(bucket.netArea.toFixed(2)),
-      grossArea: Number(grossArea.toFixed(2)),
-      width: Number(width.toFixed(3)),
-      depth: Number(depth.toFixed(3)),
+      grossArea: Number(grossArea.toFixed(FLOOR_PLATE_AREA_DECIMALS)),
+      width: Number(width.toFixed(FLOOR_PLATE_LENGTH_DECIMALS)),
+      depth: Number(depth.toFixed(FLOOR_PLATE_LENGTH_DECIMALS)),
     };
   });
 }
