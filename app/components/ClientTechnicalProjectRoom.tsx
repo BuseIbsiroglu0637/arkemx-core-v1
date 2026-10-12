@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import { validateDeliveryPackage } from "../lib/delivery-package";
@@ -10,6 +10,7 @@ import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
 import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
 import { portalStageStatus } from "../lib/portal-stage-status";
+import { portalStructuralGate, type StructuralGate } from "../lib/portal-structural-gate";
 import { portalRecords, nextPortalDecisionId, recordPortalApproval, type ApprovalState } from "../lib/portal-records";
 
 type PortalView = "overview" | "engineering" | "approvals" | "deliverables" | "assistant" | "asset" | "review" | "readiness" | "integrations";
@@ -87,7 +88,19 @@ export function ClientTechnicalProjectRoom() {
   const [reviewLanguage, setReviewLanguage] = useState("Türkçe");
 
   const approvedCount = Object.values(approvals).filter((state) => state === "Onaylandı").length;
-  const portalStatus = portalStageStatus(thread, deriveProjectJourneyState(thread), approvedCount);
+  const journey = deriveProjectJourneyState(thread);
+  const portalStatus = portalStageStatus(thread, journey, approvedCount);
+  const upstreamReady = portalStatus.architectureReady && journey.completed[3] === true;
+  const [structuralControl, setStructuralControl] = useState<{ project: typeof project; upstreamReady: boolean; gate: StructuralGate } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void portalStructuralGate(project, upstreamReady).then(gate => {
+      if (!cancelled) setStructuralControl({ project, upstreamReady, gate });
+    });
+    return () => { cancelled = true; };
+  }, [project, upstreamReady]);
+  const structuralGate = structuralControl?.project === project && structuralControl.upstreamReady === upstreamReady
+    ? structuralControl.gate : { ready: false, label: "Kontrol ediliyor", requirement: "Güncel kaynak ve hesap kaydı doğrulanıyor" };
   const completedJourney = PROJECT_JOURNEY.map((step, index) => ({ ...step, ...portalStatus.stages[index] }));
   const deliverables = [
     ["Proje veri paketi", project.events.length ? "Hazır" : "Başlatılmadı", `${project.events.length} denetlenebilir işlem`],
@@ -105,7 +118,7 @@ export function ClientTechnicalProjectRoom() {
     { code: "G01", label: "Brief", route: "/proje-baslat", ready: thread.nodes.some((node) => node.id === "decision-assistant" && node.active), requirement: "Yatırım hedefi ve başarı ölçütü" },
     { code: "G02", label: "Parsel", route: "/arsa-fizibilite-studyosu", ready: thread.canonical.site.parcelArea > 1 && thread.canonical.site.geometryValid, requirement: "Doğrulanabilir sınır ve koordinat" },
     { code: "G03", label: "Mimari", route: "/mimari-program-studyosu", ready: portalStatus.architectureReady, requirement: "İhtiyaç onayı, plan ve önceki aşama kontrolleri" },
-    { code: "G04", label: "Taşıyıcı", route: "/tasarim-calismalari#tasiyici-on-tasarim", ready: Boolean(thread.canonical.structure.system && thread.canonical.structure.width), requirement: "Sistem, aks ve ön boyut" },
+    { code: "G04", route: "/tasarim-calismalari#tasiyici-on-tasarim", ...structuralGate, statusLabel: structuralGate.label, label: "Taşıyıcı" },
     { code: "G05", label: "Koordinasyon", route: "/muhendislik-koordinasyon", ready: thread.nodes.some((node) => node.id === "engineering-coordination" && node.active) && thread.metrics.critical === 0, requirement: "Kritik issue kapanışı" },
     { code: "G06", label: "Teslim", route: "/dijital-proje-merkezi", ready: portalStatus.deliveryReady, requirement: "Önceki kontroller, teslim kapsamı ve kayıtlı onaylar" },
   ];
@@ -260,7 +273,7 @@ export function ClientTechnicalProjectRoom() {
       score: readinessScore,
       verdict: readinessVerdict,
       pillars: readinessPillars,
-      gates: stageGates.map(({ code, label, ready, requirement }) => ({ code, label, ready, requirement })),
+      gates: stageGates.map((gate) => ({ code: gate.code, label: gate.label, ready: gate.ready, requirement: gate.requirement, status: "statusLabel" in gate ? gate.statusLabel : gate.ready ? "Hazır" : "Eksik" })),
       openIssues: thread.issues.map(({ id, title, severity, evidence, action }) => ({ id, title, severity, evidence, action })),
       approvals,
       nextAction: thread.nextAction,
@@ -293,7 +306,7 @@ export function ClientTechnicalProjectRoom() {
         <div className="client-next-action"><span>Sıradaki doğru adım</span><h4>{thread.nextAction.label}</h4><p>Mevcut proje kayıtlarına göre tamamlanabilir ilk teknik çalışma.</p><Link href={thread.nextAction.route}>Çalışma alanını açın <span>↗</span></Link></div>
         <section className="client-gate-board">
           <header><div><span>V62 / YÖNLENDİRMELİ KALİTE KAPILARI</span><h4>Teknoloji bilmeden ilerleyin.</h4></div><p>Her kapı bir sonraki disipline aktarılacak asgari, anlaşılır veri setini kontrol eder.</p></header>
-          <div>{stageGates.map((gate) => <Link href={gate.route} className={gate.ready ? "ready" : ""} key={gate.code}><span>{gate.code}</span><b>{gate.label}</b><small>{gate.requirement}</small><em>{gate.ready ? "Hazır ✓" : "Tamamlayın →"}</em></Link>)}</div>
+          <div>{stageGates.map((gate) => <Link href={gate.route} className={gate.ready ? "ready" : ""} key={gate.code}><span>{gate.code}</span><b>{gate.label}</b><small>{gate.requirement}</small><em>{"statusLabel" in gate ? gate.statusLabel : gate.ready ? "Hazır ✓" : "Tamamlayın →"}</em></Link>)}</div>
         </section>
         <div className="client-kpi-grid"><article><span>Aktif modül</span><b>{thread.metrics.activeCount}/{thread.metrics.totalCount}</b><small>Ortak proje kimliğine bağlı</small></article><article><span>Kalite skoru</span><b>%{thread.metrics.quality}</b><small>{thread.metrics.critical} kritik kayıt</small></article><article><span>Müşteri onayı</span><b>{approvedCount}/4</b><small>Karar kapısı tamamlandı</small></article><article><span>Son revizyon</span><b>{project.revision}</b><small>{project.phase}</small></article></div>
         <section className="client-source-provenance">

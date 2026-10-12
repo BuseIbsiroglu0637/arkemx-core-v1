@@ -10,6 +10,43 @@ const { planGeometrySnapshot } = await import('../app/lib/source-reference-integ
 const { createDocumentIdentity, documentFingerprint } = await import('../app/lib/document-identity.ts');
 const { prepareStructuralCalculation, recordStructuralCalculation, verifyStructuralCalculation, createStructuralDocument, sealStructuralDocument, verifyStructuralDocument, traceJson } = await import('../app/lib/structural-traceability.ts');
 const { createGridDxf } = await import('../app/lib/engineering.ts');
+const { portalStructuralGate } = await import('../app/lib/portal-structural-gate.ts');
+
+test('G04 rejects seeded inputs, blocked floors and stale or tampered calculations', async () => {
+  assert.equal((await portalStructuralGate({modules:{'structural-concept':{input:{system:'concrete',width:24}}}},true)).ready,false);
+  const {p,input,options,record}=await linked();
+  Object.assign(p.modules['structural-concept'],options,{calculationId:record.id,calculationRegistry:{[record.id]:record}});
+  const valid=await portalStructuralGate(p,true);
+  assert.equal(valid.ready,record.content.result.checks.every(check=>check.state==='pass'));
+  assert.equal(valid.technicalApproval,false);
+  assert.equal((await portalStructuralGate(p,false)).ready,false);
+  const blocked=structuredClone(p);blocked.modules['structural-concept'].modelContext.floorPlates[1].width=20;
+  assert.equal((await portalStructuralGate(blocked,true)).label,'Engelli');
+  const changed=structuredClone(p);changed.modules['structural-concept'].input.liveLoad=8;
+  assert.equal((await portalStructuralGate(changed,true)).ready,false);
+  const tampered=structuredClone(p);tampered.modules['structural-concept'].calculationRegistry[record.id].sha256='fake';
+  assert.equal((await portalStructuralGate(tampered,true)).ready,false);
+  const revised=structuredClone(p);revised.revision='P99';
+  assert.equal((await portalStructuralGate(revised,true)).ready,false);
+  const empty=structuredClone(p);empty.modules['structural-concept'].calculationRegistry={};
+  assert.equal((await portalStructuralGate(empty,true)).label,'Eksik');
+});
+
+test('G04 becomes ready only for current passing preliminary controls; review and blocked controls remain open', async () => {
+  // Synthetic test spectra only; no real site or engineering approval.
+  for (const [sds, expected] of [[.04,'Hazır ✓'],[.08,'Eksik'],[1,'Engelli']]) {
+    const {p,input,options}=uniformFixture();input.sds=sds;
+    const record=await recordStructuralCalculation(prepareStructuralCalculation(p,input,options));
+    Object.assign(p.modules['structural-concept'],options,{calculationId:record.id,calculationRegistry:{[record.id]:record}});
+    const result=await portalStructuralGate(p,true);
+    assert.equal(result.label,expected);
+    assert.equal(result.ready,expected==='Hazır ✓');
+    assert.equal(result.technicalApproval,false);
+    assert.equal((await portalStructuralGate(p,false)).ready,false);
+    p.modules['structural-concept'].structuralStudio={production:{...options,fireRating:120}};
+    assert.equal((await portalStructuralGate(p,true)).ready,false);
+  }
+});
 
 export function uniformFixture() {
   const p = createG05ReviewFixture(); p.experience.autoHandoff = false;
