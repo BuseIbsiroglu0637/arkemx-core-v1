@@ -2,6 +2,7 @@ import { normalizeLandZoningDeclaration } from '../../app/lib/land-zoning-declar
 import { isEmlakjetListing } from './emlakjet-browser.mjs';
 import { LandBrowserError, classifySourcePage } from './hepsiemlak-browser.mjs';
 import { normalizeLandParcelIdentity } from '../../app/lib/land-parcel-prefill.ts';
+import { launchLandBrowser } from './land-browser-launch.mjs';
 
 export function parseEmlakjetParcelDetail(raw, { url, province, district }, retrievedAt) {
   const values = label => raw.rows.filter(row => row.label === label).map(row => row.value.trim());
@@ -77,8 +78,8 @@ export async function readEmlakjetParcelDetail(input, { launchBrowser, signal } 
   signal?.addEventListener('abort', abort, { once: true });
   try {
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'İlan okuması iptal edildi.');
-    try { browser = await (launchBrowser || (async () => (await import('playwright')).chromium.launch({ headless: true })))(); }
-    catch { throw new LandBrowserError('browser-unavailable', 'İlan detayını okumak için Chromium açılamadı.'); }
+    try { browser = await (launchBrowser || launchLandBrowser)(); }
+    catch { throw new LandBrowserError('browser-unavailable', 'İlan detayını okumak için Chromium veya Microsoft Edge açılamadı.'); }
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'İlan okuması iptal edildi.');
     context = await browser.newContext({ locale: 'tr-TR', viewport: { width: 1366, height: 900 } });
     const page = await context.newPage();

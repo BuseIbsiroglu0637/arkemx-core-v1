@@ -1,5 +1,6 @@
 import { assessLandCandidate, landCriteriaKey, normalizeLandCandidate, parseLandCriteria } from '../../app/lib/land-research.ts';
 import { LandBrowserError, classifySourcePage } from './hepsiemlak-browser.mjs';
+import { launchLandBrowser } from './land-browser-launch.mjs';
 
 const source = 'Emlakjet · tarayıcı araştırması';
 const number = value => Number(value.replace(/\./g, '').replace(',', '.'));
@@ -63,8 +64,8 @@ export async function searchEmlakjet(rawCriteria, { launchBrowser, signal } = {}
   try {
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'Arama iptal edildi.');
     try {
-      browser = await (launchBrowser || (async () => (await import('playwright')).chromium.launch({ headless: true })))();
-    } catch { throw new LandBrowserError('browser-unavailable', 'Araştırma tarayıcısı açılamadı. Chromium kurulumunu kontrol edin.'); }
+      browser = await (launchBrowser || launchLandBrowser)();
+    } catch { throw new LandBrowserError('browser-unavailable', 'Araştırma tarayıcısı açılamadı. Chromium veya Microsoft Edge kurulumunu kontrol edin.'); }
     if (signal?.aborted) throw new LandBrowserError('cancelled', 'Arama iptal edildi.');
     context = await browser.newContext({ locale: 'tr-TR', viewport: { width: 1366, height: 900 } });
     const page = await context.newPage();
