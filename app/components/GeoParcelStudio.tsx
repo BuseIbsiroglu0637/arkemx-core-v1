@@ -27,6 +27,7 @@ import {
 import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdge } from "../lib/zoning-massing";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { assessLandCandidate, object, readLandResearch } from "../lib/land-research";
+import { ZoningResearchPanel } from "./ZoningResearchPanel";
 import { officialZoningPrefill } from "../lib/official-zoning-prefill";
 import type { OfficialZoningResult } from "../lib/kastamonu-zoning";
 import { listingZoningPrefill } from "../lib/land-zoning-declaration";
@@ -964,7 +965,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       setOfficialZoningNotice(cached.message); return;
     }
     const controller = new AbortController(); let completed = false;
-    setOfficialZoningLoading(true); setOfficialZoningNotice("Parsel için resmî imar kaynağı otomatik sorgulanıyor…");
+    setOfficialZoningResult(null); setOfficialZoningLoading(true); setOfficialZoningNotice("Parsel için resmî imar kaynağı otomatik sorgulanıyor…");
     fetch("/api/zoning-conditions",{method:"POST",headers:{"Content-Type":"application/json"},body:identityKey,signal:controller.signal})
       .then(async response => {
         const result = await response.json() as OfficialZoningResult & {error?:string};
@@ -2194,14 +2195,13 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
         <small>Değeri yalnız yetkili kaynak farklıysa değiştirin; açık konu kapansın diye imar girdisini yükseltmeyin.</small>
       </div> : null}
 
-      <div className="geo-zoning-source-status" aria-label="Resmî imar sorgusu">
-        <span>OTOMATİK İMAR ARAŞTIRMASI</span>
-        <b>{officialZoningEligible ? "Kastamonu İl Özel İdaresi · konut alanı" : "Parsel konumu doğrulandıktan sonra imar kaynağı sorgulanır"}</b>
-        <small role="status">{officialZoningEligible ? officialZoningNotice : province !== "Kastamonu" ? "Bu sürümde Kastamonu bağlantısı etkin; diğer bölgeler için kaynak bağlantısı bekleniyor." : "Resmî il, ilçe ve mahalle/köy seçimini ve ada/parsel bilgisini tamamlayın. Sorgu TKGM sınırını sunucuda doğrular."}</small>
-        {officialZoningEligible && officialZoningResult?.status === "found" && officialZoningResult.conditions && <p>Kaynak değerleri: TAKS {officialZoningResult.conditions.taks ?? "bilgi yok"} · KAKS {officialZoningResult.conditions.kaks ?? "bilgi yok"} · Hmax {officialZoningResult.conditions.hmax ?? "bilgi yok"} · Plan {officialZoningResult.source?.planId}. Plan notu doğrulaması bekleniyor.</p>}
-        {officialZoningEligible && <button type="button" disabled={officialZoningLoading} onClick={() => setOfficialZoningRefresh(v => v + 1)}>{officialZoningLoading ? "İmar kaynağı sorgulanıyor…" : "Resmî imar kaynağını yeniden sorgula"}</button>}
-      </div>
-
+      <ZoningResearchPanel
+        key={`${project.id}:${province}:${district}:${neighborhood}:${neighborhoodId}:${block}:${parcelNo}`}
+        identity={{province,district,neighborhood,neighborhoodId,block,parcelNo}}
+        zoning={zoning} result={officialZoningResult} eligible={officialZoningEligible}
+        loading={officialZoningLoading} notice={officialZoningNotice}
+        onQuery={() => setOfficialZoningRefresh(v => v + 1)}
+      />
       <div className={`geo-zoning-source-status${zoningFocus ? " geo-zoning-source-focus" : ""}`} data-ready={zoningSourceReady ? "ready" : "missing"} data-reviewed={zoningExpertReviewComplete ? "true" : "false"}>
         <span>İMAR KAYNAĞI</span>
         <b>{zoningExpertReviewComplete

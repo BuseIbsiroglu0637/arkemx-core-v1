@@ -4175,3 +4175,22 @@ html[data-theme="dark"] .arx-geo-simple .geo-zoning-summary > button {
 .arx-candidate-context b,.arx-candidate-context p { flex-basis:100%; margin:0; line-height:1.65; }
 .arx-candidate-context a { min-height:44px; display:inline-flex; align-items:center; color:inherit; text-decoration:underline; }
 html[data-theme=dark] .arx-candidate-context { background:#0e2029; color:#e2ecef; }
+.geo-imar-research { margin: 18px 0; padding: 16px; border: 1px solid #c8d4d5; border-radius: 10px; background: var(--paper, #f7faf9); color: #203b42; }
+.geo-imar-research header > span { font-size: 10px; letter-spacing: .1em; font-weight: 750; }
+.geo-imar-research h4 { font-size: 17px; margin: 8px 0; }
+.geo-imar-research p { font-size: 12px; line-height: 1.65; margin: 9px 0; }
+.geo-imar-research small { display: block; font-size: 11px; line-height: 1.55; }
+.geo-imar-research details { margin: 14px 0; border-top: 1px solid #c8d4d5; padding-top: 12px; }
+.geo-imar-research summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.geo-imar-research button { padding: 10px 12px; border: 1px solid #547779; border-radius: 6px; margin: 8px 0; font-size: 12px; cursor: pointer; }
+.geo-imar-research button:disabled { opacity: .55; cursor: wait; }
+.geo-imar-source-list { display: grid; gap: 10px; margin-top: 12px; }
+.geo-imar-source-list article { border: 1px solid #c8d4d5; border-radius: 6px; padding: 12px; }
+.geo-imar-source-list a { font-size: 13px; font-weight: 700; color: #176268; text-decoration: underline; }
+.geo-imar-table-wrap { overflow-x: auto; margin-top: 12px; }
+.geo-imar-research table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.geo-imar-research caption { text-align: left; padding: 8px 0; }
+.geo-imar-research th, .geo-imar-research td { text-align: left; padding: 9px 7px; border-bottom: 1px solid #c8d4d5; min-width: 80px; }
+.geo-imar-research tr[data-conflict="true"] { background: #fff1d6; color: #713e0b; }
+html[data-theme="dark"] .geo-imar-research { background: #17292d; color: #d9e8e7; border-color: #426065; }
+html[data-theme="dark"] .geo-imar-source-list a { color: #8fd7d1; }

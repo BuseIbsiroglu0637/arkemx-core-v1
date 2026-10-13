@@ -37,6 +37,12 @@ export const ZONING_AUTHORITY_ROUTES: ZoningAuthorityRoute[] = PROVINCES.map((pr
 
 export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
   {
+    id: "kastamonu-belediye-eimar", province: "Kastamonu", districts: ["Merkez"],
+    label: "Kastamonu Belediyesi e-İmar", authority: "Kastamonu Belediyesi / e-Devlet",
+    href: "https://www.turkiye.gov.tr/kastamonu-belediyesi-eimar-8914", scope: "parcel-zoning", queryMode: "e-government-service", verifiedAt: "2026-10-12",
+    limitation: "Kimlik doğrulaması gerekir. Belediye yetki alanı kontrol edilmelidir; Merkez ilçedeki her köy belediye kapsamında kabul edilemez.",
+  },
+  {
     id: "adapazari-e-devlet-imar",
     province: "Sakarya",
     districts: ["Adapazarı"],
@@ -45,8 +51,8 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://www.turkiye.gov.tr/adapazari-belediyesi-imar-durum-sorgulama",
     scope: "parcel-zoning",
     queryMode: "e-government-service",
-    verifiedAt: "2026-07-28",
-    limitation: "Kimlik doğrulama ve belediye servisinin erişilebilirliği gerekir. Sonuç araştırma girdisidir; ruhsat eki onaylı imar durumu belgesi ayrıca yetkili idareden alınır.",
+    verifiedAt: "2026-10-12",
+    limitation: "Resmî sorgu formu üzerinden mahalle ve ada/parsel seçilir. Formun açılması parsel sonucunun alındığı anlamına gelmez; ruhsat eki onaylı imar durumu belgesi ayrıca yetkili idareden alınır.",
   },
   {
     id: "sapanca-e-devlet-imar",
@@ -57,8 +63,8 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://www.turkiye.gov.tr/sapanca-belediyesi-imar-durum-sorgulama",
     scope: "parcel-zoning",
     queryMode: "e-government-service",
-    verifiedAt: "2026-07-28",
-    limitation: "Kimlik doğrulama ve belediye servisinin erişilebilirliği gerekir. Sonuç araştırma girdisidir; plan notları ve onaylı belgeyle birlikte değerlendirilir.",
+    verifiedAt: "2026-10-12",
+    limitation: "Resmî sorgu formunda parsel kimliği ve belediye yanıtı doğrulanır. Sonuç plan notları ve onaylı belgeyle birlikte değerlendirilir.",
   },
   {
     id: "serdivan-keos",
@@ -69,7 +75,7 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://keos.serdivan.bel.tr/imardurumu/",
     scope: "parcel-zoning",
     queryMode: "official-viewer",
-    verifiedAt: "2026-07-27",
+    verifiedAt: "2026-10-12",
     limitation: "Ada/parsel araması resmî belediye görüntüleyicisinde tamamlanır; ekrandaki bilgi ruhsat veya tapu belgesi yerine geçmez.",
   },
   {

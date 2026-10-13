@@ -26,7 +26,7 @@ export function officialConnectionFailure(error:unknown, signal?:AbortSignal):st
 }
 export function parseZoningParcelInput(raw: unknown): ZoningParcelInput | null {
   const v=record(raw);
-  if (!['province','district','neighborhood'].every(k=>typeof v[k]==='string' && /^[\p{L} .'-]{2,80}$/u.test(String(v[k])))) return null;
+  if (!['province','district','neighborhood'].every(k=>typeof v[k]==='string' && /^[\p{L}\p{N} .'-]{2,80}$/u.test(String(v[k])) && /\p{L}/u.test(String(v[k])))) return null;
   if (!['neighborhoodId','block','parcelNo'].every(k=>typeof v[k]==='string' && /^\d{1,10}$/.test(String(v[k])) && Number(v[k])>0)) return null;
   return {province:text(v.province),district:text(v.district),neighborhood:text(v.neighborhood),neighborhoodId:String(v.neighborhoodId),block:String(v.block),parcelNo:String(v.parcelNo)};
 }
