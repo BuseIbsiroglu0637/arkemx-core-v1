@@ -34,7 +34,8 @@
     "test:land-browser:e2e": "node --experimental-strip-types --test tests/land-browser-fixture.test.mjs tests/emlakjet-browser-fixture.test.mjs",
     "probe:zoning": "node --experimental-strip-types scripts/probe-zoning.mjs",
     "probe:land": "node --experimental-strip-types scripts/probe-land-browser.mjs",
-    "test:zoning-source": "node --experimental-strip-types --test tests/kastamonu-zoning.test.mjs tests/zoning-research.test.mjs tests/zoning-access.test.mjs"
+    "test:zoning-source": "node --experimental-strip-types --test tests/kastamonu-zoning.test.mjs tests/zoning-research.test.mjs tests/zoning-access.test.mjs tests/zoning-document-evidence.test.mjs",
+    "test:zoning-fixtures": "node tests/create-zoning-document-fixtures.mjs"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-leaflet": "0.1.4",
@@ -47,6 +48,7 @@
     "maplibre-gl": "6.3.0",
     "next": "16.2.6",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "6.4.299",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "three": "^0.185.1"

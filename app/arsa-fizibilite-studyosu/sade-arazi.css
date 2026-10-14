@@ -1,4 +1,13 @@
 /* Simplified ARKEMX land/parcel workflow; all advanced engine functions remain available. */
+.geo-document-evidence { min-width:0; font-size:13px; line-height:1.6; }
+.geo-document-evidence article { padding:12px 0; border-top:1px solid #dfe6e9; overflow-wrap:anywhere; }
+.geo-document-evidence pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; font-size:12px; }
+.geo-document-evidence blockquote { margin:8px 0; padding:8px; border-left:3px solid #789098; background:#f1f5f7; color:#243c47; }
+.geo-document-evidence button { margin:5px 0; max-width:100%; white-space:normal; }
+.geo-document-evidence input[type=checkbox] { width:auto; }
+@media (min-width:901px) {
+  .arx-geo-simple[data-arx-stage="zoning"] .geo-workspace { grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr) !important; }
+}
 .arx-geo-page { min-height: 100vh; padding-bottom: 72px; }
 .arx-geo-back { display: flex; align-items: center; gap: 24px; }
 .arx-geo-back a {

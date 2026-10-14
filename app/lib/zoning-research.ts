@@ -25,8 +25,8 @@ const sakarya: ResearchSource[] = [
   source({ id: 'sakarya-duyuru', label: 'Sakarya plan duyuruları', url: 'https://sakarya.bel.tr/tr/Haberler-Kategori/81/1', authority: 'Sakarya Büyükşehir Belediyesi', method: 'documents', purpose: 'Yeni planlar, değişiklikler ve askı duyuruları', limitation: 'Duyuru tarihi onay veya kesinleşme tarihi değildir. Plan notu ve yürürlük durumu ayrıca kontrol edilir.' }),
 ];
 export function zoningResearchSources(province: string, district = ''): ResearchSource[] {
-  const p = province.trim().toLocaleLowerCase('tr-TR'), d = district.trim().toLocaleLowerCase('tr-TR');
-  const local = p === 'kastamonu' ? kastamonu : p === 'sakarya' ? sakarya.filter(s => !['adapazari','serdivan','sapanca'].includes(s.id) || !d || ({ adapazari: 'adapazarı', serdivan: 'serdivan', sapanca: 'sapanca' } as Record<string,string>)[s.id] === d) : [];
+  const p = province.trim().toLocaleLowerCase('tr-TR'), d = district.trim().toLocaleLowerCase('tr-TR').replace(/ı/g,'i');
+  const local = p === 'kastamonu' ? kastamonu : p === 'sakarya' ? sakarya.filter(s => !['adapazari','serdivan','sapanca'].includes(s.id) || !d || s.id === d) : [];
   return [...local, ...common];
 }
 export const ALL_RESEARCH_SOURCES = [...kastamonu, ...sakarya, ...common];

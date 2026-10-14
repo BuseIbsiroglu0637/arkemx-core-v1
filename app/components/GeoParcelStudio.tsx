@@ -28,6 +28,7 @@ import { assessParcelEdgeSetbacks, createZoningMassingModel, type ParcelFrontEdg
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { assessLandCandidate, object, readLandResearch } from "../lib/land-research";
 import { ZoningResearchPanel } from "./ZoningResearchPanel";
+import { ZoningDocumentPanel } from "./ZoningDocumentPanel";
 import { officialZoningPrefill } from "../lib/official-zoning-prefill";
 import type { OfficialZoningResult } from "../lib/kastamonu-zoning";
 import { listingZoningPrefill } from "../lib/land-zoning-declaration";
@@ -1912,13 +1913,12 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     setRequiredSetback(entered.length === 3 ? Math.max(...entered) : -1);
   };
 
-  const handleZoningDocument = (file?: File) => {
-    if (!file) return;
-    // A browser upload proves only that a file was selected. It cannot establish
-    // authenticity, current plan status or correspondence to this parcel.
+  const handleZoningDocument = (fileName: string) => {
+    // Text extraction and byte integrity do not establish legal authenticity
+    // or current plan status. Each attachment invalidates the prior review.
     setZoning((current) => ({
       ...current,
-      sourceDocument: file.name,
+      sourceDocument: fileName,
       verification: "document-pending-review",
       expertReviewStatus: "not-reviewed",
       expertReviewer: "",
@@ -1927,7 +1927,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
       expertReviewBasis: "",
       expertReviewNote: "",
     }));
-    setFileNotice(`${file.name}: belge adı proje kaydına eklendi; içeriği veya resmî geçerliliği doğrulanmadı. Yetkili idare ve uzman incelemesi bekleniyor.`);
+    setFileNotice(`${fileName}: belge içeriği yerel kanıt kaydına eklendi. Yetkili idare ve uzman incelemesi bekleniyor.`);
   };
 
   const exportGeoJson = () => downloadBlob(`${reference}.geojson`, JSON.stringify({
@@ -2303,7 +2303,18 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
           <label>Plan notu referansı<textarea rows={3} value={zoning.planNoteReference} onChange={(event) => updateZoning("planNoteReference", event.target.value)} placeholder="Madde, özel hüküm, açıklama…" /></label>
           <label>Kaynak bağlantısı<input type="url" value={zoning.sourceUrl} onChange={(event) => updateZoning("sourceUrl", event.target.value)} onBlur={() => updateZoning("sourceUrl", normalizeZoningSourceUrl(zoning.sourceUrl))} placeholder="https://… Belediye e-İmar veya e-Plan bağlantısı" /></label>
           <label>Kaynak açıklaması<textarea rows={2} value={zoning.sourceNote} onChange={(event) => updateZoning("sourceNote", event.target.value)} placeholder="Belgenin kapsamı, nereden alındığı veya kontrol notu…" /></label>
-          <label className="geo-file-drop"><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => handleZoningDocument(event.target.files?.[0])} /><b>İmar durumu / plan notu belgesi ekleyin</b><small>Belge yalnızca oturumda referanslanır; sunucuya yüklenmez.</small></label>
+          <ZoningDocumentPanel key={`${project.id}:${province}:${district}:${neighborhood}:${neighborhoodId}:${block}:${parcelNo}`}
+            identity={{province,district,neighborhood,neighborhoodId,block,parcelNo}} zoning={zoning}
+            onAttach={handleZoningDocument}
+            onApply={(values,basis) => {
+              setZoning(current => ({...current,...values,verification:"document-pending-review",expertReviewStatus:"not-reviewed",expertReviewer:"",expertReviewerRole:"",expertReviewDate:"",expertReviewBasis:"",expertReviewNote:"",sourceNote:`${current.sourceNote}\nBelge taslağı: ${basis}`.trim()}));
+              if (values.taks !== undefined) setMaxCoverage(values.taks * 100);
+              if (values.kaks !== undefined) setMaxFar(values.kaks);
+              if (values.hmax !== undefined) setMaxHeight(values.hmax);
+              const next = {...zoning,...values};
+              const setbacks = [next.frontSetback,next.sideSetback,next.rearSetback];
+              setRequiredSetback(setbacks.every(v=>Number.isFinite(v)&&v>=0)?Math.max(...setbacks):-1);
+            }} />
           <p className="geo-caution"><b>Türkiye geneli entegrasyon sınırı:</b> Yetkili servis veya belge bulunmadan TAKS, KAKS, Hmax ve nizam değeri resmî hak olarak sunulmaz.</p>
         </div>
       </details>
@@ -2447,7 +2458,7 @@ export function GeoParcelStudio({ simple = false }: { simple?: boolean } = {}) {
     export: <div className="geo-control-section"><span>07 / TEKNİK ÇIKTI</span><h3>Geometriyi, imar kaynağını ve veri statüsünü kurumsal paftayla aktarın.</h3><p className="geo-caution" role="status"><b>{exportReview.status === "review-required" ? "İNCELEME GEREKLİ" : "ÖN KONTROLLER TAMAM"}</b> · Resmî teslim onayı yoktur. {exportReview.reasons.slice(0, 3).join(" ")}</p><div className="geo-export-list"><button onClick={exportPdf} disabled={exportDisabled}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf} disabled={exportDisabled}><span>CAD</span><b>DWG uyumlu antetli DXF</b><i>↓</i></button><button onClick={exportKml} disabled={exportDisabled}><span>KML</span><b>Google Earth aktarımı</b><i>↓</i></button><button onClick={exportGeoJson} disabled={exportDisabled}><span>GJSON</span><b>GeoJSON + arazi metadata</b><i>↓</i></button><button onClick={exportLandXml} disabled={exportDisabled || terrainModel.basis !== "measured-z"}><span>XML</span><b>{terrainModel.basis === "measured-z" ? "LandXML kaynaklı TIN başlangıcı" : "LandXML için üç kaynaklı Z kotu gerekli"}</b><i>↓</i></button><button onClick={exportCsv} disabled={exportDisabled}><span>CSV</span><b>WGS84 koordinat ve kot listesi</b><i>↓</i></button><button onClick={exportManifest} disabled={exportDisabled}><span>MAN</span><b>Parsel · imar · arazi kanıt manifestosu</b><i>↓</i></button></div>{!parcelRecord.projectEligible && <p className="geo-caution"><b>Çıktı bekliyor:</b> Temsili başlangıç geometrisi teknik teslim üretmez. TKGM sınırı, doğrulanmış mekânsal dosya veya kullanıcı sınır düzenlemesi kaynağıyla kaydedilmelidir.</p>}<p className="geo-caution"><b>DWG notu:</b> İndirilen katmanlı DXF; pafta çerçevesi, antet, proje kimliği, imar kaynağı ve revizyon bilgilerini içerir ve CAD ortamında DWG olarak kaydedilebilir. Doğrudan DWG üretimi için lisanslı dönüşüm servisi gerekir.</p></div>,
   };
 
-  return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"} data-arx-results={showResults ? "open" : "closed"}>
+  return <section className={simple ? "geo-parcel-studio arx-geo-simple" : "geo-parcel-studio"} data-arx-stage={activeStage} data-arx-sources={showSources ? "open" : "closed"} data-arx-layers={showLayers ? "open" : "closed"} data-arx-results={showResults ? "open" : "closed"}>
     {simple ? <ProjectKernelBar moduleKey="geo-parcel" module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} compact /> : <ProjectKernelBar moduleKey="geo-parcel" module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
     <header className="geo-studio-top"><div><span>ARKEM / GEO·BIM WORKSPACE · V111 GIS + 3B</span><b>Parsel, Kot & Arazi Stüdyosu</b></div><div><span className="geo-status live">ORTAK KATMAN MOTORU</span><small>2B + 3B · WGS84 / yerel ENU</small></div></header>
     {simple && <>

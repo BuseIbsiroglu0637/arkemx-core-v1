@@ -14,7 +14,7 @@ test('numbered Turkish neighborhood names remain valid parcel identities',()=>{
 test('routing distinguishes municipality, special administration and district providers',()=>{
  assert.equal(zoningResearchSources('Kastamonu').filter(s=>s.method==='service').length,1);
  assert.ok(zoningResearchSources('Kastamonu').some(s=>s.id==='kastamonu-belediye'&&s.method==='login'));
- for(const [district,id] of [['Adapazarı','adapazari'],['Serdivan','serdivan'],['Sapanca','sapanca']]){
+ for(const [district,id] of [['Adapazarı','adapazari'],['Adapazari','adapazari'],['Serdivan','serdivan'],['Sapanca','sapanca']]){
   const sources=zoningResearchSources('Sakarya',district);assert.ok(sources.some(s=>s.id===id));assert.equal(sources.filter(s=>['adapazari','serdivan','sapanca'].includes(s.id)).length,1);assert.ok(sources.some(s=>s.id==='sakarya-plan'));assert.ok(sources.every(s=>s.method!=='service'));
  }
  assert.ok(!zoningResearchSources('Sakarya','Karasu').some(s=>['adapazari','serdivan','sapanca'].includes(s.id)));
