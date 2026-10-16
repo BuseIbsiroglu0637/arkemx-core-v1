@@ -20,6 +20,7 @@ import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, stru
 import { projectIntegrityIssues } from "../lib/project-integrity";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { FloorPlateStudy } from "./FloorPlateStudy";
+import { resolvePlanHandoffGeometry } from "../lib/project-integrity";
 
 type Props = { home?: boolean; compactKernel?: boolean };
 type WorkspaceView = "model" | "alternatives" | "loads" | "checks" | "quantities";
@@ -459,13 +460,17 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       ? rankedShortlist
       : shortlistIds.map((id) => ({ id, name: SYSTEM_LABELS[id], score: 0 }));
     setMcdaShortlist(shortlistItems);
-    const planInput = sourceGeometry?.handoff?.id === "H-03" ? sourceGeometry.input : undefined;
-    if (typeof planInput?.width === "number") setWidth(planInput.width); else if (typeof plate?.width === "number") setWidth(Math.max(6, Math.min(80, plate.width))); else if (source.structure.width > 0) setWidth(Math.max(6, Math.min(80, source.structure.width)));
-    if (typeof planInput?.depth === "number") setDepth(planInput.depth); else if (typeof plate?.depth === "number") setDepth(Math.max(6, Math.min(60, plate.depth))); else if (source.structure.depth > 0) setDepth(Math.max(6, Math.min(60, source.structure.depth)));
+    const planInput = sourceGeometry?.input;
+    const plan = project.modules["plan-editor"];
+    let planGeometry: ReturnType<typeof resolvePlanHandoffGeometry> | undefined;
+    try { if (plan) planGeometry = resolvePlanHandoffGeometry(plan); } catch { /* Existing source blockers remain visible. */ }
+    if (planGeometry) setWidth(planGeometry.width); else if (typeof planInput?.width === "number") setWidth(planInput.width); else if (typeof plate?.width === "number") setWidth(Math.max(6, Math.min(80, plate.width))); else if (source.structure.width > 0) setWidth(Math.max(6, Math.min(80, source.structure.width)));
+    if (planGeometry) setDepth(planGeometry.depth); else if (typeof planInput?.depth === "number") setDepth(planInput.depth); else if (typeof plate?.depth === "number") setDepth(Math.max(6, Math.min(60, plate.depth))); else if (source.structure.depth > 0) setDepth(Math.max(6, Math.min(60, source.structure.depth)));
     if (typeof plate?.floors === "number") setFloors(Math.max(1, Math.min(20, plate.floors))); else if (source.architecture.floors > 0) setFloors(Math.max(1, Math.min(20, source.architecture.floors)));
     if (typeof plate?.floorHeight === "number") setFloorHeight(Math.max(2.6, Math.min(8, plate.floorHeight))); else if (source.architecture.floorHeight > 0) setFloorHeight(Math.max(2.6, Math.min(8, source.architecture.floorHeight)));
     if (source.structure.baysX > 0) setBaysX(Math.max(1, Math.min(12, source.structure.baysX)));
     if (source.structure.baysY > 0) setBaysY(Math.max(1, Math.min(10, source.structure.baysY)));
+    if (typeof planInput?.liveLoad === "number") setLiveLoad(planInput.liveLoad);
     const recommended = source.structure.recommendedSystem.toLocaleLowerCase("tr-TR");
     if (shortlistItems[0]) setSystem(shortlistItems[0].id);
     else if (recommended.includes("hafif")) setSystem("light"); else if (recommended.includes("prefabrik")) setSystem("precast"); else if (recommended === "betonarme" || recommended.includes("concrete")) setSystem("concrete"); else if (recommended.includes("karma")) setSystem("hybrid"); else if (recommended.includes("çelik")) setSystem("steel");
@@ -533,6 +538,14 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       if (typeof value.slabThickness === "number") setSlabThickness(value.slabThickness);
       if (typeof value.superDeadLoad === "number") setSuperDeadLoad(value.superDeadLoad);
       if (typeof value.liveLoad === "number") setLiveLoad(value.liveLoad);
+      if (typeof value.roofSnowLoad === "number") setRoofSnowLoad(value.roofSnowLoad);
+      if (typeof value.basicWindSpeed === "number") setBasicWindSpeed(value.basicWindSpeed);
+      if (typeof value.sds === "number") setSds(value.sds);
+      if (typeof value.sd1 === "number") setSd1(value.sd1);
+      if (typeof value.importance === "number") setImportance(value.importance);
+      if (typeof value.behaviorFactor === "number") setBehaviorFactor(value.behaviorFactor);
+      if (typeof value.concreteStrength === "number") setConcreteStrength(value.concreteStrength);
+      if (typeof value.steelYield === "number") setSteelYield(value.steelYield);
       if (typeof saved?.structuralStudio?.production?.repetition === "number") setRepetition(saved.structuralStudio.production.repetition);
       if (typeof saved?.structuralStudio?.production?.transportDistance === "number") setTransportDistance(saved.structuralStudio.production.transportDistance);
       if (typeof saved?.structuralStudio?.production?.fireRating === "number") setFireRating(saved.structuralStudio.production.fireRating);

@@ -24,7 +24,7 @@ if (!existsSync(viteCli)) {
   process.exit(1);
 }
 const localUrl = "http://127.0.0.1:5173/dijital-proje-merkezi";
-const landBrowser = process.argv.includes("--land-browser");
+const landBrowser = !process.argv.includes("--no-land-browser");
 const openBrowser = !process.argv.includes("--no-browser");
 const logFolder = path.join(projectRoot, ".wrangler", "logs");
 mkdirSync(logFolder, { recursive: true });

@@ -6,6 +6,7 @@ import { site } from "../data/site";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
+import { decisionAssistantInput } from "../lib/project-input-mapping";
 
 const goals = [
   ["konut", "Konut / villa"],
@@ -48,6 +49,8 @@ const priorityOptions = [
   ["esneklik", "Mimari esneklik"],
   ["enerji", "Enerji performansı"],
   ["guvenlik", "Teknik risk ve güvenlik"],
+  ["karbon", "Düşük karbon"],
+  ["isletme", "İşletme performansı"],
 ] as const;
 
 const labelOf = (options: readonly (readonly [string, string])[], value: string) => options.find(([key]) => key === value)?.[1] || "Belirtilmedi";
@@ -66,11 +69,13 @@ function ProjectDecisionAssistantSession() {
   const [area, setArea] = useState("");
   const [documents, setDocuments] = useState<string[]>([]);
   const [priorities, setPriorities] = useState<string[]>([]);
+  const [inputMappingSource, setInputMappingSource] = useState<Record<string, unknown>>({});
   const [resultVisible, setResultVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generatedAt, setGeneratedAt] = useState("");
   const draftReady = useModuleRestore("decision-assistant", (saved) => {
-    const input = moduleRecord(saved.input);
+    setInputMappingSource(moduleRecord(saved.inputMappingSource ?? saved.input));
+    const input = decisionAssistantInput(saved.input);
     setGoal(restoreModuleValue(input.goal, goal));
     setStage(restoreModuleValue(input.stage, stage));
     setSystem(restoreModuleValue(input.system, system));
@@ -131,8 +136,8 @@ function ProjectDecisionAssistantSession() {
   }, [area, documents, goal, location, priorities.length, stage, system]);
 
   useEffect(() => { if (!draftReady) return;
-    patchModule("decision-assistant", { input: { goal, stage, system, location, area, documents, priorities }, result, status: resultVisible ? "report-generated" : "draft" });
-  }, [draftReady, area, documents, goal, location, patchModule, priorities, result, resultVisible, stage, system]);
+    patchModule("decision-assistant", { input: { goal, stage, system, location, area, documents, priorities }, inputMappingSource, result, status: resultVisible ? "report-generated" : "draft" });
+  }, [draftReady, area, documents, goal, inputMappingSource, location, patchModule, priorities, result, resultVisible, stage, system]);
 
   const summary = useMemo(() => [
     "Merhaba Arkem Yapı Sistemleri, Proje Karar Asistanı özetimi iletiyorum.",

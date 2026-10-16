@@ -6,7 +6,7 @@ import type { OfficialZoningResult, ZoningParcelInput } from '../lib/kastamonu-z
 import type { ZoningSourceAccess } from '../lib/zoning-source-access';
 import type { ZoningForm } from '../lib/zoning';
 
-const accessLabel: Record<ZoningSourceAccess['status'],string> = { 'page-received':'Sayfa alındı · parsel sonucu değil', 'service-readable':'Servis şeması okundu', 'login-required':'Resmî ekranda giriş gerekli', restricted:'Erişim sınırlı', unavailable:'Bağlantı kurulamadı', unexpected:'İçerik kontrolü gerekli' };
+const accessLabel: Record<ZoningSourceAccess['status'],string> = { 'page-received':'Kaynağa erişildi · parsel koşulları doğrulanmadı', 'service-readable':'Servis şeması okundu · parsel koşulları doğrulanmadı', 'login-required':'Resmî ekranda giriş gerekli', restricted:'Erişim sınırlı', unavailable:'Bağlantı kurulamadı', unexpected:'İçerik kontrolü gerekli' };
 const methodLabel = { service:'Sınırlı otomatik okuma', viewer:'Resmî ekranda sorgulama', login:'Kimlik doğrulamalı hizmet', documents:'Belge / karar araştırması' };
 type AccessReport = { schema: 'ARKEM-ZONING-ACCESS/1.0'; province: string; district: string; sources: ZoningSourceAccess[] };
 export function ZoningResearchPanel({ identity, zoning, result, eligible, loading, notice, onQuery }: {
@@ -58,7 +58,7 @@ export function ZoningResearchPanel({ identity, zoning, result, eligible, loadin
       {eligible && <button type="button" disabled={loading} onClick={onQuery}>{loading ? 'Sorgulanıyor…' : 'Parsel koşullarını yeniden sorgula'}</button>}
       {assessment.fresh && result?.status === 'not-found' && <p><b>İmarsız olduğu sonucu çıkarılamaz.</b> Konut dışı kullanım, köy yerleşik alanı, yetkili belediye ve plan notları için diğer kaynaklardan devam edin.</p>}
     </div>
-    <details open className="geo-imar-sources"><summary>Resmî kaynaklar ve erişim</summary>
+    <details className="geo-imar-sources"><summary>Resmî kaynaklar ve erişim</summary>
       <p>Kaynak kapsamını incelemek proje parselini değiştirmez. Bağlantı kontrolü yalnız sayfa/servis erişimini sınar.</p>
       <div className="geo-field-grid">
         <label>Kaynak kapsamı<select value={catalogProvince} onChange={e=>changeCatalog(e.target.value)}><option value="">İl seçin</option><option>Kastamonu</option><option>Sakarya</option>{catalogProvince && !['Kastamonu','Sakarya'].includes(catalogProvince) && <option>{catalogProvince}</option>}</select></label>
@@ -72,7 +72,7 @@ export function ZoningResearchPanel({ identity, zoning, result, eligible, loadin
         return <article key={source.id}><a href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a><small>{source.authority} · {methodLabel[source.method]}</small><p>{source.purpose}</p><p>{source.limitation}</p><small>Bağlantı kataloğu kontrolü: {source.catalogCheckedAt} · parsel doğrulaması değildir</small><p role="status"><b>{check ? accessLabel[check.status] : 'Canlı erişim kontrol edilmedi'}</b>{check && <> · {new Date(check.checkedAt).toLocaleString('tr-TR')}<br/>{check.message}</>}</p></article>;
       })}</div>
     </details>
-    <details open><summary>Koşul karşılaştırması · {assessment.available}/8 kaynak değeri{assessment.conflicts ? ` · ${assessment.conflicts} fark var` : ''}</summary>
+    <details><summary>Koşul karşılaştırması · {assessment.available}/8 kaynak değeri{assessment.conflicts ? ` · ${assessment.conflicts} fark var` : ''}</summary>
       <div className="geo-imar-table-wrap"><table><caption>Projeye girilmiş bilgi ile güncel parsel kaydı karşılaştırması</caption><thead><tr><th>Koşul</th><th>Projede girilen</th><th>Kaynakta okunan</th><th>Durum</th></tr></thead><tbody>{assessment.fields.map(field=><tr key={field.key} data-conflict={field.status==='conflict'}><th scope="row">{field.label}</th><td>{field.current ?? 'Girilmedi'}</td><td>{field.value ?? 'Alınamadı'}</td><td>{field.status==='conflict' ? 'Fark var · inceleyin' : field.status==='source-read' ? 'Kaynakta okundu · onay değil' : 'Kaynak kanıtı eksik'}</td></tr>)}</tbody></table></div>
       <p>Eksik değerler sıfır kabul edilmez. Farklı kaynaklardaki değerler ortalanmaz. 1/5000 plan, 1/1000 uygulama koşulu yerine kullanılmaz.</p>
       {assessment.available > 0 && result?.source && <p>Dayanak: {result.source.authority} · {result.source.planId} · {result.source.planScale} · kaynak onay tarihi {result.source.approvalDate}. Plan notu ve sonraki değişiklikler ayrıca incelenmeli.</p>}

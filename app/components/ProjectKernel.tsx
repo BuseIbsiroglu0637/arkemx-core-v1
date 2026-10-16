@@ -22,6 +22,7 @@ import { canRefreshGeneratedPlan, generatedPlanGeometry } from "../lib/program-p
 import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
 import { isPortalProject } from "../lib/customer-portal";
 import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
+import { traceJson } from "../lib/structural-traceability";
 import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, reconcileProjectSnapshots } from "../lib/project-storage";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -486,8 +487,21 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const architectureResult = record(architecture.result);
       const planLoads = elements.map((element) => numeric(element.load)).filter((value) => value > 0);
       const liveLoad = planLoads.length ? Math.max(...planLoads) : numeric(architectureResult.liveLoad);
+      const planHandoffSourceKey = traceJson({
+        geometry: planGeometrySnapshot(plan),
+        elements: [...elements].sort((a, b) => stringValue(a.id).localeCompare(stringValue(b.id))),
+        sourceRevision,
+        liveLoad,
+        floorCoordination: plan.floorCoordination ?? null,
+        floorHeight: thread.canonical.architecture.floorHeight,
+        usage: structuralUse(thread.canonical.architecture.use),
+      });
+      if (target.planHandoffSourceKey === planHandoffSourceKey) return;
       modules["structural-concept"] = {
         ...target,
+        planHandoffSourceKey,
+        floorStudyId: null,
+        floorStudyStatus: "source-changed",
         result: null,
         alternatives: [],
         structuralStudio: null,
@@ -544,8 +558,14 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const target = record(modules["structural-concept"]);
       const input = record(target.input);
       const selectedSystem = structuralSystem(stringValue(winner.id) || stringValue(winner.name) || stringValue(comparisonInput.preferredSystem));
+      const mcdaHandoffSourceKey = traceJson({ selectedSystem, usage: comparisonInput.usage, winner, shortlist: comparison.shortlist });
+      if (target.mcdaHandoffSourceKey === mcdaHandoffSourceKey) return;
+      const inputChanged = (selectedSystem && selectedSystem !== input.system)
+        || stringValue(comparisonInput.usage, stringValue(input.usage, "office")) !== input.usage;
       modules["structural-concept"] = {
         ...target,
+        mcdaHandoffSourceKey,
+        ...(inputChanged ? { calculationId: null, referenceStatus: "pending-calculation", floorStudyId: null, floorStudyStatus: "source-changed" } : {}),
         input: {
           ...input,
           ...(selectedSystem ? { system: selectedSystem } : {}),

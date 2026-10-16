@@ -11,15 +11,18 @@ import { FrameWorkbench } from "./FrameWorkbench";
 
 export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
   const { project, patchModule } = useProjectKernel();
+  const persistedInput = (project.modules["structural-concept"] as { input?: unknown } | undefined)?.input;
+  const inputCurrent = traceJson(persistedInput ?? {}) === traceJson(input);
   const report = useMemo(() => calculateFloorPlateStudy(project, input), [project, input]);
   const contentKey = report.study ? traceJson(report.study) : "";
   const registryKey = traceJson((project.modules["structural-concept"] as { floorStudyRegistry?: unknown } | undefined)?.floorStudyRegistry ?? {});
   const [recorded, setRecorded] = useState<{ key: string; record: FloorStudyRecord } | null>(null);
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [error, setError] = useState("");
-  const latest = useRef({ projectId: project.id, revision: project.revision, contentKey });
-  useEffect(() => { latest.current = { projectId: project.id, revision: project.revision, contentKey }; }, [project.id, project.revision, contentKey]);
+  const latest = useRef({ projectId: project.id, revision: project.revision, contentKey, inputCurrent });
+  useEffect(() => { latest.current = { projectId: project.id, revision: project.revision, contentKey, inputCurrent }; }, [project.id, project.revision, contentKey, inputCurrent]);
   useEffect(() => {
+    if (!inputCurrent) return;
     if (!contentKey) {
       patchModule("structural-concept", { floorStudyId: null });
       return;
@@ -30,14 +33,14 @@ export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
       const existing = (JSON.parse(registryKey) as Record<string, unknown>)[record.id];
       if (existing && traceJson(existing) !== traceJson(record)) throw new Error("Kat çalışma kaydı bozulmuş.");
       setError(""); setRecorded({ key: contentKey, record });
-      patchModule("structural-concept", { floorStudyId: record.id, floorStudyRegistry: { [record.id]: record } });
+      patchModule("structural-concept", { floorStudyId: record.id, floorStudyStatus: "current", floorStudyRegistry: { [record.id]: record } });
     }).catch(() => { if (!cancelled) { setRecorded(null); setError("Kat çalışması kaydedilemedi; kaynak kaydı gözden geçirilmeli."); patchModule("structural-concept", { floorStudyId: null }); } });
     return () => { cancelled = true; };
-  }, [contentKey, registryKey, patchModule]);
+  }, [contentKey, registryKey, patchModule, inputCurrent]);
 
   const study = report.study;
   const floor = study?.floors.find(item => item.level === selectedLevel) ?? study?.floors[0];
-  const ready = recorded?.key === contentKey && !!contentKey;
+  const ready = inputCurrent && recorded?.key === contentKey && !!contentKey;
   const formatNumber = (value: number) => value.toLocaleString("tr-TR", { maximumFractionDigits: 2 });
   const exportStudy = async (format: "JSON" | "CSV" | "PDF" | "DXF") => {
     if (!study || !floor || !ready || !recorded) return;
@@ -67,7 +70,7 @@ export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
       }
       const documentRecord = await sealFloorStudyDocument(manifest, name, bytes);
       const current = latest.current;
-      if (current.projectId !== project.id || current.revision !== project.revision || current.contentKey !== contentKey) throw new Error("Kaynak dışa aktarılırken değişti.");
+      if (!current.inputCurrent || current.projectId !== project.id || current.revision !== project.revision || current.contentKey !== contentKey) throw new Error("Kaynak dışa aktarılırken değişti.");
       patchModule("structural-concept", { floorDocumentRegistry: { [documentRecord.id]: documentRecord } });
       downloadTextFile(name, bytes, mime);
     } catch { setError("Kat çalışmasının kaynak zinciri doğrulanamadı; dosya oluşturulmadı."); }
@@ -87,7 +90,7 @@ export function FloorPlateStudy({ input }: { input: StructuralConceptInput }) {
     <FloorCoordinationPanel/>
     <FrameWorkbench input={input}/>
     <ul>{study.limitations.map(note => <li key={note}>{note}</li>)}</ul>
-    <p role="status">{ready ? "Kat çalışması kaynaklarıyla kaydedildi." : "Kat çalışması kaynak kaydı bekleniyor."}</p>
+    <p role="status">{ready ? "Kat çalışması güncel proje girdileri ve kaynaklarıyla kaydedildi." : "Proje girdileri veya kaynak değişti; güncel kayıt oluşmadan çıktı indirilemez."}</p>
     <div className="engineering-export-actions">{([
       ["JSON", "Kat bazlı ön çalışmayı indir"], ["CSV", "Kat yük tablosunu indir"],
       ["PDF", "Seçili kat paftasını indir"], ["DXF", "Seçili kat çizimini indir"],

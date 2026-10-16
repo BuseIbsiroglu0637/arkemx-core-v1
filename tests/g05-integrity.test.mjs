@@ -30,6 +30,31 @@ const time="2026-10-08T09:00:00.000Z";
 const units={schema:"ARKEM-UNITS/1.0",length:"m",area:"m2",force:"kN",surfaceLoad:"kN/m2",coordinates:"grid-bay"};
 const stamp=(key,value)=>stampProjectModule(value,{projectId:"TEST",projectRevision:"P02",sourceModule:key,recordedAt:time,action:"updated"});
 function project(){return {schema:"ARKEM-PROJECT/1.0",id:"TEST",name:"Test",revision:"P02",phase:"Ön fizibilite",updatedAt:time,events:[],modules:{"plan-editor":stamp("plan-editor",{units,level:2,floorCount:2,baysX:2,baysY:2,spanX:5,spanY:5,elements:[{id:"E-A",level:2,type:"load",load:3.5,provenance:"manual"}],floorPlates:[{level:1,width:10,depth:10},{level:2,width:20,depth:10}]})}};}
+test('identical plan handoff preserves current calculation and deliberate structural input; changed load invalidates it',()=>{
+ const p=project();p.modules=synchronizeModules(p.modules,['H-03'],p).modules;
+ p.modules['structural-concept']=stamp('structural-concept',p.modules['structural-concept']);
+ const structure=p.modules['structural-concept'];structure.floorStudyId='CURRENT-STUDY';structure.calculationId='CURRENT-CALC';
+ structure.input.liveLoad=4;structure.floorStudyRegistry={'CURRENT-STUDY':{preserved:true}};
+ const same=synchronizeModules(p.modules,['H-03'],p);
+ assert.deepEqual(same.applied,[]);assert.equal(same.modules['structural-concept'].input.liveLoad,4);
+ assert.equal(same.modules['structural-concept'].floorStudyId,'CURRENT-STUDY');
+ assert.equal(same.modules['structural-concept'].calculationId,'CURRENT-CALC');
+ p.modules['plan-editor'].elements[0].load=5;
+ const changed=synchronizeModules(p.modules,['H-03'],p).modules['structural-concept'];
+ assert.equal(changed.input.liveLoad,5);assert.equal(changed.floorStudyId,null);assert.equal(changed.calculationId,null);
+ assert.deepEqual(changed.floorStudyRegistry,structure.floorStudyRegistry);
+});
+test('identical MCDA handoff preserves calculation; a new system marks calculations stale',()=>{
+ const p=project();p.modules['system-comparison']=stamp('system-comparison',{ranking:[{id:'steel',name:'Yapısal Çelik',score:80}],shortlist:['steel'],input:{usage:'industrial'}});
+ p.modules=synchronizeModules(p.modules,['H-04'],p).modules;
+ p.modules['structural-concept']=stamp('structural-concept',p.modules['structural-concept']);
+ p.modules['structural-concept'].floorStudyId='CURRENT';p.modules['structural-concept'].calculationId='CALC';
+ const same=synchronizeModules(p.modules,['H-04'],p);assert.deepEqual(same.applied,[]);
+ assert.equal(same.modules['structural-concept'].floorStudyId,'CURRENT');
+ p.modules['system-comparison'].ranking=[{id:'concrete',name:'Betonarme',score:80}];
+ const changed=synchronizeModules(p.modules,['H-04'],p).modules['structural-concept'];
+ assert.equal(changed.input.system,'concrete');assert.equal(changed.floorStudyId,null);assert.equal(changed.calculationId,null);
+});
 test("B01 stale revision rejected and never relabelled",()=>{const p=project();p.modules["plan-editor"]._kernel.projectRevision="P01";const out=ensureProjectModuleStamps(p.modules,{projectId:p.id,projectRevision:p.revision,recordedAt:time});assert.equal(out["plan-editor"]._kernel.projectRevision,"P01");assert.equal(isPortalProject({...p,modules:out}),false);});
 test("B01 matching revision accepted",()=>assert.equal(isPortalProject(project()),true));
 test("B02 export carries P02 and rejects conflicting BIM revision",()=>{const input={projectId:"TEST",projectRevision:"P02",coordinateReference:"LOCAL",serviceZone:.35,shaftArea:5,floorPlate:100,topics:[]};assert.equal(createCoordinationPackage(input).identity.revision,"P02");assert.throws(()=>createCoordinationPackage({...input,bimCoordination:{projectRevision:"P01"}}),/revision/i);});

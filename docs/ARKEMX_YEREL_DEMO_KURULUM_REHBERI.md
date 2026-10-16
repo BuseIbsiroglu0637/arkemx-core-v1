@@ -1,5 +1,7 @@
 # ARKEMX CORE V1 — Bilgisayardan Yerel Demo Kurulumu
 
+Arsa araştırması yerel başlatıcıda varsayılan olarak etkindir. Canlı ilan araştırması internet ve Chromium veya Microsoft Edge gerektirir; dış kaynak erişimi ayrıca araştırma sırasında doğrulanır. Yalnız çevrimdışı demo için `npm run demo:local -- --no-land-browser` kullanabilirsiniz. Başlatıcı değişikliğinin uygulanması için açık yerel sunucuyu Ctrl+C ile kapatıp yeniden başlatın.
+
 **Amaç:** Teknokent görüşmesinde uygulamayı GitHub Codespaces veya yayımlanmış internet sitesi olmadan **kendi bilgisayarında** göstermek. Uygulama yerel tarayıcıda açılır; henüz Windows .exe / macOS .app biçiminde bağımsız bir masaüstü yazılımı değildir.
 
 ## Windows ZIP kurulumunda eksik Vite dosyaları (26.09.2026 düzeltmesi)
