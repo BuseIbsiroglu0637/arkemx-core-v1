@@ -20,7 +20,7 @@ test("all reviewed module routes render a compact, labelled entry and direct wor
     }
     if (route === "proje-karar-asistani") {
       assert.match(html, /Yatırım briefi/); assert.match(html, /id="karar-motoru"/);
-      assert.match(html, /Örnek briefi doldur/); assert.doesNotMatch(html, /Özeti WhatsApp ile gönder/);
+      assert.doesNotMatch(html, /Örnek briefi doldur/); assert.doesNotMatch(html, /Özeti WhatsApp ile gönder/);
       assert.equal((html.match(/<h1\b/g) || []).length, 1, route); continue;
     }
     assert.match(html, /module-workspace-intro/, route);
