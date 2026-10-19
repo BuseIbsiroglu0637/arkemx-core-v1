@@ -72,3 +72,21 @@ test("invalid project numbers or module provenance fail closed and preserve exis
   assert.throws(()=>saveLibraryProject(storage,wrongStamp),/geçerli değil/);
   assert.equal(storage.getItem(PROJECT_LIBRARY_KEY),original);
 });
+
+test("switching between six-module projects retains the saved module payloads", () => {
+  const storage=memory();
+  const current=project("CURRENT");
+  current.modules["geo-parcel"].optionalLabel=undefined;
+  current.modules["quick-site-scenario"]={status:"taslak"};
+  current.modules["system-comparison"]={ranking:[{id:"steel",score:65}]};
+  current.modules["project-os"]={tasks:[{id:"task-1",complete:false}]};
+  saveLibraryProject(storage,current);
+  const created=project("NEW");
+  saveLibraryProject(storage,created);
+  const opened=loadProjectLibrary(storage).find(p=>p.id==="CURRENT");
+  assert.ok(opened);
+  assert.equal(Object.keys(opened.modules).length,6);
+  assert.deepEqual(opened.modules["system-comparison"].ranking,[{id:"steel",score:65}]);
+  assert.deepEqual(opened.modules["project-os"].tasks,[{id:"task-1",complete:false}]);
+  assert.equal(loadProjectLibrary(storage).length,2);
+});
