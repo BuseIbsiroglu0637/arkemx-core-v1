@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { masArchitectureHandoffPolicy } from "../lib/mas-architecture";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import {
@@ -254,7 +255,7 @@ function stampHandoffModules(
   return stamped;
 }
 
-function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[]) {
+function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[], projectId: string) {
   const modules = { ...sourceModules };
   const applied: string[] = [];
   const synchronizedAt = new Date().toISOString();
@@ -270,6 +271,8 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       if (numeric(metrics.area) <= 1 || metrics.geometryValid === false) return;
       const target = record(modules["architectural-program"]);
       const input = record(target.input);
+      // An explicitly applied MAS source must not be replaced by the automatic GIS handoff.
+      if (!masArchitectureHandoffPolicy(projectId, modules, input).allowGISReplace) return;
       const targetGross = numeric(metrics.gross)
         || numeric(metrics.allowedGross)
         || numeric(input.targetGross)
@@ -314,6 +317,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
     if (handoffId === "H-02" && modules["architectural-program"]) {
       const architecture = record(modules["architectural-program"]);
       const architectureInput = record(architecture.input);
+      if (!masArchitectureHandoffPolicy(projectId, modules, architectureInput).allowArchitecturePropagation) return;
       const architectureResult = record(architecture.result);
       const architecturalScheme = record(architecture.architecturalScheme);
       const schemePlate = record(architecturalScheme.plate);
@@ -625,7 +629,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       const event: ProjectKernelEvent = { id: `${key}-${Date.now().toString(36)}`, module: key, action, revision: current.revision, timestamp };
       const nextModules = { ...current.modules, [key]: storedValue };
       const automatic = current.experience.autoHandoff
-        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [])
+        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [], current.id)
         : { modules: nextModules, applied: [] as string[], synchronizedAt: "" };
       const stampedModules = stampHandoffModules(automatic.modules, automatic.applied, {
         projectId: current.id,
@@ -649,10 +653,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     });
   }, [hydrated]);
   const applyHandoff = useCallback((handoffId: string) => {
-    const preview = synchronizeModules(project.modules, [handoffId]);
+    const preview = synchronizeModules(project.modules, [handoffId], project.id);
     if (!preview.applied.length) return false;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, [handoffId]);
+      const result = synchronizeModules(current.modules, [handoffId], current.id);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
@@ -676,10 +680,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     return true;
   }, [project.modules]);
   const synchronizeProject = useCallback(() => {
-    const preview = synchronizeModules(project.modules, HANDOFF_IDS);
+    const preview = synchronizeModules(project.modules, HANDOFF_IDS, project.id);
     if (!preview.applied.length) return 0;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, HANDOFF_IDS);
+      const result = synchronizeModules(current.modules, HANDOFF_IDS, current.id);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
