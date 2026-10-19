@@ -180,7 +180,8 @@ function ScopedGeoParcelStudio() {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
   const [activeStage, setActiveStage] = useState<Stage>("locate");
-  const [expertMode, setExpertMode] = useState(false);
+  // Guided GIS demo has no expert-mode toggle; file imports remain available from the location step.
+  const expertMode = false;
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [parcel, setParcel] = useState<GeoPoint[]>([]);
   const drawingGeometry = useRef(parcel);
@@ -206,7 +207,7 @@ function ScopedGeoParcelStudio() {
   const [neighborhoodOptions, setNeighborhoodOptions] = useState<LocationDirectoryOption[]>([]);
   const [directoryAttempt, setDirectoryAttempt] = useState(0);
   const [directoryError, setDirectoryError] = useState("");
-  const basemapMode: ParcelBasemap = 'osm';
+  const [basemapMode, setBasemapMode] = useState<ParcelBasemap>('osm');
   const [basemapNotice, setBasemapNotice] = useState('');
   const [administrativeLoading, setAdministrativeLoading] = useState<"province" | "district" | "neighborhood" | "idle">("province");
   const administrativeRequests = useRef(createDirectoryRequestTracker());
@@ -519,6 +520,7 @@ function ScopedGeoParcelStudio() {
     && [buildingWidth, buildingDepth, floorHeight].every(n => Number.isFinite(n) && n > 0)
     && [rotation, offsetEast, offsetNorth].every(Number.isFinite);
   const parcelOutputReady = parcelRecord.projectEligible && metrics.geometryValid && isParcelIdentityReady(currentIdentity);
+  const terrainPreviewReady = parcelRecord.projectEligible && metrics.geometryValid && parcel.length >= 3;
   const hasPlacedModel = placementReady && selectedMassingId !== 'none';
   const outputBuilding = hasPlacedModel ? building : [];
   const outputRatios = hasPlacedModel ? geometricAreaRatios(metrics.area, metrics.footprint, metrics.gross) : null;
@@ -714,6 +716,7 @@ function ScopedGeoParcelStudio() {
     const map = mapRef.current, leaflet = leafletRef.current;
     if (!map || !leaflet || !mapReady) return;
     basemapLayerRef.current?.remove();
+    setBasemapNotice('');
     const definition = PARCEL_BASEMAPS[basemapMode];
     const layer = leaflet.tileLayer(definition.url, { maxZoom: 21, maxNativeZoom: definition.maxNativeZoom, attribution: definition.attribution });
     basemapLayerRef.current = layer;
@@ -1199,7 +1202,7 @@ function ScopedGeoParcelStudio() {
   return <section className="geo-parcel-studio" data-guided={!expertMode} data-stage={journeyIndex} data-concept={conceptMode}>
     <p className={`module-feedback ${exportState}`} role="status">{exportMessage}</p>
     {expertMode && <ProjectKernelBar module="GEO·BIM PARCEL ENGINE" confidence={dataStatus} />}
-    <header className="geo-studio-top"><div><span>ARKEM / ARSA REHBERİ</span><b>Arsa bilgileri</b><p>Konumu seçin, tapudaki ada ve parseli girin. Ardından sınırı ve imar bilgilerini inceleyin.</p></div><button type="button" className="parcel-expert-toggle" aria-pressed={expertMode} onClick={() => setExpertMode(value => !value)}>{expertMode ? 'Sade rehbere dön' : 'Uzman araçlarını göster'}</button></header>
+    <header className="geo-studio-top"><div><span>ARKEM / ARSA REHBERİ</span><b>Arsa bilgileri</b><p>Konumu seçin, tapudaki ada ve parseli girin. Ardından sınırı ve imar bilgilerini inceleyin.</p></div></header>
     {(expertMode || parcelOutputReady) && <div className="parcel-output-promise"><Files aria-hidden="true"/><p><b>Yapı yerleştirmeden de teknik çıktınızı alın.</b><span>Sınır bulunduğunda A3 parsel paftası, A4 özet rapor ve DXF hazırdır. Yapı eklerseniz yerleşiminiz de çıktılara işlenir.</span></p><a href={parcelOutputReady ? '#parsel-teknik-ciktilar' : undefined} aria-disabled={!parcelOutputReady}>{parcelOutputReady ? 'Çıktılara git' : 'Sınır bulununca hazır'}<ArrowRight aria-hidden="true"/></a></div>}
     <nav className="parcel-journey" aria-label="Arsa değerlendirme adımları"><ol>{PARCEL_JOURNEY.map((step, index) => <li key={step.id}><button type="button" aria-current={journeyIndex === index ? 'step' : undefined} disabled={!parcelJourneyGate(index, identityReady, parcelRecord.projectEligible)} onClick={() => { if (index === 3 && !designReady) startConcept(); else setActiveStage(step.id); setDrawEnabled(false); }}><span className="parcel-step-number">{String(index + 1).padStart(2, '0')}</span><div><b>{step.label}</b><small>{step.note}</small></div></button></li>)}</ol></nav>
 
@@ -1224,7 +1227,7 @@ function ScopedGeoParcelStudio() {
         : stageContent[activeStage]}<div className="geo-control-notice" role="status"><i></i><span><b>Çalışma durumu</b><small>{fileNotice}</small></span></div></aside>
       <section className="geo-stage" aria-label="Parsel çalışma görünümü" hidden={!expertMode && activeStage === 'zoning'}>
         <div className="geo-stage-toolbar"><div>{([{"id":"map","label":"Harita"},{"id":"terrain","label":"Arazi modeli"},{"id":"data","label":"Koordinatlar"}] as const).map((view) => <button key={view.id} aria-pressed={viewMode === view.id} className={viewMode === view.id ? "active" : ""} onClick={() => setViewMode(view.id)}>{view.label}</button>)}</div><button onClick={fitToParcel}>Parsele odaklan</button></div>
-        <div className="parcel-basemap-bar"><b>Parsel haritası</b><p>{parcelRecord.projectEligible ? `${parcelRecord.evidence.label} · OpenStreetMap altlığı. Harita bilgilendirme amaçlıdır.` : 'OpenStreetMap altlığı · Henüz bu parsele bağlı sınır yok.'}</p></div>
+        <div className="parcel-basemap-bar"><b>Parsel haritası</b><label>Harita görünümü<select aria-label="Harita görünümü" value={basemapMode} onChange={(event) => setBasemapMode(event.target.value as ParcelBasemap)}>{(Object.keys(PARCEL_BASEMAPS) as ParcelBasemap[]).map((mode) => <option key={mode} value={mode}>{PARCEL_BASEMAPS[mode].label}</option>)}</select></label><p>{parcelRecord.projectEligible ? `${parcelRecord.evidence.label} · ${PARCEL_BASEMAPS[basemapMode].label} altlığı.` : `${PARCEL_BASEMAPS[basemapMode].label} altlığı · Henüz bu parsele bağlı sınır yok.`} Harita görünümü parselin kot veya imar verisini doğrulamaz.</p></div>
         {basemapNotice && <p className="parcel-map-notice" role="status">{basemapNotice}</p>}
         {parcelRecord.projectEligible || expertMode ? <div className="parcel-coordinate-summary"><span>{parcelRecord.projectEligible ? 'Kaynak geometrisinin merkezi' : 'Önizleme merkezi · seçili parsel verisi değil'}</span><b>WGS84 / EPSG:4326 · {center.lat.toFixed(6)}, {center.lng.toFixed(6)}</b><small>Web Mercator / EPSG:3857 · X {webMercatorPoint(center.lat, center.lng)?.x.toFixed(2) ?? '—'} / Y {webMercatorPoint(center.lat, center.lng)?.y.toFixed(2) ?? '—'} m · aplikasyon koordinatı değildir.</small></div> : <div className="parcel-map-welcome"><b>Parseliniz burada görünecek.</b><span>Konum ve ada / parsel bilgilerinizi tamamlayın. “Parseli haritada göster” düğmesiyle sınır otomatik sorgulanır.</span></div>}
         <section className="v111-layer-dock" aria-label="Ortak GIS ve 3B arazi katmanları">
@@ -1233,7 +1236,7 @@ function ScopedGeoParcelStudio() {
           <footer><span>{terrainModel.source.authority}</span><b>{terrainModel.basis === "measured-z" ? `Kot ${terrainModel.elevation.minimum?.toFixed(2)}–${terrainModel.elevation.maximum?.toFixed(2)} m · ${terrainContours.length} eş yükselti parçası` : `%${slope} temsili eğim · plankote değildir`}</b></footer>
         </section>
         <div className={`geo-map-frame${viewMode !== "map" ? " hidden-view" : ""}`}><div ref={mapHostRef} className="geo-leaflet-map"></div>{!mapReady && <div className="geo-map-loading"><b>{mapError || "Harita hazırlanıyor"}</b><small>Kaynak sınır önizlemesi harita servisinden bağımsızdır.</small></div>}<div className="parcel-map-inset"><ParcelBoundaryPreview points={parcel} eligible={parcelRecord.projectEligible} label={parcelRecord.reference} /></div><div className="geo-map-legend"><span><i></i>Kaynak sınırı</span><span><i></i>Kavramsal yapı</span><span><i></i>Sınır noktası</span></div>{drawEnabled && <div className="geo-map-crosshair" aria-hidden="true">+</div>}</div>
-        {viewMode === "terrain" && hasPlacedModel && <GeoTerrainViewer parcel={parcel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} />}
+        {viewMode === "terrain" && (terrainPreviewReady ? <GeoTerrainViewer parcel={parcel} hasBuilding={hasPlacedModel} buildingWidth={buildingWidth} buildingDepth={buildingDepth} floors={floors} rotation={rotation} offsetEast={offsetEast} offsetNorth={offsetNorth} slope={slope} exaggeration={exaggeration} layers={terrainLayers} terrainModel={terrainModel} /> : <div className="geo-map-welcome" role="status"><b>3B arazi için parsel sınırı gerekli.</b><span>Önce parseli haritada sorgulayın veya KML / GeoJSON sınır dosyası yükleyin. Konum işareti tek başına arazi modeli oluşturmaz.</span></div>)}
         {viewMode === "data" && <div className="geo-data-view"><header><div><span>KAYNAK CRS BEYANI</span><b>{sourceCrs}</b></div><div><span>İŞLEME DÜZLEMİ</span><b>WGS84 → lokal ENU · metre</b></div><div><span>VERİ STATÜSÜ</span><b>{dataStatus}</b></div></header><section className="v111-terrain-ledger"><article><span>YÜZEY TEMELİ</span><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z / IDW" : "Parametrik eğim"}</b><small>{terrainModel.trust.toLocaleUpperCase("tr-TR")}</small></article><article><span>KOT ÖRNEĞİ</span><b>{terrainModel.samples.measured} / {terrainModel.samples.total}</b><small>Ölçülmüş / toplam nokta</small></article><article><span>KOT ARALIĞI</span><b>{terrainModel.elevation.range.toFixed(2)} m</b><small>{terrainModel.elevation.datum === "source-declared" ? "Kaynak datum beyanı" : "Yerel bağıl düzlem"}</small></article><article><span>EŞ YÜKSELTİ</span><b>{terrainContours.length}</b><small>Marching-squares önizleme parçası</small></article></section><div className="geo-data-table"><div className="head"><span>ID</span><span>LATITUDE</span><span>LONGITUDE</span><span>EAST / m</span><span>NORTH / m</span><span>Z / m</span></div>{parcel.map((point, index) => { const local = toLocalMeters(point, center); return <div key={`${point.lat}-${point.lng}-${index}`}><b>P{String(index + 1).padStart(2, "0")}</b><span>{point.lat.toFixed(8)}</span><span>{point.lng.toFixed(8)}</span><span>{local.east.toFixed(3)}</span><span>{local.north.toFixed(3)}</span><span>{point.alt?.toFixed(2) ?? "—"}</span></div>; })}</div><footer><p><b>CRS kontrolü</b> Hesap motoru koordinatları coğrafi derece olarak yorumlar ve parsel merkezi çevresinde lokal ENU düzlemine alır. Kaynak veri WGS84 değilse doğru EPSG dönüşümü yapılmadan alan ve mesafe sonuçları proje verisi sayılmaz.</p><p><b>Arazi kontrolü</b> {terrainModel.limitations[0]}</p></footer></div>}
         <div className="geo-connectors"><a href={`https://www.google.com/maps/search/?api=1&query=${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>G</span><div><b>Google Maps’te aç</b><small>{center.lat.toFixed(6)}, {center.lng.toFixed(6)}</small></div><i>↗</i></a><a href={`https://earth.google.com/web/search/${center.lat},${center.lng}`} target="_blank" rel="noreferrer"><span>E</span><div><b>Google Earth’te aç</b><small>KML ile sınır ve kütle aktarın</small></div><i>↗</i></a><button onClick={exportKml} disabled={exportDisabled}><span>K</span><div><b>Earth KML paketini indir</b><small>{exportDisabled ? "Önce kaynaklı bir parsel sınırı oluşturun" : "Parsel + ön yapı poligonu"}</small></div><i>↓</i></button></div>
       </section>
