@@ -110,3 +110,36 @@
 @media(max-width:600px){#main-content .arc-demo .arc-relationship-editor{padding:14px}#main-content .arc-demo .arc-relationship-editor article>div{grid-template-columns:1fr}#main-content .arc-demo .arc-relationship-editor footer{flex-direction:column;align-items:stretch}}
 #main-content .arc-demo .architect-main>header nav{height:auto;min-height:0;align-content:start}
 #main-content .arc-demo .arc-relationship-editor footer{background:transparent;color:#526c77;padding:0;border:0;min-height:0}
+#main-content .arc-demo .arc-placement-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:18px;margin-bottom:20px;border:1px solid #cbded1;border-radius:7px;background:#f2f8f3;color:#173a40}
+#main-content .arc-demo .arc-placement-tools h3{font-size:19px;line-height:1.4;margin:0 0 8px;color:#173a40}
+#main-content .arc-demo .arc-placement-tools p,#main-content .arc-demo .arc-placement-tools small{font-size:13px;line-height:1.7;margin:4px 0;color:#526c77}
+#main-content .arc-demo .arc-placement-tools>small{grid-column:1/-1}
+#main-content .arc-demo .arc-placement-tools>div:last-of-type{display:flex;flex-direction:column;gap:8px;justify-content:center}
+#main-content .arc-demo .arc-placement-tools button{min-height:44px;padding:10px 14px;border:1px solid #174d46;border-radius:5px;color:white;background:#174d46;font-size:13px}
+#main-content .arc-demo .arc-placement-tools button:last-child{background:white;color:#174d46}
+#main-content .arc-demo .v113-relation-list p{grid-template-columns:22px minmax(0,1fr) minmax(110px,.8fr);gap:10px}
+#main-content .arc-demo .v113-relation-list p strong{font-size:13px;white-space:normal}
+#main-content .arc-demo .v113-relation-list p strong small{display:block;font-size:11px;line-height:1.6;margin-top:4px}
+#main-content .arc-demo .v113-plan-board{aspect-ratio:var(--scheme-aspect);min-height:0;margin:14px}
+#main-content .arc-demo .v113-plan-board>article{min-width:0;max-width:none;aspect-ratio:auto;padding:4px;overflow:hidden}
+#main-content .arc-demo .v113-plan-board>article b{font-size:12px;line-height:1.2}
+#main-content .arc-demo .v113-plan-board>article small,#main-content .arc-demo .v113-plan-board>article span{font-size:10px;line-height:1.3}
+#main-content .arc-demo .v113-scheme-engine .v113-scheme-note{background:transparent;min-height:0;padding:14px 0;border:0;color:#526c77}
+@media(max-width:740px){#main-content .arc-demo .arc-placement-tools{grid-template-columns:1fr}#main-content .arc-demo .v113-relation-list p{grid-template-columns:22px minmax(0,1fr)}#main-content .arc-demo .v113-relation-list p strong{grid-column:2;text-align:left}#main-content .arc-demo .v113-plan-board>article b{font-size:10px}#main-content .arc-demo .v113-plan-board>article small{display:none}}
+#main-content .arc-demo .v113-plan-board>article{box-sizing:border-box}
+@media(max-width:740px){#main-content .arc-demo .v113-plan-board>article span{display:none}#main-content .arc-demo .v113-plan-board>article{padding:2px}#main-content .arc-demo .v113-plan-board>article b{font-size:9px;line-height:1.1}}
+#main-content .arc-demo .v113-core-options button.active{background:#174d46;border-color:#174d46;color:white}
+#main-content .arc-demo .v113-plan-board>article span{color:#37675b}
+#main-content .arc-demo .v113-plan-panel>footer{background:white;color:#526c77;padding:0 18px 16px;border:0;min-height:0}
+#main-content .arc-demo .v113-relation-list>b,#main-content .arc-demo .v113-scheme-metrics dt{font-size:12px;line-height:1.6}
+#main-content .arc-demo .v113-relation-list p>span{font-size:12px;line-height:1.5}
+#main-content .arc-demo .v113-relation-list p small{overflow:visible;text-overflow:clip;white-space:normal;font-size:11px;line-height:1.5}
+#main-content .arc-demo .v113-core-options button{font-size:13px;line-height:1.4}
+#main-content .arc-demo .v113-core-options small{font-size:11px;line-height:1.5}
+#main-content .arc-demo .v113-core-options button.active small{color:#e4f1e9}
+#main-content .arc-demo .v113-scheme-note b{font-size:12px;color:#37675b}
+#main-content .arc-demo .v113-plan-panel>footer i.daylight{border-color:#547d65;background:#e6f1e9}
+#main-content .arc-demo .arc-node-key{display:none}
+#main-content .arc-demo .v113-plan-board:before{display:none}
+#main-content .arc-demo .v113-exit-node{width:4%;height:auto;aspect-ratio:1;min-width:0;min-height:0;font-size:9px}
+@media(max-width:740px){#main-content .arc-demo .v113-plan-board>article span{display:block;font-size:8px;line-height:1.1}#main-content .arc-demo .v113-plan-board>article b{display:none}#main-content .arc-demo .arc-node-key{display:grid;gap:7px;margin:0;padding:0 14px 14px}#main-content .arc-demo .arc-node-key>div{display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.5}#main-content .arc-demo .arc-node-key dt{color:#37675b;font-weight:650}#main-content .arc-demo .arc-node-key dd{margin:0;color:#526c77}}

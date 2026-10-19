@@ -11,7 +11,7 @@ const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean }> = 
   GIS: { verified: "Brief aktarımı ve ölçüt kaydı test edildi.", pending: "Canlı parsel ve çıktılar test bekliyor." },
   MAS: { verified: "Brief/GIS aktarımı, seçim kaydı ve JSON test edildi.", pending: "İmar belgeli ve arsasız senaryoların uçtan uca testi bekliyor." },
   PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true },
-  ARC: { verified: "MAS aktarımı, mahal düzenleme ve JSON/CSV test edildi.", pending: "Komşuluk eşleştirmeleri ve diğer tasarım kontrolleri bekliyor." },
+  ARC: { verified: "Mahal, komşuluk yerleşimi ve JSON/CSV test edildi.", pending: "Ölçülü plan, kat dağılımı ve uzman incelemesi bekliyor." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
   LCA: { verified: "Karbon paneli açılıyor.", pending: "Hesap ve çıktılar test bekliyor." },
 };

@@ -1,3 +1,4 @@
+import { arrangeArchitecturalNodes } from './architectural-placement.ts';
 export type ArchitecturalCoreStrategy = "central" | "split" | "perimeter";
 
 export type ArchitecturalSpaceInput = {
@@ -38,6 +39,7 @@ export type ArchitecturalSchemeInput = {
   massingModel?: unknown;
   selectedMassingId?: string;
   generatedAt?: string;
+  layoutStrategy?: "perimeter" | "adjacency";
 };
 
 type UnknownRecord = Record<string, unknown>;
@@ -142,7 +144,7 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
   const internalSpaces = spaces.filter((space) => !space.daylight);
   const daylightIndex = new Map(daylightSpaces.map((space, index) => [space.id, index]));
   const internalIndex = new Map(internalSpaces.map((space, index) => [space.id, index]));
-  const nodes = spaces.map((space) => {
+  let nodes = spaces.map((space) => {
     const totalArea = Math.max(0, space.count * space.unitArea);
     const share = totalArea / Math.max(netArea, 1);
     const position = space.daylight
@@ -178,6 +180,10 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
     stairs: Math.max(1, Math.round(stairs / corePositions.length)),
     elevators: Math.round(elevators / corePositions.length),
   }));
+  const placement = input.layoutStrategy === 'adjacency'
+    ? arrangeArchitecturalNodes(nodes, input.relationships, plateWidth, plateDepth, corePositions)
+    : {applied:false,reason:'Liste sırasına göre başlangıç dağılımı.',positions:{} as Record<string,{x:number;y:number;edge:string}>};
+  if(placement.applied)nodes=nodes.map(node=>({...node,position:{...placement.positions[node.id],edge:placement.positions[node.id].edge as typeof node.position.edge}}));
   const exits = createExitPositions(stairs).map((exit, index) => ({ id: `EXIT-${index + 1}`, label: `Çıkış ${index + 1}`, ...exit }));
 
   const routes = nodes.map((node) => {
@@ -203,18 +209,24 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
   const exitCapacity = stairs * 120;
 
   const relationshipItems = input.relationships.map((relationship) => {
-    const from = nodes.find((node) => node.name === relationship.from);
-    const to = nodes.find((node) => node.name === relationship.to);
+    const fromMatches = nodes.filter(node=>node.name===relationship.from);
+    const toMatches = nodes.filter(node=>node.name===relationship.to);
+    const from = fromMatches.length === 1 ? fromMatches[0] : undefined;
+    const to = toMatches.length === 1 ? toMatches[0] : undefined;
     const distance = from && to ? metricDistance(from.position, to.position, plateWidth, plateDepth) : 0;
     const diagonal = Math.hypot(plateWidth, plateDepth);
     const threshold = diagonal * (relationship.priority === "Zorunlu" ? .3 : .45);
-    const satisfied = Boolean(from && to && relationship.confirmed && distance <= threshold + .01);
+    const matched = Boolean(from && to && from.id !== to.id);
+    const withinTarget = matched && distance <= threshold + .01;
+    const satisfied = withinTarget && relationship.confirmed;
     return {
       ...relationship,
       fromNodeId: from?.id ?? null,
       toNodeId: to?.id ?? null,
       distance: round(distance, 1),
       targetDistance: round(threshold, 1),
+      matched,
+      withinTarget,
       satisfied,
     };
   });
@@ -311,6 +323,7 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
       occupants,
       accessibleCoverage: round(accessibleCoverage, 1),
     },
+    layout: {strategy:input.layoutStrategy === 'adjacency'?'adjacency':'perimeter',algorithm:'ARKEM-ARC-ADJACENCY/1',applied:placement.applied,reason:placement.reason,conceptual:true,authoritative:false},
     nodes,
     cores,
     exits,
@@ -324,6 +337,9 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
     },
     relationships: {
       score: round(adjacencyScore, 1),
+      geometricallySatisfied: relationshipItems.filter(item=>item.withinTarget).length,
+      matched: relationshipItems.filter(item=>item.matched).length,
+      pendingReview: relationshipItems.filter(item=>!item.confirmed).length,
       satisfied: relationshipItems.filter((item) => item.satisfied).length,
       total: relationshipItems.length,
       items: relationshipItems,
