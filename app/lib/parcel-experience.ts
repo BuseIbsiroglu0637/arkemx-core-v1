@@ -47,7 +47,7 @@ export const PARCEL_JOURNEY = [
   { id: 'locate', label: 'Parseli bul', note: 'Konum ve tapu bilgileri' },
   { id: 'draw', label: 'Sınırı kontrol et', note: 'Kaynak geometrisini inceleyin' },
   { id: 'zoning', label: 'İmar bilgisi', note: 'Plan notları ve yapılaşma' },
-  { id: 'design', label: 'Çıktılar', note: 'İsteğe bağlı yerleşim ve raporlar' },
+  { id: 'export', label: 'Çıktılar', note: 'İsteğe bağlı yerleşim ve raporlar' },
 ] as const;
 
 export function parseKmlCoordinateRing(text: string): GeoPoint[] {
