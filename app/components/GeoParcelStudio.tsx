@@ -1266,6 +1266,11 @@ function ScopedGeoParcelStudio() {
         </article>)}</div>
       </div>
     </details>
+    {!parcelOutputReady && <section className="gis-output-placeholder" id="parsel-teknik-ciktilar" aria-label="Teknik çıktılar bekliyor">
+      <h3>Teknik çıktılar</h3>
+      <p>Kaynağı parsel kimliğiyle eşleşen geçerli sınır bulunduğunda A3 pafta, A4 rapor, DXF ve KML indirilebilir. Örnek sınırdan teknik çıktı üretilmez.</p>
+      <div className="gis-placeholder-actions">{["A3 teknik pafta","A4 özet rapor","DXF dışa aktar","KML indir"].map(label => <button type="button" disabled key={label}>{label}<small>Sınır bekleniyor</small></button>)}</div>
+    </section>}
     {parcelOutputReady && <>
       <ParcelOutcomePanel parcel={parcel} alternatives={massingModel.alternatives} selectedId={activeMassingId} concept={conceptMode} showAlternatives={journeyIndex === 3 && designReady} hasBuilding={hasPlacedModel} onRemove={() => { setSelectedMassingId('none'); setFileNotice('Yapı çıktıdan ve haritadan çıkarıldı. Parsel paftasını indirebilir veya yeni bir yerleşim seçebilirsiniz.'); }} onSelect={applyMassingAlternative} onPdf={exportPdf} onSummary={exportSummaryPdf} onDxf={exportDxf} onKml={exportKml} disabled={exportDisabled} busy={exportState === 'busy'} projectName={project.name} onContinue={saveContinuation}/>
       {!expertMode && journeyIndex === 3 && designReady && <details className="parcel-edit-placement"><summary>Ölçüleri, yönü ve kullanım türünü düzenle</summary>{stageContent.design}</details>}
