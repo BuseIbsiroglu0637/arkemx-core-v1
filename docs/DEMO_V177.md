@@ -103,27 +103,3 @@ Kontrol: 28/28 test geçti (location-directory-ui, parcel-journey-gates, parcel-
 
 Açık işler: bu düzenleme gerçek ada/parsel sınırı veya imar çıktısı doğrulaması değildir. Canlı parsel sorgusu ve çıktılar için gerçek bir örnekle ayrı test gerekir. Sonraki adım kullanıcının ekran değerlendirmesi ve GIS → MAS veri devridir.
 Son kontrol: üretim derlemesi ve Worker artifact doğrulaması çıkış 0. 479 px tarayıcı görünümünde sayfa genişliği 479 px; yatay taşma görülmedi. Sorgu açıklamasının açılıp kapandığı doğrulandı.
-
-## Projelerim — kayıt doğrulama düzeltmesi — 2026-10-19
-
-Dayanak: Kullanıcının Projelerim ekranında “Proje kaydı geçerli değil.” uyarısıyla karşılaşması; yeni proje oluşturma ve kayıtlı projeyi açma akışları mevcut projenin kütüphaneye kaydedilmesine bağlı. Hata ifadesi `saveLibraryProject` doğrulama kapısından gelir. Hangi tarayıcı veri alanının bu hataya yol açtığı henüz örnek kayıt üzerinde teşhis edilmedi.
-
-Yapılan iş: `app/lib/project-library.ts` içinde kütüphaneye kaydetmeden önce gerçek JSON saklama temsilinin doğrulanması sağlandı. Bellekte bulunan, JSON'a yazılmayan isteğe bağlı `undefined` nesne özellikleri geçerli projeyi yanlışlıkla engellemez. Geçersiz kimlik/şema/modül bağlantısı yine reddedilir; sonlu olmayan sayılar veya JSON dışında kalan işlev/symbol/bigint değerleri sessizce değiştirilmez, kayıt reddedilir. Geçersiz kayıt durumunda mevcut kütüphane ve yedek üzerine yazılmaz.
-
-Test kapsamı: `tests/project-library.test.mjs` içine JSON'da atlanan `undefined` alanlar, güvenli kayıt ve geçersiz sayı/başka projeye ait modül kaynak damgası için regresyon testleri eklendi. Kaynak metin kontrolleri olumlu; bu oturumda Node test koşumu, TypeScript derlemesi veya yerel tarayıcı testi yapılmadı. GitHub commit durumunda otomatik kontrol bulunmuyor.
-
-Açık işler: Kullanıcının gerçek yerel proje verisinde doğrulama nedeninin saptanması; Projelerim ekranında yeni proje açma/oluşturma, yenileme ve altı modül verisinin korunması senaryolarının manuel doğrulanması. Resmî teknik onay değildir.
-
-## GIS sade arayüz + Projelerim kayıt düzeltmesi tek branch'te — 2026-10-19
-
-Dayanak: Kullanıcı sade GIS tasarım görselini onayladı, ardından `demo/v177-2026-10-18` branch'ini tek hedef olarak belirledi ve kayıt düzeltmeleriyle birlikte çalışmasını istedi. Bu kayıt yalnız erişilebilir kaynak kodu ve GitHub commit'lerinin kapsamını belirtir.
-
-Yapılan iş: Önceden commit edilmiş Projelerim JSON kayıt doğrulama düzeltmeleri korunarak aynı branch'e sade GIS arayüzü işlendi. Sayfa başlığı “Parsel ve arazi incelemesi” oldu; proje/brief şeridi, dört adımlı iş akışı, il–ilçe–mahalle/ada/parsel formu, görünür KML/GeoJSON aktarımı, harita/3B/koordinat sekmeleri, Sokak/Esri Uydu/Esri Topoğrafik altlık seçenekleri, kaynak/durum özeti, teknik dosya ve sonraki modül kartları düzenlendi. Karmaşık veri kaynağı, 3B katman ve uzman seçenekleri silinmeyip açılır bölümlerde korundu. Yeni stil dosyası `app/gis-approved-design.css` yalnız GIS rotasına kapsamlı seçicilerle uygulandı.
-
-Arazi modelinde geçerli/parsel kimliğiyle eşleşmiş sınır varsa bina seçilmemiş olsa da 3B kavramsal önizleme açılabilir; bina yokken yapı ve hafriyat sonuçları üretilmez. Geçerli sınır yokken eksik veri bildirimi gösterilir. Esri altlıkları yalnız görsel zemin sağlar; kadastro, kot, imar veya teknik onay kanıtı değildir. TKGM kimlik ve kaynak doğrulama kapıları korunmuştur. Kayıt düzeltmesindeki geçersiz proje reddi ve yedek koruması değiştirilmedi.
-
-Kontrol: GitHub kaynak metni üzerinde 20/20 bütünlük ve 48/48 kaynak şartı eşleşmesi olumlu. `tests/gis-approved-design-ui.test.mjs` eklendi; `tests/parcel-refinement.test.mjs` harita görselleştirmeyi uydurma idari veriyle karıştırmayacak şekilde güncellendi. Bunlar bu oturumda çalıştırılmış Node/TypeScript/production testleri değildir. Gerçek uydu/topoğrafik karo yüklenmesi, tablet/mobil responsive, TKGM canlı parsel sorgusu ve GIS çıkışları tarayıcıda doğrulanmadı.
-
-Açık işler: `node --test tests/project-library.test.mjs tests/gis-approved-design-ui.test.mjs tests/parcel-refinement.test.mjs`, `npx tsc --noEmit`, üretim derlemesi ve masaüstü/mobil kabul testi; kullanıcı yerel proje arşivinde eski 6 modül kaydının korunmasının doğrulanması. Yetkili resmî teknik onay yok.
-
-Ek uygulama notu (2026-10-19): `#geo-studyo` bağlantısı başlığı gösterecek şekilde sayfanın ana kapsayıcısına alındı. Rehberin dördüncü adımı artık `export` görünümünü açar; yapı yerleşimi kullanıcı tarafından ayrıca seçilmedikçe otomatik başlatılmaz. Parsel kimliğiyle eşleşmiş geçerli sınır yokken teknik çıktı kartları devre dışı görünür ve açıklayıcı veri eksikliği bildirimi sunar; gerçek indirme işlevleri geçerli kaynak sınırında kullanılabilir. Kaynak metni üzerinden 26/26 bütünlük şartı olumlu; gerçek tarayıcı/test koşumu ve mühendislik onayı hâlâ bekliyor.

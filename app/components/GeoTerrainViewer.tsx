@@ -14,7 +14,6 @@ import {
 
 type Props = {
   parcel: GeoPoint[];
-  hasBuilding: boolean;
   buildingWidth: number;
   buildingDepth: number;
   floors: number;
@@ -36,7 +35,6 @@ function addLineLoop(scene: THREE.Scene, points: THREE.Vector3[], color: number)
 
 export function GeoTerrainViewer({
   parcel,
-  hasBuilding,
   buildingWidth,
   buildingDepth,
   floors,
@@ -51,7 +49,7 @@ export function GeoTerrainViewer({
   const hostRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [webglError, setWebglError] = useState(false);
-  const analysis = hasBuilding ? analyzeTerrain(parcel, slope, buildingWidth, buildingDepth, rotation) : null;
+  const analysis = analyzeTerrain(parcel, slope, buildingWidth, buildingDepth, rotation);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -143,7 +141,7 @@ export function GeoTerrainViewer({
       });
     }
 
-    if (hasBuilding && layers["building-mass"]) {
+    if (layers["building-mass"]) {
       const center = geoCentroid(parcel);
       const footprint = buildingFootprint(center, buildingWidth, buildingDepth, rotation, offsetEast, offsetNorth);
       const baseElevation = sceneElevationAt(offsetEast, offsetNorth);
@@ -204,12 +202,12 @@ export function GeoTerrainViewer({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [parcel, hasBuilding, buildingWidth, buildingDepth, floors, rotation, offsetEast, offsetNorth, slope, exaggeration, layers]);
+  }, [parcel, buildingWidth, buildingDepth, floors, rotation, offsetEast, offsetNorth, slope, exaggeration, layers]);
 
   return <div className="geo-terrain-viewer">
     <div ref={hostRef} className="geo-terrain-canvas">{webglError && <div className="geo-viewer-fallback"><b>WebGL kullanılamıyor</b><p>3B görünüm için güncel bir tarayıcı veya donanım hızlandırması gerekir.</p></div>}</div>
     <div className="geo-terrain-overlay"><span><i className={ready ? "ready" : ""}></i>{ready ? "3B SAHNE HAZIR" : "3B SAHNE HAZIRLANIYOR"}</span><b>WGS84 → Yerel ENU çalışma düzlemi</b></div>
-    <aside className="geo-terrain-analysis" aria-label="V82 / ARAZİ PERFORMANS TARAMASI"><span>V111 / BÜTÜNLEŞİK ARAZİ MODELİ</span><div><p><small>VERİ TEMELİ</small><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z girdisi" : "Parametrik eğim"}</b></p><p><small>KOT FARKI</small><b>{terrainModel.elevation.range.toFixed(2)} m</b></p><p><small>YAPI ALTI Δ</small><b>{analysis ? `${analysis.buildingLevelDifference.toFixed(2)} m` : "Yapı yok"}</b></p><p><small>ÖN HAFRİYAT</small><b>{analysis ? `≈ ${analysis.indicativeEarthwork.toFixed(0)} m³` : "Hesaplanmadı"}</b></p></div><em>{terrainModel.trust === "verified" ? "Yetkili ölçüm beyanı · proje kontrolü gerekli" : terrainModel.basis === "measured-z" ? "Kaynak dosya kotları · düşey datum doğrulanmalı" : "Kavramsal gösterge · zemin etüdü ve plankote değildir"}</em></aside>
+    <aside className="geo-terrain-analysis" aria-label="V82 / ARAZİ PERFORMANS TARAMASI"><span>V111 / BÜTÜNLEŞİK ARAZİ MODELİ</span><div><p><small>VERİ TEMELİ</small><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z girdisi" : "Parametrik eğim"}</b></p><p><small>KOT FARKI</small><b>{terrainModel.elevation.range.toFixed(2)} m</b></p><p><small>YAPI ALTI Δ</small><b>{analysis.buildingLevelDifference.toFixed(2)} m</b></p><p><small>ÖN HAFRİYAT</small><b>≈ {analysis.indicativeEarthwork.toFixed(0)} m³</b></p></div><em>{terrainModel.trust === "verified" ? "Yetkili ölçüm beyanı · proje kontrolü gerekli" : terrainModel.basis === "measured-z" ? "Kaynak dosya kotları · düşey datum doğrulanmalı" : "Kavramsal gösterge · zemin etüdü ve plankote değildir"}</em></aside>
     <div className="geo-terrain-help">SOL: döndür · SAĞ: kaydır · TEKER: yaklaş</div><div className="geo-north">N<br />↑</div>
   </div>;
 }

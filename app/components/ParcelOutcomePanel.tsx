@@ -31,16 +31,16 @@ export function ParcelOutcomePanel(p: Props) {
       <div className="parcel-alternative-body"><h4>{a.label}</h4><p>{a.note}</p><dl><div><dt>Öneri brüt alanı</dt><dd>{a.grossArea.toLocaleString('tr-TR')} m²</dd></div><div><dt>Yapı tabanı</dt><dd>{a.footprint.toLocaleString('tr-TR')} m²</dd></div><div><dt>Boyut / kat</dt><dd>{a.width} × {a.depth} m / {a.floors} kat</dd></div></dl>
       <button type="button" aria-pressed={p.selectedId === a.id} disabled={a.status !== 'fits' || p.busy} onClick={() => p.onSelect(a.id)}>{p.selectedId === a.id ? <Check aria-hidden="true"/> : <Layers aria-hidden="true"/>}{a.status !== 'fits' ? 'Geometri için uzman incelemesi gerekli' : p.selectedId === a.id ? 'Haritada seçili' : 'Bu yerleşimi seç'}</button></div>
     </article>)}</div><button type="button" className="parcel-without-building" disabled={!p.hasBuilding || p.busy} onClick={p.onRemove}>{p.hasBuilding ? 'Yapıyı kaldır, yalnız parsel ile devam et' : 'Yalnız parsel çıktısı seçili'}</button></>}
-    <section className="parcel-delivery" id="parsel-teknik-ciktilar" aria-label="Teknik dosyaları indirin"><header><div><h3>Teknik çıktılar</h3><p>{p.projectName} · {p.hasBuilding ? 'Seçili yerleşim, parsel sınırı ve kaynak notları birlikte aktarılır.' : 'Yapı yerleştirilmedi. Çıktılar yalnız parsel sınırı, mevcut bilgiler ve kaynak notlarını içerir.'}</p></div><Download aria-hidden="true"/></header>
+    <section className="parcel-delivery" id="parsel-teknik-ciktilar" aria-label="Teknik dosyaları indirin"><header><div><h3>Çalışmanızın teknik dosyalarını alın.</h3><p>{p.projectName} · {p.hasBuilding ? 'Seçili yerleşim, parsel sınırı ve kaynak notları birlikte aktarılır.' : 'Yapı yerleştirilmedi. Çıktılar yalnız parsel sınırı, mevcut bilgiler ve kaynak notlarını içerir.'}</p></div><Download aria-hidden="true"/></header>
       <div className="parcel-delivery-actions">{[
         {label:'A3 teknik pafta', note:p.hasBuilding ? 'Yatay PDF · yerleşim, ölçü, antet' : 'Yatay PDF · parsel sınırı, ölçü, antet', Icon:Files, action:p.onPdf},
         {label:'A4 özet rapor', note:'PDF · proje özeti ve kaynak notları', Icon:FileText, action:p.onSummary},
-        {label:'DXF dışa aktar', note:'CAD · metre biriminde katmanlı çizim', Icon:Ruler, action:p.onDxf},
-        {label:'KML indir', note:p.hasBuilding ? 'Google Earth · sınır ve ön yapı' : 'Google Earth · yalnız parsel sınırı', Icon:Layers, action:p.onKml},
+        {label:'Düzenlenebilir DXF', note:'CAD · metre biriminde katmanlı çizim', Icon:Ruler, action:p.onDxf},
+        {label:'Harita KML dosyası', note:p.hasBuilding ? 'Google Earth · sınır ve ön yapı' : 'Google Earth · yalnız parsel sınırı', Icon:Layers, action:p.onKml},
       ].map(({label,note,Icon,action}) => <button type="button" key={label} disabled={p.disabled} onClick={action}><Icon aria-hidden="true"/><span><b>{label}</b><small>{p.busy ? 'Dosya hazırlanıyor…' : note}</small></span><Download aria-hidden="true"/></button>)}</div>
       <small>Ön çalışma çıktısıdır; ruhsat, aplikasyon, uygulama projesi veya imar onayı değildir.</small>
     </section>
-    <section className="parcel-next-modules" aria-label="Aynı projeyle devam edin"><h3>Sonraki adımlar</h3><p>Seçiminizi bu projenin devam kaydına aktarın. Mevcut modül girdileriniz silinmez; imar belirsizliği sonraki çalışmalarda görünür kalır.</p><nav>{[
+    <section className="parcel-next-modules" aria-label="Aynı projeyle devam edin"><h3>Parselden sonraki adımınız.</h3><p>Seçiminizi bu projenin devam kaydına aktarın. Mevcut modül girdileriniz silinmez; imar belirsizliği sonraki çalışmalarda görünür kalır.</p><nav>{[
       {href:'/mimari-program-studyosu', label:'Mimari program', note:'Alanları ve ihtiyaç listesini geliştirin', Icon:Layers},
       {href:'/yapi-sistemi-karsilastirma', label:'Taşıyıcı sistem seçimi', note:'Aynı parsel ve yapı alanıyla karşılaştırın', Icon:Ruler},
       {href:'/proje-on-planlama', label:'İş ve ön maliyet', note:'Birim maliyet ve iş adımlarını düzenleyin', Icon:Calculator},

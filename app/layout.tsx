@@ -101,7 +101,6 @@ import "./parcel-experience.css";
 import "./guided-experience.css";
 import "./parcel-refinement.css";
 import "./reference-presentations.css";
-import "./gis-approved-design.css";
 import { site } from "./data/site";
 import { corporateRegistry } from "./data/corporate-registry";
 import { visibleLocaleRecords } from "./data/locale-routes";
