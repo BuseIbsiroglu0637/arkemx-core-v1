@@ -103,3 +103,13 @@ Kontrol: 28/28 test geçti (location-directory-ui, parcel-journey-gates, parcel-
 
 Açık işler: bu düzenleme gerçek ada/parsel sınırı veya imar çıktısı doğrulaması değildir. Canlı parsel sorgusu ve çıktılar için gerçek bir örnekle ayrı test gerekir. Sonraki adım kullanıcının ekran değerlendirmesi ve GIS → MAS veri devridir.
 Son kontrol: üretim derlemesi ve Worker artifact doğrulaması çıkış 0. 479 px tarayıcı görünümünde sayfa genişliği 479 px; yatay taşma görülmedi. Sorgu açıklamasının açılıp kapandığı doğrulandı.
+
+## Projelerim — kayıt doğrulama düzeltmesi — 2026-10-19
+
+Dayanak: Kullanıcının Projelerim ekranında “Proje kaydı geçerli değil.” uyarısıyla karşılaşması; yeni proje oluşturma ve kayıtlı projeyi açma akışları mevcut projenin kütüphaneye kaydedilmesine bağlı. Hata ifadesi `saveLibraryProject` doğrulama kapısından gelir. Hangi tarayıcı veri alanının bu hataya yol açtığı henüz örnek kayıt üzerinde teşhis edilmedi.
+
+Yapılan iş: `app/lib/project-library.ts` içinde kütüphaneye kaydetmeden önce gerçek JSON saklama temsilinin doğrulanması sağlandı. Bellekte bulunan, JSON'a yazılmayan isteğe bağlı `undefined` nesne özellikleri geçerli projeyi yanlışlıkla engellemez. Geçersiz kimlik/şema/modül bağlantısı yine reddedilir; sonlu olmayan sayılar veya JSON dışında kalan işlev/symbol/bigint değerleri sessizce değiştirilmez, kayıt reddedilir. Geçersiz kayıt durumunda mevcut kütüphane ve yedek üzerine yazılmaz.
+
+Test kapsamı: `tests/project-library.test.mjs` içine JSON'da atlanan `undefined` alanlar, güvenli kayıt ve geçersiz sayı/başka projeye ait modül kaynak damgası için regresyon testleri eklendi. Kaynak metin kontrolleri olumlu; bu oturumda Node test koşumu, TypeScript derlemesi veya yerel tarayıcı testi yapılmadı. GitHub commit durumunda otomatik kontrol bulunmuyor.
+
+Açık işler: Kullanıcının gerçek yerel proje verisinde doğrulama nedeninin saptanması; Projelerim ekranında yeni proje açma/oluşturma, yenileme ve altı modül verisinin korunması senaryolarının manuel doğrulanması. Resmî teknik onay değildir.
