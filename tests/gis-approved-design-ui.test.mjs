@@ -9,6 +9,7 @@ const viewer = src("app/components/GeoTerrainViewer.tsx");
 const outcomes = src("app/components/ParcelOutcomePanel.tsx");
 const location = src("app/components/ParcelLocationStep.tsx");
 const basemaps = src("app/lib/parcel-basemaps.ts");
+const journey = src("app/lib/parcel-experience.ts");
 const styles = src("app/gis-approved-design.css");
 const layout = src("app/layout.tsx");
 
@@ -61,4 +62,13 @@ test("approved output labels still use actual GIS export actions",()=>{
  for (const property of ['onPdf={exportPdf}','onSummary={exportSummaryPdf}','onDxf={exportDxf}','onKml={exportKml}']) assert.ok(studio.includes(property),property);
  assert.ok(outcomes.includes("disabled={p.disabled}"));
  assert.ok(outcomes.includes("Ön çalışma çıktısıdır; ruhsat, aplikasyon"));
+});
+
+test("fourth guided step opens exports and keeps the optional massing action separate", () => {
+ assert.ok(journey.includes("{ id: 'export', label: 'Çıktılar'"));
+ assert.ok(studio.includes("setActiveStage(step.id); setDrawEnabled(false)"));
+ assert.ok(studio.includes("setActiveStage(PARCEL_JOURNEY[nextIndex].id); setDrawEnabled(false)"));
+ assert.ok(studio.includes("İsteğe bağlı yapı yerleşimini dene"));
+ assert.ok(studio.includes('href="#parsel-teknik-ciktilar"'));
+ assert.ok(!studio.includes("if (index === 3 && !designReady) startConcept()"));
 });
