@@ -16,6 +16,8 @@ import {
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
 import { loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
 import { DEMO_ENABLED } from "../lib/demo";
+import { loadProjectLibrary, saveLibraryProject } from "../lib/project-library";
+import { decodeProjectEnvelope } from "../lib/project-storage";
 import { isKernelProject } from "../lib/project-validation";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -54,6 +56,10 @@ type ProjectKernelContextValue = {
   thread: ProjectThread;
   core: ProjectCoreSnapshot;
   hydrated: boolean;
+  savedProjects: ProjectKernelState[];
+  libraryError: string;
+  openSavedProject: (id: string) => boolean;
+  createNamedProject: (name: string) => boolean;
   persistence: {
     state: "loading" | "device-saved" | "recovered" | "unavailable";
     integrity: "verified" | "legacy" | "missing";
@@ -505,6 +511,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const rejectedStorage = useRef(false);
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
   const [hydrated, setHydrated] = useState(false);
+  const [savedProjects, setSavedProjects] = useState<ProjectKernelState[]>([]);
+  const [libraryError, setLibraryError] = useState("");
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
     state: "loading",
     integrity: "missing",
@@ -515,6 +523,14 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      try {
+        let library = loadProjectLibrary(window.localStorage);
+        const backup = decodeProjectEnvelope<ProjectKernelState>(window.localStorage.getItem("arkem-demo-v177-backup")).value;
+        if (backup && isKernelProject(backup) && (Object.keys(backup.modules).length || backup.events.length)) library = saveLibraryProject(window.localStorage, backup);
+        setSavedProjects(library);
+      } catch (error) {
+        setLibraryError(error instanceof Error ? error.message : "Proje listesi açılamadı.");
+      }
       try {
         const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
         if (stored.value) {
@@ -557,6 +573,14 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!hydrated || rejectedStorage.current) return;
     const timer = window.setTimeout(() => {
+      try {
+        setSavedProjects(Object.keys(project.modules).length || project.events.length
+          ? saveLibraryProject(window.localStorage, project)
+          : loadProjectLibrary(window.localStorage));
+        setLibraryError("");
+      } catch (error) {
+        setLibraryError(error instanceof Error ? error.message : "Proje listesi kaydedilemedi. Tarayıcı depolamasını kontrol edin.");
+      }
       try {
         const result = saveProjectToStorage(window.localStorage, project);
         setPersistence({
@@ -858,6 +882,31 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     });
     setHydrated(true);
   }, []);
+  const openSavedProject = useCallback((id: string) => {
+    if (!hydrated) return false;
+    try {
+      const library = Object.keys(project.modules).length || project.events.length
+        ? saveLibraryProject(window.localStorage, project)
+        : loadProjectLibrary(window.localStorage);
+      const selected = library.find(item => item.id === id);
+      if (!selected || !importProject(selected)) return false;
+      setSavedProjects(library); setLibraryError(""); return true;
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : "Proje açılamadı."); return false;
+    }
+  }, [hydrated, importProject, project]);
+  const createNamedProject = useCallback((name: string) => {
+    if (!hydrated || !name.trim() || name.trim().length > 160) return false;
+    try {
+      if (Object.keys(project.modules).length || project.events.length) saveLibraryProject(window.localStorage, project);
+      const next = { ...createActiveProject(), id: `DEMO-${crypto.randomUUID()}`, name: name.trim() };
+      next.events = [{ id: crypto.randomUUID(), module: "project", action: "create", revision: next.revision, timestamp: next.updatedAt }];
+      const library = saveLibraryProject(window.localStorage, next);
+      setSavedProjects(library); setProject(next); rejectedStorage.current = false; setLibraryError(""); return true;
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : "Yeni proje kaydedilemedi."); return false;
+    }
+  }, [hydrated, project]);
   const reset = useCallback(() => { rejectedStorage.current = false; setProject(createActiveProject()); }, []);
   const thread = useMemo(() => deriveProjectThread(project.modules), [project.modules]);
   const core = useMemo(() => deriveProjectCore(project, thread), [project, thread]);
@@ -867,6 +916,10 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     thread,
     core,
     hydrated,
+    savedProjects,
+    libraryError,
+    openSavedProject,
+    createNamedProject,
     persistence,
     setIdentity,
     setExperience,
@@ -877,7 +930,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     importProject,
     startProject,
     reset,
-  }), [applyHandoff, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
+  }), [savedProjects, libraryError, openSavedProject, createNamedProject, applyHandoff, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
 
   return <ProjectKernelContext.Provider value={value}>{children}</ProjectKernelContext.Provider>;
 }

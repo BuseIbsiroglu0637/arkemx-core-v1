@@ -4,64 +4,30 @@ import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { site } from "../data/site";
 import { downloadTextFile } from "../lib/engineering";
+import { goals, stages, systems, documentOptions, priorityOptions, labelOf, restoreBriefDraft } from "../lib/brief-draft";
 import { DEMO_ENABLED } from "../lib/demo";
 import { positiveArea } from "../lib/readiness-input";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
-const goals = [
-  ["konut", "Konut / villa"],
-  ["sanayi", "Sanayi tesisi / fabrika / depo"],
-  ["ticari", "Ticari veya sosyal yapı"],
-  ["tarimsal", "Tarımsal yapı"],
-  ["mevcut", "Mevcut yapı incelemesi"],
-  ["yikim", "Kontrollü veya patlatmalı yıkım"],
-] as const;
-
-const stages = [
-  ["fikir", "Fikir veya arsa aşaması"],
-  ["on-proje", "Ön proje / mimari çalışma mevcut"],
-  ["ruhsat", "Ruhsat veya uygulama projesi mevcut"],
-  ["teklif", "Teklif toplama / firma seçimi"],
-  ["santiye", "Üretim veya şantiye aşaması"],
-  ["mevcut", "Mevcut yapı / dönüşüm aşaması"],
-] as const;
-
-const systems = [
-  ["kararsiz", "Henüz karar verilmedi"],
-  ["hafif-celik", "Hafif çelik"],
-  ["celik", "Çelik"],
-  ["prefabrik", "Betonarme prefabrik"],
-  ["betonarme", "Betonarme"],
-  ["karma", "Karma sistem"],
-] as const;
-
-const documentOptions = [
-  ["arsa", "Arsa / imar bilgileri"],
-  ["mimari", "Mimari plan veya eskiz"],
-  ["zemin", "Zemin etüdü"],
-  ["statik", "Statik proje veya hesap"],
-  ["gorsel", "Fotoğraf / video / mevcut durum kaydı"],
-] as const;
-
-const priorityOptions = [
-  ["sure", "Hızlı teslim"],
-  ["butce", "Bütçe kontrolü"],
-  ["esneklik", "Mimari esneklik"],
-  ["enerji", "Enerji performansı"],
-  ["guvenlik", "Teknik risk ve güvenlik"],
-] as const;
-
-const labelOf = (options: readonly (readonly [string, string])[], value: string) => options.find(([key]) => key === value)?.[1] || "Belirtilmedi";
-
 export function ProjectDecisionAssistant() {
-  const { patchModule } = useProjectKernel();
-  const [goal, setGoal] = useState("");
-  const [stage, setStage] = useState("");
-  const [system, setSystem] = useState("kararsiz");
-  const [location, setLocation] = useState("");
-  const [area, setArea] = useState("");
-  const [documents, setDocuments] = useState<string[]>([]);
-  const [priorities, setPriorities] = useState<string[]>([]);
+  const { project, hydrated } = useProjectKernel();
+  if (!hydrated) return <p role="status">Proje açılıyor…</p>;
+  return <><p className="demo-active-project-name">Proje: <strong>{project.name}</strong></p><ProjectDecisionForm key={project.id} /></>;
+}
+
+function ProjectDecisionForm() {
+  const { patchModule, project } = useProjectKernel();
+  const [draft] = useState(() => {
+    const module = project.modules["decision-assistant"] as { readinessScreening?: { input?: unknown } } | undefined;
+    return restoreBriefDraft(module?.readinessScreening?.input);
+  });
+  const [goal, setGoal] = useState(draft.goal);
+  const [stage, setStage] = useState(draft.stage);
+  const [system, setSystem] = useState(draft.system);
+  const [location, setLocation] = useState(draft.location);
+  const [area, setArea] = useState(draft.area);
+  const [documents, setDocuments] = useState<string[]>(draft.documents);
+  const [priorities, setPriorities] = useState<string[]>(draft.priorities);
   const [resultVisible, setResultVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generatedAt, setGeneratedAt] = useState("");

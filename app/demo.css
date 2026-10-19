@@ -92,3 +92,26 @@ body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#24
 .demo-brief-page .brief-report-continue>a:focus-visible{outline:3px solid #64826c;outline-offset:4px}
 @media(max-width:700px){.demo-brief-page .brief-report-continue{padding:20px 22px}.demo-brief-page .brief-report-continue>a{width:100%}}
 @media print{body.printing-decision-report .brief-report-continue{display:none!important}}
+
+.demo-projects{margin-bottom:36px}
+.demo-project-create{display:flex;align-items:flex-end;gap:12px;padding:20px;border:1px solid #d6ddd6;border-radius:10px;background:#fff}
+.demo-project-create label{display:grid;gap:8px;flex:1;font-size:12px;color:#536c5d;min-width:0}
+.demo-project-create input{width:100%;min-height:44px;border:1px solid #cbd5cd;border-radius:6px;padding:10px 12px;font:inherit;font-size:14px;color:#183a34;background:#fff}
+.demo-project-create button,.demo-project-list button{cursor:pointer;min-height:44px;border:1px solid #163f37;border-radius:6px;padding:11px 16px;background:#163f37;color:#fff;font:inherit;font-size:13px}
+.demo-project-create button:disabled{opacity:.45;cursor:default}
+.demo-project-note{font-size:12px;color:#63766d;margin:12px 0 18px;line-height:1.6}
+.demo-project-empty{font-size:14px;padding:22px;border:1px dashed #cbd5cd;border-radius:10px;color:#63766d}
+.demo-project-error{font-size:13px;color:#8a332f;line-height:1.7}
+.demo-project-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.demo-project-list li{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px;border:1px solid #d6ddd6;border-radius:10px;background:#fff}
+.demo-project-list li.is-active{border-color:#64826c;background:#eef3ec}
+.demo-project-list li>div{min-width:0}
+.demo-project-list h2{font-size:17px;margin:0 0 8px;font-weight:500;overflow-wrap:anywhere}
+.demo-project-list p{font-size:11px;color:#63766d;line-height:1.7;margin:0}
+.demo-project-list button{flex-shrink:0;background:transparent;color:#315140}
+.demo-modules-title{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:500;margin:0 0 22px}
+.demo-modules-title>span{font-size:12px;background:#e5eae2;padding:4px 9px;border-radius:20px}
+.demo-projects button:focus-visible,.demo-projects input:focus-visible{outline:3px solid #64826c;outline-offset:3px}
+@media(max-width:650px){.demo-project-create{flex-direction:column;align-items:stretch;padding:16px}.demo-project-list li{align-items:stretch;flex-direction:column;padding:16px}.demo-project-list button{align-self:flex-start}.demo-projects{margin-bottom:28px}}
+
+.demo-active-project-name{font-size:13px;color:#536c5d;margin:0 0 24px;line-height:1.6}.demo-active-project-name strong{font-weight:500}

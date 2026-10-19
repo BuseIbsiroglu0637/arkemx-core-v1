@@ -62,3 +62,17 @@ Kontrol: dar ekran tarayıcı görünümünde seçimler, kutular ve ana düğme 
 
 Kullanıcının istediği “Parsel ve arsa aşamasına devam et” düğmesi brief raporuna eklendi. `/arsa-fizibilite-studyosu#geo-studyo` çalışma alanına yönlendirir. Yeşil demo temasına ve dar ekrana uyar; yazdırılan raporda gizlenir. Mevcut rapor, kayıt ve çıktı araçları korundu. Bu değişiklik gezinme bağlantısıdır; brief alanlarının GIS girdilerine eşlenmesi ve aktarımın uçtan uca doğrulanması henüz tamamlanmış sayılmaz. Sonraki adım: bu veri devrini bağlayıp doğrulamak.
 Kontrol: devam bağlantısının raporda göründüğü, dar ekran yerleşimi ve href hedefi tarayıcıda doğrulandı. Bu gezinme eklemesinde hesap testleri ve derleme tekrarlanmadı.
+
+## Çoklu proje listesi — 2026-10-19
+
+Dayanak: kullanıcı dijital proje merkezinin üstünde oluşturulan projelerin kayıtlarının tutulmasını istedi.
+
+Yapılan iş: başlangıç sayfasına Projelerim, yeni proje adı/oluşturma formu, kayıtlı proje adı, son kayıt zamanı, veri bulunan modül sayısı ve Projeyi aç eklendi. Modül sayısı tamamlanma/onay değildir. Mevcut aktif proje ve doğrulanabilen son yedeği yeni yerel listeye aktarılır. Proje kimliğiyle güncellenir; listeye yinelenen proje eklenmez. Yeni proje oluşturma ve proje açma öncesi mevcut proje saklanır. Eski tarihli yedek daha yeni liste kaydının üzerine yazmaz. Liste anahtarı `arkem-demo-v177-projects`, yedeği `arkem-demo-v177-projects-backup` olur. Bozuk kayıt/yedek ve kapasite hataları görünür; mevcut liste boş veriyle değiştirilmez.
+
+Brief: seçilen proje kimliğine göre form yeniden kurulur ve readinessScreening.input alanları geri yüklenir. Seçenekler ortak brief-draft tanımlarından doğrulanır. Hesap kuralları değiştirilmedi. Briefte açık proje adı görünür. Kaydedilmiş brief raporu yeniden oluşturularak görüntülenir; gönderilmeden formda yapılan değişiklikler bu çalışma kapsamında ayrıca otomatik taslaklaştırılmaz. Sunucu/hesap senkronu eklenmedi; kayıt bu tarayıcı/origin ile sınırlıdır.
+
+Kontrol: 31/31 test geçti (project-library, demo, customer-journey, hardening). Çoklu kayıt, güncelleme, eski verinin yeni kaydı ezmemesi, yedekten kurtarma, bozuk kaydı koruma, kota hatası ve brief değerlerini geri yükleme test edildi. TypeScript --noEmit geçti. Üretim derlemesi ve Worker paket doğrulaması geçti; sonrasında boş/bozuk liste için hata gösterimi iyileştirildi ve TypeScript/testler tekrar geçti. CRLF dikkate alınan diff --check temiz.
+
+Tarayıcı: mevcut DEMO — Kastamonu Konut projesi (600 m²/Kastamonu) listeye geldi. Ayrı TEST — Proje kayıt kontrolü oluşturuldu; Ankara/320 m², çelik ve bütçe önceliğiyle brief üretildi (68/100). Projeler arasında geçildi, liste yenilendi ve iki projenin alanları karışmadan geri geldi. Mevcut Kastamonu projesi yeniden açık seçildi; başlangıç sayfasında bırakıldı. TEST kaydı açık adıyla yerel listede duruyor. İlk geliştirme HMR güncellemesinde Provider hatası görüldü, temiz yenilemeyle akış çalıştı. Dar ekran görüntüsü alındı.
+
+Açık işler: bulut/cihazlar arası kayıt bu demo kapsamına dahil değil. On üç modülün tüm devir ve geri yükleme senaryoları henüz test edilmedi. Sonraki adım: PIR → GIS veri eşlemesini ve sonraki modül geçişlerini doğrulamak.
