@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { isDemoRequestBlocked } from "../app/lib/demo";
 import { withResponseSecurity } from "../app/lib/response-security";
 
 interface Env {
@@ -29,6 +30,9 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (isDemoRequestBlocked(url.pathname, request.method)) {
+      return withResponseSecurity(request, Response.json({ error: "Demo sürümünde gerçek başvuru, hesap ve belge işlemleri kapalıdır. Çalışmanızı JSON olarak indirebilirsiniz.", demo: true }, { status: 403 }));
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

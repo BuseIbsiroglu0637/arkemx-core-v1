@@ -1,5 +1,6 @@
-export const PROJECT_STORAGE_KEY = "arkem-project-kernel-v2";
-export const PROJECT_BACKUP_KEY = "arkem-project-kernel-v2-backup";
+import { DEMO_STORAGE_KEY, DEMO_BACKUP_KEY } from "./demo.ts";
+export const PROJECT_STORAGE_KEY = DEMO_STORAGE_KEY;
+export const PROJECT_BACKUP_KEY = DEMO_BACKUP_KEY;
 
 export type ProjectStorageEnvelope<T> = {
   schema: "ARKEM-STORAGE/2.0";

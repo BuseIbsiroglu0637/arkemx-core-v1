@@ -15,6 +15,7 @@ import {
 } from "../lib/project-core";
 import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
 import { loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { DEMO_ENABLED } from "../lib/demo";
 import { isKernelProject } from "../lib/project-validation";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
@@ -71,7 +72,7 @@ type ProjectKernelContextValue = {
   reset: () => void;
 };
 
-const STORAGE_KEY = "arkem-project-kernel-v1";
+const STORAGE_KEY = "arkem-demo-v177-legacy";
 export const PROJECT_JOURNEY = [
   { label: "İhtiyacı tanımla", short: "Brief", output: "Proje hedefi", href: "/proje-baslat", modules: ["DECISION", "BRIEF", "START"], projectKeys: ["decision-assistant"] },
   { label: "Parseli doğrula", short: "Arazi", output: "Konum + sınır", href: "/arsa-fizibilite-studyosu", modules: ["GEO", "PARCEL", "SITE"], projectKeys: ["geo-parcel", "quick-site-scenario"] },
@@ -536,7 +537,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
             state: stored.source === "backup" ? "recovered" : "device-saved",
             integrity: stored.integrity,
             lastSavedAt: stored.savedAt,
-            backupAvailable: stored.source === "backup" || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
+            backupAvailable: stored.source === "backup" || Boolean(window.localStorage.getItem("arkem-demo-v177-backup")),
             cloud: "not-configured",
           });
         } else {
@@ -959,14 +960,14 @@ export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: 
     <div className="kernel-persistence" title="Bu oturumun proje verisi bu cihazda bütünlük denetimli olarak saklanır. Kurumsal bulut senkronu henüz bağlı değildir.">
       <span>PROJE KASASI</span>
       <b>{persistence.state === "recovered" ? "Yedekten kurtarıldı" : persistence.state === "unavailable" ? "Tarayıcı kaydı kapalı" : "Bu cihazda kayıtlı"}</b>
-      <small>{persistence.cloud === "not-configured" ? "Bulut bağlantısı bekliyor" : ""}</small>
+      <small>{DEMO_ENABLED ? "Demo · yalnız bu tarayıcı" : persistence.cloud === "not-configured" ? "Bulut bağlantısı bekliyor" : ""}</small>
     </div>
     <div className="kernel-experience" aria-label="ARKEMX kullanım modu">
       <span>KULLANIM MODU</span>
       <div><button className={project.experience.mode === "guided" ? "active" : ""} onClick={() => setExperience({ mode: "guided", autoHandoff: true })}>Yönlendirmeli</button><button className={project.experience.mode === "technical" ? "active" : ""} onClick={() => setExperience({ mode: "technical" })}>Teknik</button></div>
       <small>{project.experience.autoHandoff ? "Veri aktarımı açık" : "Elle aktarım"}</small>
     </div>
-    <div className="kernel-actions"><Link href="/arkemx">Proje rehberime dön</Link><Link href="/musteri-proje-portali">Hesaba kaydet</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={() => { if (window.confirm("Yeni oturum açılsın mı? Mevcut projenizin yedeği önce indirilecek.")) { exportProject(); reset(); } }}>Yeni oturum</button></div>
+    <div className="kernel-actions"><Link href="/arkemx">Proje rehberime dön</Link>{!DEMO_ENABLED && <Link href="/musteri-proje-portali">Hesaba kaydet</Link>}<button onClick={exportProject}>Proje JSON ↓</button><button onClick={() => { if (window.confirm("Yeni oturum açılsın mı? Mevcut projenizin yedeği önce indirilecek.")) { exportProject(); reset(); } }}>Yeni oturum</button></div>
   </div><nav className="project-guided-journey" aria-label="Rehberli proje akışı">
     <header><span>TEK PROJE · YEDİ BAĞLI ADIM</span><b>Her modül önceki adımın verisini kullanır</b><small>Şu an: {activeJourneyIndex + 1}. adım / {PROJECT_JOURNEY.length} · Sonuçlar aynı proje kaydında birleşir</small></header>
     <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; return <Link key={step.href} href={step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{step.label}</small><strong>{step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>

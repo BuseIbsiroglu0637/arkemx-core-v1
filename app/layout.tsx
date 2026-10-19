@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
+import "./demo.css";
+import { DemoBanner } from "./components/DemoWorkspace";
 import "./v25.css";
 import "./v25-apps.css";
 import "./v26.css";
@@ -176,5 +178,5 @@ const structuredData = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#061a2b"/><meta name="google" content="notranslate"/><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased arkem-corporate-site`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><div id="main-content" tabIndex={-1}>{children}</div><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
+  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#061a2b"/><meta name="google" content="notranslate"/><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased arkem-corporate-site`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><DemoBanner/><div id="main-content" tabIndex={-1}>{children}</div><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
 }
