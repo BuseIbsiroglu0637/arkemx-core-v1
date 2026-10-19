@@ -27,7 +27,8 @@ export function loadProjectLibrary(storage: DeviceStorage): ProjectKernelState[]
 function persistableSnapshot(project: ProjectKernelState): ProjectKernelState {
   let serialized: string | undefined;
   try {
-    serialized = JSON.stringify(project, (_key, value: unknown) => {
+    serialized = JSON.stringify(project, function (this: unknown, _key, value: unknown) {
+      if (value === undefined && Array.isArray(this)) throw new Error("Undefined array element cannot be safely saved");
       if (typeof value === "number" && !Number.isFinite(value)) throw new Error("Non-finite project number");
       if (typeof value === "bigint" || typeof value === "function" || typeof value === "symbol") throw new Error("Non-JSON project value");
       return value;
