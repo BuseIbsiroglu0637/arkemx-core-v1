@@ -52,3 +52,8 @@ Kullanıcı brief raporunu demo arayüzüne uygun düzenlememizi istedi. Koyu ku
 Kontrol: TypeScript --noEmit başarılı; demo/hardening testleri 18/18 geçti. Tarayıcıda mevcut konut girdileriyle aynı 76/100 sonucu, altı proje bilgisi, beş sonraki adım, açık riskler, belge durumları, disiplin göstergeleri ve kopyalandı geri bildirimi görüldü. Dar ekran görüntüsü alındı. Üretim derlemesi ve PDF yazdırma bu görünüm düzenlemesinde yeniden çalıştırılmadı; masaüstü ve yazdırma sayfalaması ayrıca doğrulanacak. Mühendislik hesabı veya resmî onay iddiası yoktur.
 
 Sonraki adım: kullanıcının rapor değerlendirmesine göre düzenleme ve dosya/PDF kontrolü.
+
+## Brief tema renkleri — 2026-10-19
+
+Kullanıcı turuncu vurguların temaya uymasını istedi. Yalnız yatırım briefi ekranında başlık, adım numarası, seçim işaretleri, onay kutuları, odak çizgileri ve ana düğme orman yeşili paletine geçirildi. Seçili seçenekler açık yeşil zeminle, rapordaki açık konular muted yeşil çizgi ve metinle gösterilir. Hesap ve form mantığı değişmedi. Sonraki adım: kullanıcı görünüm değerlendirmesi.
+Kontrol: dar ekran tarayıcı görünümünde seçimler, kutular ve ana düğme yeşil olarak doğrulandı; mevcut girdilerle rapor yeniden oluşturuldu ve 76/100 sonucu korundu. Yalnız CSS değiştiği için hesap testleri ve derleme tekrarlanmadı.

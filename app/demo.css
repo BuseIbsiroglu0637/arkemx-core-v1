@@ -74,3 +74,14 @@
 .demo-brief-page .brief-report-actions>button:focus-visible,.demo-brief-report a:focus-visible{outline:3px solid #b86a3f;outline-offset:3px}
 @media(max-width:700px){.brief-report-header{align-items:flex-start;flex-direction:column;gap:10px;padding:22px}.brief-report-overview,.brief-report-columns{grid-template-columns:1fr}.brief-report-facts{padding:22px;gap:18px}.brief-report-status{border-left:0;border-top:1px solid #e0e5df;padding:22px}.brief-report-columns>section{padding:22px}.brief-report-columns>section+section{border-left:0;border-top:1px solid #e0e5df}.brief-report-footer{padding:22px;flex-direction:column;align-items:flex-start}.demo-brief-page .brief-report-actions{padding:18px 22px;display:grid;grid-template-columns:1fr 1fr}.brief-report-documents li{flex-wrap:wrap}.brief-report-documents small{text-align:left}}
 @media print{body.printing-decision-report .demo-brief-page .demo-brief-report{display:block!important;border:0!important;border-radius:0;overflow:visible;font-size:10pt}body.printing-decision-report .brief-report-actions,body.printing-decision-report .brief-report-footer>a{display:none!important}.brief-report-header,.brief-report-status,.brief-report-columns>section,.brief-report-facts{break-inside:avoid}.brief-report-header,.brief-report-status{background:#fff}.brief-report-track>i{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+
+/* Investment brief uses the demo's forest-green accent. */
+.demo-brief-page{--copper:#315f4e;--brand-copper:#315f4e;--ds-copper:#315f4e;--ds-copper-strong:#244a3d}
+.demo-brief-page .eyebrow,.demo-brief-page .decision-form-heading h2 em,.demo-brief-page .decision-step-title>span,.demo-brief-page .decision-options b{color:#315f4e}
+.demo-brief-page .decision-options label.selected{border-color:#64826c;background:#edf3ec;box-shadow:inset 3px 0 0 #315f4e}
+.demo-brief-page .decision-options label:hover{border-color:#64826c}
+#main-content .demo-brief-page .decision-options input{accent-color:#315f4e}
+body.arkem-corporate-site .demo-brief-page .decision-submit{background:#163f37;border-color:#163f37;color:#fff}
+body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#244f43;border-color:#244f43}
+.demo-brief-page .brief-report-risks li{border-left-color:#8ca18e;color:#47614e}
+.demo-brief-page :focus-visible,.demo-brief-page .brief-report-actions>button:focus-visible{outline-color:#315f4e}
