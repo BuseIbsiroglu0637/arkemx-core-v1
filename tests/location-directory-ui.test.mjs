@@ -17,7 +17,8 @@ test('continue requires current selections and queries the parcel while file upl
  assert.match(form,/props.identityReady && currentSelections/);
  assert.match(form,/Parseli haritada göster/);
  assert.match(form,/Parsel sınırı otomatik sorgulanır/);
- assert.match(form,/isteğe bağlı uzman seçenekleri/);
+ assert.match(form,/<details className="parcel-search-help">/);
+ assert.match(form,/onClick=\{props.onImport\}/);
  assert.doesNotMatch(form,/Sınır dosyası ekleyerek devam et|TKGM otomatik sınır bağlantısı şu anda kullanılamıyor|hasOfficialIds/);
  assert.doesNotMatch(form,/mahalle \/ köy · TKGM kaynak listesi/);
 });

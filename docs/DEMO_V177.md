@@ -93,3 +93,13 @@ Kontrol: 29/29 test geçti (brief-site-context, project-library, module-workspac
 
 Açık işler: gerçek ada/parsel sorgusu, sınır geometrisi ve GIS çıktıları bu adımda uçtan uca doğrulanmadı; GIS kartı kısmen test edildi olarak işaretlidir. Otomatik ilan servisi bağlı değildir. Sonraki adım MAS kavramsal yerleşiminin bu proje bağlamıyla çalışmasını ve çıktısını test etmek. Bu kayıt resmî teknik onay değildir.
 Son doğrulama: TypeScript --noEmit çıkış 0; üretim derlemesi ve Worker artifact doğrulaması çıkış 0. GIS değişiklikleri demo/v177-2026-10-18 dalına kaydedildi.
+
+
+## Arsam var ekranının sadeleştirilmesi — 2026-10-19
+
+Dayanak: kullanıcı mevcut Arsam var ekranını daha anlaşılır hale getirmeyi istedi. Brief özeti bu görünümde açılır hale getirildi; konum özeti kapalıyken de görünür. Yinelenen çıktı tanıtımı sınır hazır olana kadar gösterilmez. Dört adım çubuğu dar ekranda kısaltıldı, ana form yukarı alındı; ileri/geri gezinme ve kaynak kaydı ayrıntıları çalışma alanının altına taşındı. Form Konum ve Tapu bilgileri olarak ayrıldı; seçime göre eksik sonraki bilgiyi açıklayan durum metni eklendi. Sorgu açıklaması açılır bölüme alındı. Uzman araçları, kaynak açıklamaları, harita, sorgu işleyicileri ve parsel/imar geçiş kapıları korundu. Yeşil tema ve dokunma alanları düzenlendi.
+
+Kontrol: 28/28 test geçti (location-directory-ui, parcel-journey-gates, parcel-zoning-scope, parcel-customer-workflow). TypeScript --noEmit çıkış 0, CRLF uyumlu diff kontrolü temiz. Dar ekran tarayıcıda briefin katlı hali, adımlar, konum/tapu formu ve açıklamalar incelendi. Kuzeykent + 123/4 yalnız form denemesi olarak girildi: sorgu düğmesi açıldı ve hazır yönlendirmesi göründü; sorgu yapılmadan deneme girdileri temizlendi. Eksik mahallede düğme tekrar kapandı ve ilgili yönlendirme geldi. Aktif proje Kastamonu/Merkez, boş mahalle/ada/parsel ile Arsam var görünümünde bırakıldı. Görüntü: çalışma alanı output/ARKEMX_Arsam_Var_Sade_Form_2026-10-19.png.
+
+Açık işler: bu düzenleme gerçek ada/parsel sınırı veya imar çıktısı doğrulaması değildir. Canlı parsel sorgusu ve çıktılar için gerçek bir örnekle ayrı test gerekir. Sonraki adım kullanıcının ekran değerlendirmesi ve GIS → MAS veri devridir.
+Son kontrol: üretim derlemesi ve Worker artifact doğrulaması çıkış 0. 479 px tarayıcı görünümünde sayfa genişliği 479 px; yatay taşma görülmedi. Sorgu açıklamasının açılıp kapandığı doğrulandı.

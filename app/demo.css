@@ -142,3 +142,55 @@ body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#24
 .demo-gis-page .geo-studio-top{background:#edf3ec;color:#183a34;border-color:#d6ddd6}
 .demo-gis-page .geo-studio-top b,.demo-gis-page .geo-studio-top span{color:#315140}
 @media(max-width:700px){.demo-site-brief,.demo-land-search{padding:18px}.demo-site-brief dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.demo-land-fields{grid-template-columns:1fr}.demo-land-choice button{flex:1}.demo-site-next{padding:20px 0}}
+
+/* Owned-land guide: lead with the location form, keep technical detail optional. */
+#main-content .demo-owned-brief{margin:0 0 20px;border:1px solid #d4dfd9;border-radius:10px;background:#fff;padding:14px 18px}
+#main-content .demo-owned-brief>summary{cursor:pointer;color:#193e35;font-weight:600;font-size:14px;line-height:1.6}
+#main-content .demo-owned-brief>summary span{display:block;font-size:13px;font-weight:400;color:#5d7069;padding-left:16px}
+#main-content .demo-owned-brief .demo-site-brief{padding:18px 0 0;margin:14px 0 0;border:0;border-top:1px solid #d4dfd9;border-radius:0}
+#main-content .demo-gis-page .geo-parcel-studio[data-guided=true]{border-radius:12px;overflow:hidden;box-shadow:none;background:#fff}
+#main-content .demo-gis-page .geo-studio-top{gap:24px;align-items:flex-start;padding:22px 24px}
+#main-content .demo-gis-page .geo-studio-top b{font-size:22px;color:#193e35}
+#main-content .demo-gis-page .geo-studio-top span{color:#566e63;font-size:11px;letter-spacing:.08em}
+#main-content .demo-gis-page .geo-studio-top p{max-width:600px;margin:8px 0 0;font-size:14px;line-height:1.7;color:#52695f}
+#main-content .demo-gis-page .parcel-expert-toggle{background:#fff;border:1px solid #b8c9c0;color:#254d40;min-height:44px;flex-shrink:0}
+#main-content .demo-gis-page .parcel-journey{margin:18px var(--parcel-gutter,24px)}
+#main-content .demo-gis-page .parcel-journey>ol{background:#f0f4f0;border-color:#d6e0d9;gap:6px;padding:5px}
+#main-content .demo-gis-page .parcel-journey>ol>li>button{min-height:78px;padding:12px;gap:10px;border:0}
+#main-content .demo-gis-page .parcel-journey button[aria-current=step]{background:#193e35;color:#fff}
+#main-content .demo-gis-page .parcel-journey button[aria-current=step] .parcel-step-number{background:#e3eee2;color:#193e35;border-color:#e3eee2}
+#main-content .demo-gis-page .parcel-journey button[aria-current=step] small{color:#e0ece4}
+#main-content .demo-gis-page .parcel-step-number{border-color:#b6c9bc;color:#47654f}
+#main-content .demo-gis-page .geo-control-section{height:auto;max-height:none;padding:24px}
+#main-content .demo-gis-page .geo-controls{padding-bottom:0}
+#main-content .demo-gis-page .geo-control-section h3{font-size:24px;line-height:1.3;margin:10px 0}
+#main-content .demo-gis-page .parcel-input-hint{font-size:14px;line-height:1.7;margin-bottom:20px}
+#main-content .demo-gis-page .parcel-search-fields{gap:14px}
+#main-content .demo-gis-page .parcel-field-heading{grid-column:1/-1;margin:6px 0 0;font-size:14px;font-weight:600;color:#193e35}
+#main-content .demo-gis-page .parcel-field-heading small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:#66776c}
+#main-content .demo-gis-page .parcel-search-fields label>span{text-transform:none;font-size:13px;letter-spacing:0;color:#294939}
+#main-content .demo-gis-page .parcel-search-fields :is(input,select){font-size:16px;min-height:48px;border-color:#bdcdbf;border-radius:7px}
+#main-content .demo-gis-page .parcel-next-instruction{background:#f0f5ed;border-left:3px solid #708b63;padding:12px 14px;font-size:13px;line-height:1.6;margin:18px 0 12px;color:#35513d}
+#main-content .demo-gis-page .parcel-search-submit{border-radius:7px;min-height:50px}
+#main-content .demo-gis-page .parcel-search-submit:disabled{background:#e5ebe5;color:#586b5c;border-color:#d4ded4}
+#main-content .demo-gis-page .parcel-boundary-connection-note{display:block;background:#f7f9f5;padding:12px 14px}
+#main-content .demo-gis-page .parcel-boundary-connection-note>summary{cursor:pointer;font-size:13px;font-weight:600;color:#35513d}
+#main-content .demo-gis-page .parcel-boundary-connection-note[open]>:not(summary){display:block;margin-top:10px}
+#main-content .demo-gis-page .parcel-next-action{margin-top:20px;background:#f1f5ef;border-radius:8px;border:1px solid #d5dfd4}
+#main-content .demo-gis-page .parcel-next-action button:last-child:not(:disabled){background:#193e35;border-color:#193e35}
+#main-content .demo-gis-page :is(.parcel-search-help,.parcel-directory-provenance)>summary{font-size:13px;line-height:1.6;color:#3c5b46}
+#main-content .demo-gis-page .geo-control-notice{position:static;padding:14px 24px;background:#f6f8f4;border-top:1px solid #dce5d9}
+#main-content .demo-gis-page .geo-workspace{min-height:0}
+#main-content .demo-gis-page .geo-stage{border-radius:8px;background:#f0f4f0}
+@media(max-width:600px){
+ #main-content .demo-gis-page .geo-studio-top{padding:18px;flex-direction:column;gap:12px}
+ #main-content .demo-gis-page .parcel-expert-toggle{min-height:40px;padding:8px 12px}
+ #main-content .demo-gis-page .parcel-journey>ol{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #main-content .demo-gis-page .parcel-journey>ol>li>button{min-height:60px;padding:10px 8px;gap:8px}
+ #main-content .demo-gis-page .parcel-journey button small{display:none}
+ #main-content .demo-gis-page .parcel-step-number{flex-basis:26px;width:26px;height:26px;min-width:26px;font-size:11px}
+ #main-content .demo-gis-page .parcel-journey button b{font-size:13px}
+ #main-content .demo-gis-page .geo-control-section{padding:20px 16px}
+ #main-content .demo-gis-page .parcel-next-action{align-items:stretch;flex-direction:column}
+ #main-content .demo-gis-page .geo-stage-toolbar{height:auto;min-height:47px;flex-wrap:wrap;gap:8px;padding:8px}
+}
