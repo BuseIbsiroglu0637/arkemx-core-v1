@@ -221,3 +221,18 @@ Tarayıcı: DEMO — Kastamonu Konut üzerinde geçici A-001 mahali eklendi, ad�
 Responsive: masaüstü 1351/1351 px, tablet 805/805 px, mobil 375/375 px sayfa/kaydırma genişliği; taşma yok. Mobilde sekmelerin sabit yüksekliği başlıkla çakışıyordu; yükseklik otomatik yapılıp tekrar kontrol edildi. Mobil komşuluk alanı da 375 px sınırında kaldı. Geçici viewport kaldırıldı. Görsel kanıt: çalışma alanı output/ARKEMX_ARC_Mahal_Masaustu_2026-10-19.png ve output/ARKEMX_ARC_Mahal_Mobil_2026-10-19.png; kaydedilip açılarak incelendi.
 
 Açık işler / sonraki adım: mevcut projenin üç komşuluk ilişkisindeki eksik mahal eşleştirmeleri kullanıcı tasarım kararı bekliyor. Plan şeması, alternatifler, cephe ve performans hesaplarının tamamı bu tur uçtan uca doğrulanmadı. Sonraki çalışma gerçek mahal programı/komşuluk kararlarını netleştirip plan aşamasına kontrollü devam etmek. Bu çalışma 13 modülün veya ARC'nin tüm işlevlerinin tamamlandığı ya da resmî teknik onay alındığı anlamına gelmez.
+
+## ARC — eksik mahalleri ekleyerek komşuluk eşleştirme, 2026-10-19
+
+Dayanak / karar: kullanıcı mevcut üç ilişkiyi eşleştirmeyi istedi; Banyo ve Ortak giriş listede bulunmadığı için seçenek soruldu. Kullanıcı açıkça “eksik mahalleri ekleyerek eski ilişki anlamlarını koruyalım” dedi. Yaşam alanı mevcut Salon ile eşleştirildi; Banyo ve Ortak giriş başka odayla değiştirilmedi.
+
+Yapılan iş: DEMO — Kastamonu Konut projesinin bu tarayıcıdaki kaydına A-001 Banyo (Servis, 4 × 5 m²) ve A-002 Ortak giriş (Ortak, 1 × 12 m²) eklendi. Adet/alanlar kullanıcı tarafından verilmiş gereksinim veya doğrulanmış ölçü değildir; açıkça bildirilen, düzenlenebilir demo başlangıç varsayımlarıdır. Net toplam 304 → 336 m², program brüt ihtiyacı 466.7 m² oldu; hedef 1117.7 m² ve mevcut üç mahalin tüm değerleri korundu.
+
+Üç ilişki: R-01 Salon ↔ Mutfak / Zorunlu; R-02 Yatak odası ↔ Banyo / Tercih; R-03 Ortak giriş ↔ Salon / Tercih. Üçü de inceleme bekleyen taslak olarak confirmed:false; otomatik onay verilmedi. Sayfa yenilemesinden sonra uçlar korundu, “listede yok” ve eksik eşleşme uyarısı kalmadı.
+
+Teknik kanıt: uygulamadan önce/sonra indirilen arkem-mimari-sema (4).json ve (5).json karşılaştırıldı: mevcut üç mahal ve tüm mimari input değerleri birebir eşit; beş mahal türü, üç ilişki, sıfır kayıp/kendisine bağlı uç, sıfır gözden geçirilmiş işareti. Yeni kayıt çalışma alanı output/ARKEMX_ARC_Eslesmis_Mahal_Kaydi_2026-10-19.json dosyasına yedeklendi. Görsel output/ARKEMX_ARC_Uc_Komsuluk_Eslestirme_2026-10-19.png olarak kaydedilip açılarak incelendi; geçici viewport kaldırıldı. İlişki kartlarının footer alanına genel site footer'ının koyu arka plan/padding kuralları sızıyordu; yalnız bu bölümde transparan arka plan/sıfır padding ile düzeltildi. Üç kartta footer yüksekliği 44 px olarak doğrulandı.
+
+Açık işler / sonraki adım: isim/uç eşleştirmesi tamamdır; kavramsal şemadaki fiziksel yakınlıklar sağlanmış değildir. İndirilen hesapta Salon–Mutfak 20.3 m, Yatak odası–Banyo 22 m, Ortak giriş–Salon 11.4 m ve üçü de satisfied:false. Sonraki adım plan yerleşiminde yakınlıkları düzenlemek; yeni mahal adet/alanları ve ihtiyaç etiketleri de tasarım incelemesi bekler. Bu çalışma resmî mimari/teknik onay değildir. Proje verisi bu tarayıcıdadır; kod deposuna proje verisi gömülmedi.
+
+Doğrulama: bu tur uygulama hesabı değiştirilmedi; yalnız ilişki kartı CSS düzeltmesi için üretim/Worker derlemesi tekrar çalıştırıldı ve başarılı oldu. Diff kontrolü temiz.
+

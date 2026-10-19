@@ -109,3 +109,4 @@
 #main-content .arc-demo .v113-scheme-note p{font-size:12px;line-height:1.7}
 @media(max-width:600px){#main-content .arc-demo .arc-relationship-editor{padding:14px}#main-content .arc-demo .arc-relationship-editor article>div{grid-template-columns:1fr}#main-content .arc-demo .arc-relationship-editor footer{flex-direction:column;align-items:stretch}}
 #main-content .arc-demo .architect-main>header nav{height:auto;min-height:0;align-content:start}
+#main-content .arc-demo .arc-relationship-editor footer{background:transparent;color:#526c77;padding:0;border:0;min-height:0}
