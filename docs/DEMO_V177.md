@@ -150,3 +150,14 @@ Tarayıcı: DEMO — Kastamonu Konut üzerinde genişlik 29.6 m'den 28 m'ye değ
 Geliştirme sunucusu: yeni CSS importu ve derleme sonrasında geliştirme önbelleği çakışması görüldü; yalnız bu repo için 5175 sunucusu --force ile yeniden başlatıldı ve temiz sekmede etkileşimler çalıştı. Tarayıcı ekran görüntüsü API'si yeni sekmelerde Unable to capture screenshot döndürdüğünden bu adımın görsel kanıt dosyası üretilemedi; tarayıcı kontrolü DOM, ölçüler, hesaplanmış stiller ve kullanıcı etkileşimleriyle yapıldı. Görsel ekran görüntüsü incelemesi doğrulanacak.
 
 Açık işler / sonraki adım: tam belgeye dayalı imar koşullarıyla yerleşim ve indirilen PDF/DXF içerikleri ayrıca uçtan uca incelenecek. Bu düzenleme hesaplı imar onayı veya 13 modülün tamamlandığı anlamına gelmez. Sonraki modüle aynı parsel/yerleşim kaydının aktarımını birlikte denemek.
+
+
+## Kaynak bölümünün sadeleştirilmesi — 2026-10-19
+
+Dayanak: kullanıcı büyük Parsel veri merkezi panelinin kaldırılması, kaynak bilgisinin küçük bir açılır alanda korunması ve resmî bağlantıların imar adımına alınması önerisini onayladı.
+
+Yapılan iş: tekrar eden parsel/alan/proje kartları ve koyu kaynak şeridi kaldırıldı. Kaynak ayrıntıları altında geometri kaynağı, kurum ve kaynak zamanı gösterilir; zaman Europe/Istanbul olarak biçimlenir, örnek veri sorgu yapılmış gibi sunulmaz. TKGM, e-Plan, belediye ve e-Devlet bağlantıları İmar bilgisi → Resmî kaynağı bul bölümüne taşındı. Uzun alt metin kısa ön inceleme notuyla değiştirildi. Proje state'i, provenance, hesaplar ve rapor/export üretimi değiştirilmedi.
+
+Kanıt: 38/38 ilgili test ve TypeScript --noEmit başarılı; diff kontrolü temiz. Tarayıcıda kaynak ayrıntıları açılarak kurum/tarih okundu, imar adımına dönüş ve dört resmî bağlantı doğrulandı; büyük panel metni bulunmuyor. Mobil görünüm ekran görüntüsü çalışma alanı output/ARKEMX_Kaynak_Ayrintilari_2026-10-19.png dosyasına kaydedildi ve görsel olarak incelendi.
+
+Açık işler: bu değişiklik için üretim derlemesi ve indirilen dosyaların içerik incelemesi tekrarlanmadı; hesap/export kodunda değişiklik yok. Sonraki adım aynı proje verisiyle sonraki modül aktarımını denemek. Bu çalışma resmî teknik onay değildir.

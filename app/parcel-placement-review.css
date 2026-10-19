@@ -51,3 +51,18 @@
 #main-content .demo-gis-page .parcel-placement-editor :is(input,select,button,summary):focus-visible,#main-content .demo-gis-page .parcel-alternative-body button:focus-visible{outline:3px solid #70aa90;outline-offset:3px}
 @media(max-width:1000px){#main-content .demo-gis-page .geo-parcel-studio[data-stage='3'] .geo-workspace{grid-template-columns:300px minmax(0,1fr)!important}#main-content .demo-gis-page .parcel-alternatives{gap:10px!important}#main-content .demo-gis-page .parcel-alternative-body{padding:12px!important}}
 @media(max-width:740px){#main-content .demo-gis-page .geo-parcel-studio[data-stage='3'] .geo-workspace{grid-template-columns:minmax(0,1fr)!important}#main-content .demo-gis-page .parcel-placement-overview{padding:18px}#main-content .demo-gis-page .parcel-placement-overview header,#main-content .demo-gis-page .parcel-outcome>header{flex-direction:column;gap:12px}#main-content .demo-gis-page .parcel-placement-overview dl{grid-template-columns:1fr;gap:14px}#main-content .demo-gis-page .parcel-alternatives{grid-template-columns:1fr!important}#main-content .demo-gis-page .parcel-placement-editor{padding:18px}#main-content .demo-gis-page .parcel-alternative-preview{height:150px!important}}
+
+/* Compact provenance; full records remain in project state and exports. */
+#main-content .demo-gis-page .parcel-source-note{padding:0;margin:16px 0 0;border:0;border-top:1px solid var(--panel-line);background:transparent;border-radius:0}
+#main-content .demo-gis-page .parcel-source-note>summary{padding:14px 0;font-size:13px;line-height:1.5;color:var(--panel-green);cursor:pointer}
+#main-content .demo-gis-page .parcel-source-note dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 12px}
+#main-content .demo-gis-page .parcel-source-note dt{font-size:11px;color:var(--panel-muted);margin-bottom:4px}
+#main-content .demo-gis-page .parcel-source-note dd{font-size:12px;line-height:1.6;color:var(--panel-ink);margin:0;overflow-wrap:anywhere}
+#main-content .demo-gis-page .parcel-source-note p{font-size:12px;line-height:1.7;color:var(--panel-muted);margin:0 0 12px}
+#main-content .demo-gis-page .parcel-source-note button{display:inline;background:transparent!important;border:0!important;color:var(--panel-green)!important;font-size:12px!important;padding:4px!important;text-decoration:underline}
+#main-content .demo-gis-page .parcel-official-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+#main-content .demo-gis-page .parcel-official-links a{display:flex;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--panel-line);border-radius:6px;background:#fff;color:var(--panel-green);text-decoration:none;min-width:0}
+#main-content .demo-gis-page .parcel-official-links b{font-size:13px;display:block;line-height:1.6}
+#main-content .demo-gis-page .parcel-official-links small{display:block;font-size:11px;line-height:1.6;color:var(--panel-muted)}
+#main-content .demo-gis-page :is(.parcel-source-note summary,.parcel-source-note button,.parcel-official-links a):focus-visible{outline:3px solid #70aa90;outline-offset:3px}
+@media(max-width:740px){#main-content .demo-gis-page .parcel-source-note dl,#main-content .demo-gis-page .parcel-official-links{grid-template-columns:1fr}}
