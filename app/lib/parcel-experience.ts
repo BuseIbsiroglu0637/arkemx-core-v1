@@ -44,10 +44,10 @@ export function parcelOperationMatches(sequence: number, currentSequence: number
 }
 
 export const PARCEL_JOURNEY = [
-  { id: 'locate', label: 'Parselini bul', note: 'Konumu ve ada / parseli seçin' },
-  { id: 'draw', label: 'Sınırı gör', note: 'Geometriyi ve kaynağını kontrol edin' },
-  { id: 'zoning', label: 'İmarı incele', note: 'Plan notları ve alan hesabı' },
-  { id: 'design', label: 'Yapıyı yerleştir', note: 'Önerilen yerleşim ve proje çıktısı' },
+  { id: 'locate', label: 'Parseli bul', note: 'Konum ve tapu bilgileri' },
+  { id: 'draw', label: 'Sınırı kontrol et', note: 'Kaynak geometrisini inceleyin' },
+  { id: 'zoning', label: 'İmar bilgisi', note: 'Plan notları ve yapılaşma' },
+  { id: 'design', label: 'Çıktılar', note: 'İsteğe bağlı yerleşim ve raporlar' },
 ] as const;
 
 export function parseKmlCoordinateRing(text: string): GeoPoint[] {
