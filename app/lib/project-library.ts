@@ -39,7 +39,7 @@ function persistableSnapshot(project: ProjectKernelState): ProjectKernelState {
   if (!serialized) throw new Error("Proje kaydı boş. Kayıtlar değiştirilmedi.");
   const snapshot = JSON.parse(serialized) as unknown;
   if (!isKernelProject(snapshot)) throw new Error("Proje kaydı geçerli değil. Kimlik, modül bağlantısı veya veri yapısı kontrol edilmeli; kayıtlar değiştirilmedi.");
-  return snapshot;
+  return snapshot as ProjectKernelState;
 }
 
 export function saveLibraryProject(storage: DeviceStorage, project: ProjectKernelState): ProjectKernelState[] {
