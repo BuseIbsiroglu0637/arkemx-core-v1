@@ -7,8 +7,8 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 
 // Evidence from the 2026-10-19 entry checks and recorded browser tests.
 const defaultCheck = { verified: "Sayfa açılıyor.", pending: "İşlev ve çıktı testleri bekliyor." };
-const moduleChecks: Record<string, typeof defaultCheck> = {
-  PIR: { verified: "Brief ve yol haritası test edildi.", pending: "Dosya/PDF çıktıları test bekliyor." },
+const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean }> = {
+  PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true },
   ARC: { verified: "Örnek proje verisi açılıyor.", pending: "Diğer işlev ve çıktılar test bekliyor." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
   LCA: { verified: "Karbon paneli açılıyor.", pending: "Hesap ve çıktılar test bekliyor." },
@@ -52,8 +52,8 @@ export function DemoWorkspace() {
     </section>
     <h2 className="demo-modules-title">Modüller <span>13</span></h2>
     <nav className="demo-module-grid" aria-label="Proje modülleri">{PROJECT_MODULES.map((module, index) => {
-      const check = moduleChecks[module.code] ?? defaultCheck;
-      return <Link key={module.id} href={module.route} aria-label={`${module.code} — ${module.label}`} aria-describedby={`check-${module.code}`}><span className="demo-module-code">{String(index + 1).padStart(2, "0")} / {module.code}</span><h2>{module.label}</h2><small className="demo-module-check" id={`check-${module.code}`} title="Son kontrol: 19 Ekim 2026"><span className="demo-check-verified">{check.verified}</span><span className="demo-check-pending">{check.pending}</span></small><span className="demo-module-arrow" aria-hidden="true">↗</span></Link>;
+      const check: typeof defaultCheck & { ready?: boolean } = moduleChecks[module.code] ?? defaultCheck;
+      return <Link key={module.id} href={module.route} aria-label={`${module.code} — ${module.label}`} aria-describedby={`check-${module.code}`}><span className="demo-module-code">{String(index + 1).padStart(2, "0")} / {module.code}</span><h2>{module.label}</h2><small className="demo-module-check" id={`check-${module.code}`} title="Son kontrol: 19 Ekim 2026">{check.ready && <span className="demo-check-ready">Hazır</span>}<span className="demo-check-verified">{check.verified}</span>{check.pending && <span className="demo-check-pending">{check.pending}</span>}</small><span className="demo-module-arrow" aria-hidden="true">↗</span></Link>;
     })}</nav>
   </section>;
 }

@@ -115,3 +115,5 @@ body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#24
 @media(max-width:650px){.demo-project-create{flex-direction:column;align-items:stretch;padding:16px}.demo-project-list li{align-items:stretch;flex-direction:column;padding:16px}.demo-project-list button{align-self:flex-start}.demo-projects{margin-bottom:28px}}
 
 .demo-active-project-name{font-size:13px;color:#536c5d;margin:0 0 24px;line-height:1.6}.demo-active-project-name strong{font-weight:500}
+
+.demo-check-ready{width:fit-content;display:inline-block;padding:3px 9px;border-radius:20px;background:#e5eee1;color:#315f4e;font-size:11px;font-weight:600;letter-spacing:0}

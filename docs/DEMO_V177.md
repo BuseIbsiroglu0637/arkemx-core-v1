@@ -76,3 +76,8 @@ Kontrol: 31/31 test geçti (project-library, demo, customer-journey, hardening).
 Tarayıcı: mevcut DEMO — Kastamonu Konut projesi (600 m²/Kastamonu) listeye geldi. Ayrı TEST — Proje kayıt kontrolü oluşturuldu; Ankara/320 m², çelik ve bütçe önceliğiyle brief üretildi (68/100). Projeler arasında geçildi, liste yenilendi ve iki projenin alanları karışmadan geri geldi. Mevcut Kastamonu projesi yeniden açık seçildi; başlangıç sayfasında bırakıldı. TEST kaydı açık adıyla yerel listede duruyor. İlk geliştirme HMR güncellemesinde Provider hatası görüldü, temiz yenilemeyle akış çalıştı. Dar ekran görüntüsü alındı.
 
 Açık işler: bulut/cihazlar arası kayıt bu demo kapsamına dahil değil. On üç modülün tüm devir ve geri yükleme senaryoları henüz test edilmedi. Sonraki adım: PIR → GIS veri eşlemesini ve sonraki modül geçişlerini doğrulamak.
+
+## PIR kartı hazır etiketi — 2026-10-19
+
+Kullanıcının onayıyla PIR kartına “Hazır” etiketi ve “Demo akışı ve örnek çıktılar doğrulandı” notu eklendi. Önceki dosya/PDF testi bekliyor notu, kullanıcının sunduğu PDF/TXT/JSON örneğinin içerik ve görsel kontrolü tamamlandığından kaldırıldı. Dayanak: brief formu, rapor ve kopyalama tarayıcı kontrolleri, 24 test/derleme kaydı; çıktı incelemesi için output/ARKEMX_Brief_Cikti_Kontrolu_2026-10-19.md. Etiket demo kapsamındaki hazır olmayı belirtir; tüm senaryolar veya resmî mühendislik onayı değildir. Sonraki adım PIR → GIS veri aktarımını bağlayıp test etmek; hazır etiketinden modüller arası aktarımın tamamlandığı sonucu çıkarılmamalıdır.
+Kontrol: PIR kartındaki Hazır etiketinin ve demo doğrulama notunun görünürlüğü tarayıcıda doğrulandı; kart brief ekranını açıyor. Bu etiket değişikliğinde hesap testleri tekrarlanmadı.
