@@ -1,5 +1,7 @@
 export const PARCEL_BASEMAPS = {
-  osm: { label: 'Sokak haritası', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>', maxNativeZoom: 19 },
+  osm: { label: 'Sokak', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>', maxNativeZoom: 19 },
+  satellite: { label: 'Uydu', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics and the GIS User Community', maxNativeZoom: 19 },
+  topographic: { label: 'Topoğrafik', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri, HERE, Garmin, OpenStreetMap contributors and the GIS User Community', maxNativeZoom: 19 },
 } as const;
 export type ParcelBasemap = keyof typeof PARCEL_BASEMAPS;
 /** Display transformation only. Web Mercator is not a cadastral survey/grid coordinate. */
