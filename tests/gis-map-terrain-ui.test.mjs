@@ -5,6 +5,7 @@ import { PARCEL_BASEMAPS } from '../app/lib/parcel-basemaps.ts';
 
 const studio = readFileSync(new URL('../app/components/GeoParcelStudio.tsx', import.meta.url), 'utf8');
 const terrainViewer = readFileSync(new URL('../app/components/GeoTerrainViewer.tsx', import.meta.url), 'utf8');
+const demoCss = readFileSync(new URL('../app/demo.css', import.meta.url), 'utf8');
 
 test('map options include street, satellite and topographic imagery with source attribution', () => {
   assert.deepEqual(Object.keys(PARCEL_BASEMAPS), ['osm', 'satellite', 'topographic']);
@@ -31,4 +32,9 @@ test('terrain tab has an explicit missing-boundary state and renders without a p
   assert.match(terrainViewer, /if \(hasBuilding && layers\["building-mass"\]\)/);
   assert.match(terrainViewer, /const analysis = hasBuilding \?/);
   assert.match(terrainViewer, /Hesaplanmadı/);
+});
+
+test('guided parcel heading shares one left alignment with its descriptive line', () => {
+  assert.match(studio, /<header className="geo-studio-top"><div><span>ARKEM \/ ARSA REHBERİ<\/span><b>Arsa bilgileri<\/b><p>/);
+  assert.match(demoCss, /\.geo-studio-top>div:only-child\{align-items:flex-start;gap:0;width:100%;text-align:left\}/);
 });
