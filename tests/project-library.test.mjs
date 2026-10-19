@@ -64,6 +64,9 @@ test("invalid project numbers or module provenance fail closed and preserve exis
   const invalidNumber=project("INVALID");
   invalidNumber.modules["geo-parcel"].metrics={area:Infinity};
   assert.throws(()=>saveLibraryProject(storage,invalidNumber),/JSON/);
+  const invalidArray=project("INVALID-ARRAY");
+  invalidArray.modules["geo-parcel"].points=[{lat:41,lng:33},undefined];
+  assert.throws(()=>saveLibraryProject(storage,invalidArray),/JSON/);
   const wrongStamp=project("WRONG-STAMP");
   wrongStamp.modules["geo-parcel"]._kernel={
     schema:"ARKEM-MODULE-LINK/1.0",projectId:"UNRELATED",projectRevision:"P01",
