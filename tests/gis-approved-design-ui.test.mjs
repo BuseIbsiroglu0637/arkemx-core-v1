@@ -15,6 +15,7 @@ const layout = src("app/layout.tsx");
 
 test("GIS approved header and project strip are isolated to GIS", () => {
  assert.ok(page.includes("Parsel ve arazi incelemesi"));
+ assert.ok(page.includes('<main id="geo-studyo"'));
  assert.ok(page.includes("ARKEM / ARSA REHBERİ"));
  assert.ok(workspace.includes('className="demo-project-summary"'));
  assert.ok(workspace.includes('mode === "owned" && <GeoParcelStudio />'));
@@ -70,5 +71,7 @@ test("fourth guided step opens exports and keeps the optional massing action sep
  assert.ok(studio.includes("setActiveStage(PARCEL_JOURNEY[nextIndex].id); setDrawEnabled(false)"));
  assert.ok(studio.includes("İsteğe bağlı yapı yerleşimini dene"));
  assert.ok(studio.includes('href="#parsel-teknik-ciktilar"'));
+ assert.ok(studio.includes('className="gis-output-placeholder"'));
+ assert.ok(studio.includes('Sınır bekleniyor'));
  assert.ok(!studio.includes("if (index === 3 && !designReady) startConcept()"));
 });
