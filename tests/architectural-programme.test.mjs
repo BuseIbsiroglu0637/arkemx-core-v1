@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {nextProgrammeCode,renameProgrammeRelationships,removeProgrammeSpace,restoreProgrammeSpace,programmeIssues,programmeCsv} from '../app/lib/architectural-programme.ts';
+const room=(id,code,name)=>({id,code,name,zone:'Yaşam',count:2,unitArea:15,density:10,daylight:true,accessible:true});
+const spaces=[room('1','A-001','Salon'),room('2','A-003','Mutfak')];
+const relationships=[{id:'R1',from:'Salon',to:'Mutfak',priority:'Zorunlu',confirmed:true}];
+test('Rename preserves relation identity, decision and untouched endpoints without mutating source',()=>{const next=renameProgrammeRelationships(spaces,relationships,'1','Yaşam alanı');assert.deepEqual(next,[{...relationships[0],from:'Yaşam alanı'}]);assert.equal(relationships[0].from,'Salon');});
+test('Delete removes only affected links and retains complete reversible room and relation data',()=>{const third=room('3','A-005','Banyo'),other={...relationships[0],id:'R2',from:'Mutfak',to:'Banyo'};const next=removeProgrammeSpace([...spaces,third],[...relationships,other],'1');assert.deepEqual(next.spaces,[spaces[1],third]);assert.deepEqual(next.relationships,[other]);assert.deepEqual(next.deleted,{space:spaces[0],index:0,relationships});assert.equal(spaces.length,2);});
+test('Adding after deletion cannot duplicate a surviving room code',()=>{assert.equal(nextProgrammeCode(spaces),'A-002');assert.equal(nextProgrammeCode([room('1','A-001','Salon'),room('2','A-002','Mutfak')]),'A-003');});
+test('Blank and case-insensitive duplicate names are flagged; Turkish names retain meaning',()=>{assert.equal(programmeIssues(spaces).length,0);assert.equal(programmeIssues([...spaces,room('3','A-005',' salon ')]).length,1);assert.equal(programmeIssues([room('1','A-001',' ')]).length,1);});
+test('CSV safely quotes commas, embedded quotes and newlines in user-edited room fields',()=>{const csv=programmeCsv([{...spaces[0],name:'Salon, "A"',zone:'Bir\niki'}]);assert.ok(csv.includes('"Salon, ""A"""'));assert.ok(csv.includes('"Bir\niki"'));assert.ok(csv.includes('"30.00"'));});
+
+test('Undo after adding another room preserves the new room and avoids duplicate room codes',()=>{const deleted=removeProgrammeSpace(spaces,relationships,'1').deleted;const added=room('3','A-001','Çalışma');const restored=restoreProgrammeSpace([spaces[1],added],[],deleted);assert.equal(restored.spaces.length,3);assert.equal(new Set(restored.spaces.map(s=>s.code)).size,3);assert.deepEqual(restored.relationships,relationships);assert.equal(restored.spaces.find(s=>s.id==='3').name,'Çalışma');});

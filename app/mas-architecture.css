@@ -21,3 +21,91 @@
 #main-content .architect-app .mas-arc-transfer .mas-arc-warning{padding:12px 14px;border:1px solid #d7cba7;background:#faf7ed;border-radius:5px;color:#695d3d!important}
 #main-content .architect-app .mas-arc-transfer :is(button,a):focus-visible{outline:3px solid #70aa90;outline-offset:3px}
 @media(max-width:740px){#main-content .architect-app .mas-arc-transfer{padding:18px}#main-content .architect-app .mas-arc-transfer header,#main-content .architect-app .mas-arc-actions{flex-direction:column;align-items:stretch}#main-content .architect-app .mas-arc-values{grid-template-columns:1fr}#main-content .architect-app .mas-arc-transfer h2{font-size:23px!important}}
+/* Demo ARC: room editing is primary; technical tools remain available. */
+#main-content .arc-demo{background:#f5f8f6;color:#173a40;box-shadow:none;overflow:visible;padding:0;--arc-green:#174d46}
+#main-content .arc-demo :is(h2,h3,p){max-width:none}
+#main-content .arc-demo .arc-demo-title{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 0;background:transparent}
+#main-content .arc-demo .arc-demo-title h2{font-size:26px;line-height:1.35;margin:6px 0;color:#163440}
+#main-content .arc-demo .arc-demo-title p,#main-content .arc-demo .arc-demo-next p{font-size:14px;line-height:1.7;color:#59717c;margin:4px 0}
+#main-content .arc-demo .arc-demo-title span{font-size:12px;color:#37675b}
+#main-content .arc-demo :is(.arc-source-details,.arc-program-settings){border:1px solid #cfddd7;border-radius:8px;background:#fff;min-width:0}
+#main-content .arc-demo summary{cursor:pointer;padding:16px 20px;color:#174d46;font-size:14px;font-weight:650;line-height:1.5}
+#main-content .arc-demo .mas-arc-transfer{margin:0;border:0;border-top:1px solid #dce6df;border-radius:0}
+#main-content .arc-demo .arc-program-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+#main-content .arc-demo .arc-program-summary article{display:flex;flex-direction:column;gap:7px;padding:20px;background:#fff;border:1px solid #cfddd7;border-radius:8px;min-width:0}
+#main-content .arc-demo .arc-program-summary span,#main-content .arc-demo .arc-program-summary small{font-size:12px;color:#59717c;line-height:1.6}
+#main-content .arc-demo .arc-program-summary b{font-size:26px;color:#173a40;line-height:1.3;font-weight:650}
+#main-content .arc-demo .arc-fit-note{font-size:13px;line-height:1.7;color:#426657;background:#edf4ee;border-radius:6px;padding:14px 18px;margin:14px 0 20px}
+#main-content .arc-demo .architect-workspace{display:flex;flex-direction:column;gap:16px}
+#main-content .arc-demo .arc-program-settings{order:2}
+#main-content .arc-demo .architect-controls{background:#fff;border:0;border-top:1px solid #dce6df;padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#main-content .arc-demo .architect-controls>strong{font-size:12px;color:#174d46;grid-column:1/-1;margin:0}
+#main-content .arc-demo .architect-controls>label{font-size:13px;color:#526c77;margin:0}
+#main-content .arc-demo .architect-controls>.architect-input-grid{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;gap:14px}
+#main-content .arc-demo .architect-input-grid label{font-size:12px;color:#526c77}
+#main-content .arc-demo .architect-input-grid i{font-size:11px;bottom:13px}
+#main-content .arc-demo :is(input,select){min-width:0;max-width:100%;font:inherit}
+#main-content .arc-demo .architect-controls :is(input,select){font-size:14px;min-height:44px;border:1px solid #b7cdc1;border-radius:5px;background:#fff;color:#163a40}
+#main-content .arc-demo .architect-main{background:#fff;border:1px solid #cfddd7;border-radius:8px;overflow:hidden}
+#main-content .arc-demo .architect-main>header{height:auto;display:flex;flex-direction:column;align-items:stretch;padding:14px;background:#fff;border-bottom:1px solid #d6e2da;gap:12px;overflow:visible}
+#main-content .arc-demo .architect-main>header nav{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+#main-content .arc-demo .architect-main>header nav button{height:auto;min-height:44px;padding:10px 14px;background:#f4f8f5;border:1px solid #d1dfd7;border-radius:5px;color:#31595c;font-size:13px;white-space:normal}
+#main-content .arc-demo .architect-main>header nav button.active{background:#174d46;color:#fff;border-color:#174d46}
+#main-content .arc-demo .architect-main>header>div{display:none}
+#main-content .arc-demo .arc-room-editor{padding:22px}
+#main-content .arc-demo .arc-room-editor>header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 20px;background:transparent}
+#main-content .arc-demo .arc-room-editor h2{font-size:21px;line-height:1.4;color:#163440;margin:0 0 5px}
+#main-content .arc-demo .arc-room-editor p{font-size:13px;line-height:1.7;color:#59717c;margin:0}
+#main-content .arc-demo :is(.arc-room-editor,.architect-controls,.arc-demo-next) button,#main-content .arc-demo .arc-demo-next>a{min-height:44px;border:1px solid #b7cdc1;border-radius:5px;background:#fff;color:#174d46;font-size:13px;padding:10px 16px;cursor:pointer;text-decoration:none}
+#main-content .arc-demo .arc-room-editor>header button,#main-content .arc-demo .arc-demo-next>a{background:#174d46;color:#fff;flex-shrink:0}
+#main-content .arc-demo :is(button,a)[aria-disabled=true],#main-content .arc-demo button:disabled{opacity:.5;cursor:not-allowed}
+#main-content .arc-demo .arc-room-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#main-content .arc-demo .arc-room-list>article{border:1px solid #d3e0d8;border-radius:7px;background:#fff;min-width:0;padding:18px}
+#main-content .arc-demo .arc-room-list>article>header{display:flex;align-items:center;gap:12px;margin-bottom:14px;background:transparent}
+#main-content .arc-demo .arc-room-list>article>header b{font-size:12px;color:#59717c}
+#main-content .arc-demo .arc-room-list>article>header strong{font-size:15px;color:#174d46;margin-left:auto}
+#main-content .arc-demo .arc-room-list>article>header button{padding:8px 12px;background:#f7faf7}
+#main-content .arc-demo .arc-room-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#main-content .arc-demo .arc-room-fields label,#main-content .arc-demo .arc-room-needs label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#526c77;line-height:1.5;min-width:0}
+#main-content .arc-demo .arc-room-fields input,#main-content .arc-demo .arc-room-needs input[type=number]{width:100%;height:44px;border:1px solid #b7cdc1;border-radius:5px;padding:8px 10px;font-size:15px;color:#163a40;background:white}
+#main-content .arc-demo .arc-room-list details{margin-top:14px;border-top:1px solid #e1e8e3}
+#main-content .arc-demo .arc-room-list summary{padding:12px 0 0;font-size:12px}
+#main-content .arc-demo .arc-room-needs{display:grid;gap:12px;padding-top:14px}
+#main-content .arc-demo .arc-room-needs label:has([type=checkbox]){flex-direction:row;align-items:center;min-height:36px}
+#main-content .arc-demo .arc-room-needs input[type=checkbox]{width:20px;height:20px;accent-color:#174d46}
+#main-content .arc-demo .arc-room-warning,#main-content .arc-demo .arc-room-undo{background:#f3f6eb;border:1px solid #d7ddc6;border-radius:5px;padding:12px;margin:0 0 14px;font-size:13px;grid-column:1/-1}
+#main-content .arc-demo .architect-export{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}
+#main-content .arc-demo .architect-export b{font-size:12px;line-height:1.5;color:inherit;font-weight:400}
+#main-content .arc-demo .architect-export a{border-radius:5px;font-size:13px;color:#174d46;background:#f3f8f4;padding:12px;min-height:44px}
+#main-content .arc-demo .arc-demo-next{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px;background:white;border:1px solid #cfddd7;border-radius:8px;margin-top:20px}
+#main-content .arc-demo .arc-demo-next b{font-size:15px;color:#173a40}
+#main-content .arc-demo .architect-disclaimer{display:block;background:transparent;border:0;padding:18px 0;color:#59717c}
+#main-content .arc-demo .architect-disclaimer b{font-size:12px;color:#426657}
+#main-content .arc-demo .architect-disclaimer p{font-size:12px;line-height:1.8;margin:6px 0}
+#main-content .arc-demo :is(button,a,input,select,summary):focus-visible{outline:3px solid #75ae94;outline-offset:3px}
+#main-content:has(.arc-demo) .architecture-live-section{background:#f5f8f6;padding-bottom:35px}
+#main-content .arc-demo :is(.architect-zoning,.architect-matrix-view,.architect-envelope,.architect-checks,.v113-scheme-engine){padding:20px}
+#main-content .arc-demo .architect-zoning{grid-template-columns:1fr 1fr;gap:20px}
+#main-content .arc-demo .architect-zoning :is(header span,header b,p,button,button b,button small,button strong,.zone-board b,.zone-board small){font-size:13px;line-height:1.6}
+#main-content .arc-demo .architect-kpis :is(span,small){font-size:12px;line-height:1.6}
+@media(max-width:900px){#main-content .arc-demo .arc-room-list{grid-template-columns:1fr}#main-content .arc-demo .architect-controls>.architect-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .arc-demo .architect-zoning{grid-template-columns:1fr}}
+@media(max-width:600px){#main-content .arc-demo .arc-demo-title,#main-content .arc-demo .arc-room-editor>header,#main-content .arc-demo .arc-demo-next{flex-direction:column;align-items:stretch}#main-content .arc-demo .arc-program-summary{grid-template-columns:1fr;gap:8px}#main-content .arc-demo .arc-program-summary article{padding:14px}#main-content .arc-demo .arc-program-summary b{font-size:23px}#main-content .arc-demo .arc-room-editor{padding:14px}#main-content .arc-demo .arc-room-list>article{padding:14px}#main-content .arc-demo .architect-main>header nav button{flex:1 1 42%;padding:9px}#main-content .arc-demo .architect-controls{grid-template-columns:1fr}#main-content .arc-demo .architect-export{grid-template-columns:1fr}#main-content .arc-demo .architect-controls>.architect-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .arc-demo .arc-room-list>article>header{flex-wrap:wrap}#main-content .arc-demo .arc-demo-title h2{font-size:24px}}
+#main-content .arc-demo .arc-relationship-editor{padding:22px;color:#173a40}
+#main-content .arc-demo .arc-relationship-editor h2{font-size:21px;line-height:1.4;margin:0 0 6px;color:#173a40}
+#main-content .arc-demo .arc-relationship-editor p{font-size:13px;line-height:1.7;margin:8px 0;color:#59717c}
+#main-content .arc-demo .arc-relationship-editor article{border:1px solid #d3e0d8;border-radius:6px;padding:16px;margin:16px 0}
+#main-content .arc-demo .arc-relationship-editor article>div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+#main-content .arc-demo .arc-relationship-editor label{font-size:13px;line-height:1.6;display:flex;flex-direction:column;gap:6px;min-width:0}
+#main-content .arc-demo .arc-relationship-editor select{min-height:44px;width:100%;font-size:14px;color:#173a40;background:white;border:1px solid #b7cdc1;border-radius:5px;padding:8px}
+#main-content .arc-demo .arc-relationship-editor button{min-height:44px;background:#174d46;color:white;border:1px solid #174d46;border-radius:5px;padding:10px 14px;font-size:13px}
+#main-content .arc-demo .arc-relationship-editor footer{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-top:14px}
+#main-content .arc-demo .arc-relationship-editor footer label{flex-direction:row;align-items:center}
+#main-content .arc-demo .arc-relationship-editor input{width:20px;height:20px;accent-color:#174d46}
+#main-content .arc-demo .v113-source-band{background:#edf5ef;box-shadow:inset 4px 0 #548774}
+#main-content .arc-demo .v113-source-band>span{color:#37675b;font-size:11px}
+#main-content .arc-demo .v113-source-band>b,#main-content .arc-demo .v113-source-band>small{font-size:12px;line-height:1.6}
+#main-content .arc-demo .v113-plan-board>article.daylight{border-color:#547d65;background:rgba(230,241,233,.97)}
+#main-content .arc-demo .v113-scheme-engine :is(header span,header b,.v113-plan-heading span,.v113-plan-heading b,.v113-plan-heading small,.v113-scheme-inspector>span,.v113-plan-panel>footer){font-size:12px;line-height:1.6;color:#37675b}
+#main-content .arc-demo .v113-scheme-note p{font-size:12px;line-height:1.7}
+@media(max-width:600px){#main-content .arc-demo .arc-relationship-editor{padding:14px}#main-content .arc-demo .arc-relationship-editor article>div{grid-template-columns:1fr}#main-content .arc-demo .arc-relationship-editor footer{flex-direction:column;align-items:stretch}}
+#main-content .arc-demo .architect-main>header nav{height:auto;min-height:0;align-content:start}
