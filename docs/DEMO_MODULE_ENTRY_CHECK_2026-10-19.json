@@ -1,0 +1,80 @@
+[
+  {
+    "code": "PIR",
+    "route": "/proje-karar-asistani#karar-motoru",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "GIS",
+    "route": "/arsa-fizibilite-studyosu#geo-studyo",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "MAS",
+    "route": "/arsa-fizibilite-studyosu#hizli-senaryo",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "ARC",
+    "route": "/mimari-program-studyosu#mimari-motor",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "BIM",
+    "route": "/tasarim-calismalari#plan-editor",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "MCDA",
+    "route": "/yapi-sistemi-karsilastirma#sistem-karsilastirma",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "STR",
+    "route": "/tasarim-calismalari#tasiyici-on-tasarim",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "ICE",
+    "route": "/muhendislik-koordinasyon#koordinasyon-motoru",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "BEP",
+    "route": "/bilgi-teslim-plani#teslim-kapsami",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "LCA",
+    "route": "/performans-laboratuvari#laboratuvar",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "CDE",
+    "route": "/proje-os#proje-os-motoru",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "3DM",
+    "route": "/3b-model-kutuphanesi#model-kutuphanesi",
+    "status": 200,
+    "anchorPresent": true
+  },
+  {
+    "code": "DEM",
+    "route": "/yikim-karar-studyosu#yikim-motoru",
+    "status": 200,
+    "anchorPresent": true
+  }
+]
