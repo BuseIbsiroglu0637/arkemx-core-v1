@@ -91,5 +91,6 @@ test('declared plan values are not labelled as permission and gated rendering hi
   assert.doesNotMatch(source, /İZİNLİ TABAN|İZİNLİ EMSAL|İzinli taban \/ imar|İzinli emsal alan \/ imar/);
   assert.match(source, /belediye veya uzman onayı değildir/);
   assert.match(source, /if \(hasPlacedModel && terrainLayers\["building-mass"\]/);
-  assert.match(source, /viewMode === "terrain" && hasPlacedModel/);
+  assert.match(source, /viewMode === "terrain" && \(terrainPreviewReady \?/);
+  assert.match(source, /hasBuilding=\{hasPlacedModel\}/);
 });

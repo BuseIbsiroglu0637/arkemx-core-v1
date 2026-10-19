@@ -1,6 +1,6 @@
 export const PARCEL_BASEMAPS = {
   osm: { label: 'Sokak', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>', maxNativeZoom: 19 },
-  satellite: { label: 'Uydu', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community', maxNativeZoom: 19 },
+  satellite: { label: 'Uydu', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community', maxNativeZoom: 18 },
   topographic: { label: 'Topoğrafik', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri and its data providers', maxNativeZoom: 19 },
 } as const;
 export type ParcelBasemap = keyof typeof PARCEL_BASEMAPS;

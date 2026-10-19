@@ -103,3 +103,14 @@ Kontrol: 28/28 test geçti (location-directory-ui, parcel-journey-gates, parcel-
 
 Açık işler: bu düzenleme gerçek ada/parsel sınırı veya imar çıktısı doğrulaması değildir. Canlı parsel sorgusu ve çıktılar için gerçek bir örnekle ayrı test gerekir. Sonraki adım kullanıcının ekran değerlendirmesi ve GIS → MAS veri devridir.
 Son kontrol: üretim derlemesi ve Worker artifact doğrulaması çıkış 0. 479 px tarayıcı görünümünde sayfa genişliği 479 px; yatay taşma görülmedi. Sorgu açıklamasının açılıp kapandığı doğrulandı.
+
+
+## Referansa göre parsel/arsa paneli — 2026-10-19
+
+Dayanak: kullanıcı Parsel ve Arazi İnceleme Paneli.png görselini esas almayı ve düğmelerin yeşil olmasını istedi. Mevcut kodun son GIS iyileştirmeleri korundu. Üst başlık ve proje/brief satırı yenilendi; solda form, sağda harita ve teknik çıktılar, altta sonraki modüller kuruldu. Sokak/Uydu/Topoğrafik görünüm düğmeleri, 3B/koordinat sekmeleri, ölçek, odak ve katman düğmesi görünür hale geldi. KML/GeoJSON aktarımı formda doğrudan erişilebilir. Dört mevcut çıktı türü korundu; kaynak sınırı yokken indirme ve devam kapıları açılmaz. Yeni CSS yalnız demo GIS sayfasına uygulanır.
+
+Bulunan hata: altlık temizliğinde layer.off() önce çalışınca Leaflet map dinleyicileri kalıyordu; remove/off sırası düzeltildi. Uydu native zoom 18 yapıldı; aşırı yakınlaştırmada boş görüntü yerine mevcut çözünürlük kullanılır. Kayıtlı Budamış 210/15 verisi korundu; referansın Kuzeykent 218/11 örneği kaydedilmedi.
+
+Kontrol: 31/31 GIS, konum, parsel akışı ve imar kapsam testi geçti. TypeScript ve üretim/Worker derlemesi başarılı. Eski arazi testi, önceki arazi önizleme düzeltmesindeki bağımsız terrainPreviewReady ve hasBuilding kapılarını kontrol edecek şekilde güncellendi. Tarayıcıda altlık değişimleri, odaklama, katman aç/kapa, 3B, koordinatlar ve KML kartından indirme doğrulandı. 375 px mobil genişlikte yatay taşma yok. Son etkileşim aralığında konsol hatası yok. Görsel karşılaştırma ve sınırları design-qa.md kaydında; ekranlar çalışma alanı output/ARKEMX_Parsel_Panel*.png altında. Test viewport değişikliği kaldırıldı.
+
+Açık işler: bu çalışmada yeni canlı TKGM sorgusu yapılmadı; mevcut kaynak sınırı kullanıldı. PDF/DXF içerikleri tekrar incelenmedi. Uydu çözünürlüğü kaynak ve bölgeyle sınırlı. GIS modülünün tüm senaryolarının tamamlandığı veya resmî teknik onay alındığı anlamına gelmez. Sonraki adım: kullanıcı görsel değerlendirmesi ve GIS → MAS veri devri.

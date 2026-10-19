@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { FileText, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { GeoParcelStudio } from "./GeoParcelStudio";
@@ -32,9 +33,10 @@ function ParcelWorkspace() {
   };
   const briefSummary = context ? <section className="demo-site-brief" aria-label="Yatırım briefinden gelen bilgiler"><h2>Yatırım briefi</h2><dl><div><dt>Bölge</dt><dd>{context.location}</dd></div><div><dt>Kullanım</dt><dd>{context.goal}</dd></div><div><dt>Hedef yapı alanı</dt><dd>{context.targetGrossArea ? `${context.targetGrossArea.toLocaleString("tr-TR")} m²` : "Belirtilmedi"}</dd></div><div><dt>Sistem tercihi</dt><dd>{context.systemLabel}</dd></div></dl>{linkedSignature !== signature && linkedSignature && <button type="button" onClick={() => {patchModule("geo-parcel",briefSitePatch(context,geo));setNotice("Güncel brief hedefleri aktarıldı. Parsel sınırı ve imar kaydı korundu.");}}>Güncel briefi aktar</button>}<small>Yapı alanı hedefi, arsa büyüklüğü veya yapılaşma hakkı değildir.</small></section> : <p className="demo-site-missing">Bu projede kayıtlı yatırım briefi yok. <Link href="/proje-karar-asistani#karar-motoru">Briefi tamamla ↗</Link></p>;
   return <div className="demo-parcel-workspace">
-    <p className="demo-active-project-name">Proje: <strong>{project.name}</strong></p>
+    <div className="parcel-project-strip"><div className="parcel-project-title"><FileText aria-hidden="true"/><span>Proje<strong>{project.name}</strong></span></div>
     {mode === "owned" && context ? <details className="demo-owned-brief"><summary>Brief özeti <span>{context.location}{context.targetGrossArea ? ` · ${context.targetGrossArea.toLocaleString("tr-TR")} m² yapı hedefi` : ""}</span></summary>{briefSummary}</details> : briefSummary}
-    <fieldset className="demo-land-choice"><legend>Arsa durumunuz</legend><button type="button" aria-pressed={mode === "owned"} onClick={() => choose("owned")}>Arsam var</button><button type="button" aria-pressed={mode === "search"} onClick={() => choose("search")}>Arsa arıyorum</button></fieldset>
+    </div>
+    <fieldset className="demo-land-choice"><legend>Arsa durumunuz</legend><button type="button" aria-pressed={mode === "owned"} onClick={() => choose("owned")}><MapPin aria-hidden="true"/>Arsam var</button><button type="button" aria-pressed={mode === "search"} onClick={() => choose("search")}><Search aria-hidden="true"/>Arsa arıyorum</button></fieldset>
     {notice && <p role="status" className="demo-site-notice">{notice}</p>}
     {mode === "search" && <section className="demo-land-search" aria-labelledby="land-search-title"><h2 id="land-search-title">Arama ölçütleri</h2><p>Aday arsa ararken kullanacağınız bölge, arsa alanı ve bütçe sınırlarını kaydedin.</p><form onSubmit={save}><div className="demo-land-fields">{[["region","Arama bölgesi"],["minArea","En küçük arsa alanı (m²)"],["maxArea","En büyük arsa alanı (m²)"],["budget","En yüksek arsa bütçesi (TL)"]].map(([key,label]) => <label key={key}>{label}<input value={search[key as keyof typeof search]} required={key === "region"} inputMode={key === "region" ? "text" : "decimal"} maxLength={key === "region" ? 300 : 30} onChange={event => {const value=event.currentTarget.value;setSearch(current=>({...current,[key]:value}));setNotice("");setError("");}}/></label>)}</div>{error && <p role="alert">{error}</p>}<button type="submit">Ölçütleri kaydet</button></form><p className="demo-site-note">Bu adım ilan getirmez ve arsa seçilmiş sayılmaz. Bir aday belirlediğinizde “Arsam var” ile parselini inceleyebilirsiniz.</p><Link href="/hizli-yerlesim#hizli-senaryo">Arsa seçmeden kavramsal yerleşimi dene ↗</Link></section>}
     {mode === "owned" && <GeoParcelStudio />}
