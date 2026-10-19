@@ -85,3 +85,10 @@ body.arkem-corporate-site .demo-brief-page .decision-submit{background:#163f37;b
 body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#244f43;border-color:#244f43}
 .demo-brief-page .brief-report-risks li{border-left-color:#8ca18e;color:#47614e}
 .demo-brief-page :focus-visible,.demo-brief-page .brief-report-actions>button:focus-visible{outline-color:#315f4e}
+
+.demo-brief-page .brief-report-continue{padding:22px 28px;border-top:1px solid #e0e5df}
+.demo-brief-page .brief-report-continue>a{display:flex;align-items:center;justify-content:space-between;gap:20px;width:fit-content;max-width:100%;padding:14px 20px;border:1px solid #163f37;border-radius:7px;background:#163f37;color:#fff;text-decoration:none;font-size:14px;line-height:1.5}
+.demo-brief-page .brief-report-continue>a:hover{background:#244f43}
+.demo-brief-page .brief-report-continue>a:focus-visible{outline:3px solid #64826c;outline-offset:4px}
+@media(max-width:700px){.demo-brief-page .brief-report-continue{padding:20px 22px}.demo-brief-page .brief-report-continue>a{width:100%}}
+@media print{body.printing-decision-report .brief-report-continue{display:none!important}}

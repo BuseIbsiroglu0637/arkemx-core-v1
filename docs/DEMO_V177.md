@@ -57,3 +57,8 @@ Sonraki adım: kullanıcının rapor değerlendirmesine göre düzenleme ve dosy
 
 Kullanıcı turuncu vurguların temaya uymasını istedi. Yalnız yatırım briefi ekranında başlık, adım numarası, seçim işaretleri, onay kutuları, odak çizgileri ve ana düğme orman yeşili paletine geçirildi. Seçili seçenekler açık yeşil zeminle, rapordaki açık konular muted yeşil çizgi ve metinle gösterilir. Hesap ve form mantığı değişmedi. Sonraki adım: kullanıcı görünüm değerlendirmesi.
 Kontrol: dar ekran tarayıcı görünümünde seçimler, kutular ve ana düğme yeşil olarak doğrulandı; mevcut girdilerle rapor yeniden oluşturuldu ve 76/100 sonucu korundu. Yalnız CSS değiştiği için hesap testleri ve derleme tekrarlanmadı.
+
+## PIR → GIS devam düğmesi — 2026-10-19
+
+Kullanıcının istediği “Parsel ve arsa aşamasına devam et” düğmesi brief raporuna eklendi. `/arsa-fizibilite-studyosu#geo-studyo` çalışma alanına yönlendirir. Yeşil demo temasına ve dar ekrana uyar; yazdırılan raporda gizlenir. Mevcut rapor, kayıt ve çıktı araçları korundu. Bu değişiklik gezinme bağlantısıdır; brief alanlarının GIS girdilerine eşlenmesi ve aktarımın uçtan uca doğrulanması henüz tamamlanmış sayılmaz. Sonraki adım: bu veri devrini bağlayıp doğrulamak.
+Kontrol: devam bağlantısının raporda göründüğü, dar ekran yerleşimi ve href hedefi tarayıcıda doğrulandı. Bu gezinme eklemesinde hesap testleri ve derleme tekrarlanmadı.
