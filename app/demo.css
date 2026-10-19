@@ -30,11 +30,9 @@
 .demo-brief-heading h1{font-size:clamp(30px,5vw,46px);line-height:1.15;margin:12px 0 16px}
 .demo-brief-heading>p:last-child{max-width:680px;line-height:1.7}
 .demo-brief-page #karar-motoru{padding-top:24px}
-.demo-brief-settings{border:1px solid #d6ddd6;border-radius:8px;margin-bottom:18px;background:#fff}
-.demo-brief-settings>summary{padding:14px 18px;cursor:pointer;font-size:13px;color:#365a4b}
 .demo-brief-toolbar{display:flex;align-items:center;gap:20px;justify-content:space-between;padding:20px;margin-bottom:24px;border:1px solid #d6ddd6;border-radius:10px;background:#f2f5ee}
 .demo-brief-toolbar p{font-size:13px;line-height:1.7;max-width:650px;margin:0}
 .demo-brief-toolbar button{flex-shrink:0;cursor:pointer;padding:12px 18px;border:1px solid #163f37;border-radius:6px;background:#163f37;color:white;font:inherit;font-size:13px}
-.demo-brief-toolbar button:focus-visible,.demo-brief-settings>summary:focus-visible{outline:3px solid #b86a3f;outline-offset:3px}
+.demo-brief-toolbar button:focus-visible{outline:3px solid #b86a3f;outline-offset:3px}
 @media(max-width:650px){.demo-brief-heading{padding-top:24px}.demo-brief-toolbar{align-items:stretch;flex-direction:column;gap:14px}.demo-brief-toolbar button{width:100%}}
-@media print{.demo-brief-heading,.demo-brief-toolbar,.demo-brief-settings,.demo-banner{display:none!important}}
+@media print{.demo-brief-heading,.demo-brief-toolbar,.demo-banner{display:none!important}}

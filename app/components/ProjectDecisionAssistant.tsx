@@ -181,7 +181,7 @@ export function ProjectDecisionAssistant() {
   const downloadReport = () => downloadTextFile("arkem-proje-on-hazirlik.json", JSON.stringify({ schema: "ARKEM-BRIEF/1.0", demo: DEMO_ENABLED, method: "rule-based", methodVersion: "readiness-1.1", documentVerification: "user-declared-not-reviewed", input: { goal, stage, system, location, area, documents, priorities }, result, generatedAt }, null, 2), "application/json");
 
   return <div className="decision-assistant">
-    {DEMO_ENABLED ? <details className="demo-brief-settings"><summary>Proje ayarları ve kayıt</summary><ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Demo · ön değerlendirme" /></details> : <ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Müşteri beyanı · inceleme bekliyor" />}
+    {!DEMO_ENABLED && <ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Müşteri beyanı · inceleme bekliyor" />}
     {DEMO_ENABLED && <div className="demo-brief-toolbar"><p>Örnek verilerle deneyebilir veya kendi girdilerinizi kullanabilirsiniz. Belge seçimleri örnektir; gerçek doğrulama yapılmaz.</p><button type="button" onClick={fillDemo}>Örnek briefi doldur</button></div>}
     <form className="decision-form" onSubmit={submit} onChange={() => { setResultVisible(false); setCopied(false); }}>
       <div className="decision-form-heading"><p className="eyebrow">Proje Verisi</p><h2>İhtiyacı adım adım<br/><em>somutlaştıralım.</em></h2><p>{DEMO_ENABLED ? "Alanları değiştirip yol haritasını oluşturun. Demo çalışması bu tarayıcıda tutulur; başvuru gönderilmez." : "Bu ekranda ön çalışma hazırlanır. Hesaba kaydetme ve ARKEM’e gönderme ayrı işlemlerdir."}</p></div>

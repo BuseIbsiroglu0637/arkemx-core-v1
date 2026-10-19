@@ -34,3 +34,8 @@ Kontrol: TypeScript --noEmit başarılı. npm run build ve paket doğrulaması b
 Tarayıcı: örnek konut 76/100 ve Projelendirme sonucu; sıfır alanın reddi; 450,5 alanının kabulü; yıkım seçimiyle Patlatmalı Bina Yıkımı sonucu; konum değişince eski raporun gizlenmesi; demo işaretli özetin panoya kopyalanması doğrulandı. JSON/TXT indirme düğmeleri tetiklendi. PDF yazdırma diyalogu ve indirilen dosyaların disk üzerindeki içerikleri ayrıca doğrulanmadı; bu nedenle kartta dosya/PDF çıktıları test bekliyor notu korunuyor. Form dar ekranda görüntülendi. Bunlar mühendislik veya resmî teknik onay değildir.
 
 Açık işler: PDF/dosya içerik kontrolleri ve kalan senaryolar. Sonraki adım: kullanıcının brief ekranı değerlendirmesine göre düzenleme veya sonraki modül.
+
+## Brief ayar bölümünün kaldırılması — 2026-10-19
+
+Kullanıcının sadeleştirme talebiyle PIR demo ekranındaki “Proje ayarları ve kayıt” bölümü kaldırıldı. Bu kayıt, önceki bölümde ayarların açılır alanda korunduğu bilgisini günceller. Yalnız bu ekranın demo görünümü değişti; proje çekirdeği, kayıt işlemleri, diğer modüller, brief formu ve rapor araçları değiştirilmedi. Sonraki adım: kullanıcının ekran değerlendirmesine göre ilerlemek.
+Kontrol: tarayıcıda ayar bölümünün bulunmadığı, örnek brief düğmesi ve form gönderim düğmesinin korunduğu doğrulandı. Bu görünüm değişikliğinde hesap testleri yeniden çalıştırılmadı.
