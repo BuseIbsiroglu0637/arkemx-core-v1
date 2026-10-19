@@ -44,3 +44,31 @@ test("brief fields round trip between projects and invalid stored options are fi
  assert.equal(b.goal,"");assert.equal(b.system,"kararsiz");assert.deepEqual(b.documents,["arsa"]);assert.deepEqual(b.priorities,[]);assert.equal(b.area,"");
  assert.equal(restoreBriefDraft(null).location,"");
 });
+
+test("in-memory optional undefined fields do not block a JSON-persistable project", () => {
+  const storage=memory();
+  const draft=project("OPTIONAL");
+  draft.modules["geo-parcel"]={ ...draft.modules["geo-parcel"], optionalNote:undefined, nested:{ recorded:undefined, status:"pending" }, items:[{ elevation:undefined, label:"P1" }] };
+  saveLibraryProject(storage,draft);
+  const stored=loadProjectLibrary(storage)[0];
+  assert.equal(stored.id,"OPTIONAL");
+  assert.equal(Object.hasOwn(stored.modules["geo-parcel"],"optionalNote"),false);
+  assert.deepEqual(stored.modules["geo-parcel"].nested,{status:"pending"});
+  assert.deepEqual(stored.modules["geo-parcel"].items,[{label:"P1"}]);
+  assert.equal(Object.hasOwn(draft.modules["geo-parcel"],"optionalNote"),true,"input is not mutated");
+});
+test("invalid project numbers or module provenance fail closed and preserve existing records", () => {
+  const storage=memory();
+  saveLibraryProject(storage,project("SAFE"));
+  const original=storage.getItem(PROJECT_LIBRARY_KEY);
+  const invalidNumber=project("INVALID");
+  invalidNumber.modules["geo-parcel"].metrics={area:Infinity};
+  assert.throws(()=>saveLibraryProject(storage,invalidNumber),/JSON/);
+  const wrongStamp=project("WRONG-STAMP");
+  wrongStamp.modules["geo-parcel"]._kernel={
+    schema:"ARKEM-MODULE-LINK/1.0",projectId:"UNRELATED",projectRevision:"P01",
+    sourceModule:"geo-parcel",recordedAt:"2026-10-19T09:00:00.000Z",action:"updated"
+  };
+  assert.throws(()=>saveLibraryProject(storage,wrongStamp),/geçerli değil/);
+  assert.equal(storage.getItem(PROJECT_LIBRARY_KEY),original);
+});
