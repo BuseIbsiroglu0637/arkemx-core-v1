@@ -19,3 +19,9 @@
 @media(prefers-reduced-motion:reduce){.demo-module-grid>a{transition:none}}
 
 .demo-tool-page h1{font-size:clamp(28px,4vw,42px);margin:0 0 28px}
+
+.demo-module-check{display:grid;gap:4px;font-size:11px;line-height:1.5;font-weight:400;letter-spacing:0}
+.demo-check-verified{color:#3f6556}
+.demo-check-pending{color:#84612f}
+.demo-module-grid>a{justify-content:flex-start}
+.demo-module-check{margin-top:auto;padding-top:4px}
