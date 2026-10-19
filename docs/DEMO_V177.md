@@ -161,3 +161,16 @@ Yapılan iş: tekrar eden parsel/alan/proje kartları ve koyu kaynak şeridi kal
 Kanıt: 38/38 ilgili test ve TypeScript --noEmit başarılı; diff kontrolü temiz. Tarayıcıda kaynak ayrıntıları açılarak kurum/tarih okundu, imar adımına dönüş ve dört resmî bağlantı doğrulandı; büyük panel metni bulunmuyor. Mobil görünüm ekran görüntüsü çalışma alanı output/ARKEMX_Kaynak_Ayrintilari_2026-10-19.png dosyasına kaydedildi ve görsel olarak incelendi.
 
 Açık işler: bu değişiklik için üretim derlemesi ve indirilen dosyaların içerik incelemesi tekrarlanmadı; hesap/export kodunda değişiklik yok. Sonraki adım aynı proje verisiyle sonraki modül aktarımını denemek. Bu çalışma resmî teknik onay değildir.
+
+
+## GIS boş ana harita — kapanış doğrulaması, 2026-10-19
+
+Durum: mevcut yerel sürümde yeniden test edildi; boş ana harita açık işi kapatıldı. Dayanak: kullanıcı sorunun düzeldiğini bildirerek test ve kapanış istedi.
+
+Tarayıcı kontrolü: DEMO — Kastamonu Konut, Kastamonu/Merkez/Budamış 210/15 kaydında sokak altlığı, ana parsel poligonu/köşe noktaları ve seçili yapı görünür. İki kademe uzaklaştırınca yol/dere/çevre altlığı da görüldü. Uydu görünümüne geçiş ve uydu üzerinde parsele odaklanma başarılı. Tam sayfa yenilemesinden sonra kayıt tekrar açıldı; sokak altlığı, parsel ve yapı yine görünür, parsele odaklanma çalışıyor. Test aralığında yeni tarayıcı konsol hatası yok.
+
+Kod kontrolü: gis-map-terrain-ui 3/3 test geçti. Bu tur uygulama koduna düzeltme yapılmadı; çalışma dalı fix/gis-harita-arazi-onizleme-2026-10-19, uygulama kodu 5d22dd4. Önceki boş görünümün kök nedeni doğrulanmadı; kapanış mevcut sürümde sorunun tekrarlanmaması ve görsel/etkileşim kanıtlarına dayanıyor. Uydu görüntüsü yakın ölçekte düşük çözünürlüklü olabilir; görüntü kalitesi ayrı bir konudur.
+
+Kanıt: çalışma alanı output/gis-harita-kapanis-2026-10-19/ altında 01-sokak.png, 02-sokak-cevre.png, 03-uydu.png, 04-uydu-odak.png, 05-yenileme-sonrasi.png; dosyalar açılarak incelendi.
+
+Kapsam sınırı: yalnız boş harita işi kapandı. Bu kontrol GIS modülünün tamamı, çıktı dosyaları, resmî kadastro/aplikasyon doğruluğu veya teknik/idari onay anlamına gelmez. Sonraki adım MAS modülünde brief/GIS girdilerinin örnek başlangıç değerleri yerine kontrollü aktarımı.
