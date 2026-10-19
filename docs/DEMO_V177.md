@@ -44,3 +44,11 @@ Kontrol: tarayıcıda ayar bölümünün bulunmadığı, örnek brief düğmesi 
 
 Kullanıcının görselde belirttiği örnek veri açıklaması ve “Örnek briefi doldur” düğmesi PIR ekranından kaldırıldı. Kullanılmayan doldurma işlevi ve bu bölüme ait CSS temizlendi. Form girişleri, puanlama ve rapor araçları değiştirilmedi. Önceki örnek doldurma düğmesi beklentisi, render testinde düğmenin bulunmaması olarak güncellendi. Sonraki adım: kullanıcı değerlendirmesine göre devam etmek.
 Kontrol: tarayıcıda örnek doldurma düğmesinin bulunmadığı ve form gönderim düğmesinin korunduğu doğrulandı; ekran görüntüsü alındı. Bu görünüm değişikliğinde üretim derlemesi ve hesap testleri yeniden çalıştırılmadı.
+
+## Rapor görünümünün sadeleştirilmesi — 2026-10-19
+
+Kullanıcı brief raporunu demo arayüzüne uygun düzenlememizi istedi. Koyu kurumsal başlık ve büyük puan paneli yerine açık renkli Brief özeti, altı proje bilgisi, kompakt bilgi tamlığı göstergesi ve önerilen ilk adım eklendi. Sonraki adımlar, açık konular, belge beyanları ve disiplin puanları sade bölümlerde korundu. Hizmet kapsamı ve sistem karşılaştırması bağlantıları ile TXT, PDF/yazdır, JSON ve kopyalama araçları korundu. Hesaplama, özet içeriği ve proje kaydı mantığı değiştirilmedi. Dar ekranda bölümler tek sütuna iner; yazdırma stilleri yeni rapora uyarlandı.
+
+Kontrol: TypeScript --noEmit başarılı; demo/hardening testleri 18/18 geçti. Tarayıcıda mevcut konut girdileriyle aynı 76/100 sonucu, altı proje bilgisi, beş sonraki adım, açık riskler, belge durumları, disiplin göstergeleri ve kopyalandı geri bildirimi görüldü. Dar ekran görüntüsü alındı. Üretim derlemesi ve PDF yazdırma bu görünüm düzenlemesinde yeniden çalıştırılmadı; masaüstü ve yazdırma sayfalaması ayrıca doğrulanacak. Mühendislik hesabı veya resmî onay iddiası yoktur.
+
+Sonraki adım: kullanıcının rapor değerlendirmesine göre düzenleme ve dosya/PDF kontrolü.
