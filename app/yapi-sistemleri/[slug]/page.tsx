@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description: system.description,
     alternates: { canonical: `/yapi-sistemleri/${system.slug}` },
     openGraph: {
+      url: `/yapi-sistemleri/${system.slug}`,
       title: `${system.name} | Arkem`,
       description: system.description,
       images: [{ url: system.image, alt: system.imageAlt }],

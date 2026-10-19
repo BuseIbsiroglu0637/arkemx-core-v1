@@ -141,8 +141,11 @@ export function ensureProjectModuleStamps(
     const moduleValue = record(value);
     const existing = record(moduleValue._kernel);
     if (existing.schema === "ARKEM-MODULE-LINK/1.0" && existing.projectId === identity.projectId) return [key, value];
-    // Imported/legacy bytes cannot acquire a fabricated current source stamp.
-    return [key, { ...(value && typeof value === "object" && !Array.isArray(value) ? moduleValue : { _payload: value }), integrity: { status: "unsupported-source", reason: "Original module source stamp missing or incompatible" } }];
+    return [key, stampProjectModule(value, {
+      ...identity,
+      sourceModule: key,
+      action: "imported",
+    })];
   }));
 }
 
@@ -160,7 +163,6 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
   const massingModel = record(geo.massingModel);
   const massingEnvelope = record(massingModel.envelope);
   const massingLimits = record(massingModel.limits);
-  const massingSource = record(massingModel.source);
   const parcelRecord = record(geo.parcelRecord);
   const parcelRecordIdentity = record(parcelRecord.identity);
   const parcelRecordGeometry = record(parcelRecord.geometry);
@@ -171,7 +173,6 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
   const architectureInput = record(architecture.input);
   const architectureResult = record(architecture.result);
   const architecturalScheme = record(architecture.architecturalScheme);
-  const architecturalSchemeSource = record(architecturalScheme.source);
   const architecturalSchemePlate = record(architecturalScheme.plate);
   const architecturalSchemeCirculation = record(architecturalScheme.circulation);
   const plan = record(modules["plan-editor"]);
@@ -228,10 +229,7 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
   const officialParcelResponse = hasParcelRecord
     ? textValue(parcelRecordEvidence.sourceKind) === "tkgm-open-service"
       && textValue(parcelRecordEvidence.trust) === "verified"
-      && textValue(parcelRecordIdentity.block).length > 0
-      && textValue(parcelRecordIdentity.parcelNo).length > 0
-    : hasText(dataStatus, ["TKGM", "MEGSİS"])
-      && !hasText(dataStatus, ["bekleniyor", "kullanıcı beyanı", "doğrulanmamış", "önizleme"]);
+    : hasText(dataStatus, ["TKGM", "MEGSİS"]);
   const licensedSurvey = hasText(dataStatus, ["harita mühendisi", "onaylı aplikasyon"]);
   const geometryReady = hasParcelRecord
     ? parcelRecord.projectEligible === true && parcelRecordGeometry.valid === true
@@ -265,11 +263,7 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
       ? `Parametrik yüzey · %${formatNumber(numberValue(terrainParameters.indicativeSlopePercent), 1)} eğim`
       : "";
   const massingReady = massingModel.schema === "ARKEM-ZONING-MASSING/1.0";
-  const massingTrust: ProjectDataTrust = !massingReady
-    ? "missing"
-    : massingSource.authoritative === true
-      ? "verified"
-      : "derived";
+  const massingTrust: ProjectDataTrust = massingReady ? "derived" : "missing";
   const massingValue = massingReady
     ? `${formatNumber(numberValue(massingEnvelope.width), 1)} × ${formatNumber(numberValue(massingEnvelope.depth), 1)} m zarf · ${formatNumber(numberValue(massingLimits.allowedGrossArea))} m² emsal üst sınırı`
     : "";
@@ -281,11 +275,7 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
     numberValue(zoning.hmax) > 0 ? `Hmax ${numberValue(zoning.hmax).toFixed(2)} m` : "",
     textValue(zoning.buildingOrder),
   ].filter(Boolean);
-  const zoningTrust: ProjectDataTrust = hasText(zoningVerification, ["certified", "approved-plan"])
-    ? "verified"
-    : zoningValues.length
-      ? "declared"
-      : "missing";
+  const zoningTrust: ProjectDataTrust = zoningValues.length ? "declared" : "missing";
 
   const grossArea = numberValue(architectureResult.grossDemand)
     || numberValue(architectureInput.targetGross)
@@ -296,11 +286,7 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
       ? "declared"
       : "missing";
   const architecturalSchemeReady = architecturalScheme.schema === "ARKEM-ARCH-SCHEME/3.0";
-  const architecturalSchemeTrust: ProjectDataTrust = !architecturalSchemeReady
-    ? "missing"
-    : architecturalSchemeSource.authoritativeMassing === true
-      ? "verified"
-      : "derived";
+  const architecturalSchemeTrust: ProjectDataTrust = architecturalSchemeReady ? "derived" : "missing";
   const architecturalSchemeValue = architecturalSchemeReady
     ? `${formatNumber(numberValue(architecturalSchemePlate.width), 1)} × ${formatNumber(numberValue(architecturalSchemePlate.depth), 1)} m · ${Array.isArray(architecturalScheme.nodes) ? architecturalScheme.nodes.length : 0} mahal düğümü · ${formatNumber(numberValue(architecturalSchemeCirculation.maximumTravelDistance), 1)} m kaçış göstergesi`
     : "";
@@ -351,8 +337,8 @@ export function deriveProjectCore(project: ProjectLike, thread: ThreadLike): Pro
     field("parcel-id", "Parsel kimliği", parcelIdentity, parcelTrust, "geo-parcel", "GIS / parsel", officialParcelResponse ? "TKGM servis yanıtından okunmuştur; tapu kaydı değildir." : "Kullanıcı girdisi; resmî kaynaktan doğrulanmalıdır."),
     field("parcel-geometry", "Parsel geometrisi", geometryReady ? `${formatNumber(parcelArea)} m² · ${Array.isArray(geo.parcel) ? geo.parcel.length : 0} köşe` : "", geometryTrust, "geo-parcel", "GIS / parsel", geometryReady ? dataStatus : "Koordinatlı sınır henüz oluşturulmadı."),
     field("terrain-model", "Arazi ve kot modeli", terrainValue, terrainTrust, "geo-parcel", "GIS + 3B arazi", terrainBasis === "measured-z" ? "Kaynak dosya kotlarına dayalı enterpolasyondur; düşey datum ve ölçüm yetkisi doğrulanmalıdır." : "Parametrik yüzey sistem türevidir; plankote veya arazi ölçümü değildir."),
-    field("massing-model", "Yapı zarfı ve kütle", massingValue, massingTrust, "geo-parcel", "V112 imar uyumlu kütle", massingSource.authoritative === true ? "Doğrulanmış imar girdilerinden türetilmiştir; yine de ruhsat projesi değildir." : "Kullanıcı beyanlı imar girdilerinden türetilen kavramsal ön değerlendirmedir."),
-    field("zoning", "İmar koşulları", zoningValues.join(" · "), zoningTrust, "zoning-integration", "İmar kanıt zinciri", zoningVerification ? `Doğrulama statüsü: ${zoningVerification}.` : "TAKS, KAKS, Hmax ve nizam belgeden doğrulanmalıdır."),
+    field("massing-model", "Yapı zarfı ve kütle", massingValue, massingTrust, "geo-parcel", "V112 imar uyumlu kütle", "Kullanıcı beyanlı imar girdilerinden türetilen kavramsal ön değerlendirmedir; kaynak ve parsel aidiyeti inceleme bekliyor."),
+    field("zoning", "İmar koşulları", zoningValues.join(" · "), zoningTrust, "zoning-integration", "İmar kanıt zinciri", zoningVerification ? `Beyan edilen kaynak türü: ${zoningVerification}; belge ve parsel aidiyeti inceleme bekliyor.` : "TAKS, KAKS, Hmax ve nizam belgeden doğrulanmalıdır."),
     field("program", "Mimari program", grossArea > 0 ? `${formatNumber(grossArea)} m² · ${textValue(architectureInput.use, thread.canonical.architecture.use) || "kullanım bekleniyor"}` : "", grossAreaTrust, "architectural-program", "Mimari program", grossAreaTrust === "derived" ? "Mimari program motorunun hesapladığı brüt taleptir." : "Müşteri hedef alanıdır; mimari çözüm değildir."),
     field("architectural-scheme", "Mekânsal şema", architecturalSchemeValue, architecturalSchemeTrust, "architectural-program", "V113 mimari şema", architecturalSchemeReady ? "Mahal düğümü, komşuluk, dolaşım, çekirdek, günışığı ve kaçış ön göstergelerinden türetilir; avan veya ruhsat projesi değildir." : "V113 mekânsal şeması henüz üretilmedi."),
     field("floors", "Kat ve yükseklik", floors > 0 ? `${floors} kat · ${floorHeight ? `${floorHeight.toFixed(2)} m/kat` : "yükseklik bekleniyor"}` : "", floorTrust, numberValue(plan.floorCount) > 0 ? "plan-editor" : "architectural-program", numberValue(plan.floorCount) > 0 ? "Plan ve aks modeli" : "Müşteri briefi", floorTrust === "derived" ? "Plan modelinden okunur." : "Başlangıç hedefidir; imar ve tasarımla doğrulanır."),

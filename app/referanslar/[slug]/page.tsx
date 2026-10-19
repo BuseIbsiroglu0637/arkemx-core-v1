@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { getProjectPresentation } from '../../data/project-presentations';
 import { SiteFooter, SiteHeader } from "../../components/SiteChrome";
 import { getReferenceRecord, referenceRecords } from "../../data/references";
 import { site } from "../../data/site";
@@ -22,7 +23,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ReferenceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const record = getReferenceRecord((await params).slug);
+  const slug = (await params).slug;
+  const alias: Record<string, string> = { 'romon-group-yapi-modeli': 'romon', 'diyanet-tasiyici-sistem-modeli': 'diyanet', 'diyamet-tasiyici-sistem-modeli': 'diyanet' };
+  const target = alias[slug] || slug;
+  if (getProjectPresentation(target)) permanentRedirect(`/projeler/${target}`);
+  const record = getReferenceRecord(slug);
   if (!record) notFound();
   const mainMedia = record.media[0];
   const schema = {

@@ -1,36 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { ArchitecturalProgramStudio } from "../components/ArchitecturalProgramStudio";
-import "../sade-arac-paneli.css";
-import "./sade-mimari.css";
+import { SiteFooter } from "../components/SiteChrome";
+import { ModuleWorkspaceHeader } from "../components/ModuleWorkspaceHeader";
 
 export const metadata: Metadata = {
-  title: "Mimari Program | ARKEMX",
-  description: "Mahal listesi, hedef alan ve kavramsal plan şemasını yönetin.",
+  title: "Mimari Program ve Mekân Tasarımı | ARKEMX",
+  description: "V112 yapı zarfını mahal programı, gerçek mesafe tabanlı komşuluk, dolaşım, çekirdek, günışığı ve kaçış ön kontrollerine bağlayan Arkem V113 mimari tasarım stüdyosu.",
   alternates: { canonical: "/mimari-program-studyosu" },
-  robots: { index: false, follow: false },
 };
 
 export default function ArchitecturalProgramPage() {
-  return <main className="arx-simple-home arx-architecture-page">
-    <div className="arx-simple-shell">
-      <header className="arx-simple-head">
-        <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-        <nav className="arx-architecture-back" aria-label="Sayfa bağlantıları">
-          <Link href="/arsa-fizibilite-studyosu?stage=design#geo-studyo"><ArrowLeft size={16} aria-hidden="true" /> Yapı Yerleşimine Dön</Link>
-          <Link href="/dijital-proje-merkezi">Proje Çalışma Alanı</Link>
-          <Link href="/araclar">Tüm araçlar</Link>
-        </nav>
-      </header>
-      <div className="arx-architecture-intro">
-        <span>TASARIM / MİMARİ</span>
-        <h1>Mimari program</h1>
-        <p>Arazi ve yapı yerleşiminden devralınan verilerle mahal programını kurun, plan şemasını geliştirin ve mimari ön kontrolleri tamamlayın.</p>
-      </div>
-      <section id="mimari-motor" aria-label="Mimari program çalışma alanı">
-        <ArchitecturalProgramStudio simple />
-      </section>
-    </div>
+  return <main className="inner-page architectural-program-page module-workspace-page">
+    <ModuleWorkspaceHeader title="Mekân ihtiyaçlarınızı düzenleyin" description="Alanları ve mekân ilişkilerini bir ön şemada geliştirin. Sonuç mimar incelemesi içindir; ruhsat veya uygulama projesi değildir." target="mimari-motor" />
+    
+    <section id="mimari-motor" className="architecture-live-section"><div className="section shell"><ArchitecturalProgramStudio/></div></section>
+    <section className="architecture-workflow"><div className="section shell"><p className="eyebrow light">Bağlı Tasarım Akışı</p><div>{[["01","Parsel","İzin ve kütle girdisi","/arsa-fizibilite-studyosu"],["02","Program","Mahal ve performans kaydı","/mimari-program-studyosu"],["03","Plan","Aks ve nesne modeli","/tasarim-calismalari"],["04","Koordinasyon","Mimari–statik–MEP issue","/muhendislik-koordinasyon"]].map(([no,title,copy,href]) => <Link href={href} key={no}><span>{no}</span><b>{title}</b><small>{copy}</small><i>↗</i></Link>)}</div></div></section>
+  <section className="section shell architecture-intro"><div><p className="eyebrow">Mimari Karar Sistemi 2.0</p><h2>Biçimden önce<br/><em>gereksinim, ilişki ve rota.</em></h2></div><div><p>Şema motoru; her mahalin alanını, adedini, kullanıcı yoğunluğunu ve çevre ihtiyacını V112’den gelen yapı zarfı içinde konumlandırır.</p><p>Komşuluk kararları gerçek düğüm mesafeleriyle, kaçış ön göstergesi en yakın çıkış rotasıyla değerlendirilir. Sonuç avan tasarım girdisidir; ruhsat veya uygulama projesi değildir.</p></div></section>
+  <SiteFooter/>
   </main>;
 }

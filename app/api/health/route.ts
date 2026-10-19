@@ -25,7 +25,8 @@ export async function GET() {
       arkemxProductArchitecture: "central-registry-5-groups-13-customer-facing-engineering-modules",
       arkemxRegistry: "single-source-api-synchronized",
       arkemxRuntimeAcceptance: {
-        checkedAt: "2026-08-09",
+        declarationDate: "2026-08-09",
+        evidenceType: "historical-implementation-declaration-not-current-runtime-test",
         modules: arkemXModuleRegistry.length,
         active: activeModules,
         validating: validatingModules,
@@ -56,6 +57,7 @@ export async function GET() {
     },
     timestamp: new Date().toISOString(),
   }, {
+    status: resolveProjectEvidenceHealthStatus(projectEvidenceRuntime) === "ok" ? 200 : 503,
     headers: {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",

@@ -1,0 +1,84 @@
+/* Scoped product workspace: shared corporate header/footer remain unchanged. */
+.digital-tools-page{background:#0b2535;color:#f4f7f8}
+.digital-workspace{padding-top:48px;padding-bottom:40px;max-width:1280px}
+.digital-workspace-head{display:flex;align-items:start;justify-content:space-between;gap:32px;margin-bottom:28px}
+.digital-workspace-head h1{font-size:clamp(28px,3.4vw,44px);line-height:1.15;letter-spacing:-.035em;margin:8px 0 14px;color:#fff}
+.digital-workspace-head p:not(.digital-kicker){font-size:16px;line-height:1.65;color:#cbd8df;max-width:690px;margin:0}
+.digital-workspace-head>a{font-size:14px;min-height:44px;display:flex;align-items:center;border-bottom:1px solid #728898;white-space:nowrap}
+.digital-kicker{display:block;font-size:12px!important;letter-spacing:.10em;font-weight:700;color:#efa77a;margin:0}
+.digital-stepper{list-style:none;padding:0;margin:0 0 22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.digital-stepper li{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid #496270;color:#b9cbd4}
+.digital-stepper li[aria-current=step]{border-top:2px solid #efa77a;color:white}
+.digital-stepper li>span{display:grid;place-items:center;width:32px;height:32px;border:1px solid #66808e;border-radius:50%;font-size:13px;flex-shrink:0}
+.digital-stepper li b{font-size:14px;line-height:1.35;font-weight:600}
+.digital-task{background:#f2f5f4;color:#153244;border:1px solid #cad6db;border-radius:14px;padding:32px}
+.digital-task-heading{margin-bottom:26px;max-width:780px}
+.digital-task .digital-kicker{color:#94441e}
+.digital-task-heading h2{font-size:clamp(23px,2.7vw,32px);line-height:1.25;margin:8px 0 12px;letter-spacing:-.025em;color:#153244}
+.digital-task p{font-size:16px;line-height:1.65;color:#455f6d;margin:8px 0 16px}
+.digital-task small{display:block;font-size:13px;line-height:1.6;color:#526a77;font-weight:400}
+.digital-goals{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0}
+.digital-goals label{position:relative;display:flex;flex-direction:column;align-items:start;gap:12px;border:1px solid #c8d4da;border-radius:10px;background:#fff;padding:24px 20px;min-width:0;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
+.digital-goals label:hover{border-color:#94441e;transform:translateY(-2px);box-shadow:0 8px 20px #102d400b}
+.digital-goals label.is-selected{border:2px solid #94441e;padding:23px 19px;background:#fcf7f3}
+.digital-goals input{position:absolute;inset:18px 18px auto auto;width:18px;height:18px;accent-color:#94441e}
+.digital-goals strong{font-size:16px;line-height:1.45;max-width:210px;overflow-wrap:anywhere}
+.digital-goals small{flex:1}
+.digital-goals label>span{font-size:13px;color:#94441e;font-weight:600;padding-top:4px}
+.digital-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:26px}
+.digital-actions>span{font-size:13px;color:#526a77}
+.digital-task button,.digital-workspace-head>a,.digital-retain>a{min-height:44px}
+.digital-task button{font-family:inherit;font-size:14px;font-weight:600;line-height:1.45;cursor:pointer;border-radius:6px;padding:12px 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.digital-task .digital-primary{background:#94441e;color:white;border:1px solid #94441e}
+.digital-task .digital-secondary{background:#fff;color:#17394c;border:1px solid #9cafb9}
+.digital-task .digital-quiet{border:0;background:transparent;color:#17394c;text-decoration:underline}
+.digital-task button:disabled{opacity:.65;cursor:default;transform:none}
+.digital-tools-page :focus-visible{outline:3px solid #c66c39;outline-offset:4px}
+.digital-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.digital-form-grid label{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5;font-weight:600;min-width:0}
+.digital-task input:not([type=checkbox]):not([type=radio]),.digital-task select,.digital-task textarea{font:400 16px/1.5 Arial,sans-serif;display:block;min-height:46px;max-width:100%;width:100%;padding:11px 12px;color:#153244;background:#fff;border:1px solid #66808e;border-radius:5px}
+.digital-task input:disabled{background:#e9eeed;color:#526a77}
+.digital-task input[aria-invalid=true]{border-color:#9b3229}
+.digital-wide,.digital-documents,.digital-mode{grid-column:1/-1}
+.digital-task fieldset.digital-documents,.digital-task fieldset.digital-mode{min-width:0;border:1px solid #c8d4da;padding:20px;border-radius:8px}
+.digital-task fieldset legend{font-size:16px;font-weight:600;padding:0 8px}
+.digital-documents{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.digital-documents>p{grid-column:1/-1;margin:0;font-size:14px}
+.digital-mode label,.digital-task .digital-checkbox{display:flex;flex-direction:row;align-items:center;gap:10px;min-height:44px;font-size:14px;line-height:1.55;font-weight:400}
+.digital-task input[type=checkbox],.digital-mode input{width:18px;height:18px;accent-color:#94441e;flex-shrink:0}
+.digital-error,.digital-task .digital-error{color:#9b3229;font-size:14px}
+.digital-result-lead{display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #c5d3d9}
+.digital-result-lead h3{font-size:24px;line-height:1.3;margin:0;overflow-wrap:anywhere}
+.digital-result-lead p{margin:4px 0;font-size:16px}
+.digital-result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.digital-result-grid>section{border:1px solid #c8d4da;background:#fff;border-radius:8px;padding:22px}
+.digital-task h3{font-size:19px;line-height:1.35;margin:0 0 14px;color:#17394c}
+.digital-task h4{font-size:16px;line-height:1.4;margin:0 0 6px;color:#17394c}
+.digital-result-grid dl{margin:0}.digital-result-grid dl>div{display:flex;justify-content:space-between;align-items:start;gap:16px;border-top:1px solid #e0e7e9;padding:12px 0;font-size:14px}
+.digital-result-grid dt{color:#526a77}.digital-result-grid dd{margin:0;text-align:right;max-width:65%;overflow-wrap:anywhere;font-size:16px}
+.digital-result-grid ul{padding:0;list-style:none;margin:0}.digital-result-grid li{border-top:1px solid #e0e7e9;padding:12px 0}.digital-result-grid li b{font-size:14px}
+.digital-service-plan{margin-top:24px;padding:24px 0;border-top:1px solid #c5d3d9;border-bottom:1px solid #c5d3d9}
+.digital-service-plan>p{font-size:14px}
+.digital-service-plan ol{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.digital-service-plan li{display:flex;align-items:start;gap:12px;min-width:0}.digital-service-plan li>span{font-size:14px;font-weight:700;color:#94441e;padding-top:2px}.digital-service-plan li p{font-size:14px;margin:0 0 8px}
+.digital-task p.digital-review-note{font-size:13px;line-height:1.7;color:#526a77;margin:20px 0 0}
+.digital-review-flags{padding-left:20px;margin:20px 0 0}.digital-review-flags li{display:list-item;font-size:13px;line-height:1.7;color:#526a77;margin:10px 0}
+.digital-task p.digital-export-status{font-size:14px;min-height:22px;margin:10px 0}
+.digital-retain,.digital-submit,.digital-receipt{margin-top:26px;border-top:1px solid #c5d3d9;padding-top:24px}
+.digital-retain>a{font-size:14px;color:#94441e;text-decoration:underline;display:flex;align-items:center;width:fit-content;margin-top:12px}
+.digital-retain .customer-save{margin:20px 0;background:#fff}
+.digital-receipt{border:1px solid #acc5bc;padding:20px;border-radius:8px;background:#eef6f2}
+.digital-receipt summary{font-size:14px;min-height:44px;cursor:pointer;display:flex;align-items:center;text-decoration:underline}.digital-submitted-message{font:400 14px/1.65 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid #c8d4da;background:white}
+.digital-submit .project-brief-form{padding:20px 0 0;background:transparent;max-width:100%;margin:0}
+.digital-submit .form-heading h2{font-size:24px;line-height:1.3;letter-spacing:-.02em}
+.digital-policy{font-size:13px;line-height:1.75;color:#bdcfd9;max-width:920px;margin:22px 0 0}
+.digital-tools-page .v117-section-head h2{font-size:clamp(26px,3vw,38px);line-height:1.2}
+.digital-tools-page .v117-product-journey,.digital-tools-page .v117-customer-paths{padding:50px 0;background:#edf1f1;color:#17394c}
+.digital-tools-page .v117-customer-paths{border-top:1px solid #c8d4da}
+.digital-tools-page .v117-digital-final{padding:44px 0}
+.digital-tools-page .v117-path-grid small{font-size:13px}
+.digital-workspace .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.digital-task .digital-result-lead h3{font-size:24px;line-height:1.35}
+@media(max-width:1050px){.digital-goals{grid-template-columns:repeat(2,minmax(0,1fr))}.digital-service-plan ol{grid-template-columns:1fr}.digital-workspace{padding-top:32px}}
+@media(max-width:640px){.digital-workspace-head{display:block}.digital-workspace-head>a{width:fit-content;margin-top:14px}.digital-task{padding:20px 16px;border-radius:10px}.digital-stepper{gap:8px}.digital-stepper li{align-items:start;flex-direction:column;gap:8px}.digital-stepper li b{font-size:12px}.digital-form-grid,.digital-result-grid,.digital-documents{grid-template-columns:1fr}.digital-goals{gap:10px}.digital-goals label{padding:18px 12px}.digital-goals label.is-selected{padding:17px 11px}.digital-goals strong{font-size:15px}.digital-goals small{font-size:12px}.digital-actions{align-items:stretch}.digital-actions>button{flex-grow:1}.digital-task fieldset.digital-documents,.digital-task fieldset.digital-mode{padding:16px 12px}.digital-result-grid>section{padding:18px}.digital-result-grid dl>div{display:block}.digital-result-grid dd{text-align:left;max-width:100%;margin-top:6px}.digital-service-plan li{gap:10px}}
+@media(prefers-reduced-motion:reduce){.digital-goals label{transition:none}.digital-goals label:hover{transform:none}}

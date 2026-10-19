@@ -1,4 +1,5 @@
-import { getArkemAccountSession, getArkemAccountUser, prototypeDemoProfileDefaults } from "../../chatgpt-auth";
+import { getArkemAccountUser } from "../../chatgpt-auth";
+import { readBoundedJsonObject, requestInputFailure } from "../../lib/request-input";
 import {
   isPortalProject,
   resolveAccountProjectWritePrecondition,
@@ -59,39 +60,16 @@ function safeProjectPayload(value: unknown) {
 }
 
 export async function GET() {
-  const session = await getArkemAccountSession();
-  const user = session.user;
+  const user = await getArkemAccountUser();
   if (!user) return unauthorized();
   try {
     const db = await database();
-    const [loadedProfile, projects, meetings, activities] = await Promise.all([
+    const [profile, projects, meetings, activities] = await Promise.all([
       db.prepare("SELECT email, display_name AS displayName, company, phone, preferred_language AS preferredLanguage, created_at AS createdAt, updated_at AS updatedAt FROM customer_profiles WHERE email = ?").bind(user.email).first(),
       db.prepare("SELECT id, name, phase, revision, status, payload, updated_at AS updatedAt FROM customer_projects WHERE owner_email = ? ORDER BY updated_at DESC LIMIT 24").bind(user.email).all(),
       db.prepare("SELECT id, project_id AS projectId, subject, meeting_at AS meetingAt, channel, status, notes, created_at AS createdAt FROM customer_meetings WHERE owner_email = ? ORDER BY meeting_at DESC LIMIT 40").bind(user.email).all(),
-      db.prepare("SELECT id, event_type AS eventType, CASE WHEN event_type = 'project' AND title = 'Proje buluta kaydedildi' THEN 'Proje hesaba kaydedildi' ELSE title END AS title, detail, created_at AS createdAt FROM customer_activities WHERE owner_email = ? ORDER BY created_at DESC LIMIT 50").bind(user.email).all(),
+      db.prepare("SELECT id, event_type AS eventType, title, detail, created_at AS createdAt FROM customer_activities WHERE owner_email = ? ORDER BY created_at DESC LIMIT 50").bind(user.email).all(),
     ]);
-
-    let profile = loadedProfile;
-
-    if (!profile && session.identitySource === "prototype-demo") {
-      const defaults = prototypeDemoProfileDefaults();
-      const now = new Date().toISOString();
-      await db.prepare(`INSERT INTO customer_profiles (email, display_name, company, phone, preferred_language, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(email) DO NOTHING`)
-        .bind(user.email, defaults.displayName, defaults.company, defaults.phone, defaults.preferredLanguage, now, now)
-        .run();
-      profile = {
-        email: user.email,
-        displayName: defaults.displayName,
-        company: defaults.company,
-        phone: defaults.phone,
-        preferredLanguage: defaults.preferredLanguage,
-        createdAt: now,
-        updatedAt: now,
-      };
-    }
-
     const safeProjects = projects.results.map((value) => {
       const project = value as Record<string, unknown>;
       return { ...project, payload: safeProjectPayload(project.payload) };
@@ -107,9 +85,9 @@ export async function POST(request: Request) {
   if (!user) return unauthorized();
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
-  } catch {
-    return Response.json({ error: "Geçersiz istek." }, { status: 400 });
+    body = await readBoundedJsonObject(request);
+  } catch (error) {
+    return requestInputFailure(error, "Geçersiz istek.");
   }
   const action = String(body.action || "");
   const now = new Date().toISOString();
@@ -132,7 +110,7 @@ export async function POST(request: Request) {
       const validatedPayload = validateAccountProjectPayload(id, body.payload);
       if (!validatedPayload.ok) return Response.json({ error: validatedPayload.error }, { status: 400 });
       const payload = JSON.stringify(validatedPayload.project);
-      if (payload.length > 300_000) return Response.json({ error: "Proje verisi 300 KB sınırını aşıyor." }, { status: 413 });
+      if (new TextEncoder().encode(payload).byteLength > 300_000) return Response.json({ error: "Proje verisi 300 KB sınırını aşıyor." }, { status: 413 });
       const phase = String(body.phase || "Başlangıç").slice(0, 80);
       const revision = String(body.revision || "R00").slice(0, 24);
       const existing = await db.prepare("SELECT owner_email AS ownerEmail, updated_at AS updatedAt, payload FROM customer_projects WHERE id = ?").bind(id).first();
@@ -188,14 +166,14 @@ export async function POST(request: Request) {
       const projectId = String(body.projectId || "").slice(0, 64);
       const channel = String(body.channel || "Teknik görüşme").slice(0, 80);
       const notes = String(body.notes || "").slice(0, 2000);
-      const meetingWrite = db.prepare("INSERT INTO customer_meetings (id, owner_email, project_id, subject, meeting_at, channel, status, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Planlandı', ?, ?)")
+      const meetingWrite = db.prepare("INSERT INTO customer_meetings (id, owner_email, project_id, subject, meeting_at, channel, status, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Teyit edilmedi', ?, ?)")
         .bind(id, user.email, projectId, subject, meetingAt, channel, notes, now);
       const meetingActivity = db.prepare("INSERT INTO customer_activities (owner_email, event_type, title, detail, created_at) VALUES (?, 'meeting', 'Görüşme kaydı oluşturuldu', ?, ?)").bind(user.email, subject, now);
       await db.batch([meetingWrite, meetingActivity]);
     } else {
       return Response.json({ error: "Desteklenmeyen işlem." }, { status: 400 });
     }
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, updatedAt: now });
   } catch {
     return Response.json({ error: "Kayıt tamamlanamadı." }, { status: 503 });
   }
@@ -210,7 +188,12 @@ export async function DELETE(request: Request) {
   if (!id || !["project", "meeting"].includes(resource || "")) return Response.json({ error: "Geçersiz silme isteği." }, { status: 400 });
   try {
     const db = await database();
-    if (resource === "project") await db.prepare("DELETE FROM customer_projects WHERE id = ? AND owner_email = ?").bind(id, user.email).run();
+    if (resource === "project") {
+      const expected = url.searchParams.get("expectedAccountUpdatedAt");
+      if (!expected || expected.length > 40 || !Number.isFinite(Date.parse(expected))) return Response.json({ error: "Silmeden önce hesabınızın güncel kaydını açın." }, { status: 428 });
+      const deleted = await db.prepare("DELETE FROM customer_projects WHERE id = ? AND owner_email = ? AND updated_at = ?").bind(id, user.email, expected).run();
+      if (!deleted.success || deleted.meta.changes !== 1) return Response.json({ error: "Proje kaydı değişti veya bulunamadı. Güncel kaydı açılmadan silinmedi." }, { status: 409 });
+    }
     else await db.prepare("DELETE FROM customer_meetings WHERE id = ? AND owner_email = ?").bind(id, user.email).run();
     return Response.json({ ok: true });
   } catch {

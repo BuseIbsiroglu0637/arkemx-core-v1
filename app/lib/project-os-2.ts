@@ -28,8 +28,6 @@ export type ProjectOperatingWorkItem = {
   type: ProjectOperatingWorkType;
   title: string;
   owner: string;
-  ownerSuggested?: boolean;
-  dueDateSuggested?: boolean;
   dueDate: string;
   status: ProjectOperatingWorkStatus;
   priority: "critical" | "high" | "normal";
@@ -56,45 +54,21 @@ function text(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
-// Legacy sequential RFI numbers are display labels, never source identities.
-export function operatingWorkStateKey(item: Pick<ProjectOperatingWorkItem, "id" | "revision">) {
-  return `${item.id}@${encodeURIComponent(item.revision)}`;
-}
-
-export function restoreOperatingWorkStates(saved: unknown[], current: ProjectOperatingWorkItem[]) {
-  const states: Record<string, ProjectOperatingWorkStatus> = {};
-  const rows = saved.filter((v): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v));
-  for (const item of current) {
-    const matches = rows.filter(row => item.sourceGuid
-      ? row.sourceGuid === item.sourceGuid
-      : !row.sourceGuid && row.id === item.id);
-    if (matches.length !== 1) continue;
-    const row = matches[0];
-    if (row.revision && row.revision !== item.revision) continue;
-    if (["open", "in-review", "blocked", "closed"].includes(String(row.status))) states[item.id] = row.status as ProjectOperatingWorkStatus;
-  }
-  return states;
-}
-
 export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
   const generatedAt = input.generatedAt ?? new Date().toISOString();
   const revision = text(input.projectRevision, "P01");
   const coordination = input.bimCoordination ?? {};
   const clashes = Array.isArray(coordination.clashes) ? coordination.clashes : [];
-  const guids = clashes.map(clash => text(clash.guid, ""));
-  if (guids.some(guid => !guid) || new Set(guids).size !== guids.length) throw new Error("Clash identity missing or duplicated");
   const coordinationConnected = coordination.schema === "ARKEM-BIM-COORDINATION/3.0";
 
-  const clashWork: ProjectOperatingWorkItem[] = clashes.map((clash) => {
-    const guid = text(clash.guid, "");
+  const clashWork: ProjectOperatingWorkItem[] = clashes.map((clash, index) => {
+    const guid = text(clash.guid, `BCF-${String(index + 1).padStart(3, "0")}`);
     const critical = clash.severity === "critical";
     return {
-      id: `RFI-${encodeURIComponent(input.projectId)}:${encodeURIComponent(guid)}`,
+      id: `RFI-${String(41 + index).padStart(3, "0")}`,
       type: "rfi",
       title: text(clash.title, "Koordinasyon issue incelemesi"),
       owner: text(clash.assignee, "BIM Koordinatörü"),
-      ownerSuggested: !text(clash.assignee, ""),
-      dueDateSuggested: true,
       dueDate: addDays(generatedAt, critical ? 2 : 5),
       status: critical ? "blocked" : "open",
       priority: critical ? "critical" : clash.severity === "high" ? "high" : "normal",
@@ -110,9 +84,52 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
 
   const workItems: ProjectOperatingWorkItem[] = [
     ...clashWork,
+    {
+      id: "TASK-116-01",
+      type: "task",
+      title: "Cephe paneli teknik onay paketini tamamla",
+      owner: "Mimari Koordinatör",
+      dueDate: addDays(generatedAt, 3),
+      status: "in-review",
+      priority: "high",
+      revision,
+      source: "PKG-04 tedarik paketi",
+      disciplines: ["ARC", "PROC"],
+      scheduleImpact: "Montaj başlangıcı +4 gün riski",
+      costImpact: "Eşdeğer ürün karşılaştırması açık",
+    },
+    {
+      id: "NCR-116-02",
+      type: "ncr",
+      title: "Aks C ankraj düşeylik toleransını doğrula",
+      owner: "Saha Kalite Mühendisi",
+      dueDate: addDays(generatedAt, 1),
+      status: "open",
+      priority: "critical",
+      revision,
+      source: "360° saha kalite kaydı",
+      location: "Aks C / temel kotu",
+      disciplines: ["STR", "FIELD"],
+      scheduleImpact: "Kolon montajı öncesi kapatılmalı",
+      costImpact: "Düzeltme yöntemi bekleniyor",
+    },
+    {
+      id: "DEC-116-03",
+      type: "decision",
+      title: "Yükleme kapısı ürün ve termin kararını kilitle",
+      owner: "İşveren Temsilcisi",
+      dueDate: addDays(generatedAt, 4),
+      status: "open",
+      priority: "high",
+      revision,
+      source: "PKG-09 karar kaydı",
+      disciplines: ["CLIENT", "PROC"],
+      scheduleImpact: "Uzun terminli paket",
+      costImpact: "Teklif karşılaştırması açık",
+    },
   ];
 
-  const completeOwnership = workItems.every((item) => Boolean(item.owner && item.dueDate && item.revision && item.source && !item.ownerSuggested && !item.dueDateSuggested));
+  const completeOwnership = workItems.every((item) => Boolean(item.owner && item.dueDate && item.revision && item.source));
   const criticalOpen = workItems.filter((item) => item.priority === "critical" && item.status !== "closed").length;
 
   return {
@@ -121,11 +138,13 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
     source: {
       coordinationConnected,
       coordinationSchema: coordination.schema ?? "missing",
-      dataStatus: coordinationConnected ? "project-kernel-derived" as const : "missing" as const,
+      dataStatus: "project-kernel-derived" as const,
     },
     workItems,
     revisions: [
       { code: revision, title: "Koordinasyon ve proje kontrolü güncel çalışma kaydı", status: "current" as const, source: "Project Kernel", publishedAt: generatedAt },
+      { code: "P03", title: "Önceki koordinasyon ve karar kaydı", status: "obsolete" as const, source: "CDE revizyon geçmişi", supersededBy: revision },
+      { code: "R05", title: "Çelik genel yerleşim", status: "current" as const, source: "V115 federasyon manifestosu", publishedAt: generatedAt },
     ],
     healthGates: [
       { code: "OS-116-OWNER-DUE", label: "Sorumlu ve hedef tarih", status: completeOwnership ? "passed" as const : "blocked" as const, count: workItems.length },
@@ -149,16 +168,4 @@ export function createProjectOperatingModel(input: ProjectOperatingModelInput) {
       "Hesap bağlantısı yoksa kayıt bu cihazda tutulur; kurumsal sunucu ve yetkilendirme ayrıca yapılandırılmalıdır.",
     ],
   };
-}
-
-/** Recompute gates after restored/user work states, using the displayed rows. */
-export function operatingHealthGates(items: ProjectOperatingWorkItem[], coordinationConnected: boolean) {
-  const owned = items.every(item => Boolean(item.owner && item.dueDate && item.revision && item.source && !item.ownerSuggested && !item.dueDateSuggested));
-  const critical = items.filter(item => item.priority === "critical" && item.status !== "closed").length;
-  return [
-    { code: "OS-116-OWNER-DUE", label: "Sorumlu ve hedef tarih", status: items.length && owned ? "passed" : "attention", count: items.length },
-    { code: "OS-116-CRITICAL", label: "Kritik açık işler", status: critical ? "attention" : "passed", count: critical },
-    { code: "OS-116-REVISION", label: "Güncel revizyon ayrımı", status: "passed", count: 1 },
-    { code: "OS-116-EVIDENCE", label: "Kaynak ve kanıt izi", status: coordinationConnected ? "passed" : "attention", count: items.filter(item => item.sourceGuid).length },
-  ];
 }

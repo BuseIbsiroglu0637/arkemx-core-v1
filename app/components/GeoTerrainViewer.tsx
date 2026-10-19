@@ -50,7 +50,6 @@ export function GeoTerrainViewer({
   const [ready, setReady] = useState(false);
   const [webglError, setWebglError] = useState(false);
   const analysis = analyzeTerrain(parcel, slope, buildingWidth, buildingDepth, rotation);
-  const estimateLabel = terrainModel.basis === "measured-z" ? "Kaynak kotlu ön hesap" : "Parametrik ön hesap";
 
   useEffect(() => {
     const host = hostRef.current;
@@ -82,9 +81,7 @@ export function GeoTerrainViewer({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.domElement.setAttribute("role", "img");
-    renderer.domElement.setAttribute("aria-label", layers["building-mass"]
-      ? "Parsel sınırı, kot verisi, eş yükselti çizgileri ve temsili ön kütlenin etkileşimli üç boyutlu görünümü"
-      : "Parsel sınırı, kot verisi ve eş yükselti çizgilerinin etkileşimli üç boyutlu arazi görünümü");
+    renderer.domElement.setAttribute("aria-label", "Parsel sınırı, kot verisi, eş yükselti çizgileri ve yapı kütlesinin ortak arazi modelindeki etkileşimli üç boyutlu görünümü");
     host.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -210,8 +207,7 @@ export function GeoTerrainViewer({
   return <div className="geo-terrain-viewer">
     <div ref={hostRef} className="geo-terrain-canvas">{webglError && <div className="geo-viewer-fallback"><b>WebGL kullanılamıyor</b><p>3B görünüm için güncel bir tarayıcı veya donanım hızlandırması gerekir.</p></div>}</div>
     <div className="geo-terrain-overlay"><span><i className={ready ? "ready" : ""}></i>{ready ? "3B SAHNE HAZIR" : "3B SAHNE HAZIRLANIYOR"}</span><b>WGS84 → Yerel ENU çalışma düzlemi</b></div>
-    {layers["building-mass"] && <div className="geo-terrain-massing-badge">Temsili Ön Kütle</div>}
-    <aside className={`geo-terrain-analysis${layers["building-mass"] ? " has-massing" : " terrain-only"}`} aria-label="V82 / ARAZİ PERFORMANS TARAMASI"><span>V111 / BÜTÜNLEŞİK ARAZİ MODELİ</span><div><p><small>VERİ TEMELİ</small><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z girdisi" : "Parametrik eğim"}</b></p><p><small>KOT FARKI</small><b>{terrainModel.elevation.range.toFixed(2)} m</b><i>{estimateLabel}</i></p>{layers["building-mass"] && <><p><small>YAPI ALTI Δ</small><b>{analysis.buildingLevelDifference.toFixed(2)} m</b><i>{estimateLabel}</i></p><p><small>ÖN HAFRİYAT</small><b>≈ {analysis.indicativeEarthwork.toFixed(0)} m³</b><i>{estimateLabel}</i></p></>}</div><em>{terrainModel.trust === "verified" ? "Yetkili ölçüm beyanı · proje kontrolü gerekli" : terrainModel.basis === "measured-z" ? "Kaynak dosya kotları · düşey datum doğrulanmalı" : "Ölçülmüş veri değildir · kavramsal gösterge · zemin etüdü ve plankote değildir"}</em></aside>
+    <aside className="geo-terrain-analysis" aria-label="V82 / ARAZİ PERFORMANS TARAMASI"><span>V111 / BÜTÜNLEŞİK ARAZİ MODELİ</span><div><p><small>VERİ TEMELİ</small><b>{terrainModel.basis === "measured-z" ? "Ölçülmüş Z girdisi" : "Parametrik eğim"}</b></p><p><small>KOT FARKI</small><b>{terrainModel.elevation.range.toFixed(2)} m</b></p><p><small>YAPI ALTI Δ</small><b>{analysis.buildingLevelDifference.toFixed(2)} m</b></p><p><small>ÖN HAFRİYAT</small><b>≈ {analysis.indicativeEarthwork.toFixed(0)} m³</b></p></div><em>{terrainModel.trust === "verified" ? "Yetkili ölçüm beyanı · proje kontrolü gerekli" : terrainModel.basis === "measured-z" ? "Kaynak dosya kotları · düşey datum doğrulanmalı" : "Kavramsal gösterge · zemin etüdü ve plankote değildir"}</em></aside>
     <div className="geo-terrain-help">SOL: döndür · SAĞ: kaydır · TEKER: yaklaş</div><div className="geo-north">N<br />↑</div>
   </div>;
 }

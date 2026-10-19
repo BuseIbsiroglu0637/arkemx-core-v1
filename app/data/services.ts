@@ -30,7 +30,7 @@ export const services: Service[] = [
     summary: "Mimari fikirden ruhsat, uygulama ve imalat projelerine kadar tüm teknik disiplinlerin koordinasyonu.",
     lead: "Yapının mimari, statik, mekanik ve elektrik kararlarını tek teknik yönetim altında birleştiriyor; ruhsata, üretime ve sahaya aktarılabilir eksiksiz proje setleri hazırlıyoruz.",
     items: ["Mimari ön tasarım ve avan proje", "Betonarme, prefabrik, çelik ve hafif çelik statik proje", "Mekanik ve elektrik proje koordinasyonu", "Zemin etüdü, harita ve aplikasyon koordinasyonu", "Ruhsat projesi ve resmî kurum dosyaları", "Uygulama, imalat ve birleşim detayları", "3B modelleme, görselleştirme ve VR sunumu"],
-    deliverables: ["Onaylı proje paftaları", "Statik hesap raporları", "Uygulama ve imalat detayları", "Disiplinlerarası çakışma kontrolleri", "Ruhsat başvuru dokümanları"],
+    deliverables: ["Sözleşme kapsamına göre hazırlanan proje paftaları", "Statik hesap raporları", "Uygulama ve imalat detayları", "Disiplinlerarası çakışma kontrolleri", "Ruhsat başvuru dokümanları; kurum onayı ayrıca yürütülür"],
     audiences: ["Arsa sahipleri", "Yatırımcılar", "Müteahhitler", "Mimarlık ofisleri", "Sanayi kuruluşları"],
     process: [
       { title: "İhtiyaç ve veri toplama", description: "Arsa, zemin, kullanım, kapasite, mimari beklenti ve hedef takvim birlikte tanımlanır." },

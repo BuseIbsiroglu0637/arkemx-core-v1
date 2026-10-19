@@ -1,0 +1,1495 @@
+[
+  {
+    "slug": "yapikur-plaza",
+    "title": "Yapıkur Plaza",
+    "category": "Prefabrik",
+    "summary": "Kastamonu Merkez’de betonarme prefabrik bir yapı için yapısal modelleme ve statik analiz.",
+    "description": [
+      "Yapıkur Plaza, Kastamonu Merkez’de 2025 yılında tamamlanan bir betonarme prefabrik yapı projesidir. Projedeki mühendislik kapsamımız, taşıyıcı sistemin yapısal modellemesi ve statik analizidir.",
+      "Prefabrik betonarme sistem, kolon, kiriş ve döşeme elemanlarının yapı bütünlüğü içinde birlikte değerlendirilmesini gerektirir. Yapıkur Plaza’daki çalışmamız bu taşıyıcı düzeni hesap modeli içinde temsil etmeye, elemanlar arasındaki yük aktarımını incelemeye ve statik analiz sürecini yürütmeye odaklandı.",
+      "Bu proje sunumu, mühendislik yaklaşımını saha görüntüleri ve üç boyutlu model üzerinden görünür kılar. Saha galerisinde temel ve prefabrik yapım aşamalarından seçilmiş görüntüler; model bölümünde ise taşıyıcı sistemin genel düzenini inceleyebileceğiniz bir sunum yer alır."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/yapikur-plaza/hero.jpg",
+        "caption": "Saha videosundan seçilmiş kare · Yapıkur Plaza · Kastamonu Merkez",
+        "kind": "photo",
+        "alt": "Yapıkur Plaza betonarme prefabrik yapısının kaynak saha videosundan seçilmiş genel görünümü"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/saha-prefabrik.jpg",
+        "caption": "Saha videosundan seçilmiş kare · Prefabrik yapım aşamasından",
+        "kind": "photo",
+        "alt": "Yapıkur Plaza prefabrik betonarme taşıyıcı elemanlarının saha görünümü"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/saha-temel.jpg",
+        "caption": "Saha videosundan seçilmiş kare · Temel imalatından",
+        "kind": "photo",
+        "alt": "Yapıkur Plaza temel imalatının kaynak saha videosundan seçilmiş görünümü"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/model-genel.webp",
+        "caption": "Taşıyıcı sistem · 3B sunum",
+        "kind": "model",
+        "alt": "Taşıyıcı sistem · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/model-iskelet.webp",
+        "caption": "İskelet görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "İskelet görünümü · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/model-patlatilmis.webp",
+        "caption": "Ayrıştırılmış görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Ayrıştırılmış görünüm · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/yapikur-plaza/model-t2-detay.webp",
+        "caption": "T2 elemanı · detay sunumu",
+        "kind": "model",
+        "alt": "T2 elemanı · detay sunumu"
+      }
+    ],
+    "scopeNote": "Sunum modelini döndürerek taşıyıcı sistemin genel düzenini farklı açılardan inceleyin. Taşıyıcı akslar ve ana eleman düzeni kaynak çizimlere dayanır; bazı kesitler, kotlar ve döşeme yerleşimleri sunum için sadeleştirilmiştir. Model, kaynaklardan türetilmiş bir proje anlatımıdır; uygulama veya imalat çizimi yerine kullanılmaz.",
+    "facts": [
+      {
+        "label": "Konum",
+        "value": "Kastamonu Merkez"
+      },
+      {
+        "label": "Tamamlanma yılı",
+        "value": "2025 · kullanıcı beyanı"
+      },
+      {
+        "label": "ARKEM kapsamı",
+        "value": "Yapısal modelleme ve statik analiz"
+      }
+    ],
+    "package": "Yapıkur Plaza sunum paketi",
+    "model": {
+      "src": "/references/2026-10/yapikur-plaza/YAPIKUR_PLAZA.glb",
+      "bytes": 1535628,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "featured": true,
+    "cover": {
+      "src": "/references/2026-10/yapikur-plaza/hero.jpg",
+      "caption": "Saha videosundan seçilmiş kare · Yapıkur Plaza · Kastamonu Merkez",
+      "kind": "photo",
+      "alt": "Yapıkur Plaza betonarme prefabrik yapısının kaynak saha videosundan seçilmiş genel görünümü"
+    }
+  },
+  {
+    "slug": "isil-kilic-hafif-celik-villa",
+    "title": "Işıl Kılıç Hafif Çelik Villa",
+    "category": "Hafif Çelik",
+    "summary": "Kastamonu Esentepe’de 2024 yılında gerçekleştirilen hafif çelik villa projesi. Mimari görünüş, taşıyıcı sistem ve plan üzerinden projeyi keşfedin.",
+    "description": [
+      "Kastamonu Esentepe’de 2024 yılında gerçekleştirilen hafif çelik villa projesi. Mimari görünüş, taşıyıcı sistem ve plan üzerinden projeyi keşfedin."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/isil-kilic-hafif-celik-villa/hero.webp",
+        "caption": "3B sunum modeli",
+        "kind": "model",
+        "alt": "Işıl Kılıç Hafif Çelik Villa Projesi’nin 3D sunum modelinden üretilmiş mimari görünüşü"
+      },
+      {
+        "src": "/references/2026-10/isil-kilic-hafif-celik-villa/exterior.webp",
+        "caption": "Mimari dış görünüş · Proje modelinden üretilen görsel",
+        "kind": "model",
+        "alt": "Işıl Kılıç Hafif Çelik Villa Projesi’nin mimari dış görünüşü, 3D sunum modeli"
+      },
+      {
+        "src": "/references/2026-10/isil-kilic-hafif-celik-villa/frame.webp",
+        "caption": "Taşıyıcı sistem · Hafif çelik kurgu",
+        "kind": "model",
+        "alt": "Işıl Kılıç Hafif Çelik Villa Projesi’nin hafif çelik taşıyıcı sistemini gösteren 3D sunum modeli"
+      },
+      {
+        "src": "/references/2026-10/isil-kilic-hafif-celik-villa/plan.webp",
+        "caption": "Plan görünüşü · 3B modelden plan görünüşü",
+        "kind": "model",
+        "alt": "Işıl Kılıç Hafif Çelik Villa Projesi’nin 3D sunum modelinden üretilmiş plan görünüşü"
+      }
+    ],
+    "scopeNote": "Kaynak paftalardan oluşturulmuş mimari ve şematik hafif çelik sunum. Çatı, bazı açıklıklar ve profil yerleşimleri sunum kabulleridir; as-built model veya imalat onayı değildir.",
+    "facts": [
+      {
+        "label": "Konum",
+        "value": "Kastamonu · Esentepe"
+      },
+      {
+        "label": "Uygulama yılı",
+        "value": "2024 · kullanıcı beyanı"
+      },
+      {
+        "label": "Yapı düzeni",
+        "value": "Zemin + 1 kat"
+      },
+      {
+        "label": "Kapsam",
+        "value": "Tasarım, hafif çelik üretim ve montaj, anahtar teslim uygulama · kullanıcı beyanı"
+      }
+    ],
+    "package": "Işıl Kılıç sunum paketi",
+    "model": {
+      "src": "/references/2026-10/isil-kilic-hafif-celik-villa/isil_kilic_villa.glb",
+      "bytes": 1753496,
+      "label": "3B sunum modeli",
+      "upAxis": "y",
+      "layers": "isil-villa"
+    },
+    "featured": true,
+    "cover": {
+      "src": "/references/2026-10/isil-kilic-hafif-celik-villa/hero.webp",
+      "caption": "3B sunum modeli",
+      "kind": "model",
+      "alt": "Işıl Kılıç Hafif Çelik Villa Projesi’nin 3D sunum modelinden üretilmiş mimari görünüşü"
+    }
+  },
+  {
+    "slug": "cihan-tat",
+    "title": "Cihan Tat Gıda",
+    "category": "Prefabrik",
+    "summary": "Önüretimli betonarme bina ile menfez ve giriş köprüsü çalışmalarını kapsayan referans. 3D sunum, binanın tek blok taşıyıcı düzenine odaklanır.",
+    "description": [
+      "Cihan Tat referansı, önüretimli betonarme bina projesi ile menfez ve bina giriş köprüsüne ait teknik çalışmaları kapsar. Bina ve geçiş yapıları, kendi proje başlıkları içinde ele alınır.\n\nÜç boyutlu sunum modeli, önüretimli betonarme binanın tek blok taşıyıcı düzenini gösterir. Kaynak pafta ölçülerinden hazırlanan sadeleştirilmiş geometri, bu bloğun genel düzenini farklı açılardan inceleme olanağı verir.\n\nMenfez ve bina giriş köprüsü, referansın ayrıca belgelenen teknik kapsamındadır. Bu başlıklar, bina sunum modelinden ayrı proje çalışmaları olarak anlatılır."
+    ],
+    "gallery": [
+      {
+        "src": "/projects/v32/cihan-tamamlanan.webp",
+        "caption": "Tamamlanan üretim tesisi · saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Cihan Tat Gıda üretim tesisi saha görüntüsü"
+      },
+      {
+        "src": "/references/2026-10/cihan-tat/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Cihan Tat önüretimli betonarme bina bloğunun taşıyıcı düzeni için genel 3D sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/cihan-tat/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Cihan Tat · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/cihan-tat/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Cihan Tat önüretimli betonarme bina bloğunun taşıyıcı düzeni için ana elemanlara odaklanan 3D görünüm"
+      },
+      {
+        "src": "/references/2026-10/cihan-tat/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Cihan Tat önüretimli betonarme bina bloğunun taşıyıcı düzeni için üstten 3D görünüm"
+      }
+    ],
+    "scopeNote": "Sunum modeli, önüretimli betonarme binanın tek blok taşıyıcı düzenini gösterir. Menfez ve giriş köprüsü ayrı teknik proje başlıklarıdır. 3D sunum, uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [
+      {
+        "label": "Belgelenen bina sistemi",
+        "value": "Önüretimli betonarme"
+      }
+    ],
+    "package": "Referans projeler 02",
+    "origin": "Pafta ölçülerinden sunum",
+    "model": {
+      "src": "/references/2026-10/cihan-tat/cihan-tat.glb",
+      "bytes": 15672,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/projects/v32/cihan-tamamlanan.webp",
+      "caption": "Tamamlanan üretim tesisi · saha videosundan seçilmiş kare",
+      "kind": "photo",
+      "alt": "Cihan Tat Gıda üretim tesisi saha görüntüsü"
+    }
+  },
+  {
+    "slug": "dmr",
+    "title": "DMR Entegre Orman Ürünleri",
+    "category": "Prefabrik",
+    "summary": "DMR Entegre Orman Ürünleri projesinde betonarme prefabrik taşıyıcı elemanlar, yapı hacimlerinin ana geometrisini oluşturur. Kolonlar, çatı kirişleri ve ikincil taşıyıcılar, üç boyutlu görünüşte birlikte okunur. Referans sunumu, genel yapı görünüşünü iç mekân ve taşıyıcı sistem açılarıyla tamamlar. Böylece dış kütle ile prefabrik iskelet arasındaki ilişki, proje geometrisine bağlı ve anlaşılır bir anlatımla gösterilir.",
+    "description": [
+      "DMR Entegre Orman Ürünleri projesinde betonarme prefabrik taşıyıcı elemanlar, yapı hacimlerinin ana geometrisini oluşturur. Kolonlar, çatı kirişleri ve ikincil taşıyıcılar, üç boyutlu görünüşte birlikte okunur. Referans sunumu, genel yapı görünüşünü iç mekân ve taşıyıcı sistem açılarıyla tamamlar. Böylece dış kütle ile prefabrik iskelet arasındaki ilişki, proje geometrisine bağlı ve anlaşılır bir anlatımla gösterilir."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/dmr/dmr_hero.webp",
+        "caption": "Genel perspektif — mevcut kaynak modelinden 3B sunum.",
+        "kind": "model",
+        "alt": "DMR ENTEGRE betonarme prefabrik yapı genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/dmr/dmr_tasiyici.webp",
+        "caption": "Taşıyıcı sistem görünüşü — mevcut kaynak modelinden 3B sunum.",
+        "kind": "model",
+        "alt": "DMR ENTEGRE betonarme prefabrik yapı taşıyıcı sistem görünüşü"
+      },
+      {
+        "src": "/references/2026-10/dmr/dmr_ust.webp",
+        "caption": "Üst görünüş — mevcut kaynak modelinden 3B sunum.",
+        "kind": "model",
+        "alt": "DMR ENTEGRE betonarme prefabrik yapı üst görünüş"
+      }
+    ],
+    "scopeNote": "Kaynak model sunum amacıyla düzenlendi. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Taşıyıcı sunumu",
+        "value": "Betonarme prefabrik kolon ve çatı elemanları"
+      }
+    ],
+    "package": "Prefabrik referans paketi",
+    "model": {
+      "src": "/references/2026-10/dmr/dmr.glb",
+      "bytes": 552360,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "origin": "Mevcut kaynak modelinden 3D sunum",
+    "cover": {
+      "src": "/references/2026-10/dmr/dmr_hero.webp",
+      "caption": "Genel perspektif — mevcut kaynak modelinden 3B sunum.",
+      "kind": "model",
+      "alt": "DMR ENTEGRE betonarme prefabrik yapı genel perspektif"
+    }
+  },
+  {
+    "slug": "diyanet",
+    "title": "Türkiye Diyanet Vakfı C Blok",
+    "category": "Prefabrik",
+    "summary": "C Blok’un mimari yerleşimini ve taşıyıcı düzenini birlikte anlatan referans. Mevcut üç boyutlu model, yapının genel kurgusunu farklı açılardan görünür kılar.",
+    "description": [
+      "Türkiye Diyanet Vakfı C Blok projesi, mimari ve statik proje çizimleriyle tanımlanan bir yapı referansıdır. Sunumun odağında C Blok’un biçimi, yerleşimi ve taşıyıcı eleman ilişkileri yer alır.\n\nMimari çizimler yapı düzenini, statik çizimler ise taşıyıcı sistem kurgusunu anlatır. Mevcut üç boyutlu kaynaktan hazırlanan sunum, bu yapı bütününün farklı açılardan okunmasını destekler."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/diyanet/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Türkiye Diyanet Vakfı C Blok projesinin genel üç boyutlu sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/diyanet/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Türkiye Diyanet Vakfı C Blok · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/diyanet/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Türkiye Diyanet Vakfı C Blok projesinde modellenen ana elemanların üç boyutlu sunumu"
+      },
+      {
+        "src": "/references/2026-10/diyanet/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Türkiye Diyanet Vakfı C Blok projesinin modellenen geometrisine üstten bakış"
+      }
+    ],
+    "scopeNote": "Mevcut üç boyutlu kaynaktan aktarılmış sunum modeli. Uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [],
+    "package": "Referans projeler 02",
+    "origin": "Mevcut 3D kaynak",
+    "model": {
+      "src": "/references/2026-10/diyanet/diyanet.glb",
+      "bytes": 847268,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/references/2026-10/diyanet/hero.webp",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "Türkiye Diyanet Vakfı C Blok projesinin genel üç boyutlu sunum görünümü"
+    }
+  },
+  {
+    "slug": "romon",
+    "title": "ROMON",
+    "category": "Prefabrik",
+    "summary": "Statik proje çizimlerini ve mevcut üç boyutlu geometriyi bir araya getiren referans. Yapının genel düzeni, farklı açılardan hazırlanan model görselleriyle sunulur.",
+    "description": [
+      "ROMON referansı, statik proje çizimleri ve mevcut üç boyutlu kaynak üzerinden sunulur. Anlatım, yapının genel biçimini ve modelde temsil edilen ana eleman ilişkilerini görünür kılar.\n\nMevcut üç boyutlu kaynaktan hazırlanan sunum modeli, yapı bütününü farklı açılardan inceleme olanağı verir. Genel görünüş, üstten görünüş ve sistem odaklı görseller, mekânsal kurgunun okunmasını destekler."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/romon/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "ROMON projesinin genel üç boyutlu sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/romon/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "ROMON · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/romon/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "ROMON projesinde modellenen ana elemanların üç boyutlu sunumu"
+      },
+      {
+        "src": "/references/2026-10/romon/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "ROMON projesinin modellenen geometrisine üstten bakış"
+      }
+    ],
+    "scopeNote": "Mevcut üç boyutlu kaynaktan aktarılmış sunum modeli. Uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [],
+    "package": "Referans projeler 02",
+    "origin": "Mevcut 3D kaynak",
+    "model": {
+      "src": "/references/2026-10/romon/romon.glb",
+      "bytes": 472124,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/references/2026-10/romon/hero.webp",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "ROMON projesinin genel üç boyutlu sunum görünümü"
+    }
+  },
+  {
+    "slug": "hizel-ciftlik",
+    "title": "Hizel Çiftlik",
+    "category": "Tarımsal",
+    "summary": "Ahır, yem deposu, revir ve gübre çukuru çalışmalarını içeren çiftlik referansı. 3D sunum, ana ahırın betonarme taşıyıcıları ve çelik üst yapısına odaklanır.",
+    "description": [
+      "Hizel Çiftlik referansı; ahır, yem deposu, revir ve gübre çukuru gibi farklı işletme bileşenlerini kapsar. Bu yapı başlıkları, çiftlik projesinin işlevsel kapsamını birlikte ortaya koyar.\n\nProje çalışmaları mimari, betonarme ve çelik çizimleri içerir. Teknik anlatım, bu disiplinleri ilgili yapı bileşenleriyle birlikte ele alır.\n\nPafta ölçülerinden hazırlanan sadeleştirilmiş üç boyutlu sunum, ana ahırın betonarme taşıyıcıları ve çelik üst yapısını gösterir. Genel görünüş ve üstten görünüş, bu yapının ana eleman ilişkilerini farklı açılardan inceleme olanağı verir."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/hizel-ciftlik/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Hizel Çiftlik ana ahırının betonarme taşıyıcıları ve çelik üst yapısı için genel 3D sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/hizel-ciftlik/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Hizel Çiftlik · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/hizel-ciftlik/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Hizel Çiftlik ana ahırının betonarme taşıyıcıları ve çelik üst yapısı için ana elemanlara odaklanan 3D görünüm"
+      },
+      {
+        "src": "/references/2026-10/hizel-ciftlik/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Hizel Çiftlik ana ahırının betonarme taşıyıcıları ve çelik üst yapısı için üstten 3D görünüm"
+      },
+      {
+        "src": "/references/2026-10/hizel-ciftlik/yem-deposu-hero.webp",
+        "caption": "Yem deposu · ayrı 3B sunum",
+        "kind": "model",
+        "alt": "Hizel yem deposunun ayrı sunum modeli"
+      }
+    ],
+    "scopeNote": "3D sunum kapsamı, ana ahırın betonarme taşıyıcıları ve çelik üst yapısıdır. Yem deposu, revir ve gübre çukuru referansın ayrı teknik başlıklarıdır. Sunum, uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [],
+    "package": "Referans projeler 02",
+    "origin": "Pafta ölçülerinden sunum",
+    "model": {
+      "src": "/references/2026-10/hizel-ciftlik/hizel-ciftlik.glb",
+      "bytes": 325332,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/references/2026-10/hizel-ciftlik/hero.webp",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "Hizel Çiftlik ana ahırının betonarme taşıyıcıları ve çelik üst yapısı için genel 3D sunum görünümü"
+    },
+    "additionalModels": [
+      {
+        "src": "/references/2026-10/hizel-ciftlik/hizel-yem-deposu.glb",
+        "bytes": 137428,
+        "label": "Yem deposu · ayrı sunum modeli",
+        "upAxis": "y"
+      }
+    ]
+  },
+  {
+    "slug": "as-onur",
+    "title": "AS ONUR",
+    "category": "Prefabrik",
+    "summary": "AS ONUR projesinin ana prefabrik bloğu, 52,00 metre boyuna aks uzunluğu ve 24,73 metre enine aks aralığıyla tanımlanır. Boyuna çerçeveler, 8,50 metrelik ilk aks aralığının ardından altı adet 7,25 metrelik aralıkla tekrarlanır. Referans sunumu, ana taşıyıcı sıralarını ve uç duvarlardaki ara aksları aynı plan üzerinde ilişkilendirerek prefabrik sistemin düzenini görünür kılar.",
+    "description": [
+      "AS ONUR projesinin ana prefabrik bloğu, 52,00 metre boyuna aks uzunluğu ve 24,73 metre enine aks aralığıyla tanımlanır. Boyuna çerçeveler, 8,50 metrelik ilk aks aralığının ardından altı adet 7,25 metrelik aralıkla tekrarlanır. Referans sunumu, ana taşıyıcı sıralarını ve uç duvarlardaki ara aksları aynı plan üzerinde ilişkilendirerek prefabrik sistemin düzenini görünür kılar."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/as-onur/as-onur_hero.webp",
+        "caption": "Genel perspektif — kaynak eleman ölçüleriyle kolon altı referanslı 3B sunum.",
+        "kind": "model",
+        "alt": "AS ONUR betonarme prefabrik yapı genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/as-onur/as-onur_tasiyici.webp",
+        "caption": "Taşıyıcı sistem görünüşü — kaynak eleman ölçüleriyle kolon altı referanslı 3B sunum.",
+        "kind": "model",
+        "alt": "AS ONUR betonarme prefabrik yapı taşıyıcı sistem görünüşü"
+      },
+      {
+        "src": "/references/2026-10/as-onur/as-onur_ust.webp",
+        "caption": "Üst görünüş — kaynak eleman ölçüleriyle kolon altı referanslı 3B sunum.",
+        "kind": "model",
+        "alt": "AS ONUR betonarme prefabrik yapı üst görünüş"
+      }
+    ],
+    "scopeNote": "Model 0,00 referansı beton kolon gövdesi altıdır; gerçek zemin ve gömülü boy ilişkisi kaynakta kesinleştirilememiştir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Ana aks oturumu",
+        "value": "24,73 × 52,00 m"
+      },
+      {
+        "label": "Boy aksları",
+        "value": "8,50 + 6 × 7,25 m"
+      },
+      {
+        "label": "Kolon kalıp gövdesi",
+        "value": "60 × 60 cm; beton gövde boyu 6,20 m"
+      },
+      {
+        "label": "Makas kaynak konturu",
+        "value": "24,09 m nominal eleman; 1,65 m toplam profil yüksekliği"
+      }
+    ],
+    "package": "Prefabrik referans paketi",
+    "model": {
+      "src": "/references/2026-10/as-onur/as-onur.glb",
+      "bytes": 77168,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "origin": "Kaynak eleman ölçüleriyle kolon altı referanslı 3D sunum",
+    "cover": {
+      "src": "/references/2026-10/as-onur/as-onur_hero.webp",
+      "caption": "Genel perspektif — kaynak eleman ölçüleriyle kolon altı referanslı 3B sunum.",
+      "kind": "model",
+      "alt": "AS ONUR betonarme prefabrik yapı genel perspektif"
+    }
+  },
+  {
+    "slug": "karapurcek",
+    "title": "KARAPÜRÇEK",
+    "category": "Prefabrik",
+    "summary": "KARAPÜRÇEK yapısının betonarme prefabrik taşıyıcı düzeni, 19,40 metre en açıklığını sekiz çatı çerçevesiyle bir araya getirir. Boy yönünde 4,40 metrelik ilk aks aralığını altı adet 7,50 metrelik modül izler; toplam aks boyu 49,40 metredir. 60 × 60 cm ana kolonlar ve çatı makasları, üretim ve montaj düzenini okunabilir bir bütün olarak gösterir. Kesitlerdeki +6,00 ve +7,60 metre kotları yapının düşey oranlarını tanımlar.",
+    "description": [
+      "KARAPÜRÇEK yapısının betonarme prefabrik taşıyıcı düzeni, 19,40 metre en açıklığını sekiz çatı çerçevesiyle bir araya getirir. Boy yönünde 4,40 metrelik ilk aks aralığını altı adet 7,50 metrelik modül izler; toplam aks boyu 49,40 metredir. 60 × 60 cm ana kolonlar ve çatı makasları, üretim ve montaj düzenini okunabilir bir bütün olarak gösterir. Kesitlerdeki +6,00 ve +7,60 metre kotları yapının düşey oranlarını tanımlar."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/karapurcek/karapurcek_hero.webp",
+        "caption": "Genel perspektif — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "KARAPÜRÇEK betonarme prefabrik yapı genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/karapurcek/karapurcek_tasiyici.webp",
+        "caption": "Taşıyıcı sistem görünüşü — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "KARAPÜRÇEK betonarme prefabrik yapı taşıyıcı sistem görünüşü"
+      },
+      {
+        "src": "/references/2026-10/karapurcek/karapurcek_ust.webp",
+        "caption": "Üst görünüş — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "KARAPÜRÇEK betonarme prefabrik yapı üst görünüş"
+      }
+    ],
+    "scopeNote": "Eleman kesitleri ve birleşim ayrıntıları sunum için sadeleştirilmiştir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Ana aks oturumu",
+        "value": "19,40 × 49,40 m"
+      },
+      {
+        "label": "Boy aksları",
+        "value": "4,40 + 6 × 7,50 m"
+      },
+      {
+        "label": "Ana elemanlar",
+        "value": "16 kolon, 8 makas; kolon kesiti 60 × 60 cm"
+      },
+      {
+        "label": "Pafta çatı kotları",
+        "value": "+ 6,00 / +7,60 m"
+      }
+    ],
+    "package": "Prefabrik referans paketi",
+    "model": {
+      "src": "/references/2026-10/karapurcek/karapurcek.glb",
+      "bytes": 66288,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "origin": "Kaynak aks ve kotlarına dayalı taşıyıcı sunumu",
+    "cover": {
+      "src": "/references/2026-10/karapurcek/karapurcek_hero.webp",
+      "caption": "Genel perspektif — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+      "kind": "model",
+      "alt": "KARAPÜRÇEK betonarme prefabrik yapı genel perspektif"
+    }
+  },
+  {
+    "slug": "iseri",
+    "title": "İŞERİ",
+    "category": "Prefabrik",
+    "summary": "İŞERİ projesinin ana taşıyıcı aksları, iki adet 19,70 metrelik enine aralık ve dokuz adet 7,95 metrelik boyuna aralıkla düzenlenmiştir. Statik paftada 60 × 60 santimetre kolon kesiti ve 20 çatı makası bilgisi bulunur. Mimari kesitlerde +5,00 metre kolon/oluk hattı ile +6,50 metre çatı tepe kotu gösterilir. Plan ve kesit geometrisi, üç boyutlu sunumda aynı taşıyıcı düzen üzerinden okunur.",
+    "description": [
+      "İŞERİ projesinin ana taşıyıcı aksları, iki adet 19,70 metrelik enine aralık ve dokuz adet 7,95 metrelik boyuna aralıkla düzenlenmiştir. Statik paftada 60 × 60 santimetre kolon kesiti ve 20 çatı makası bilgisi bulunur. Mimari kesitlerde +5,00 metre kolon/oluk hattı ile +6,50 metre çatı tepe kotu gösterilir. Plan ve kesit geometrisi, üç boyutlu sunumda aynı taşıyıcı düzen üzerinden okunur."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/iseri/iseri_hero.webp",
+        "caption": "Genel perspektif — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "İŞERİ betonarme prefabrik yapı genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/iseri/iseri_tasiyici.webp",
+        "caption": "Taşıyıcı sistem görünüşü — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "İŞERİ betonarme prefabrik yapı taşıyıcı sistem görünüşü"
+      },
+      {
+        "src": "/references/2026-10/iseri/iseri_ust.webp",
+        "caption": "Üst görünüş — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "İŞERİ betonarme prefabrik yapı üst görünüş"
+      }
+    ],
+    "scopeNote": "Eleman kesitleri ve birleşim ayrıntıları sunum için sadeleştirilmiştir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Ana aks oturumu",
+        "value": "39,40 × 71,55 m"
+      },
+      {
+        "label": "Çatı açıklıkları",
+        "value": "2 × 19,70 m"
+      },
+      {
+        "label": "Boy aksları",
+        "value": "9 × 7,95 m"
+      },
+      {
+        "label": "Kolon kesiti",
+        "value": "60 × 60 cm"
+      },
+      {
+        "label": "Çatı elemanları",
+        "value": "20 makas;216 aşık;27 oluk"
+      },
+      {
+        "label": "Pafta çatı kotları",
+        "value": "+5,00/+ 6,50 m"
+      }
+    ],
+    "package": "Prefabrik referans paketi",
+    "model": {
+      "src": "/references/2026-10/iseri/iseri.glb",
+      "bytes": 192428,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "origin": "Kaynak aks ve kotlarına dayalı taşıyıcı sunumu",
+    "cover": {
+      "src": "/references/2026-10/iseri/iseri_hero.webp",
+      "caption": "Genel perspektif — kaynak aks ve kotlarına dayalı taşıyıcı sunumu.",
+      "kind": "model",
+      "alt": "İŞERİ betonarme prefabrik yapı genel perspektif"
+    }
+  },
+  {
+    "slug": "sinvet",
+    "title": "SİNVET",
+    "category": "Prefabrik",
+    "summary": "SİNVET yapısında 21,00 metre en açıklığı boyunca çalışan dokuz çatı makası, 60,95 metrelik boy aksı üzerinde düzenlenir. Sekiz eşit 7,61875 metrelik aks aralığı, prefabrik üretim ve montaj için tekrar eden bir taşıyıcı ritim oluşturur. 50 × 50 cm kolon ailesi ile çatı makaslarının kaynakta görülen dış profili birlikte ele alınır. Yapının sunumu, ana çatı çerçevelerini ve düşey kot ilişkisini ölçülü plan ve kesitlerle anlatır.",
+    "description": [
+      "SİNVET yapısında 21,00 metre en açıklığı boyunca çalışan dokuz çatı makası, 60,95 metrelik boy aksı üzerinde düzenlenir. Sekiz eşit 7,61875 metrelik aks aralığı, prefabrik üretim ve montaj için tekrar eden bir taşıyıcı ritim oluşturur. 50 × 50 cm kolon ailesi ile çatı makaslarının kaynakta görülen dış profili birlikte ele alınır. Yapının sunumu, ana çatı çerçevelerini ve düşey kot ilişkisini ölçülü plan ve kesitlerle anlatır."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/sinvet/sinvet_hero.webp",
+        "caption": "Genel perspektif — kaynak makas dış profiliyle 3B taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "SİNVET betonarme prefabrik yapı genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/sinvet/sinvet_tasiyici.webp",
+        "caption": "Taşıyıcı sistem görünüşü — kaynak makas dış profiliyle 3B taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "SİNVET betonarme prefabrik yapı taşıyıcı sistem görünüşü"
+      },
+      {
+        "src": "/references/2026-10/sinvet/sinvet_ust.webp",
+        "caption": "Üst görünüş — kaynak makas dış profiliyle 3B taşıyıcı sunumu.",
+        "kind": "model",
+        "alt": "SİNVET betonarme prefabrik yapı üst görünüş"
+      }
+    ],
+    "scopeNote": "Makas dış profili kaynak kesitten alınmıştır; enine kesit değişimi ve küçük birleşim detayları sunum için sadeleştirilmiştir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Ana aks oturumu",
+        "value": "21,00 × 60,95 m"
+      },
+      {
+        "label": "Boy aksları",
+        "value": "8 × 7,61875 m; 1–9 aksları"
+      },
+      {
+        "label": "Çatı makası",
+        "value": "9 adet; nominal eleman boyu20,66 m"
+      },
+      {
+        "label": "Kolon kesit ailesi",
+        "value": "50 × 50 cm"
+      },
+      {
+        "label": "Ana plan kolon düzeni",
+        "value": "18 ana mesnet kolonu + 2 uç orta kolon; 50 × 50 cm"
+      },
+      {
+        "label": "Çatı makası pafta malzemesi",
+        "value": "Beton sınıfı C35"
+      }
+    ],
+    "package": "Prefabrik referans paketi",
+    "model": {
+      "src": "/references/2026-10/sinvet/sinvet.glb",
+      "bytes": 78032,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "origin": "Kaynak makas dış profiliyle 3D taşıyıcı sunumu",
+    "cover": {
+      "src": "/references/2026-10/sinvet/sinvet_hero.webp",
+      "caption": "Genel perspektif — kaynak makas dış profiliyle 3B taşıyıcı sunumu.",
+      "kind": "model",
+      "alt": "SİNVET betonarme prefabrik yapı genel perspektif"
+    }
+  },
+  {
+    "slug": "viakasta",
+    "title": "Viakasta Entegre Orman Ürünleri",
+    "category": "Prefabrik",
+    "summary": "Endüstriyel yapının temel ve saha sürecinden seçilmiş arşiv görüntüleri.",
+    "description": [
+      "Endüstriyel yapının temel ve saha sürecinden seçilmiş arşiv görüntüleri."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/viakasta/viakasta_01_saha_genel.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Temel imalatı devam eden saha ile çevredeki yolların ve yapıların drone genel görünümü."
+      },
+      {
+        "src": "/references/2026-10/viakasta/viakasta_02_temel_aks_duzeni.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Üstten drone bakışında sıralı temel kazıları, temel elemanları ve saha yolları."
+      },
+      {
+        "src": "/references/2026-10/viakasta/viakasta_03_temel_dizisi.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "İki sıra halinde ilerleyen temel imalatı ve sahadaki beton pompasının drone görünümü."
+      },
+      {
+        "src": "/references/2026-10/viakasta/viakasta_04_beton_dokumu.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Temel imalatlarının yanında beton pompası ve beton mikseri ile yürütülen saha çalışması."
+      },
+      {
+        "src": "/references/2026-10/viakasta/viakasta_05_temel_yakin_bakis.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Kazı ve temel alanlarının yakından drone görünümü; beton pompası saha kenarında çalışıyor."
+      },
+      {
+        "src": "/references/2026-10/viakasta/viakasta_06_kare_kadraj_temeller.webp",
+        "caption": "Saha videosundan seçilmiş kare",
+        "kind": "photo",
+        "alt": "Kaynak videonun kare kadrajında temel sıraları, beton pompası ve çevresindeki kazı alanı."
+      }
+    ],
+    "scopeNote": "Saha kaydı, yapının tamamlanma veya kabul belgesi yerine geçmez. Yeni paketteki üç boyutlu modelin proje kimliği kesinleştirilmediği için bu kayda bağlanmamıştır.",
+    "facts": [],
+    "package": "Prefabrik referans paketi",
+    "cover": {
+      "src": "/references/2026-10/viakasta/viakasta_01_saha_genel.webp",
+      "caption": "Saha videosundan seçilmiş kare",
+      "kind": "photo",
+      "alt": "Temel imalatı devam eden saha ile çevredeki yolların ve yapıların drone genel görünümü."
+    }
+  },
+  {
+    "slug": "ahir-projesi-01",
+    "title": "Ahır Projesi 01",
+    "category": "Tarımsal",
+    "summary": "Padoklar, karantina ve revir ile bütünleşen ahır düzeni.",
+    "description": [
+      "Merkezi yem yolu, barınak bölümleri, karantina ve revir kaynak plan üzerinde birlikte okunabilir. Yerleşim paftası, yapıların açık alanlarla ilişkisini gösterir."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-01/ahr-01-plan.webp",
+        "caption": "Zemin kat planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Zemin kat planı · kaynak çizim"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-01/ahr-01-vaziyet.webp",
+        "caption": "Yerleşim planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Yerleşim planı · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak çizimlerin seçilmiş plan sunumu. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Plan düzeni",
+        "value": "Padoklar ve merkezi yem yolu"
+      },
+      {
+        "label": "Destek alanları",
+        "value": "Karantina ve revir"
+      },
+      {
+        "label": "Paftadaki sistem",
+        "value": "Çelik çatı; beton döşeme"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-01/ahr-01-plan.webp",
+      "caption": "Zemin kat planı · kaynak çizim",
+      "kind": "drawing",
+      "alt": "Zemin kat planı · kaynak çizim"
+    }
+  },
+  {
+    "slug": "ahir-projesi-02",
+    "title": "Ahır Projesi 02",
+    "category": "Tarımsal",
+    "summary": "Ahır planı ve taşıyıcı sistem çizimleriyle belgelenen proje.",
+    "description": [
+      "Ahır planı ve statik çizimler üzerinden kayıtlı tarımsal yapı projesi."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-02/ahr-02-plan.webp",
+        "caption": "Ahır planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Ahır planı · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak çizimlerin seçilmiş plan sunumu. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Kaynak içerik",
+        "value": "Mimari ve statik çizimler"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-02/ahr-02-plan.webp",
+      "caption": "Ahır planı · kaynak çizim",
+      "kind": "drawing",
+      "alt": "Ahır planı · kaynak çizim"
+    }
+  },
+  {
+    "slug": "ahir-projesi-03",
+    "title": "Ahır Projesi 03",
+    "category": "Tarımsal",
+    "summary": "Mimari ve statik çizimlerle belgelenen ahır projesi.",
+    "description": [
+      "Mimari proje ile taşıyıcı sistem çizimlerinin birlikte ele alındığı ahır çalışması."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-03/ahr-03-plan.webp",
+        "caption": "Ahır planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Ahır planı · kaynak çizim"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-03/ahr-03-z-pafta.webp",
+        "caption": "Pafta detayları · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Pafta detayları · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak çizimlerin seçilmiş plan sunumu. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Kaynak içerik",
+        "value": "Mimari ve statik çizimler"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-03/ahr-03-plan.webp",
+      "caption": "Ahır planı · kaynak çizim",
+      "kind": "drawing",
+      "alt": "Ahır planı · kaynak çizim"
+    }
+  },
+  {
+    "slug": "ahir-projesi-04",
+    "title": "Ahır Projesi 04",
+    "category": "Tarımsal",
+    "summary": "Ahır, yem deposu ve etaplı padok yerleşimi.",
+    "description": [
+      "Vaziyet planı; prefabrik ahır, yem deposu, yem yolu ve etaplı açık padokların ilişkisini gösterir. Pafta alanları, çizimdeki etiketlerin beyanıdır."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-04/ahr-04_hero.png",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Genel perspektif · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-04/ahr-04_rear.png",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Karşı perspektif · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-04/ahr-04_front.png",
+        "caption": "Cephe görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Cephe görünümü · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-04/ahr-04_top.png",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Üst görünüm · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-04/ahr-04-vaziyet.webp",
+        "caption": "Vaziyet ve etap şeması · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Vaziyet ve etap şeması · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Arşivdeki SketchUp modelinden hazırlanan 3D sunum. Yüksek detaylı model: yaklaşık 75 MB. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Vaziyet planı etiketi · ahır",
+        "value": "1056 m² prefabrik ahır"
+      },
+      {
+        "label": "Vaziyet planı etiketi · depo",
+        "value": "250 m² yem deposu"
+      },
+      {
+        "label": "Yerleşim",
+        "value": "Etaplı açık padoklar"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-04/ahr-04_hero.png",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "Genel perspektif · 3B sunum"
+    },
+    "modelNotice": "Bu kaydın yüksek detaylı 3B dosyası web yükleme sınırının üzerindedir. Modelden hazırlanmış görünüşleri aşağıdaki galeriden inceleyebilirsiniz."
+  },
+  {
+    "slug": "ahir-projesi-05",
+    "title": "Ahır Projesi 05",
+    "category": "Tarımsal",
+    "summary": "Besi yapısının plan ve taşıyıcı sistem çalışması.",
+    "description": [
+      "Besi ahırının planı ve statik çizimleriyle belgelenen proje kaydı."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-05/ahr-05-plan.webp",
+        "caption": "Ahır planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Ahır planı · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak çizimlerin seçilmiş plan sunumu. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Kaynak içerik",
+        "value": "Mimari ve statik çizimler"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-05/ahr-05-plan.webp",
+      "caption": "Ahır planı · kaynak çizim",
+      "kind": "drawing",
+      "alt": "Ahır planı · kaynak çizim"
+    }
+  },
+  {
+    "slug": "ahir-projesi-06",
+    "title": "Ahır Projesi 06",
+    "category": "Tarımsal",
+    "summary": "Yapı çizimleri ile saha bilgilerini birleştiren referans.",
+    "description": [
+      "Yapı ve statik çizimler, saha plankotesiyle birlikte arşivlenmiştir."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-06/ahr-06-plan.webp",
+        "caption": "Seçili taşıyıcı sistem planları · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Seçili taşıyıcı sistem planları · kaynak çizim"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-06/ahr-06-z-pafta.webp",
+        "caption": "Pafta detayları · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Pafta detayları · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak çizimlerin seçilmiş plan sunumu. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Kaynak içerik",
+        "value": "Mimari ve statik çizimler"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-06/ahr-06-plan.webp",
+      "caption": "Seçili taşıyıcı sistem planları · kaynak çizim",
+      "kind": "drawing",
+      "alt": "Seçili taşıyıcı sistem planları · kaynak çizim"
+    }
+  },
+  {
+    "slug": "ahir-projesi-07",
+    "title": "Ahır Projesi 07",
+    "category": "Tarımsal",
+    "summary": "Merkezi yem yolu çevresinde düzenlenen besi padokları.",
+    "description": [
+      "Zemin kat planı, kesit ve cepheler; besi padokları, merkezi yem yolu ve çatı kurgusunu birlikte anlatır."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahir-07-clean-render.png",
+        "caption": "Kaynak sunum modelinden genel perspektif",
+        "kind": "model",
+        "alt": "Kaynak sunum modelinden genel perspektif"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07_hero.png",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Genel perspektif · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07_rear.png",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Karşı perspektif · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07_front.png",
+        "caption": "Cephe görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Cephe görünümü · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07_top.png",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Üst görünüm · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07_open_roof.png",
+        "caption": "Açık çatı · sunum türevi · 3B sunum",
+        "kind": "model",
+        "alt": "Açık çatı · sunum türevi · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07-plan.webp",
+        "caption": "Zemin kat planı · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Zemin kat planı · kaynak çizim"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07-cepheler.webp",
+        "caption": "Uzun cepheler · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Uzun cepheler · kaynak çizim"
+      },
+      {
+        "src": "/references/2026-10/ahir-projesi-07/ahr-07-pafta.webp",
+        "caption": "Plan, kesit ve cepheler · kaynak çizim",
+        "kind": "drawing",
+        "alt": "Plan, kesit ve cepheler · kaynak çizim"
+      }
+    ],
+    "scopeNote": "Kaynak plan ve kesitten türetilmiş yaklaşık sunum geometrisi. Ölçü kalibrasyonu ve hayvan kapasitesi kesinleştirilmemiştir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Kaynak plan · kullanım",
+        "value": "Besi padokları ve merkezi yem yolu"
+      },
+      {
+        "label": "Kaynak pafta · çatı",
+        "value": "Çelik çatı ve sandviç panel"
+      },
+      {
+        "label": "Paftadaki çatı eğimi",
+        "value": "%20"
+      }
+    ],
+    "package": "Ahır referans paketi",
+    "cover": {
+      "src": "/references/2026-10/ahir-projesi-07/ahir-07-clean-render.png",
+      "caption": "Kaynak sunum modelinden genel perspektif",
+      "kind": "model",
+      "alt": "Kaynak sunum modelinden genel perspektif"
+    },
+    "model": {
+      "src": "/references/2026-10/ahir-projesi-07/ahr-07.glb",
+      "bytes": 206328,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    }
+  },
+  {
+    "slug": "saraclar-plan",
+    "title": "Saraçlar 2. Etap",
+    "category": "Betonarme",
+    "summary": "Kaynak plandaki duvar, kolon ve panel yerleşiminden hazırlanan sunum modeli.",
+    "description": [
+      "Kaynak plandaki duvar, kolon ve panel yerleşiminden hazırlanan sunum modeli."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/saraclar-plan/saraclar-plan_combined.webp",
+        "caption": "Mimari kütle ve betonarme taşıyıcı sistem",
+        "kind": "model",
+        "alt": "Mimari kütle ve betonarme taşıyıcı sistem"
+      },
+      {
+        "src": "/references/2026-10/saraclar-plan/saraclar-plan_architecture.webp",
+        "caption": "Mimari görünüm",
+        "kind": "model",
+        "alt": "Mimari görünüm"
+      },
+      {
+        "src": "/references/2026-10/saraclar-plan/saraclar-plan_structure.webp",
+        "caption": "Taşıyıcı sistem",
+        "kind": "model",
+        "alt": "Taşıyıcı sistem"
+      },
+      {
+        "src": "/references/2026-10/saraclar-plan/saraclar-plan_reverse.webp",
+        "caption": "Ters açı",
+        "kind": "model",
+        "alt": "Ters açı"
+      },
+      {
+        "src": "/references/2026-10/saraclar-plan/p003-source-plan.webp",
+        "caption": "Saraçlar 2. Etap — kaynak plan seçimi",
+        "kind": "drawing",
+        "alt": "Saraçlar 2. Etap — kaynak plan seçimi"
+      }
+    ],
+    "scopeNote": "Kaynak plandaki duvar, kolon ve panel yerleşiminden hazırlanan sunum modeli. 3,00 m yükseklik temsil amacıyla varsayılmıştır; yapının toplam kat adedi ve nihai mimari görünüşü doğrulanmamıştır. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Sunum kapsamı",
+        "value": "Mimari plan ve taşıyıcı yerleşim"
+      },
+      {
+        "label": "Model yüksekliği",
+        "value": "3,00 m · sunum için temsilî kabul"
+      }
+    ],
+    "package": "Betonarme referans paketi",
+    "cover": {
+      "src": "/references/2026-10/saraclar-plan/saraclar-plan_combined.webp",
+      "caption": "Mimari kütle ve betonarme taşıyıcı sistem",
+      "kind": "model",
+      "alt": "Mimari kütle ve betonarme taşıyıcı sistem"
+    },
+    "model": {
+      "src": "/references/2026-10/saraclar-plan/saraclar-plan.glb",
+      "bytes": 384012,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    }
+  },
+  {
+    "slug": "kaynak-05-konut",
+    "title": "Saraçlar Konut Projesi",
+    "category": "Betonarme",
+    "summary": "Normal kat dış konturu, çizimdeki kat kotlarında tekrarlanarak mimari kütle oluşturuldu.",
+    "description": [
+      "Normal kat dış konturu, çizimdeki kat kotlarında tekrarlanarak mimari kütle oluşturuldu."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/kaynak-05-konut/kaynak-05-clean-render.png",
+        "caption": "Kaynak modelden mimari kütle sunumu",
+        "kind": "model",
+        "alt": "Kaynak modelden mimari kütle sunumu"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/kaynak-05-konut_combined.webp",
+        "caption": "Mimari kütle ve temsili kat plakları",
+        "kind": "model",
+        "alt": "Mimari kütle ve temsili kat plakları"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/kaynak-05-konut_architecture.webp",
+        "caption": "Mimari görünüm",
+        "kind": "model",
+        "alt": "Mimari görünüm"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/kaynak-05-konut_structure.webp",
+        "caption": "Temsili yatay plaklar",
+        "kind": "model",
+        "alt": "Temsili yatay plaklar"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/kaynak-05-konut_reverse.webp",
+        "caption": "Ters açı",
+        "kind": "model",
+        "alt": "Ters açı"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/p005-normal-plan.webp",
+        "caption": "Saraçlar — normal kat planı",
+        "kind": "drawing",
+        "alt": "Saraçlar — normal kat planı"
+      },
+      {
+        "src": "/references/2026-10/kaynak-05-konut/p005-kalip-plan.webp",
+        "caption": "Saraçlar — kalıp planı",
+        "kind": "drawing",
+        "alt": "Saraçlar — kalıp planı"
+      }
+    ],
+    "scopeNote": "Normal kat dış konturu, çizimdeki kat kotlarında tekrarlanarak mimari kütle oluşturuldu. Bodrum/zemin kat farkları, cephe ve çatı ayrıntıları modellenmedi. Yatay plakların kalınlığı temsilidir. Kolon, perde ve kiriş geometrisi oluşturulmadı; model taşıyıcı sistem uygulama modeli değildir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Model dayanağı",
+        "value": "Normal kat planı ve paftadaki kat kotları"
+      },
+      {
+        "label": "Sunum kapsamı",
+        "value": "Mimari kütle ve temsilî kat plakları"
+      }
+    ],
+    "package": "Betonarme referans paketi",
+    "cover": {
+      "src": "/references/2026-10/kaynak-05-konut/kaynak-05-clean-render.png",
+      "caption": "Kaynak modelden mimari kütle sunumu",
+      "kind": "model",
+      "alt": "Kaynak modelden mimari kütle sunumu"
+    },
+    "model": {
+      "src": "/references/2026-10/kaynak-05-konut/kaynak-05-konut.glb",
+      "bytes": 28564,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    }
+  },
+  {
+    "slug": "kaynak-06-mimari",
+    "title": "Mimari Plan Çalışması",
+    "category": "Betonarme",
+    "summary": "Kaynak birinci kat planındaki duvar, kolon ve panel profillerinin 3D anlatımı.",
+    "description": [
+      "Kaynak birinci kat planındaki duvar, kolon ve panel profillerinin 3D anlatımı."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan_combined.webp",
+        "caption": "Mimari plan ve eleman yerleşimi · 3B sunum",
+        "kind": "model",
+        "alt": "Mimari plan ve eleman yerleşimi · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan_architecture.webp",
+        "caption": "Mimari plan ve eleman yerleşimi · 3B sunum",
+        "kind": "model",
+        "alt": "Mimari plan ve eleman yerleşimi · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan_structure.webp",
+        "caption": "Mimari plan ve eleman yerleşimi · 3B sunum",
+        "kind": "model",
+        "alt": "Mimari plan ve eleman yerleşimi · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan_reverse.webp",
+        "caption": "Mimari plan ve eleman yerleşimi · 3B sunum",
+        "kind": "model",
+        "alt": "Mimari plan ve eleman yerleşimi · 3B sunum"
+      }
+    ],
+    "scopeNote": "Kaynak birinci kat planındaki duvar, kolon ve panel profillerinin 3D anlatımı. 3,00m yükseklik sunum varsayımıdır; nihai bina görünüşü ve statik tasarım teyidi değildir. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Sunum kapsamı",
+        "value": "Mimari çizimler"
+      }
+    ],
+    "package": "Betonarme referans paketi",
+    "cover": {
+      "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan_combined.webp",
+      "caption": "Mimari plan ve eleman yerleşimi · 3B sunum",
+      "kind": "model",
+      "alt": "Mimari plan ve eleman yerleşimi · 3B sunum"
+    },
+    "model": {
+      "src": "/references/2026-10/kaynak-06-mimari/kaynak-06-plan.glb",
+      "bytes": 192052,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    }
+  },
+  {
+    "slug": "tasci-prefabrik",
+    "title": "Taşçılar Prefabrik Betonarme Sistem",
+    "category": "Betonarme",
+    "summary": "Kaynak60×60cm kolon aplikasyon izlerinin 3D plan sunumu.",
+    "description": [
+      "Kaynak60×60cm kolon aplikasyon izlerinin 3D plan sunumu."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/tasci-prefabrik/tasci-kolon-plan_combined.webp",
+        "caption": "Kolon aplikasyon izlerinden 3B plan sunumu",
+        "kind": "model",
+        "alt": "Kolon aplikasyon izlerinden 3B plan sunumu"
+      },
+      {
+        "src": "/references/2026-10/tasci-prefabrik/tasci-kolon-plan_structure.webp",
+        "caption": "Kolon aplikasyon izlerinden 3B plan sunumu",
+        "kind": "model",
+        "alt": "Kolon aplikasyon izlerinden 3B plan sunumu"
+      },
+      {
+        "src": "/references/2026-10/tasci-prefabrik/tasci-kolon-plan_reverse.webp",
+        "caption": "Kolon aplikasyon izlerinden 3B plan sunumu",
+        "kind": "model",
+        "alt": "Kolon aplikasyon izlerinden 3B plan sunumu"
+      },
+      {
+        "src": "/references/2026-10/tasci-prefabrik/p010-kolon-plan.webp",
+        "caption": "Taşçılar — kolon aplikasyonundan seçilmiş detay",
+        "kind": "drawing",
+        "alt": "Taşçılar — kolon aplikasyonundan seçilmiş detay"
+      },
+      {
+        "src": "/references/2026-10/tasci-prefabrik/p010-cati-plan.webp",
+        "caption": "Taşçılar — çatı montajından seçilmiş detay",
+        "kind": "drawing",
+        "alt": "Taşçılar — çatı montajından seçilmiş detay"
+      }
+    ],
+    "scopeNote": "Kaynak60×60cm kolon aplikasyon izlerinin 3D plan sunumu. 3,00m boy sunum varsayımıdır; çatı, temeller ve nihai bina biçimi bu modelin kapsamı dışındadır. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Sunum kapsamı",
+        "value": "Prefabrik betonarme sistem çizimleri"
+      }
+    ],
+    "package": "Betonarme referans paketi",
+    "cover": {
+      "src": "/references/2026-10/tasci-prefabrik/tasci-kolon-plan_combined.webp",
+      "caption": "Kolon aplikasyon izlerinden 3B plan sunumu",
+      "kind": "model",
+      "alt": "Kolon aplikasyon izlerinden 3B plan sunumu"
+    },
+    "model": {
+      "src": "/references/2026-10/tasci-prefabrik/tasci-kolon-plan.glb",
+      "bytes": 6028,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "tags": [
+      "Prefabrik"
+    ]
+  },
+  {
+    "slug": "cigil-senturk",
+    "title": "Konut ve Villa Planları",
+    "category": "Betonarme",
+    "summary": "İki DWG aynı klasör ailesinde yer almaktadır.",
+    "description": [
+      "İki DWG aynı klasör ailesinde yer almaktadır."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/cigil-senturk/p011-konut-plan.webp",
+        "caption": "Çiğil — konut planları",
+        "kind": "drawing",
+        "alt": "Çiğil — konut planları"
+      },
+      {
+        "src": "/references/2026-10/cigil-senturk/p012-villa-plan.webp",
+        "caption": "Konut ve villa — kaynak planları",
+        "kind": "drawing",
+        "alt": "Konut ve villa — kaynak planları"
+      }
+    ],
+    "scopeNote": "İki DWG aynı klasör ailesinde yer almaktadır. Aynı yapının revizyonları mı, ayrı konutlar mı oldukları yalnız klasör ve dosya adlarından kesinleştirilmemiştir; tek aile içinde kaynak kimlikleri korunmuştur. Bu içerik proje sunumudur; uygulama, imalat veya statik uygunluk onayı değildir.",
+    "facts": [
+      {
+        "label": "Sunum kapsamı",
+        "value": "İki konut çiziminin birlikte sunumu"
+      }
+    ],
+    "package": "Betonarme referans paketi",
+    "cover": {
+      "src": "/references/2026-10/cigil-senturk/p011-konut-plan.webp",
+      "caption": "Çiğil — konut planları",
+      "kind": "drawing",
+      "alt": "Çiğil — konut planları"
+    }
+  },
+  {
+    "slug": "baris-simsar",
+    "title": "Barış Simsar Ahır",
+    "category": "Prefabrik",
+    "summary": "Ahır yapısının taşıyıcı düzenini ve mekânsal kurgusunu gösteren referans. Teknik çizimler ve mevcut üç boyutlu model, yapının genel düzenini birlikte anlatır.",
+    "description": [
+      "Barış Simsar Ahır, hayvancılık kullanımına yönelik bir yapı projesidir. Referans sunumu, ahırın genel biçimini ve ana taşıyıcı elemanların düzenini görünür kılar.\n\nStatik proje çizimleri ve mevcut üç boyutlu kaynak, yapının teknik anlatımının temelini oluşturur. Genel görünüş ve üstten görünüş, yapı bütünü ile taşıyıcı eleman ilişkilerinin farklı açılardan okunmasını sağlar."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/baris-simsar/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Barış Simsar Ahır projesinin genel üç boyutlu sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/baris-simsar/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Barış Simsar Ahır · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/baris-simsar/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Barış Simsar Ahır projesinde modellenen ana elemanların üç boyutlu sunumu"
+      },
+      {
+        "src": "/references/2026-10/baris-simsar/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Barış Simsar Ahır projesinin modellenen geometrisine üstten bakış"
+      }
+    ],
+    "scopeNote": "Mevcut üç boyutlu kaynaktan aktarılmış sunum modeli. Uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [],
+    "package": "Referans projeler 02",
+    "origin": "Mevcut 3D kaynak",
+    "model": {
+      "src": "/references/2026-10/baris-simsar/baris-simsar.glb",
+      "bytes": 22692,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/references/2026-10/baris-simsar/hero.webp",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "Barış Simsar Ahır projesinin genel üç boyutlu sunum görünümü"
+    },
+    "tags": [
+      "Tarımsal"
+    ]
+  },
+  {
+    "slug": "kaan-ayakkabi",
+    "title": "Kaan Ayakkabı",
+    "category": "Prefabrik",
+    "summary": "Betonarme kolon düzenini ve makas/oluk akslarını gösteren referans. Kaynak pafta ölçülerinden hazırlanan sunum, ana taşıyıcı düzeni okunabilir kılar.",
+    "description": [
+      "Kaan Ayakkabı referansı, betonarme yapı projesine ait çizimleri esas alır. Sunumun odağında kolon düzeni ile makas ve oluk doğrultularının birlikte okunması yer alır.\n\nKaynak pafta ölçülerinden hazırlanan sadeleştirilmiş üç boyutlu model, betonarme kolonları ve çatı elemanlarının eksen düzenini gösterir. Makas ve oluklar, imalat profili tanımlamayan eksen gösterimleriyle sunulur.\n\nGenel görünüş ve üstten görünüş, ana taşıyıcı düzenin farklı açılardan incelenmesini destekler."
+    ],
+    "gallery": [
+      {
+        "src": "/references/2026-10/kaan-ayakkabi/hero.webp",
+        "caption": "Genel perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Kaan Ayakkabı betonarme kolon düzeni ve makas/oluk aksları için genel 3D sunum görünümü"
+      },
+      {
+        "src": "/references/2026-10/kaan-ayakkabi/reverse.webp",
+        "caption": "Karşı perspektif · 3B sunum",
+        "kind": "model",
+        "alt": "Kaan Ayakkabı · 3B sunum"
+      },
+      {
+        "src": "/references/2026-10/kaan-ayakkabi/structure.webp",
+        "caption": "Sistem görünümü · 3B sunum",
+        "kind": "model",
+        "alt": "Kaan Ayakkabı betonarme kolon düzeni ve makas/oluk aksları için ana elemanlara odaklanan 3D görünüm"
+      },
+      {
+        "src": "/references/2026-10/kaan-ayakkabi/top.webp",
+        "caption": "Üst görünüm · 3B sunum",
+        "kind": "model",
+        "alt": "Kaan Ayakkabı betonarme kolon düzeni ve makas/oluk aksları için üstten 3D görünüm"
+      }
+    ],
+    "scopeNote": "Sunum modeli, betonarme kolonları ile makas ve oluk akslarını gösterir. Makas ve oluk gösterimleri imalat profili tanımlamaz. 3D sunum, uygulama ve imalat projesi yerine kullanılmaz.",
+    "facts": [],
+    "package": "Referans projeler 02",
+    "origin": "Pafta ölçülerinden sunum",
+    "model": {
+      "src": "/references/2026-10/kaan-ayakkabi/kaan-ayakkabi.glb",
+      "bytes": 49296,
+      "label": "3B sunum modeli",
+      "upAxis": "y"
+    },
+    "cover": {
+      "src": "/references/2026-10/kaan-ayakkabi/hero.webp",
+      "caption": "Genel perspektif · 3B sunum",
+      "kind": "model",
+      "alt": "Kaan Ayakkabı betonarme kolon düzeni ve makas/oluk aksları için genel 3D sunum görünümü"
+    }
+  }
+]

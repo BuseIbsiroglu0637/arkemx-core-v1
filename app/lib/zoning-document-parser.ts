@@ -24,9 +24,13 @@ export function extractZoningConditions(input: string): ParsedZoningCondition[] 
     ["rearSetback", "Arka bahçe", new RegExp(String.raw`\bARKA\s+BAHÇE\b[^0-9]{0,24}${number}\s*(?:m|metre)?`, "i")],
   ];
   for (const [field, label, regex] of numericRules) {
-    const match = text.match(regex);
-    if (!match) continue;
-    results.push({ field, label, value: Number(match[1].replace(",", ".")), evidence: match[0].slice(0, 120), confidence: "high" });
+    const matches = [...text.matchAll(new RegExp(regex.source, 'gi'))];
+    if (!matches.length) continue;
+    const values = matches.map(match => Number(match[1].replace(',', '.')));
+    const maximum = field === 'taks' ? 1 : field === 'kaks' ? 10 : field === 'hmax' ? 250 : 100;
+    const invalid = values.some(value => !Number.isFinite(value) || value < 0 || value > maximum || (['taks','kaks','hmax'].includes(field) && value === 0));
+    const ambiguous = new Set(values).size > 1 || matches.some(match => /%/.test(match[0]));
+    results.push({ field, label, value: values[0], evidence: matches.map(match=>match[0]).join(' / ').slice(0, 240), confidence: invalid || ambiguous ? 'review' : 'high' });
   }
   const orderMatch = text.match(/\b(AYRIK|BİTİŞİK|BLOK|İKİZ|SERBEST)\s+NİZAM\b/i);
   if (orderMatch) results.push({ field: "buildingOrder", label: "Yapı nizamı", value: `${orderMatch[1].toLocaleLowerCase("tr-TR").replace(/^./, (value) => value.toLocaleUpperCase("tr-TR"))} nizam`, evidence: orderMatch[0], confidence: "high" });

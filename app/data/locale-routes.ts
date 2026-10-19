@@ -81,12 +81,32 @@ export function localeEquivalent(pathname: string, target: PublishedLocale): str
 export function localizedHref(href: string, locale: PublishedLocale): string {
   if (locale === "tr" || !href.startsWith("/")) return href;
   const [path, hash = ""] = href.split("#");
+  const systemSections: Record<string, string> = {
+    "betonarme-prefabrik": "precast",
+    celik: "steel",
+    "hafif-celik": "light-steel",
+    "karma-sistem": "hybrid",
+  };
+  if (path.startsWith("/yapi-sistemleri/")) {
+    const section = systemSections[path.split("/").at(-1) ?? ""];
+    return section ? `/en/systems#${section}` : href;
+  }
+  const sectionTranslations: Record<string, Record<string, string>> = {
+    "/muhendislik": {
+      "tasiyici-sistem": "structural-system",
+      "statik-analiz": "structural-analysis",
+      deprem: "seismic",
+      "imalat-cizimleri": "detailing",
+      saha: "site",
+    },
+    "/iletisim": { "proje-on-bilgisi": "project-pre-assessment" },
+  };
+  const translatedHash = sectionTranslations[path]?.[hash] ?? hash;
   const exact = localeEquivalent(path, "en");
-  if (exact) return `${exact}${hash ? `#${hash}` : ""}`;
+  if (exact) return `${exact}${translatedHash ? `#${translatedHash}` : ""}`;
 
   if (path === "/arkemx") return `/en/arkemx${hash ? `#${hash}` : ""}`;
   if (path === "/muhendislik") return `/en/engineering${hash ? `#${hash}` : ""}`;
-  if (path.startsWith("/yapi-sistemleri/")) return `/en/systems#${path.split("/").at(-1)}`;
   if (path.startsWith("/projeler/")) return `/en/projects/${path.split("/").at(-1)}`;
   return href;
 }

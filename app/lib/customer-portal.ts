@@ -1,6 +1,6 @@
 import type { ProjectCoreSnapshot, ProjectDataTrust } from "./project-core";
 import type { ProjectThread } from "./project-graph";
-import { projectIntegrityIssues } from "./project-integrity";
+import { isDigitalBrief } from "./digital-brief.ts";
 
 export type PortalProject = {
   schema: "ARKEM-PROJECT/1.0";
@@ -138,7 +138,6 @@ export function isPortalProject(value: unknown): value is PortalProject {
     && boundedText(candidate.phase, 1, 80)
     && isoTimestamp(candidate.updatedAt)
     && candidate.modules === modules
-    && projectIntegrityIssues(candidate).length === 0
     && Object.keys(modules).length <= 64
     && Object.entries(modules).every(([moduleId, moduleValue]) => (
       /^[a-z0-9][a-z0-9-]{0,63}$/i.test(moduleId)
@@ -163,7 +162,7 @@ export function validateAccountProjectPayload(expectedId: string, value: unknown
   if (!isPortalProject(value)) {
     return {
       ok: false as const,
-      error: "Proje veri paketi doğrulanamadı. " + projectIntegrityIssues(value).join("; "),
+      error: "Proje veri paketi doğrulanamadı.",
       project: null,
     };
   }
@@ -364,7 +363,7 @@ export function derivePortalWorkItems(
       owner: "Proje sahibi",
       status: "Eksik",
       target: "Sonraki adım öncesi",
-      route: "/proje-baslat",
+      route: "/proje-baslat?edit=1&step=1",
       tone: "warning",
     });
   }
@@ -398,12 +397,15 @@ export function derivePortalWorkItems(
     });
   }
 
+  const brief = record(project.modules["digital-tools-brief"]);
+  if (isDigitalBrief(brief.input)) items.unshift({ id: "digital-brief", title: "Ön görüşme dosyanıza devam edin", detail: "Müşteri beyanlarını, açık konuları ve önerilen hizmet yolunu gözden geçirin. Uzman değerlendirmesi yapılmış sayılmaz.", owner: "Proje sahibi + ARKEM", status: "Sıradaki adım", target: "Kapsam görüşmesi öncesi", route: "/dijital-donusum", tone: "next" });
   return items.slice(0, 4);
 }
 
 function sectionTrust(fields: ProjectCoreSnapshot["fields"]): ProjectDataTrust {
   if (fields.every((field) => field.trust === "missing")) return "missing";
-  if (fields.some((field) => field.trust === "verified")) return "verified";
+  // One identifier cannot certify a whole parcel/geometry/zoning section.
+  if (fields.length && fields.every((field) => field.trust === "verified")) return "verified";
   if (fields.some((field) => field.trust === "derived")) return "derived";
   return "declared";
 }

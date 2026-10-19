@@ -17,3 +17,4 @@ const sections = [
 export default function EnglishAboutPage() {
   return <EnglishContentPage eyebrow="07 / ARKEM" title="ENGINEERING TO THE SITE. SITE EXPERIENCE TO TECHNOLOGY." lead="ARKEM is a building-systems organisation that connects real project experience, structural engineering and its own digital engineering platform." image="/projects/v32/yapikur-montaj.webp" imageAlt="ARKEM site and precast assembly record" sections={sections} />;
 }
+

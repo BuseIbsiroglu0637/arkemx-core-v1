@@ -21,12 +21,12 @@ export const site = {
 } as const;
 
 export const socialChannels = [
-  { label: "Instagram", short: "IG", href: site.instagram },
-  { label: "LinkedIn", short: "IN", href: site.linkedin },
-  { label: "YouTube", short: "YT", href: site.youtube },
-  { label: "Facebook", short: "FB", href: site.facebook },
-  { label: "TikTok", short: "TK", href: site.tiktok },
-  { label: "Threads", short: "TH", href: site.threads },
+  { label: "Instagram", short: "IG", href: site.instagram, icon: "/social/instagram.svg" },
+  { label: "LinkedIn", short: "IN", href: site.linkedin, icon: "/social/linkedin-in.svg" },
+  { label: "YouTube", short: "YT", href: site.youtube, icon: "/social/youtube.svg" },
+  { label: "Facebook", short: "FB", href: site.facebook, icon: "/social/facebook-f.svg" },
+  { label: "TikTok", short: "TK", href: site.tiktok, icon: "/social/tiktok.svg" },
+  { label: "Threads", short: "TH", href: site.threads, icon: "/social/threads.svg" },
 ] as const;
 
 export const mainNavigation = [
@@ -67,21 +67,11 @@ export const navigationTree = [
     description: "Ürün adı aramanıza gerek kalmadan yapmak istediğiniz işi seçin; teknik ayrıntılar gerektiğinde açılır.",
     sections: [
       {
-        title: "Hemen başlayın",
-        items: [
-          { label: "Yeni proje başlat", href: "/proje-baslat", note: "Teknik bilgi gerekmeden beş sade adım" },
-          { label: "Mevcut projeme devam et", href: "/giris", note: "Güvenli girişten sonra proje merkezini aç" },
-          { label: "İlk yol haritamı oluştur", href: "/proje-karar-asistani", note: "Eksik veriler ve doğru başlangıç" },
-        ],
-      },
-      {
-        title: "İhtiyacınıza göre ilerleyin",
+        title: "Ne yapmak istiyorsunuz?",
         items: [
           { label: "Arsayı değerlendirin", href: "/arsa-fizibilite-studyosu", note: "Konum, parsel ve ön fizibilite" },
-          { label: "Yapıyı planlayın", href: "/mimari-program-studyosu", note: "Alan, mahal ve ihtiyaç programı" },
-          { label: "Taşıyıcı sistemi karşılaştırın", href: "/yapi-sistemi-karsilastirma", note: "Süre, açıklık ve performans" },
-          { label: "Tasarımı koordine edin", href: "/muhendislik-koordinasyon", note: "Mimari, statik ve diğer disiplinler" },
-          { label: "Süre ve maliyeti yönetin", href: "/proje-os", note: "Program, bütçe, saha ve teslim" },
+          { label: "Yeni proje başlat", href: "/proje-baslat", note: "Teknik bilgi gerekmeden beş sade adım" },
+          { label: "Mevcut projeme devam et", href: "/musteri-proje-portali", note: "Sıradaki iş, kararlar ve dosyalar" },
         ],
       },
     ],

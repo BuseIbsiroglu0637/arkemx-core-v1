@@ -1,0 +1,126 @@
+/* Home-only art direction. Shared navigation and all tool routes stay unchanged. */
+body.arkem-corporate-site .home-experience { --home-ink: #081923; --home-copper: #e6ae87; --home-muted: #b8c9d1; }
+body.arkem-corporate-site .home-experience .v4-hero { background: var(--home-ink); color: #f5f3ef; padding-bottom: 32px; }
+body.arkem-corporate-site .home-experience .v4-hero-grid { grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); min-height: 540px !important; gap: 28px; padding-top: 36px; padding-bottom: 36px; }
+body.arkem-corporate-site .home-experience .v4-hero-copy { padding: 24px 0; }
+body.arkem-corporate-site .home-experience .home-opening-label { margin: 0 0 32px; color: var(--home-muted); font-size: .75rem; font-weight: 600; letter-spacing: .16em; }
+body.arkem-corporate-site .home-experience .v4-hero-copy h1 { margin: 0; font-size: clamp(2rem,3.25vw,3.1rem) !important; line-height: 1.12 !important; letter-spacing: -.055em; font-weight: 550; }
+body.arkem-corporate-site .home-experience .v4-hero-copy h1 > span { font-size: .9em; }
+body.arkem-corporate-site .home-experience .v4-hero-copy h1 > em { color: var(--home-copper); font-size: clamp(4.7rem,7.8vw,7.8rem); line-height: 1.05; margin-top: 8px; font-weight: 600; }
+body.arkem-corporate-site .home-experience .v4-hero-lead { max-width: 46ch; color: var(--home-muted); font-size: 1rem !important; line-height: 1.7; margin: 28px 0; }
+body.arkem-corporate-site .home-experience .v4-hero .v4-button { min-height: 52px; border-radius: 5px; font-size: .8125rem; gap: 14px; }
+body.arkem-corporate-site .home-experience .v4-hero .v4-button.is-primary { background: var(--home-copper); border-color: var(--home-copper); color: var(--home-ink); }
+body.arkem-corporate-site .home-experience .v4-hero .v4-button.is-primary:is(:hover,:focus-visible) { background: #f4cdae; border-color: #f4cdae; color: #081923; }
+body.arkem-corporate-site .home-experience .v4-hero .v4-arrow-icon { display: block; }
+body.arkem-corporate-site .home-experience .v4-hero-process { margin-top: 24px; color: var(--home-muted); }
+body.arkem-corporate-site .home-experience .home-explore-link { display: inline-flex; align-items: center; gap: 18px; align-self: flex-start; margin-top: 28px; min-height: 44px; color: #e4e9e9; font-size: .8125rem; text-decoration: underline; text-underline-offset: 6px; }
+body.arkem-corporate-site .home-experience .home-architecture { min-width: 0; }
+body.arkem-corporate-site .home-experience .home-architecture-figure { position: relative; margin: 0; overflow: hidden; border-radius: 8px; background: #091821; }
+body.arkem-corporate-site .home-experience .home-architecture-image { height: clamp(290px,26vw,390px); overflow: hidden; }
+body.arkem-corporate-site .home-experience .home-architecture-image > img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 74% center; }
+body.arkem-corporate-site .home-experience .home-architecture-figure figcaption { position: relative; padding: 12px 16px 0; color: var(--home-muted); font-size: .75rem; line-height: 1.6; letter-spacing: .025em; }
+body.arkem-corporate-site .home-experience .home-motion-control { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 2px 16px 8px; padding: 0; border: 0; background: transparent; color: #e6ae87; font-size: .75rem; }
+body.arkem-corporate-site .home-experience .home-motion-control:disabled { color: #a5b7c0; cursor: default; }
+body.arkem-corporate-site .home-experience .home-project-story-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--home-muted); font-size: .6875rem; line-height: 1.6; letter-spacing: .07em; }
+body.arkem-corporate-site .home-experience .home-project-story .home-architecture-image { display: block; position: relative; height: clamp(280px,27vw,390px); }
+body.arkem-corporate-site .home-experience .home-project-story .project-photo { width: 100%; height: 100%; }
+body.arkem-corporate-site .home-experience .home-project-story .project-photo-plane { width: 100%; height: auto; aspect-ratio: 1; position: absolute; top: 50%; transform: translateY(-50%); }
+body.arkem-corporate-site .home-experience .home-project-photo-link { position: absolute; bottom: 16px; right: 16px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: #fff; background: #081923e8; border: 1px solid #9aaeb8; border-radius: 4px; font-size: .8125rem; }
+body.arkem-corporate-site .home-experience .home-project-story figcaption { display: grid; gap: 3px; padding: 14px 16px; }
+body.arkem-corporate-site .home-experience .home-project-story figcaption strong { color: #f4f2ed; font-size: .9375rem; }
+body.arkem-corporate-site .home-experience .home-project-phase { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 14px; }
+body.arkem-corporate-site .home-experience .home-project-phase button { display: flex; gap: 10px; align-items: center; min-height: 48px; padding: 10px 12px; background: transparent; border: 1px solid #516672; border-radius: 4px; color: #d9e2e6; text-align: left; font-size: .8125rem; }
+body.arkem-corporate-site .home-experience .home-project-phase button span { color: var(--home-copper); font-size: .6875rem; }
+body.arkem-corporate-site .home-experience .home-project-phase button[aria-pressed="true"] { color: #081923; background: var(--home-copper); border-color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .home-project-phase button[aria-pressed="true"] span { color: #293d46; }
+body.arkem-corporate-site .home-experience .home-project-phase-note { color: var(--home-muted); font-size: .75rem; line-height: 1.6; margin: 10px 0 12px; }
+body.arkem-corporate-site .home-experience .home-project-paths { display: grid; gap: 1px; }
+body.arkem-corporate-site .home-experience .home-project-paths a { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #344751; color: #dbe3e5; font-size: .8125rem; }
+body.arkem-corporate-site .home-experience .home-project-paths a:is(:hover,:focus-visible) { color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .home-project-story :is(a,button):focus-visible { outline: 3px solid #e6ae87; outline-offset: 4px; }
+body.arkem-corporate-site .home-experience .home-story { padding: 18px 0 0; }
+body.arkem-corporate-site .home-experience .home-story-steps { display: flex; gap: 12px; border-bottom: 1px solid #3c4b53; }
+body.arkem-corporate-site .home-experience .home-story-steps button { display: inline-flex; min-height: 44px; align-items: center; gap: 10px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #bac9d0; font-size: .875rem; }
+body.arkem-corporate-site .home-experience .home-story-steps button span { color: #90a5b0; font-size: .6875rem; }
+body.arkem-corporate-site .home-experience .home-story-steps button[aria-pressed="true"] { color: #f4f2ed; border-bottom-color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .home-story-detail { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; min-height: 70px; padding-top: 10px; }
+body.arkem-corporate-site .home-experience .home-story-detail p { margin: 0; font-size: .8125rem; color: #c2ced4; }
+body.arkem-corporate-site .home-experience .home-story-detail > a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--home-copper); font-size: .8125rem; text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site .home-experience .home-project-rail { border-top: 1px solid #344751; padding-top: 18px; padding-bottom: 28px; }
+body.arkem-corporate-site .home-experience .home-project-selection > header { margin-bottom: 8px; }
+body.arkem-corporate-site .home-experience .home-project-selection h2 { font-size: .875rem !important; }
+body.arkem-corporate-site .home-experience .home-project-track { gap: 20px; padding: 4px 0 10px; scroll-snap-type: x proximity; }
+body.arkem-corporate-site .home-experience .home-project-slide { display: grid; grid-template-columns: 84px minmax(0,1fr); align-items: center; flex: 0 0 calc((100% - 60px) / 4); gap: 14px; padding: 0; border-radius: 6px; }
+body.arkem-corporate-site .home-experience .home-project-slide-image { aspect-ratio: 1; border-radius: 6px; }
+body.arkem-corporate-site .home-experience .home-project-slide-caption b { font-size: .8125rem; font-weight: 550; line-height: 1.4; }
+body.arkem-corporate-site .home-experience .home-project-slide-caption small { font-size: .75rem !important; line-height: 1.5; color: #b3c4ce; }
+body.arkem-corporate-site .home-experience .home-project-controls { padding-top: 0; }
+body.arkem-corporate-site .home-experience .home-project-position { font-size: .6875rem; }
+body.arkem-corporate-site .home-experience .home-project-controls button { min-width: 66px; min-height: 44px; padding: 6px 10px; font-size: .75rem; }
+body.arkem-corporate-site .home-experience .v117-choice-label { font-size: .75rem; letter-spacing: .07em; }
+body.arkem-corporate-site .home-experience .v4-capability-band a { min-height: 148px; gap: 12px; background: #102630; border-color: #3a515e !important; padding: 18px 20px; }
+body.arkem-corporate-site .home-experience .v4-capability-band a strong { font-size: 1rem; line-height: 1.4; }
+body.arkem-corporate-site .home-experience .v4-capability-band a small { font-size: .8125rem !important; line-height: 1.5; color: #bdcbd2; }
+body.arkem-corporate-site .home-experience .v4-capability-band a:is(:hover,:focus-visible) { background: #18333f; border-color: var(--home-copper) !important; transform: translateY(-3px); }
+body.arkem-corporate-site .home-experience .home-capability-symbol { color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .v4-section { padding: clamp(64px,6vw,100px) 0; }
+body.arkem-corporate-site .home-experience :is(.v4-projects,.v4-engineering,.v4-about) { background: #eef0ed; }
+body.arkem-corporate-site .home-experience :is(.v4-systems,.v4-outputs,.v4-methodology) { background: #e7ebea; }
+body.arkem-corporate-site .home-experience .v4-section-head { margin-bottom: 36px; }
+body.arkem-corporate-site .home-experience .v4-section-head h2 { font-size: clamp(1.875rem,3.6vw,3.25rem); line-height: 1.16; }
+body.arkem-corporate-site .home-experience .v4-section-head .v4-index { display: block; margin-bottom: 18px; font-size: .6875rem !important; letter-spacing: .08em; }
+body.arkem-corporate-site .home-experience .v4-project-editorial { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; }
+body.arkem-corporate-site .home-experience .v4-project-editorial article,
+body.arkem-corporate-site .home-experience .v4-project-editorial article.is-flagship { display: block; grid-row: auto; grid-column: auto; background: #e2e8e6; color: #142e3d; border: 1px solid #ccd5d7; border-radius: 7px; overflow: hidden; }
+body.arkem-corporate-site .home-experience .v4-project-editorial .v4-project-image { min-height: 0 !important; aspect-ratio: 4 / 3; }
+body.arkem-corporate-site .home-experience .v4-project-editorial h3 { font-size: 1.25rem; line-height: 1.4; }
+body.arkem-corporate-site .home-experience .v4-project-editorial h3 a:is(:hover,:focus-visible) { color: #793515; text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site .home-experience .v4-method-flow { gap: 12px; }
+body.arkem-corporate-site .home-experience .v4-method-flow::before { display: none; }
+body.arkem-corporate-site .home-experience .v4-method-flow li { min-height: 190px; padding: 20px 16px; border: 1px solid #c3ced0; border-radius: 5px; }
+body.arkem-corporate-site .home-experience .v4-method-flow span { width: auto; height: auto; display: block; background: transparent; border: 0; border-radius: 0; font-size: 1.625rem; font-weight: 500; }
+body.arkem-corporate-site .home-experience .v4-method-flow b { margin: 18px 0 10px; font-size: .875rem; }
+body.arkem-corporate-site .home-experience .v4-method-flow small { font-size: .8125rem !important; color: #526975; }
+body.arkem-corporate-site .home-experience .v4-arkemx { background: var(--home-ink); }
+body.arkem-corporate-site .home-experience .v4-arkemx-copy h2 { font-size: clamp(1.8rem,3.25vw,3rem); line-height: 1.2; }
+body.arkem-corporate-site .home-experience .v4-arkemx-copy h2 em { color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .v4-about-grid h2 { font-size: clamp(2rem,3.2vw,3.2rem); line-height: 1.16; }
+body.arkem-corporate-site .home-experience .v4-contact { background: var(--home-ink); padding: 64px 0; }
+body.arkem-corporate-site .home-experience .v4-contact::before { display: none; }
+body.arkem-corporate-site .home-experience .v4-contact-frame { border: 0; padding: 0 !important; background: transparent; }
+body.arkem-corporate-site .home-experience .v4-contact-frame h2 { font-size: clamp(1.875rem,3vw,2.75rem); line-height: 1.2; }
+body.arkem-corporate-site .home-experience .v4-contact-frame h2 em { color: var(--home-copper); }
+body.arkem-corporate-site .home-experience .v4-contact-frame p { color: #c2cfd5; }
+body.arkem-corporate-site .home-experience .v4-contact .v4-button.is-secondary { color: white; border-color: #a0b5c0; }
+body.arkem-corporate-site .home-experience .v4-contact .v4-button.is-secondary:is(:hover,:focus-visible) { color: #081923; background: #f3f3ed; }
+@media (max-width: 980px) {
+  body.arkem-corporate-site .home-experience .v4-hero-grid { grid-template-columns: 1fr; min-height: 0 !important; }
+  body.arkem-corporate-site .home-experience .home-architecture-image { height: clamp(260px,48vw,440px); }
+  body.arkem-corporate-site .home-experience .home-project-slide { flex-basis: calc((100% - 20px) / 2); grid-template-columns: 96px minmax(0,1fr); }
+  body.arkem-corporate-site .home-experience .v4-project-editorial { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  body.arkem-corporate-site .home-experience .v4-method-flow { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 600px) {
+  body.arkem-corporate-site .home-experience .v4-hero-grid { width: calc(100% - 40px) !important; padding-top: 14px; gap: 24px; }
+  body.arkem-corporate-site .home-experience .v4-hero-copy { padding: 18px 0 0; }
+  body.arkem-corporate-site .home-experience .home-opening-label { margin-bottom: 24px; font-size: .6875rem; letter-spacing: .1em; }
+  body.arkem-corporate-site .home-experience .v4-hero-copy h1 { font-size: clamp(1.55rem,6.5vw,2.4rem) !important; }
+  body.arkem-corporate-site .home-experience .v4-hero-copy h1 > em { font-size: clamp(3.6rem,16.5vw,6rem); }
+  body.arkem-corporate-site .home-experience .v4-hero-copy .v4-actions { flex-wrap: wrap; }
+  body.arkem-corporate-site .home-experience .home-explore-link { margin-top: 14px; }
+  body.arkem-corporate-site .home-experience .home-architecture-image { height: clamp(230px,65vw,350px); }
+  body.arkem-corporate-site .home-experience .home-architecture-image > img { object-position: 78% center; }
+  body.arkem-corporate-site .home-experience .home-story-steps { gap: 0; }
+  body.arkem-corporate-site .home-experience .home-story-steps button { flex: 1; justify-content: center; padding: 0 6px; gap: 8px; }
+  body.arkem-corporate-site .home-experience .home-project-rail { width: calc(100% - 40px) !important; }
+  body.arkem-corporate-site .home-experience .home-project-slide { flex-basis: 82%; grid-template-columns: 84px minmax(0,1fr); }
+  body.arkem-corporate-site .home-experience .v4-capability-band { grid-template-columns: 1fr; width: calc(100% - 40px) !important; }
+  body.arkem-corporate-site .home-experience .v4-capability-band a { min-height: 130px; }
+  body.arkem-corporate-site .home-experience .v4-project-editorial { grid-template-columns: 1fr; }
+  body.arkem-corporate-site .home-experience .v4-method-flow { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  body.arkem-corporate-site .home-experience .v4-method-flow li { min-height: 175px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.arkem-corporate-site .home-experience .home-architecture-image > img { animation: none !important; transform: none !important; }
+  body.arkem-corporate-site .home-experience .v4-capability-band a { transition: none; transform: none !important; }
+}

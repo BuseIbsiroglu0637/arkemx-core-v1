@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createLayeredDxf } from "../app/lib/engineering.ts";
-import { createCorporateTechnicalPdf } from "../app/lib/technical-sheet.ts";
+import { createCorporateTechnicalPdf, createCorporateSummaryPdf, type TechnicalSheetInput } from "../app/lib/technical-sheet.ts";
 
 mkdirSync("tmp/pdfs", { recursive: true });
 
@@ -17,7 +17,7 @@ const building = [
   { x: 8, y: 22 },
 ];
 
-const pdf = await createCorporateTechnicalPdf({
+const input: TechnicalSheetInput = {
   projectName: "Arkem X Örnek Sanayi Yapısı",
   projectCode: "ARK-26-DEMO",
   module: "ARKEM X / GEO PARSEL STÜDYOSU",
@@ -28,6 +28,7 @@ const pdf = await createCorporateTechnicalPdf({
   sheetNo: "GEO-001",
   scale: "OTOMATİK / METRE",
   coordinateSystem: "WGS84 / EPSG:4326",
+  northAngleDegrees: 0,
   polylines: [
     { role: "secondary", points: footprint.map((point, index) => ({ ...point, label: `P${index + 1}` })) },
     { role: "primary", points: building },
@@ -53,12 +54,20 @@ const pdf = await createCorporateTechnicalPdf({
     "Kütle yerleşimi erken karar ve disiplin koordinasyonu içindir.",
   ],
   legend: [["Ön yapı kütlesi", "primary"], ["Parsel sınırı", "secondary"]],
-}, {
+};
+const assets = {
   regularFont: readFileSync("public/fonts/ArkemSans-Regular.ttf"),
   boldFont: readFileSync("public/fonts/ArkemSans-Bold.ttf"),
   logo: readFileSync("public/brand/arkem-a-mark.png"),
-});
+};
+const pdf = await createCorporateTechnicalPdf(input, assets);
 writeFileSync("tmp/pdfs/arkem-kurumsal-pafta-ornek.pdf", pdf);
+writeFileSync("tmp/pdfs/arkem-a4-ozet-rapor.pdf", await createCorporateSummaryPdf(input, assets));
+writeFileSync("tmp/pdfs/arkem-a4-overflow-test.pdf", await createCorporateSummaryPdf({
+  ...input,
+  notes: Array.from({ length: 45 }, (_, i) => `Kaynak ${i + 1}: İmar bilgisi doğrulanmamıştır. ${"Uzun kaynak URL'si ve varsayımlar satır kaybetmeden raporda korunur. ".repeat(4)}`),
+  metrics: [...input.metrics!, ["İmar durumu", "Bulunamadı — yalnız kavramsal senaryo"]],
+}, assets));
 
 const dxf = createLayeredDxf({
   title: "ARKEM PARSEL VE ON YAPI",
@@ -79,6 +88,8 @@ const dxf = createLayeredDxf({
     status: "KAVRAMSAL",
     coordinateSystem: "WGS84 / EPSG:4326",
     scale: "MODEL 1:1",
+    northAngleDegrees: 0,
   },
 });
 writeFileSync("tmp/pdfs/arkem-kurumsal-pafta-ornek.dxf", dxf, "utf8");
+console.log("A3 PDF + A4 summary + overflow report + layered DXF generated in tmp/pdfs");

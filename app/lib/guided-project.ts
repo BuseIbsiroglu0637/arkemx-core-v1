@@ -30,8 +30,7 @@ export type GuidedGateStatus =
   | "missing"
   | "official-review"
   | "client-decision"
-  | "expert-review"
-  | "analysis";
+  | "expert-review";
 
 export type GuidedJourneyGate = {
   id: "brief" | "parcel" | "zoning" | "architecture" | "system" | "budget" | "coordination" | "delivery";
@@ -51,7 +50,6 @@ export type GuidedProjectRoadmap = {
     route: string;
   };
   missingDocuments: string[];
-  verificationItems: string[];
   policy: {
     userDeclarationsAreNotOfficialData: true;
     officialZoningRequiresEvidence: true;
@@ -75,7 +73,6 @@ export const GUIDED_GATE_LABELS: Record<GuidedGateStatus, string> = {
   "official-review": "Resmî doğrulama bekliyor",
   "client-decision": "Müşteri kararı bekliyor",
   "expert-review": "Arkem uzmanı incelemeli",
-  analysis: "ARKEMX analizi bekliyor",
 };
 
 function hasDocument(intake: GuidedProjectIntake, id: GuidedDocumentId) {
@@ -111,22 +108,6 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     .filter((id) => !hasDocument(intake, id))
     .map((id) => GUIDED_DOCUMENT_OPTIONS.find((item) => item.id === id)?.label ?? id);
 
-  const verificationItems = [
-    ...(parcelKnown ? ["Ada / parsel numarası — başlangıç formunda henüz girilmedi."] : []),
-    ...(parcelKnown ? ["Resmî parsel geometrisi — doğrulama bekliyor."] : []),
-    ...(hasDocument(intake, "parcel-id")
-      ? ["Parsel kaynağı — mevcut olarak beyan edildi; içerik ve resmî kimlik doğrulanacak."]
-      : parcelKnown
-        ? ["Parsel kimliği / koordinat kaynağı — eksik."]
-        : []),
-    ...(!zoningProvided && parcelKnown
-      ? ["İmar durumu / plan notları — resmî kaynaktan doğrulama bekliyor."]
-      : []),
-    ...(intake.projectType === "new"
-      ? ["Zemin / temel etüdü — taşıyıcı sistem kararı öncesinde gerekliliği değerlendirilecek."]
-      : []),
-  ];
-
   const gates: GuidedJourneyGate[] = [
     {
       id: "brief",
@@ -137,14 +118,14 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     },
     {
       id: "parcel",
-      label: parcelKnown ? "Parsel ve arazi kimliği" : "Arsa araştırması ve aday seçimi",
+      label: "Parsel ve arazi kimliği",
       detail: parcelVerified
-        ? "Ada / parsel bilgisinin hazır olduğu kullanıcı tarafından beyan edildi; numara ve resmî geometri bu başlangıç adımında doğrulanmış sayılmaz."
+        ? "Ada / parsel bilgisinin hazır olduğu beyan edildi; resmî servis yanıtı projede ayrıca kaydedilir."
         : parcelKnown
           ? "Parsel biliniyor; koordinatlı sınır ve resmî kimlik kontrol edilmelidir."
-          : "Yatırım kriterleriyle aday arsalar araştırılır; seçilen adayın parsel kimliği ve sınırı sonraki aşamada doğrulanır.",
-      status: parcelKnown ? "official-review" : "missing",
-      route: parcelKnown ? "/arsa-fizibilite-studyosu?stage=locate#geo-studyo" : "/arsa-arastirma",
+          : "Parsel kimliği veya yatırım bölgesi henüz netleştirilmelidir.",
+      status: parcelVerified ? "ready" : parcelKnown ? "official-review" : "missing",
+      route: parcelKnown ? "/imar-entegrasyon-merkezi" : "/arsa-fizibilite-studyosu",
     },
     {
       id: "zoning",
@@ -153,7 +134,7 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         ? "Belge mevcut olarak işaretlendi; TAKS, KAKS, Hmax, nizam ve çekmeler kaynağından okunmalıdır."
         : "Resmî plan, belediye/e-Plan kaynağı veya imar belgesi henüz eklenmedi.",
       status: zoningProvided ? "expert-review" : "official-review",
-      route: "/arsa-fizibilite-studyosu?stage=zoning#geo-studyo",
+      route: "/imar-entegrasyon-merkezi",
     },
     {
       id: "architecture",
@@ -168,8 +149,8 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
       detail: intake.system === "undecided"
         ? "Betonarme, prefabrik, çelik, hafif çelik ve hibrit alternatifler karşılaştırılmalıdır."
         : "Ön sistem tercihi girildi; zemin, açıklık, deprem, yangın, üretim ve maliyetle doğrulanmalıdır.",
-      status: intake.system === "undecided" ? "analysis" : "expert-review",
-      route: "/sistem-karsilastirma",
+      status: intake.system === "undecided" ? "client-decision" : "expert-review",
+      route: "/yapi-sistemi-karsilastirma",
     },
     {
       id: "budget",
@@ -178,21 +159,21 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
         ? "Bütçe aralığı müşteriyle netleştirilerek metraj ve alternatif senaryoya bağlanmalıdır."
         : "Bütçe ve zaman hedefi ön fizibilite hesabına aktarılmaya hazır.",
       status: intake.budget === "undecided" ? "client-decision" : "expert-review",
-      route: "/proje-takibi",
+      route: "/proje-os",
     },
     {
       id: "coordination",
       label: "Mühendislik koordinasyonu",
       detail: "Mimari, taşıyıcı ve tesisat verileri oluştukça aks, kot, şaft ve çakışma kontrolleri açılır.",
       status: "expert-review",
-      route: "/bim-koordinasyon",
+      route: "/muhendislik-koordinasyon",
     },
     {
       id: "delivery",
-      label: "Bilgi teslim planı ve kapanış",
-      detail: "Doğrulanan brief, koordinasyon kayıtları ve teknik çıktılar teslim gereksinimleriyle eşleştirilir.",
-      status: "expert-review",
-      route: "/bilgi-teslim-plani",
+      label: "Teklif, onay ve teslim",
+      detail: "Doğrulanan brief ve teknik kayıtlar teklif, görüşme ve kurumsal teslim paketine dönüşür.",
+      status: "ready",
+      route: "/iletisim",
     },
   ];
 
@@ -204,17 +185,21 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     }
     : !parcelKnown
       ? {
-        title: "Kriterlerinize göre aday arsaları araştırın",
-        copy: "Bölge, arsa bütçesi ve alan kriterlerini belirleyin. ARKEMX kaynaklarda adayları araştırır; kısa listeye alınan adaylar parsel ve imar incelemesine geçer.",
-        route: "/arsa-arastirma",
+        title: "Parsel kimliğini belirleyin",
+        copy: "Yatırım alanını haritada bulun; ada, parsel ve koordinatlı sınırı proje kimliğine bağlayın.",
+        route: "/arsa-fizibilite-studyosu",
       }
-      : {
-        title: "Parsel ve imar kanıtını doğrulayın",
-        copy: zoningProvided
-          ? "Beyan edilen parsel bilgisini, resmî sınırı ve mevcut imar belgesini kaynağıyla doğrulayın."
-          : "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
-        route: "/arsa-fizibilite-studyosu?stage=locate#geo-studyo",
-      };
+      : !parcelVerified || !zoningProvided
+        ? {
+          title: "Parsel ve imar kanıtını doğrulayın",
+          copy: "Resmî parsel sınırı ile ulaşılabilen plan ve belediye kaynaklarını tek kanıt zincirinde kontrol edin.",
+          route: "/imar-entegrasyon-merkezi",
+        }
+        : {
+          title: "Mimari ihtiyaç programını oluşturun",
+          copy: "Doğrulanmış parsel ve yapılaşma koşullarını alan, mahal, dolaşım ve kütle kararlarına aktarın.",
+          route: "/mimari-program-studyosu",
+        };
 
   return {
     schema: "ARKEM-GUIDED-JOURNEY/1.0",
@@ -222,7 +207,6 @@ export function deriveGuidedProjectRoadmap(intake: GuidedProjectIntake): GuidedP
     gates,
     nextAction,
     missingDocuments,
-    verificationItems,
     policy: {
       userDeclarationsAreNotOfficialData: true,
       officialZoningRequiresEvidence: true,

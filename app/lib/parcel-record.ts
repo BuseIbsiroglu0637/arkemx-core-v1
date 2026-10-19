@@ -54,6 +54,8 @@ export type ParcelRecord = {
     url: string | null;
     trust: ParcelRecordTrust;
     officialCadastre: false;
+    sourceIdentity?: ParcelIdentity | null;
+    identityMatches?: boolean;
     limitations: string[];
   };
 };
@@ -68,6 +70,7 @@ export type ParcelRecordInput = {
     capturedAt: string;
     url: string;
     reportedArea?: number;
+    identity?: ParcelIdentity;
   };
 };
 
@@ -82,6 +85,10 @@ export type ParcelSourceRecord = {
   limitation: string;
 };
 
+export function parcelIdentityKey(identity: ParcelIdentity) {
+  return JSON.stringify(["province", "district", "neighborhood", "block", "parcelNo"].map(key => String(identity[key as keyof ParcelIdentity] ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR")));
+}
+
 function cleanText(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
@@ -89,6 +96,7 @@ function cleanText(value: string) {
 function finitePoint(point: GeoPoint) {
   return Number.isFinite(point.lat)
     && Number.isFinite(point.lng)
+    && (point.alt === undefined || Number.isFinite(point.alt))
     && Math.abs(point.lat) <= 90
     && Math.abs(point.lng) <= 180;
 }
@@ -148,7 +156,8 @@ export function createParcelRecord(input: ParcelRecordInput): ParcelRecord {
     block: cleanText(input.identity.block),
     parcelNo: cleanText(input.identity.parcelNo),
   };
-  const points = input.geometry.filter(finitePoint).slice(0, 400);
+  const intact = input.geometry.length <= 400 && input.geometry.every(finitePoint);
+  const points = intact ? input.geometry.map(point => ({ ...point })) : [];
   const computedArea = polygonArea(points);
   const valid = points.length >= 3
     && computedArea > 1
@@ -167,14 +176,15 @@ export function createParcelRecord(input: ParcelRecordInput): ParcelRecord {
     && identity.block
     && identity.parcelNo,
   );
-  const projectEligible = !["sample", "coordinate"].includes(input.source.kind)
+  const identityMatches = !input.source.identity || parcelIdentityKey(input.source.identity) === parcelIdentityKey(identity);
+  const projectEligible = identityMatches && !["sample", "coordinate"].includes(input.source.kind)
     && valid
     && (
       identityComplete
       || input.source.kind === "user-file"
       || input.source.kind === "manual-drawing"
     );
-  const state: ParcelRecordState = input.source.kind === "sample"
+  const state: ParcelRecordState = !identityMatches ? "needs-review" : input.source.kind === "sample"
     ? "preview"
     : input.source.kind === "tkgm-open-service" && identityComplete && valid
       ? "identified"
@@ -205,14 +215,16 @@ export function createParcelRecord(input: ParcelRecordInput): ParcelRecord {
       url: input.source.url || null,
       trust: sourceTrust(input.source.kind),
       officialCadastre: false,
-      limitations: sourceLimitations(input.source.kind),
+      sourceIdentity: input.source.identity ?? null,
+      identityMatches,
+      limitations: [...sourceLimitations(input.source.kind), ...(!intact ? ["Geçersiz veya 400 köşeden büyük sınır reddedildi; noktalar atlanarak ya da kesilerek yeni sınır üretilmedi."] : []), ...(!identityMatches ? ["Geometri kaynağının parsel kimliği mevcut seçimle eşleşmiyor; yeni parsele aktarılmadı."] : [])],
     },
   };
 }
 
-export function resolveParcelSourceNetwork(province: string, district = "") {
-  const authority = resolveZoningAuthority(province, district);
-  const localPortal = resolveZoningPortal(province, district);
+export function resolveParcelSourceNetwork(province: string, district = "", neighborhood = "") {
+  const authority = resolveZoningAuthority(province, district, neighborhood);
+  const localPortal = resolveZoningPortal(province, district, neighborhood);
   const sources: ParcelSourceRecord[] = [
     {
       id: "tkgm-parcel",
@@ -278,6 +290,7 @@ export function resolveParcelSourceNetwork(province: string, district = "") {
     coverage: "81-province-routing" as const,
     province,
     district,
+    neighborhood,
     authority: authority?.administrativeRoute || "",
     sources,
     limitation: "Kaynaklar çelişirse otomatik seçim yapılmaz; uzman incelemesi ve güncel resmî belge gerekir.",

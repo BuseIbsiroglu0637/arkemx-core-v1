@@ -40,32 +40,4 @@ next-env.d.ts
 /.sites-runtime/
 /outputs/
 /work/
-
-
-# ARKEMX local build and test artifacts
-/.vinext/
-/build/
-/output/
-/arkemx-browser-results/
-/tsconfig.tsbuildinfo
-/worker-configuration.d.ts
-/playwright-report/
-/test-results/
-/test-artifacts/
-arkemx-*.log
-/ekran-test-sonuclari.txt
-
-# Repository hygiene
-/evidence/**/*.log
-/Arkem-Yapi-Sistemleri-*.zip
-
-# Local credentials and databases
-/.dev.vars
-/.dev.vars.*
-/.npmrc
-*.sqlite
-*.sqlite3
-*.sqlite-journal
-*.db
-*.db-wal
-*.db-shm
+/tmp/

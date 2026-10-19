@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProjectArchiveExplorer } from "../components/ProjectArchiveExplorer";
+import { PresentationCatalog } from "../components/PresentationCatalog";
+import { projectPresentations } from "../data/project-presentations";
+import { selectProjectPhoto } from "../lib/project-photo";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getPublicV3Projects } from "../lib/public-projects";
 
@@ -20,29 +22,12 @@ export const metadata: Metadata = {
 
 export default async function ProjectsPage() {
   const projects = (await getPublicV3Projects()).filter((project) => project.archiveVisible);
-  return <main className="inner-page v21-standard-page v31-project-index">
-    <section className="v21-standard-hero v31-project-hero">
-      <SiteHeader />
-      <div className="shell">
-        <p className="v21-index">ARKEM / PROJE ARŞİVİ</p>
-        <h1>HER PROJE,<br /><em>MÜHENDİSLİK YAKLAŞIMIMIZIN UYGULAMADAKİ KARŞILIĞIDIR.</em></h1>
-        <p>Projeleri yalnız sonuçlarıyla değil; künyesi, teknik kısıtları, sistem kararı, ARKEM kapsamı, üretim ve saha kayıtlarıyla birlikte değerlendiriyoruz.</p>
-      </div>
-    </section>
-    <section className="v21-section">
-      <div className="shell">
-        <header className="v21-section-head">
-          <div><p className="v21-index">01 / PROJE ARŞİVİ</p><h2>Seçilmiş projeler.<br /><em>Teknik kayıt düzeni.</em></h2></div>
-          <p>Proje adı, lokasyon, yapı türü, taşıyıcı sistem, yıl ve ARKEM kapsamı yalnız kaynak kaydıyla eşleşen veri üzerinden gösterilir.</p>
-        </header>
-        <ProjectArchiveExplorer projects={projects} />
-        <aside className="v31-project-registry-note">
-          <strong>TEKNİK KAYIT STANDARDI</strong>
-          <p>Eksik proje verisi tahminle tamamlanmaz. Gerçek medya, teknik değer ve sorumluluk kapsamı kaynak ve yayın hakkı kaydı tamamlandığında açılır.</p>
-          <Link href="/iletisim">Projenizi değerlendirelim <span aria-hidden="true">↗</span></Link>
-        </aside>
-      </div>
-    </section>
+  const legacy = projects.map(p => ({ slug: p.slug, title: p.shortTitle, src: selectProjectPhoto(p.slug, p.publishedMedia)?.href || '', summary: p.summary })).filter(p => p.src);
+  return <main className="ref-experience ref-index">
+    <SiteHeader dark={false} />
+    <section className="ref-index-heading shell"><div><p className="ref-eyebrow">ARKEM / REFERANS ÇALIŞMALARI</p><h1>Çizgiden yapıya.<br /><em>Mühendisliğin izleri.</em></h1><p className="ref-lead">Endüstriyel tesislerden konutlara; projelerimizi saha kayıtları, çizimler ve etkileşimli üç boyutlu sunumlarla keşfedin.</p></div><aside><span><b>{projectPresentations.filter(p => p.model).length}</b> etkileşimli proje sunumu</span><p>Gerçek saha görüntüsü, proje çizimi ve 3B sunum her kayıtta ayrı etiketlenir.</p><Link href="/3b-model-kutuphanesi">3B seçkisine geç ↗</Link></aside></section>
+    <section className="shell ref-index-catalog"><PresentationCatalog legacy={legacy} /></section>
+    <section className="shell ref-catalog-note"><p>Bu seçki proje ve arşiv çalışmalarını içerir; tüm kayıtlar tamamlanmış yapı beyanı değildir. Sunum kabulleri ve mevcut bilgi kapsamı ilgili proje sayfasında açıklanır.</p><Link href="/iletisim">Birlikte çalışalım ↗</Link></section>
     <SiteFooter />
   </main>;
 }

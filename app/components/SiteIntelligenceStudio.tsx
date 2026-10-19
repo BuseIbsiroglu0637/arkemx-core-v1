@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
+import { rectangularEnvelope } from "../lib/readiness-input";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
-import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
 
 const schemes = {
   "Kompakt": { coverage: .68, efficiency: .91, solar: 72, carbon: 78, note: "Kısa dolaşım, yüksek alan verimi ve daha küçük dış kabuk." },
@@ -21,11 +21,6 @@ const systemFactors = {
 } as const;
 
 export function SiteIntelligenceStudio() {
-  const { project } = useProjectKernel();
-  return <SiteIntelligenceStudioSession key={project.id} />;
-}
-
-function SiteIntelligenceStudioSession() {
   const { patchModule } = useProjectKernel();
   const [width, setWidth] = useState(46);
   const [depth, setDepth] = useState(72);
@@ -41,46 +36,27 @@ function SiteIntelligenceStudioSession() {
   const [maxFar, setMaxFar] = useState(1.2);
   const [maxHeight, setMaxHeight] = useState(12.5);
 
-
-  const draftReady = useModuleRestore("quick-site-scenario", saved => {
-    const input = { ...moduleRecord(saved.input), ...moduleRecord(moduleRecord(saved.input).planning) };
-    setWidth(restoreModuleValue(input.width, width));
-    setDepth(restoreModuleValue(input.depth, depth));
-    setSetback(restoreModuleValue(input.setback, setback));
-    setFloors(restoreModuleValue(input.floors, floors));
-    setSlope(restoreModuleValue(input.slope, slope));
-    setOrientation(restoreModuleValue(input.orientation, orientation));
-    setUse(restoreModuleValue(input.use, use));
-    setMaxCoverage(restoreModuleValue(input.maxCoverage, maxCoverage));
-    setMaxFar(restoreModuleValue(input.maxFar, maxFar));
-    setMaxHeight(restoreModuleValue(input.maxHeight, maxHeight));
-    if (typeof input.system === "string" && Object.hasOwn(systemFactors, input.system)) setSystem(input.system as keyof typeof systemFactors);
-    if (typeof input.scheme === "string" && Object.hasOwn(schemes, input.scheme)) setScheme(input.scheme as Scheme);
-  });
-
   const result = useMemo(() => {
-    const plot = width * depth;
-    const envelope = Math.max(100, (width - setback * 2) * (depth - setback * 2));
+    const { valid, plot, envelope } = rectangularEnvelope(width, depth, setback);
     const footprint = Math.round(envelope * schemes[scheme].coverage);
     const gross = footprint * floors;
-    const open = Math.round((1 - footprint / plot) * 100);
+    const open = valid ? Math.round((1 - footprint / plot) * 100) : 0;
     const parkingRatio = use === "Konut / Villa" ? 115 : use === "Ticari Yapı" ? 65 : 180;
-    const parking = Math.max(2, Math.round(gross / parkingRatio));
+    const parking = valid ? Math.max(2, Math.round(gross / parkingRatio)) : 0;
     const terrain = Math.round(plot * slope * .0032);
     const fit = Math.min(98, Math.round((schemes[scheme].efficiency * 100 + systemFactors[system].speed) / 2 - slope * .7));
     const carbon = Math.round(systemFactors[system].carbon * (1 - (schemes[scheme].carbon - 78) / 160));
-    const coverage = footprint / plot;
-    const far = gross / plot;
+    const coverage = valid ? footprint / plot : 0;
+    const far = valid ? gross / plot : 0;
     const buildingHeight = floors * 3.4;
-    return { plot, envelope: Math.round(envelope), footprint, gross, open, parking, terrain, fit, carbon, coverage, far, buildingHeight, compliance: { coverage: coverage <= maxCoverage, far: far <= maxFar, height: buildingHeight <= maxHeight } };
+    return { valid, plot, envelope: Math.round(envelope), footprint, gross, open, parking, terrain, fit: valid ? fit : 0, carbon: valid ? carbon : 0, coverage, far, buildingHeight, compliance: { coverage: valid && coverage <= maxCoverage, far: valid && far <= maxFar, height: valid && buildingHeight <= maxHeight } };
   }, [width, depth, setback, floors, slope, use, system, scheme, maxCoverage, maxFar, maxHeight]);
 
   useEffect(() => {
-    if (!draftReady) return;
-    patchModule("quick-site-scenario", { input: { width, depth, setback, floors, slope, orientation, use, system, scheme, planning: { maxCoverage, maxFar, maxHeight } }, result, status: "synthetic-rectangular-plot" });
-  }, [draftReady, depth, floors, maxCoverage, maxFar, maxHeight, orientation, patchModule, result, scheme, setback, slope, system, use, width]);
+    patchModule("quick-site-scenario", { input: { width, depth, setback, floors, slope, orientation, use, system, scheme, planning: { maxCoverage, maxFar, maxHeight } }, result, status: result.valid ? "synthetic-rectangular-plot" : "invalid-geometry" });
+  }, [depth, floors, maxCoverage, maxFar, maxHeight, orientation, patchModule, result, scheme, setback, slope, system, use, width]);
 
-  const exportScenario = () => downloadTextFile("arkem-hizli-arsa-senaryosu.json", JSON.stringify({ schema: "ARKEM-SITE-SCENARIO/1.0", dataStatus: "SYNTHETIC", units: "m", input: { width, depth, setback, floors, slope, orientation, use, system, scheme, maxCoverage, maxFar, maxHeight }, result }, null, 2), "application/json");
+  const exportScenario = () => { if (result.valid) downloadTextFile("arkem-hizli-arsa-senaryosu.json", JSON.stringify({ schema: "ARKEM-SITE-SCENARIO/1.0", dataStatus: "SYNTHETIC", units: "m", input: { width, depth, setback, floors, slope, orientation, use, system, scheme, maxCoverage, maxFar, maxHeight }, result }, null, 2), "application/json"); };
 
   const buildWidth = Math.max(30, Math.min(74, 36 + schemes[scheme].coverage * 46));
   const buildDepth = Math.max(28, Math.min(70, 31 + schemes[scheme].coverage * 42));
@@ -92,7 +68,7 @@ function SiteIntelligenceStudioSession() {
   };
 
   return <section className="site-intelligence-studio">
-    <ProjectKernelBar moduleKey="quick-site-scenario" module="QUICK SITE SCENARIO" confidence="Sentetik dikdörtgen parsel" />
+    <ProjectKernelBar module="QUICK SITE SCENARIO" confidence="Sentetik dikdörtgen parsel" />
     <header className="site-studio-head"><div><span>ARKEM / SITE INTELLIGENCE</span><b>Arsa & Ön Fizibilite Stüdyosu</b></div><div><i></i><span>CANLI SENARYO</span><small>Kalıcı veri saklanmaz</small></div></header>
     <div className="site-studio-body">
       <aside className="site-studio-controls">
@@ -108,9 +84,9 @@ function SiteIntelligenceStudioSession() {
           <div className="site-parcel" style={{aspectRatio:`${width}/${depth}`}}>
             <span className="site-dim width">{width} m</span><span className="site-dim depth">{depth} m</span>
             <div className="site-envelope" style={{inset:`${Math.min(16,6+setback*.55)}%`}}></div>
-            <div className="site-building" style={{width:`${buildWidth}%`,height:`${buildDepth}%`,transform:`translate(-50%,-50%) rotate(${orientation}deg)`}}>
+            {result.valid && <div className="site-building" style={{width:`${buildWidth}%`,height:`${buildDepth}%`,transform:`translate(-50%,-50%) rotate(${orientation}deg)`}}>
               <div>{Array.from({length:12},(_,index)=><i key={index}></i>)}</div><b>{use}</b><small>{system} · {floors} kat</small>
-            </div>
+            </div>}
             <div className="site-loading"><i></i><i></i><i></i><span>YÜKLEME</span></div>
             <div className="site-circulation"><i></i></div>
             <div className="site-sun"><i></i><span>G</span></div>
@@ -122,15 +98,16 @@ function SiteIntelligenceStudioSession() {
       </main>
       <aside className="site-studio-results">
         <span>04 / ANLIK GÖSTERGELER</span>
+        {!result.valid ? <div className="module-feedback error" role="alert"><b>Bu çekme mesafesiyle yapı alanı kalmıyor.</b><p>Parsel genişliğini/derinliğini artırın veya temsili çekmeyi azaltın. Hesap ve dışa aktarım durduruldu.</p></div> : <>
         <div className="site-result-primary"><small>TAHMİNİ BRÜT ALAN</small><strong>{result.gross.toLocaleString("tr-TR")} <i>m²</i></strong><p>{result.footprint.toLocaleString("tr-TR")} m² taban · {result.plot.toLocaleString("tr-TR")} m² parsel</p></div>
         <div className="site-result-grid"><article><span>Açık alan</span><b>%{result.open}</b></article><article><span>Park ihtiyacı</span><b>~{result.parking}</b></article><article><span>TAKS / KAKS</span><b>{result.coverage.toFixed(2)} / {result.far.toFixed(2)}</b></article><article><span>Kazı/dolgu</span><b>~{result.terrain} m³</b></article></div>
         <div className="site-compliance"><span>GİRİLEN SINIRLARA GÖRE ÖN KONTROL</span>{[["TAKS", result.compliance.coverage, `${result.coverage.toFixed(2)} ≤ ${maxCoverage.toFixed(2)}`],["KAKS", result.compliance.far, `${result.far.toFixed(2)} ≤ ${maxFar.toFixed(2)}`],["Yükseklik", result.compliance.height, `${result.buildingHeight.toFixed(1)} ≤ ${maxHeight.toFixed(1)} m`]].map(([label, ok, value])=><p className={ok ? "pass" : "risk"} key={String(label)}><i>{ok ? "✓" : "!"}</i><b>{label}</b><span>{value}</span></p>)}</div>
         <div className="site-performance"><article><span>Günışığı potansiyeli</span><i><b style={{width:`${Math.max(45,schemes[scheme].solar-orientation*.12)}%`}}></b></i><strong>{Math.round(schemes[scheme].solar-orientation*.12)}</strong></article><article><span>Göreli karbon endeksi</span><i><b className="copper" style={{width:`${result.carbon}%`}}></b></i><strong>{result.carbon}</strong></article><article><span>Yapım hızı endeksi</span><i><b style={{width:`${systemFactors[system].speed}%`}}></b></i><strong>{systemFactors[system].speed}</strong></article></div>
         <div className="site-recommendation"><span>ARKEM ÖN NOTU</span><h4>{scheme} şema + {system}</h4><p>{slope>12?"Eğim nedeniyle kotlandırma, istinat ve zemin verisi ilk teknik pakete alınmalı.":"Parsel geometrisi erken sistem karşılaştırması ve yerleşim alternatifleri için elverişli görünüyor."} {systemFactors[system].span} gerektiren kullanım için açıklık ve aks kararları statik modelle doğrulanmalı.</p></div>
-        <button className="site-export-json" onClick={exportScenario}>Senaryo JSON indir ↓</button><a href="/iletisim">Bu senaryoyla ön görüşme başlatın ↗</a>
+        </>}
+        <button className="site-export-json" onClick={exportScenario} disabled={!result.valid}>Senaryo JSON indir</button><a href="/iletisim">Bu senaryoyla ön görüşme başlatın</a>
       </aside>
     </div>
     <footer><b>Kavramsal karar desteği</b><p>Bu araç imar durumu, ruhsat uygunluğu, zemin etüdü, kesin metraj, statik hesap veya sertifikalı çevresel analiz yerine geçmez. Gerçek çalışma, doğrulanmış parsel ve proje verileriyle hazırlanır.</p></footer>
   </section>;
 }
-

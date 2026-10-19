@@ -27,6 +27,10 @@ const moduleNames: Record<string, string> = {
   "yapim-saha": "Construction Stage & Site",
 };
 
+const customerModuleRoutes: Record<string, string> = {
+  "proje-modeli": "/arkemx", "yapisal-analiz": "/tasarim-calismalari#tasiyici-on-tasarim", "deprem-muhendisligi": "/muhendislik-koordinasyon", betonarme: "/yapi-sistemi-karsilastirma#sistem-karsilastirma", "prefabrik-betonarme": "/yapi-sistemi-karsilastirma#sistem-karsilastirma", "yapisal-celik": "/yapi-sistemi-karsilastirma#sistem-karsilastirma", "hafif-celik": "/yapi-sistemi-karsilastirma#sistem-karsilastirma", "hibrit-sistemler": "/yapi-sistemi-karsilastirma#sistem-karsilastirma", "temel-zemin": "/arsa-fizibilite-studyosu", "detay-imalat": "/muhendislik-koordinasyon", "metraj-maliyet": "/proje-os", "dogrulama-izlenebilirlik": "/dijital-proje-merkezi#canli-proje-grafigi", "yapim-saha": "/proje-os",
+};
+
 const groupNames: Record<PublicArkemXModuleGroupId, string> = {
   "modelleme-analiz": "Modelling & Analysis",
   "tasiyici-sistemler": "Structural Systems",
@@ -104,7 +108,7 @@ function ModuleDrawer({ module, groups, modules, locale, onClose, onPrevious, on
       </div>
       <details className="v4-module-validation"><summary>{english ? "VIEW TECHNICAL VALIDATION" : "TEKNİK DOĞRULAMA AYRINTILARINI GÖRÜNTÜLE"}</summary><p>{t(module.publicValidationSummary)}</p></details>
       <details className="v4-module-updates"><summary>{english ? "RECENT DEVELOPMENT" : "SON GELİŞTİRMELER"}</summary><ul>{module.latestPublicUpdates.map((item) => <li key={item}>{t(item)}</li>)}</ul></details>
-      <Link className="v4-module-route" href={`${english ? "/en/contact" : "/iletisim"}?arkemx=${module.code}`} data-analytics="arkemx_working_module_open" data-analytics-context={module.code}>{english ? "OPEN PRE-ASSESSMENT" : "ÖN DEĞERLENDİRMEYİ AÇIN"}<ArrowUpRight className="v4-arrow-icon" size={17} strokeWidth={1.7} aria-hidden="true" /></Link>
+      <Link className="v4-module-route" href={english ? `/en/contact?arkemx=${module.code}` : customerModuleRoutes[module.id] || "/arkemx"} data-analytics="arkemx_working_module_open" data-analytics-context={module.code}>{english ? "OPEN PRE-ASSESSMENT" : "İLGİLİ ÇALIŞMA ALANINI AÇIN"}</Link>
       <nav className="v4-module-pagination" aria-label={english ? "Module navigation" : "Modül yönlendirmesi"}><button type="button" onClick={onPrevious}><ArrowLeft size={16} strokeWidth={1.7} aria-hidden="true" /> {english ? "Previous Module" : "Önceki Modül"}</button><span>{module.code} / 13</span><button type="button" onClick={onNext}>{english ? "Next Module" : "Sonraki Modül"} <ArrowRight size={16} strokeWidth={1.7} aria-hidden="true" /></button></nav>
     </article>
   </div>, document.body);

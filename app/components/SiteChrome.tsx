@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronDown, Menu, MessageCircle, X } from "lucide-react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, Menu, MessageCircle, X } from "lucide-react";
 import { corporateRegistry } from "../data/corporate-registry";
 import { localizedHref } from "../data/locale-routes";
 import { navigationTree, site, socialChannels } from "../data/site";
 import { LanguageSwitcher, useLanguage } from "./LanguageSystem";
 
-const Arrow = () => <ArrowUpRight className="v4-arrow-icon" size={17} strokeWidth={1.7} aria-hidden="true" />;
+const Arrow = () => null;
 
 const englishNavigation: Record<string, { label: string; description: string }> = {
   HİZMETLER: { label: "SERVICES", description: "Choose the building system, engineering or delivery support your project needs." },
@@ -22,7 +22,7 @@ const englishNavigation: Record<string, { label: string; description: string }> 
 };
 
 function routeIsCurrent(pathname: string, href: string, locale: "tr" | "en") {
-  const localized = localizedHref(href, locale);
+  const localized = localizedHref(href, locale).split(/[?#]/)[0];
   return pathname === localized || pathname.startsWith(`${localized}/`);
 }
 
@@ -85,7 +85,7 @@ function MobileNavigationDrawer({ open, onClose }: { open: boolean; onClose: () 
       <div className="v4-mobile-nav-groups">
         <div className="v117-mobile-priority" aria-label={isEnglish ? "Project shortcuts" : "Proje kısayolları"}>
           <Link href={isEnglish ? "/en/contact" : "/proje-baslat"} onClick={closeDrawer}><span>01</span><div><b>{isEnglish ? "Start a new project" : "Yeni proje başlat"}</b><small>{isEnglish ? "Tell us what you need" : "Teknik bilgi gerekmeden başlayın"}</small></div><Arrow /></Link>
-          <Link href={isEnglish ? "/en/contact" : "/giris"} onClick={closeDrawer}><span>02</span><div><b>{isEnglish ? "Continue my project" : "Projeme devam et"}</b><small>{isEnglish ? "Open project records" : "Sıradaki iş, kararlar ve dosyalar"}</small></div><Arrow /></Link>
+          <Link href={isEnglish ? "/en/contact" : "/musteri-proje-portali"} onClick={closeDrawer}><span>02</span><div><b>{isEnglish ? "Continue my project" : "Projeme devam et"}</b><small>{isEnglish ? "Open project records" : "Sıradaki iş, kararlar ve dosyalar"}</small></div><Arrow /></Link>
         </div>
         {navigationTree.map((item, index) => {
           const translated = englishNavigation[item.label];
@@ -131,22 +131,48 @@ function MobileSiteHeader({ dark }: { dark: boolean }) {
   const { isEnglish } = useLanguage();
   const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
 
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1181px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobileOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
   return <header className={`v4-mobile-site-header ${dark ? "is-dark" : "is-light"}`}>
-    <Link className="v4-mobile-brand" href={isEnglish ? "/en" : "/"} aria-label={isEnglish ? "ARKEM home" : "ARKEM Yapı Sistemleri ana sayfa"}><Logo variant={dark ? "on-dark" : "on-light"} /></Link>
+    <Link className="v4-mobile-brand" href={isEnglish ? "/en" : "/"} aria-label={isEnglish ? "ARKEM home" : "ARKEM Yapı Sistemleri ana sayfa"}><Logo variant="on-light" /></Link>
+    <div className="corporate-mobile-actions">
     <LanguageSwitcher compact />
     <button ref={trigger} className="v4-mobile-nav-trigger" type="button" onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen} aria-haspopup="dialog" aria-controls="v4-mobile-navigation" aria-label={isEnglish ? "Open menu" : "Menüyü aç"}><Menu size={25} strokeWidth={1.7} aria-hidden="true" /></button>
+    </div>
     <MobileNavigationDrawer open={mobileOpen} onClose={closeMobileMenu} />
   </header>;
 }
 
 export function SiteHeader({ dark = true }: { dark?: boolean }) {
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
+  const [menuTop, setMenuTop] = useState(88);
   const headerRef = useRef<HTMLElement>(null);
   const { language, isEnglish, translate } = useLanguage();
   const pathname = usePathname() || "/";
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && setActiveDesktopMenu(null);
+    if (!activeDesktopMenu) return;
+    const closeOnLayoutChange = () => setActiveDesktopMenu(null);
+    window.addEventListener("scroll", closeOnLayoutChange, { passive: true });
+    window.addEventListener("resize", closeOnLayoutChange);
+    return () => {
+      window.removeEventListener("scroll", closeOnLayoutChange);
+      window.removeEventListener("resize", closeOnLayoutChange);
+    };
+  }, [activeDesktopMenu]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const activeTrigger = headerRef.current?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]');
+      setActiveDesktopMenu(null);
+      activeTrigger?.focus();
+    };
     const closeOutside = (event: PointerEvent) => {
       if (!headerRef.current?.contains(event.target as Node)) setActiveDesktopMenu(null);
     };
@@ -160,10 +186,12 @@ export function SiteHeader({ dark = true }: { dark?: boolean }) {
 
   const homeHref = isEnglish ? "/en" : "/";
   const desktopNavigation = navigationTree;
-  return <><header ref={headerRef} className={`nav shell site-nav v4-site-header v4-desktop-site-header ${dark ? "is-dark" : "is-light"}`} onMouseLeave={() => setActiveDesktopMenu(null)} onBlur={(event) => {
+  return <><header ref={headerRef} className={`nav shell site-nav v4-site-header v4-desktop-site-header ${dark ? "is-dark" : "is-light"}`} onMouseLeave={() => {
+    if (!headerRef.current?.contains(document.activeElement)) setActiveDesktopMenu(null);
+  }} onBlur={(event) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveDesktopMenu(null);
   }}>
-    <Link className="brand" href={homeHref} aria-label={isEnglish ? "ARKEM home" : "ARKEM Yapı Sistemleri ana sayfa"}><Logo variant={dark ? "on-dark" : "on-light"} /></Link>
+    <Link className="brand" href={homeHref} aria-label={isEnglish ? "ARKEM home" : "ARKEM Yapı Sistemleri ana sayfa"}><Logo variant="on-light" /></Link>
     <nav className="v4-desktop-navigation" aria-label={isEnglish ? "Primary navigation" : "Ana menü"}>
       {desktopNavigation.map((item, index) => {
         const translated = englishNavigation[item.label];
@@ -173,11 +201,18 @@ export function SiteHeader({ dark = true }: { dark?: boolean }) {
         const childActive = item.sections.some((section) => section.items.some((child) => routeIsCurrent(pathname, child.href, locale)));
         const itemActive = routeIsCurrent(pathname, item.href, locale) || childActive;
         if (item.sections.length === 0) return <Link className="v4-nav-direct" data-current={itemActive ? "true" : undefined} aria-current={itemActive ? "page" : undefined} href={localized} key={item.href}>{label}</Link>;
-        return <div className="v4-nav-group" data-current={itemActive ? "true" : undefined} key={item.href} onMouseEnter={() => setActiveDesktopMenu(item.label)} onFocus={() => setActiveDesktopMenu(item.label)}>
-          <button type="button" aria-haspopup="true" aria-expanded={activeDesktopMenu === item.label} aria-controls={`v4-desktop-nav-${index}`} onClick={() => setActiveDesktopMenu((current) => current === item.label ? null : item.label)}>
+        return <div className="v4-nav-group" data-current={itemActive ? "true" : undefined} key={item.href} onMouseEnter={() => {
+          if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+          setMenuTop(headerRef.current?.getBoundingClientRect().bottom ?? 88);
+          setActiveDesktopMenu(item.label);
+        }}>
+          <button type="button" aria-expanded={activeDesktopMenu === item.label} aria-controls={`v4-desktop-nav-${index}`} onClick={() => {
+            setMenuTop(headerRef.current?.getBoundingClientRect().bottom ?? 88);
+            setActiveDesktopMenu((current) => current === item.label ? null : item.label);
+          }}>
             <span>{label}</span><ChevronDown size={14} aria-hidden="true" />
           </button>
-          {activeDesktopMenu === item.label ? <div className="v4-mega-menu" id={`v4-desktop-nav-${index}`}>
+          {activeDesktopMenu === item.label ? <div className="v4-mega-menu" id={`v4-desktop-nav-${index}`} style={{ "--corporate-menu-top": `${menuTop}px` } as CSSProperties}>
             <div className="v4-mega-intro">
               <span>{String(index + 1).padStart(2, "0")}</span><h2>{label}</h2>
               <p>{isEnglish ? translated.description : item.description}</p>
@@ -193,10 +228,12 @@ export function SiteHeader({ dark = true }: { dark?: boolean }) {
         </div>;
       })}
     </nav>
-    <Link className="v117-project-shortcut" href={isEnglish ? "/en/contact" : "/giris"}>{isEnglish ? "MY PROJECT" : "PROJEM"}</Link>
+    <div className="corporate-nav-actions">
+    <Link className="v117-project-shortcut" href={isEnglish ? "/en/contact" : "/musteri-proje-portali"}>{isEnglish ? "MY PROJECT" : "PROJEM"}</Link>
     <LanguageSwitcher compact />
     <Link className="v4-nav-cta" data-analytics="guided_project_start" href={isEnglish ? "/en/contact" : "/proje-baslat"}><b>{isEnglish ? "START A PROJECT" : "YENİ PROJE BAŞLAT"}</b><Arrow /></Link>
-  </header>{activeDesktopMenu ? <button className="v118-menu-backdrop" type="button" onClick={() => setActiveDesktopMenu(null)} aria-label={isEnglish ? "Close navigation menu" : "Açılır menüyü kapat"} /> : null}<MobileSiteHeader dark={dark} /></>;
+    </div>
+  </header>{activeDesktopMenu ? <button className="v118-menu-backdrop" tabIndex={-1} style={{ "--corporate-menu-top": `${menuTop}px` } as CSSProperties} type="button" onClick={() => setActiveDesktopMenu(null)} aria-label={isEnglish ? "Close navigation menu" : "Açılır menüyü kapat"} /> : null}<MobileSiteHeader dark={dark} /></>;
 }
 
 const footerGroups = [
@@ -218,7 +255,7 @@ const footerGroups = [
   ] },
   { title: "Dijital Araçlar", english: "Digital Tools", links: [
     { label: "Yeni Proje Başlat", english: "Start a New Project", href: "/proje-baslat" },
-    { label: "ARKEMX Giriş", english: "Customer Project Portal", href: "/giris" },
+    { label: "Müşteri Proje Portalı", english: "Customer Project Portal", href: "/musteri-proje-portali" },
     { label: "Arsa Fizibilitesi", english: "Land Feasibility", href: "/arsa-fizibilite-studyosu" },
     { label: "Sistem Karşılaştırma", english: "System Comparison", href: "/yapi-sistemi-karsilastirma" },
     { label: "Proje Yönetim Alanı", english: "Project Management", href: "/proje-os" },
@@ -226,6 +263,7 @@ const footerGroups = [
   { title: "Kurumsal", english: "Corporate", links: [
     { label: "ARKEM", english: "About ARKEM", href: "/arkem" },
     { label: "Teknik Bilgiler", english: "Technical Resources", href: "/dokumanlar" },
+    { label: "Teknik Yazılar", english: "Technical Articles", href: "/blog" },
     { label: "İletişim", english: "Contact", href: "/iletisim" },
   ] },
   { title: "İletişim", english: "Contact", links: [
@@ -236,37 +274,50 @@ const footerGroups = [
 ] as const;
 
 function FooterNavigationGroup({ group, isEnglish, locale }: { group: (typeof footerGroups)[number]; isEnglish: boolean; locale: "tr" | "en" }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 601px)");
-    const sync = () => setOpen(desktop.matches);
-    sync();
-    desktop.addEventListener("change", sync);
-    return () => desktop.removeEventListener("change", sync);
-  }, []);
-
-  return <details className="v4-footer-accordion" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary>{isEnglish ? group.english : group.title}<ChevronDown size={18} aria-hidden="true" /></summary>
+  return <section className="corporate-footer-group">
+    <h3>{isEnglish ? group.english : group.title}</h3>
     <div>{group.links.map((item) => <Link key={item.href} href={item.href.startsWith("/") ? localizedHref(item.href, locale) : item.href}>{isEnglish ? item.english : item.label}</Link>)}</div>
-  </details>;
+  </section>;
 }
 
 export function SiteFooter() {
   const { language, isEnglish } = useLanguage();
   const locale = language === "en" ? "en" : "tr";
-  return <footer className="v4-footer"><div className="shell v4-footer-statement"><span>ARKEM YAPI SİSTEMLERİ</span><h2>{isEnglish ? <>Engineering into delivery.<br /><em>Site experience into technology.</em></> : <>Mühendisliği uygulamaya.<br /><em>Uygulama deneyimini teknolojiye.</em></>}</h2><p>{isEnglish ? "PROJECT · ANALYSIS · DETAIL · PRODUCTION · SITE" : "PROJE · ANALİZ · DETAY · ÜRETİM · SAHA"}</p></div><div className="shell v4-footer-grid">
-    <div className="v4-footer-identity"><Link className="brand footer-brand" href={isEnglish ? "/en" : "/"}><Logo variant="on-dark" footer /></Link><p>{isEnglish ? "Structural engineering, building systems and site delivery connected through one technical responsibility line." : "Betonarme prefabrik, çelik, hafif çelik ve hibrit sistemlerde mühendislikten sahaya bütünleşik çözüm."}</p><span>SAKARYA · TÜRKİYE</span></div>
-    <div className="v4-footer-navigation">{footerGroups.map((group) => <FooterNavigationGroup group={group} isEnglish={isEnglish} locale={locale} key={group.title} />)}</div>
-  </div>
-  <div className="shell v4-footer-social"><span>@arkemyapisistemleri</span>{socialChannels.map((channel) => <a key={channel.label} href={channel.href} target="_blank" rel="noreferrer">{channel.label}</a>)}</div>
-  {corporateRegistry.legalEntity.relationshipStatement ? <div className="shell v4-footer-legal"><p>{corporateRegistry.legalEntity.relationshipStatement}</p></div> : null}
-  <div className="shell v4-footer-bottom"><span>© 2026 {corporateRegistry.brand.name}. {isEnglish ? "All rights reserved." : "Tüm hakları saklıdır."}</span><span>{site.location}</span></div></footer>;
+  return <footer className="v4-footer">
+    <div className="shell corporate-footer-main">
+      <div className="corporate-footer-brand">
+        <Link className="brand footer-brand" href={isEnglish ? "/en" : "/"}><Logo variant="on-dark" footer /></Link>
+        <p>{isEnglish ? "Building systems and structural engineering. From the project to the site." : "Yapı sistemleri ve mühendislik. Projeden sahaya bütünleşik çözüm."}</p>
+      </div>
+      <div className="corporate-footer-contact">
+        <Link className="corporate-footer-contact-cta" href={isEnglish ? "/en/contact" : "/iletisim"}>{isEnglish ? "Discuss your project" : "Projenizi görüşelim"}</Link>
+        <a href={`tel:${site.phoneHref}`}>{site.phoneDisplay}</a>
+      </div>
+    </div>
+    <div className="shell corporate-footer-navigation">
+      <nav className="corporate-footer-directory corporate-footer-directory-content" aria-label={isEnglish ? "All site links" : "Tüm site bağlantıları"}>
+        {footerGroups.map(group => <FooterNavigationGroup group={group} isEnglish={isEnglish} locale={locale} key={group.title} />)}
+      </nav>
+    </div>
+    <div className="shell corporate-footer-connect">
+      <span>{site.location}</span>
+      <nav className="corporate-footer-social" aria-label={isEnglish ? "ARKEM social media" : "ARKEM sosyal medya"}>
+        {socialChannels.map(channel => <a key={channel.label} href={channel.href} target="_blank" rel="noreferrer" aria-label={`${channel.label} (${isEnglish ? "opens in a new tab" : "yeni sekmede açılır"})`} title={channel.label}><Image className="corporate-social-icon" src={channel.icon} width={22} height={22} alt="" aria-hidden="true" unoptimized /></a>)}
+      </nav>
+    </div>
+    {corporateRegistry.legalEntity.relationshipStatement ? <div className="shell corporate-footer-legal"><p>{corporateRegistry.legalEntity.relationshipStatement}</p></div> : null}
+    <div className="shell corporate-footer-meta">
+      <span>© 2026 {corporateRegistry.brand.name}. {isEnglish ? "All rights reserved." : "Tüm hakları saklıdır."}</span>
+      <nav aria-label={isEnglish ? "Corporate information" : "Kurumsal bilgiler"}>
+        <Link href={isEnglish ? "/en/about" : "/kurumsal"}>{isEnglish ? "Organisation" : "Kurumsal bilgiler"}</Link>
+        <Link href="/site-haritasi">{isEnglish ? "Site map" : "Site haritası"}</Link>
+      </nav>
+    </div>
+  </footer>;
 }
 
 export function FloatingContact() {
   const { isEnglish } = useLanguage();
-  const pathname = usePathname();
   const [mobileVisible, setMobileVisible] = useState(false);
   const message = isEnglish ? "Hello ARKEM Yapı Sistemleri, I am contacting you through your website." : "Merhaba ARKEM Yapı Sistemleri, web siteniz üzerinden iletişime geçiyorum.";
 
@@ -280,18 +331,6 @@ export function FloatingContact() {
       window.removeEventListener("resize", updateVisibility);
     };
   }, []);
-
-  // ARKEMX project workspaces and their focused subroutes do not show the public WhatsApp contact widget.
-  const arkemxWorkspaceRoots = [
-    "/proje-baslat",
-    "/dijital-proje-merkezi",
-    "/mimari-program-studyosu",
-    "/arsa-fizibilite-studyosu",
-    "/tasarim-calismalari",
-    "/sistem-karsilastirma",
-    "/proje-takibi",
-  ];
-  if (pathname === "/" || arkemxWorkspaceRoots.some((root) => pathname === root || pathname?.startsWith(`${root}/`))) return null;
 
   return <a className="floating-contact v4-floating-contact" data-mobile-visible={mobileVisible ? "true" : "false"} data-analytics="whatsapp_click" href={`https://wa.me/${site.whatsappHref}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" aria-label={isEnglish ? "Contact ARKEM via WhatsApp" : "ARKEM Yapı Sistemleri ile WhatsApp üzerinden iletişime geçin"}><MessageCircle className="v4-whatsapp-icon" size={22} strokeWidth={1.8} aria-hidden="true" /><b>WhatsApp</b><small>{isEnglish ? "Quick contact" : "Hızlı iletişim"}</small></a>;
 }

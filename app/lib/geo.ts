@@ -94,28 +94,6 @@ export function pointInPolygon(point: GeoPoint, polygon: GeoPoint[]) {
   return inside;
 }
 
-
-// Detect a boundary crossing even when all building corners lie inside a
-// concave parcel (e.g. a building bridging the open notch of a U-shaped lot).
-export function polygonEdgesCross(boundary: GeoPoint[], object: GeoPoint[]) {
-  if (boundary.length < 3 || object.length < 3) return false;
-  const origin = geoCentroid(boundary);
-  const parcel = boundary.map((point) => toLocalMeters(point, origin));
-  const footprint = object.map((point) => toLocalMeters(point, origin));
-  const orientation = (a: {east:number;north:number}, b: {east:number;north:number}, c: {east:number;north:number}) =>
-    (b.east - a.east) * (c.north - a.north) - (b.north - a.north) * (c.east - a.east);
-  for (let i = 0; i < parcel.length; i++) {
-    const a = parcel[i], b = parcel[(i + 1) % parcel.length];
-    for (let j = 0; j < footprint.length; j++) {
-      const c = footprint[j], d = footprint[(j + 1) % footprint.length];
-      const abC = orientation(a,b,c), abD = orientation(a,b,d);
-      const cdA = orientation(c,d,a), cdB = orientation(c,d,b);
-      if (abC * abD < -1e-9 && cdA * cdB < -1e-9) return true;
-    }
-  }
-  return false;
-}
-
 export function minimumBoundaryDistance(polygon: GeoPoint[], object: GeoPoint[]) {
   if (polygon.length < 2 || !object.length) return 0;
   const origin = geoCentroid(polygon);

@@ -39,3 +39,4 @@ export const englishProjectRecords: Record<string, {
     summary: "An agricultural-facility project record with a verified three-dimensional structural-system view and explicit scope boundaries.",
   },
 };
+

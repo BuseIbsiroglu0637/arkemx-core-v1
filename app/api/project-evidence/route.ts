@@ -10,6 +10,8 @@ import {
 } from "../../lib/project-evidence";
 import { getProjectCmsAuthorization } from "../../lib/project-cms-auth";
 import { evidenceFileMatchesExtension } from "../../lib/project-evidence-file";
+import { readBoundedFormData, readBoundedJsonObject, requestInputFailure } from "../../lib/request-input";
+import { evidenceBytesMatch } from "../../lib/project-evidence-integrity";
 import {
   projectEvidenceBucket,
   projectEvidenceDatabase,
@@ -85,9 +87,9 @@ export async function POST(request: Request) {
   if (contentLength > MAX_EVIDENCE_FILE_BYTES + 1_000_000) return Response.json({ error: "Kanıt isteği 25 MB sınırını aşıyor." }, { status: 413 });
   let form: FormData;
   try {
-    form = await request.formData();
-  } catch {
-    return Response.json({ error: "Geçersiz form verisi." }, { status: 400 });
+    form = await readBoundedFormData(request, MAX_EVIDENCE_FILE_BYTES + 1_000_000);
+  } catch (error) {
+    return requestInputFailure(error, "Geçersiz form verisi.");
   }
 
   const projectSlug = textField(form, "projectSlug", 80);
@@ -155,9 +157,9 @@ export async function PATCH(request: Request) {
   if (auth.status !== "authorized") return authResponse(auth.status);
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
-  } catch {
-    return Response.json({ error: "Geçersiz istek." }, { status: 400 });
+    body = await readBoundedJsonObject(request, 16_000);
+  } catch (error) {
+    return requestInputFailure(error, "Geçersiz istek.");
   }
   const id = String(body.id || "").slice(0, 80);
   const action = body.action;
@@ -190,12 +192,15 @@ export async function PATCH(request: Request) {
         return Response.json({ error: "Kanıt dosyasının bütünlük kaydı eksik; yayın durduruldu." }, { status: 409 });
       }
       const bucket = await projectEvidenceBucket();
-      const storedObject = await bucket.head(current.fileKey);
+      const storedObject = await bucket.get(current.fileKey);
       if (!projectEvidenceObjectMatchesRecord(storedObject, {
         fileSize: current.fileSize,
         fileSha256: current.fileSha256,
       })) {
         return Response.json({ error: "Kanıt dosyası depoda bulunamadı veya bütünlük doğrulaması başarısız; yayın durduruldu." }, { status: 409 });
+      }
+      if (!storedObject || storedObject.size > MAX_EVIDENCE_FILE_BYTES || !await evidenceBytesMatch(await storedObject.arrayBuffer(), { fileSize: current.fileSize, fileSha256: current.fileSha256 })) {
+        return Response.json({ error: "Kanıt dosyasının gerçek içeriği kayıtla eşleşmiyor; yayın durduruldu." }, { status: 409 });
       }
     }
     const now = new Date().toISOString();

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "leaflet/dist/leaflet.css";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./v25.css";
 import "./v25-apps.css";
@@ -89,6 +88,17 @@ import "./v4.css";
 import "./v50.css";
 import "./v117.css";
 import "./v118-system.css";
+import "./customer-guide.css";
+import "./corporate-system.css";
+import "./corporate-navigation.css";
+import "./release-polish.css";
+import "./digital-tools.css";
+import "./module-workspaces.css";
+import "./home-experience.css";
+import "./parcel-experience.css";
+import "./guided-experience.css";
+import "./parcel-refinement.css";
+import "./reference-presentations.css";
 import { site } from "./data/site";
 import { corporateRegistry } from "./data/corporate-registry";
 import { visibleLocaleRecords } from "./data/locale-routes";
@@ -96,7 +106,6 @@ import { FloatingContact } from "./components/SiteChrome";
 import { ProjectKernelProvider } from "./components/ProjectKernel";
 import { LanguageProvider } from "./components/LanguageSystem";
 import { V21Analytics } from "./components/V21Analytics";
-import { ThemeControl } from "./components/ThemeSystem";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext", "cyrillic"] });
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin", "latin-ext", "cyrillic"] });
@@ -121,7 +130,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
   openGraph: { type: "website", locale: "tr_TR", url: "/", siteName: "ARKEM Yapı Sistemleri", title: "ARKEM Yapı Sistemleri | Prefabrik, Çelik, Hafif Çelik ve Yapısal Mühendislik", description: "Betonarme prefabrik, yapısal çelik, hafif çelik ve hibrit yapı sistemlerinde mühendislik, projelendirme ve uygulama.", images: [{ url: "/arkem-social-share.png", width: 1200, height: 630, alt: "ARKEM Yapı Sistemleri — mühendislikten sahaya" }] },
   twitter: { card: "summary_large_image", title: "ARKEM Yapı Sistemleri | Prefabrik, Çelik, Hafif Çelik ve Yapısal Mühendislik", description: "Betonarme prefabrik, yapısal çelik, hafif çelik ve hibrit yapı sistemlerinde mühendislik, projelendirme ve uygulama.", images: ["/arkem-social-share.png"] },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: { icon: { url: "/favicon-arkem-depth.png", type: "image/png", sizes: "1254x1254" }, shortcut: "/favicon-arkem-depth.png" },
 };
 
 export const viewport: Viewport = {
@@ -153,7 +162,7 @@ const structuredData = {
     availableLanguage: visibleLocaleRecords.map((locale) => locale.label),
   },
   areaServed: [{ "@type": "Country", name: "Türkiye" }, { "@type": "Country", name: "Azerbaycan" }],
-  founder: { "@type": "Person", name: "Özenç Öztürk", jobTitle: ["Yüksek İnşaat Mühendisi", "Yüksek Patlayıcı Mühendisi"], image: `${site.domain}/ozenc-ozturk.webp` },
+  founder: { "@type": "Person", name: "Özenç Öztürk", jobTitle: ["Yüksek İnşaat Mühendisi", "Yüksek Patlayıcı Mühendisi"], image: `${site.domain}/ozenc-ozturk.jpg` },
   sameAs: [site.instagram, site.linkedin, site.youtube, site.facebook, site.tiktok, site.threads, site.sketchfab],
   hasOfferCatalog: {
     "@type": "OfferCatalog", name: "Arkem Yapı Sistemleri Hizmetleri",
@@ -167,6 +176,5 @@ const structuredData = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const themeBoot = `try{var t=localStorage.getItem("arkemx-theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light";document.documentElement.style.colorScheme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}`;
-  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#f8f9fa"/><meta name="google" content="notranslate"/><script dangerouslySetInnerHTML={{ __html: themeBoot }} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><div id="main-content">{children}</div><ThemeControl/><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
+  return <html lang="tr" suppressHydrationWarning><head><meta name="theme-color" content="#061a2b"/><meta name="google" content="notranslate"/><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${inter.variable} ${manrope.variable} antialiased arkem-corporate-site`}><LanguageProvider><V21Analytics/><a className="skip-link" href="#main-content">İçeriğe geç</a><ProjectKernelProvider><div id="main-content" tabIndex={-1}>{children}</div><FloatingContact/></ProjectKernelProvider></LanguageProvider></body></html>;
 }

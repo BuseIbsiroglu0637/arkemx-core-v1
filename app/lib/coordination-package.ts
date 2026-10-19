@@ -6,7 +6,7 @@ export type CoordinationTopic = {
   evidence: string;
   action: string;
   source: string;
-  reviewed?: boolean;
+  closed: boolean;
   assignee?: string;
   location?: string;
   type?: string;
@@ -18,7 +18,6 @@ const record = (value: unknown): UnknownRecord => value && typeof value === "obj
 
 export function createCoordinationPackage(input: {
   projectId: string;
-  projectRevision?: string;
   coordinateReference: string;
   serviceZone: number;
   shaftArea: number;
@@ -27,12 +26,7 @@ export function createCoordinationPackage(input: {
   topics: CoordinationTopic[];
 }) {
   const bim = record(input.bimCoordination);
-  const revision = input.projectRevision ?? bim.projectRevision;
-  if (typeof revision !== "string" || !revision.trim()) throw new Error("Source revision required for coordination export");
-  if (typeof bim.projectId === "string" && bim.projectId !== input.projectId) throw new Error("Project identity conflict");
-  if (typeof bim.projectRevision === "string" && bim.projectRevision !== revision) throw new Error("Source revision conflict");
   const federation = record(bim.federation);
-  if (typeof federation.commonRevision === "string" && federation.commonRevision !== revision) throw new Error("Federation revision conflict");
   const spatial = record(bim.spatial);
   const interoperability = record(bim.interoperability);
   return {
@@ -50,7 +44,7 @@ export function createCoordinationPackage(input: {
     identity: {
       projectId: input.projectId,
       coordinateReference: input.coordinateReference,
-      revision,
+      revision: "P01",
       generatedAt: new Date().toISOString(),
     },
     servicePlanning: {
@@ -60,7 +54,7 @@ export function createCoordinationPackage(input: {
       disciplines: ["HVAC", "Electrical", "Plumbing", "Fire"],
     },
     federation: {
-      commonRevision: federation.commonRevision ?? revision,
+      commonRevision: federation.commonRevision ?? "P01",
       layers: federation.layers ?? [],
       spatial: spatial.plate ?? null,
       modelSchema: bim.schema ?? null,
@@ -75,9 +69,7 @@ export function createCoordinationPackage(input: {
       clashType: topic.type ?? "coordination",
       description: topic.evidence,
       requiredAction: topic.action,
-      status: topic.reviewed ? "InReview" : "Open",
-      closureVerified: false,
-      note: "İnceleme kaydı, teknik çözüm veya yetkili onayı olarak yorumlanamaz.",
+      status: topic.closed ? "Closed" : "Open",
       source: topic.source,
       sourceRefs: topic.sourceRefs ?? [topic.source],
       nativeViewpoint: false,

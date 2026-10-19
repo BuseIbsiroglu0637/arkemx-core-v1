@@ -11,6 +11,7 @@ export type StructuralStudioInput = {
   reference: string;
   input: StructuralConceptInput;
   architecturalScheme?: unknown;
+  geometryMode?: "input" | "architecture";
   repetition: number;
   transportDistance: number;
   fireRating: number;
@@ -188,10 +189,12 @@ export function createStructuralStudio(sourceInput: StructuralStudioInput) {
   const program = record(scheme.program);
   const circulation = record(scheme.circulation);
   const architecturalSchemeConnected = scheme.schema === "ARKEM-ARCH-SCHEME/3.0";
-  const width = architecturalSchemeConnected ? numberValue(plate.width, sourceInput.input.width) : sourceInput.input.width;
-  const depth = architecturalSchemeConnected ? numberValue(plate.depth, sourceInput.input.depth) : sourceInput.input.depth;
-  const floors = architecturalSchemeConnected ? numberValue(plate.floors, sourceInput.input.floors) : sourceInput.input.floors;
-  const floorHeight = architecturalSchemeConnected ? numberValue(plate.floorHeight, sourceInput.input.floorHeight) : sourceInput.input.floorHeight;
+  // Interactive form, primary calculation, alternatives and exports must use one geometry.
+  const useArchitecturalGeometry = architecturalSchemeConnected && sourceInput.geometryMode !== "input";
+  const width = useArchitecturalGeometry ? numberValue(plate.width, sourceInput.input.width) : sourceInput.input.width;
+  const depth = useArchitecturalGeometry ? numberValue(plate.depth, sourceInput.input.depth) : sourceInput.input.depth;
+  const floors = useArchitecturalGeometry ? numberValue(plate.floors, sourceInput.input.floors) : sourceInput.input.floors;
+  const floorHeight = useArchitecturalGeometry ? numberValue(plate.floorHeight, sourceInput.input.floorHeight) : sourceInput.input.floorHeight;
   const repetition = clamp(sourceInput.repetition, 0, 100);
   const transportDistance = clamp(sourceInput.transportDistance, 0, 2_000);
   const fireRating = clamp(sourceInput.fireRating, 30, 240);
@@ -273,10 +276,10 @@ export function createStructuralStudio(sourceInput: StructuralStudioInput) {
   const checks = [
     {
       code: "STR-114-01",
-      label: "V113 geometri bağlantısı",
-      value: architecturalSchemeConnected ? `${round(width, 1)} × ${round(depth, 1)} m` : "Bağımsız girdi",
-      state: architecturalSchemeConnected ? "pass" as const : "review" as const,
-      note: architecturalSchemeConnected ? "Plaka, kat ve çekirdek bağlamı V113 mekânsal şemasından alındı." : "Mimari şema yok; taşıyıcı geometri kullanıcı girdisinden kuruluyor.",
+      label: "Hesap geometri kaynağı",
+      value: `${round(width, 1)} × ${round(depth, 1)} m · ${useArchitecturalGeometry ? "V113" : "Form girdisi"}`,
+      state: "review" as const,
+      note: useArchitecturalGeometry ? "Hesap geometrisi V113 şemasından alındı; mimari ve mühendislik uygunluğu ayrıca doğrulanır." : "Hesap ve alternatiflerin tamamı form geometrisini kullanır; bağlantılı mimari şema geometriyi değiştirmez.",
     },
     {
       code: "STR-114-02",
@@ -321,10 +324,13 @@ export function createStructuralStudio(sourceInput: StructuralStudioInput) {
     generatedAt: sourceInput.generatedAt ?? new Date().toISOString(),
     source: {
       architecturalSchemeConnected,
-      authoritativeGeometry: architecturalSchemeConnected && schemeSource.authoritativeMassing === true,
+      carbonBasis: "Temsili katsayılar: beton kgCO2e/m³, metal kgCO2e/t; ürün EPD doğrulaması ve kapsamlı yaşam döngüsü analizi yok.",
+      geometryOrigin: useArchitecturalGeometry ? "architectural-scheme" : "form-input",
+      authoritativeGeometry: false,
+      needsReview: true,
       selectedMassingId: stringValue(schemeSource.selectedMassingId) || null,
       coreStrategy: stringValue(core.strategy) || null,
-      architectureTrust: architecturalSchemeConnected ? schemeSource.authoritativeMassing === true ? "verified" : "derived" : "missing",
+      architectureTrust: useArchitecturalGeometry ? "derived" : "missing",
     },
     geometry: {
       width: round(width),
@@ -358,6 +364,7 @@ export function createStructuralStudio(sourceInput: StructuralStudioInput) {
       carbon: "Genel malzeme katsayılarıyla yön karşılaştırmasıdır; EPD veya EN 15978 LCA sonucu değildir.",
     },
     limitations: [
+      "Montaj aşaması stabilitesi, kaldırma, geçici destek, kalıp/iskele ve yapım aşaması yükleri değerlendirilmemiştir; ayrı mühendislik çalışması gerektirir.",
       "Kesitler ön boyutlandırma sınıfıdır; eleman dayanım, stabilite, sehim, titreşim, birleşim ve detay hesabı değildir.",
       "Deprem sonucu yalnız talep göstergesidir; TBDY uyumlu üç boyutlu statik analiz, düzensizlik, ikinci mertebe ve temel–zemin etkileşimi içermez.",
       "Göreli maliyet, süre ve karbon göstergeleri teklif, iş programı veya sertifikalı yaşam döngüsü değerlendirmesi değildir.",

@@ -1,0 +1,12 @@
+/* Scoped feedback hierarchy; preserve the approved corporate navigation and carousel. */
+.module-feedback:empty { display: none; }
+.module-feedback { margin: 12px 0; padding: 14px 16px; border: 1px solid #b9c8ce; border-radius: 8px; background: #edf3f3; color: #163544; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.module-feedback.error { border-color: #b97557; background: #fff2e9; color: #803816; }
+.module-feedback p { margin: 6px 0 0; font-size: 14px; line-height: 1.6; }
+.decision-fields label small[role="alert"] { color: #a14323; font-size: 14px; line-height: 1.5; }
+.start-customer-success .customer-save, .start-success .customer-save { margin: 24px 0; }
+.project-start-studio .start-fieldset label > span { font-size: 14px; line-height: 1.5; }
+.project-start-studio .start-fieldset input, .project-start-studio .start-fieldset select { min-height: 44px; font-size: 16px; }
+.project-intelligence .intelligence-kpis article span { font-size: 14px; line-height: 1.5; }
+.project-intelligence .intelligence-kpis article small { font-size: 13px; line-height: 1.6; }
+.project-brief-form .form-data-note { font-size: 14px; line-height: 1.65; color: #526574; max-width: 76ch; margin: 0; }

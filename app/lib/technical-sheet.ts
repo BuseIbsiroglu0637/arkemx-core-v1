@@ -2,462 +2,240 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { createDocumentIdentity } from "./document-identity.ts";
 
-export type TechnicalSheetPoint = {
-  x: number;
-  y: number;
-  label?: string;
-};
-
-export type TechnicalSheetPolyline = {
-  points: TechnicalSheetPoint[];
-  role?: "primary" | "secondary" | "grid" | "warning";
-  closed?: boolean;
-};
-
-export type TechnicalCalculationTable = {
-  title: string;
-  context: string;
-  headers: string[];
-  rows: string[][];
-};
-
+export type TechnicalSheetPoint = { x: number; y: number; label?: string };
+export type TechnicalSheetPolyline = { points: TechnicalSheetPoint[]; role?: "primary" | "secondary" | "grid" | "warning"; closed?: boolean };
 export type TechnicalSheetInput = {
-  projectName: string;
-  projectCode: string;
-  module: string;
-  drawingTitle: string;
-  drawingSubtitle?: string;
-  revision?: string;
-  status?: string;
-  sheetNo?: string;
-  scale?: string;
-  coordinateSystem?: string;
-  sourceRevision?: string;
-  elementIds?: string[];
-  calculationIds?: string[];
-  contentDigest?: string;
-  sourceContext?: Parameters<typeof createDocumentIdentity>[0]["sourceContext"];
-  traceability?: unknown;
-  calculationTables?: TechnicalCalculationTable[];
-  preparedBy?: string;
-  checkedBy?: string;
-  reviewBanner?: string;
-  polylines: TechnicalSheetPolyline[];
-  metrics?: Array<[string, string]>;
-  notes?: string[];
+  projectName: string; projectCode: string; module: string; drawingTitle: string;
+  drawingSubtitle?: string; revision?: string; status?: string; sheetNo?: string;
+  scale?: string; coordinateSystem?: string; preparedBy?: string; checkedBy?: string;
+  /** Degrees clockwise from page-up. Omit when north has not been established. */
+  northAngleDegrees?: number;
+  polylines: TechnicalSheetPolyline[]; metrics?: Array<[string, string]>; notes?: string[];
   legend?: Array<[string, "primary" | "secondary" | "grid" | "warning"]>;
   coordinates?: Array<[string, string, string]>;
 };
-
-export type TechnicalSheetAssets = {
-  regularFont: Uint8Array;
-  boldFont: Uint8Array;
-  logo: Uint8Array;
-};
-
-const PAGE = { width: 1190.55, height: 841.89 };
-const COLORS = {
-  navy: rgb(7 / 255, 27 / 255, 40 / 255),
-  deep: rgb(4 / 255, 17 / 255, 27 / 255),
-  copper: rgb(185 / 255, 102 / 255, 55 / 255),
-  blue: rgb(66 / 255, 113 / 255, 133 / 255),
-  slate: rgb(78 / 255, 96 / 255, 105 / 255),
-  pale: rgb(235 / 255, 239 / 255, 237 / 255),
-  paper: rgb(249 / 255, 250 / 255, 248 / 255),
-  line: rgb(190 / 255, 201 / 255, 202 / 255),
-  faint: rgb(224 / 255, 230 / 255, 229 / 255),
-  white: rgb(1, 1, 1),
-  warning: rgb(180 / 255, 68 / 255, 59 / 255),
-};
-
+export type TechnicalSheetAssets = { regularFont: Uint8Array; boldFont: Uint8Array; logo: Uint8Array };
+const C = { navy: rgb(.035, .13, .18), copper: rgb(.65, .32, .16), slate: rgb(.29, .37, .41), line: rgb(.76, .81, .81), pale: rgb(.94, .96, .95), white: rgb(1, 1, 1), grid: rgb(.70, .78, .79), warning: rgb(.70, .21, .18) };
+const ROLES = { primary: C.copper, secondary: C.navy, grid: C.grid, warning: C.warning };
+const DISCLAIMER = "Ön değerlendirme / kavramsal çalışma. Ruhsat, aplikasyon, statik uygunluk veya uygulama projesi değildir.";
 let browserAssetPromise: Promise<TechnicalSheetAssets> | null = null;
-
-function clean(value: unknown, fallback = "-") {
-  const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
-  return normalized || fallback;
-}
-
+const clean = (v: unknown, fallback = "Belirtilmedi") => String(v ?? "").replace(/\s+/g, " ").trim() || fallback;
 async function fetchBytes(path: string) {
   const response = await fetch(path);
   if (!response.ok) throw new Error(`Teknik pafta varlığı yüklenemedi: ${path}`);
   return new Uint8Array(await response.arrayBuffer());
 }
-
 async function resolveAssets(assets?: TechnicalSheetAssets) {
   if (assets) return assets;
-  browserAssetPromise ??= Promise.all([
-    fetchBytes("/fonts/ArkemSans-Regular.ttf"),
-    fetchBytes("/fonts/ArkemSans-Bold.ttf"),
-    fetchBytes("/brand/arkem-a-mark.png"),
-  ]).then(([regularFont, boldFont, logo]) => ({ regularFont, boldFont, logo }));
+  browserAssetPromise ??= Promise.all([fetchBytes("/fonts/ArkemSans-Regular.ttf"), fetchBytes("/fonts/ArkemSans-Bold.ttf"), fetchBytes("/brand/arkem-a-mark.png")])
+    .then(([regularFont, boldFont, logo]) => ({ regularFont, boldFont, logo }))
+    .catch(error => { browserAssetPromise = null; throw error; });
   return browserAssetPromise;
 }
-
-function fitSize(font: PDFFont, value: string, preferred: number, maxWidth: number, minimum = 5.2) {
-  let size = preferred;
-  while (size > minimum && font.widthOfTextAtSize(value, size) > maxWidth) size -= .25;
-  return Math.max(minimum, size);
-}
-
-function splitLongWord(word: string, font: PDFFont, size: number, maxWidth: number) {
-  const chunks: string[] = [];
-  let current = "";
-  for (const character of word) {
-    const next = `${current}${character}`;
-    if (current && font.widthOfTextAtSize(next, size) > maxWidth) {
-      chunks.push(current);
-      current = character;
-    } else current = next;
+function wrap(value: string, font: PDFFont, size: number, width: number) {
+  const words: string[] = [];
+  for (const word of clean(value).split(" ")) {
+    let part = "";
+    for (const char of word) {
+      if (part && font.widthOfTextAtSize(part + char, size) > width) { words.push(part); part = ""; }
+      part += char;
+    }
+    if (part) words.push(part);
   }
-  if (current) chunks.push(current);
-  return chunks;
-}
-
-function wrapText(value: string, font: PDFFont, size: number, maxWidth: number, maxLines: number) {
-  const sourceWords = clean(value).split(" ");
-  const words = sourceWords.flatMap((word) => font.widthOfTextAtSize(word, size) > maxWidth
-    ? splitLongWord(word, font, size, maxWidth)
-    : [word]);
-  const lines: string[] = [];
-  let current = "";
+  const lines: string[] = []; let line = "";
   for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (!current || font.widthOfTextAtSize(candidate, size) <= maxWidth) current = candidate;
-    else {
-      lines.push(current);
-      current = word;
-    }
+    if (line && font.widthOfTextAtSize(`${line} ${word}`, size) > width) { lines.push(line); line = word; }
+    else line = line ? `${line} ${word}` : word;
   }
-  if (current) lines.push(current);
-  if (lines.length <= maxLines) return lines;
-  const clipped = lines.slice(0, maxLines);
-  let last = clipped[maxLines - 1];
-  while (last.length > 1 && font.widthOfTextAtSize(`${last}…`, size) > maxWidth) last = last.slice(0, -1);
-  clipped[maxLines - 1] = `${last.trimEnd()}…`;
-  return clipped;
+  if (line) lines.push(line);
+  return lines;
 }
-
-function drawMultiline(
-  page: PDFPage,
-  value: string,
-  options: {
-    x: number;
-    y: number;
-    width: number;
-    font: PDFFont;
-    size: number;
-    color: ReturnType<typeof rgb>;
-    maxLines?: number;
-    leading?: number;
-  },
-) {
-  const lines = wrapText(value, options.font, options.size, options.width, options.maxLines ?? 2);
-  const leading = options.leading ?? options.size * 1.35;
-  lines.forEach((line, index) => page.drawText(line, {
-    x: options.x,
-    y: options.y - index * leading,
-    size: options.size,
-    font: options.font,
-    color: options.color,
-  }));
-  return lines.length;
+function bounded(value: string, font: PDFFont, size: number, width: number, limit: number) {
+  const lines = wrap(value, font, size, width);
+  if (lines.length <= limit) return lines;
+  const output = lines.slice(0, limit); let last = output[limit - 1];
+  while (last && font.widthOfTextAtSize(last + "…", size) > width) last = last.slice(0, -1);
+  output[limit - 1] = last + "…";
+  return output;
 }
-
-function drawLogoLockup(
-  page: PDFPage,
-  logo: PDFImage,
-  regular: PDFFont,
-  bold: PDFFont,
-  x: number,
-  y: number,
-  options: { compact?: boolean; dark?: boolean } = {},
-) {
-  const compact = options.compact ?? false;
-  const dark = options.dark ?? false;
-  const markWidth = compact ? 34 : 45;
-  const markHeight = markWidth * logo.height / logo.width;
-  const cardHeight = compact ? 34 : 46;
-  page.drawRectangle({
-    x,
-    y,
-    width: compact ? 44 : 58,
-    height: cardHeight,
-    color: COLORS.white,
-    borderColor: dark ? COLORS.faint : COLORS.line,
-    borderWidth: .5,
-  });
-  page.drawImage(logo, {
-    x: x + (compact ? 5 : 6.5),
-    y: y + (cardHeight - markHeight) / 2,
-    width: markWidth,
-    height: markHeight,
-  });
-  const wordX = x + (compact ? 52 : 70);
-  const titleColor = dark ? COLORS.navy : COLORS.white;
-  page.drawText("ARKEM", { x: wordX, y: y + (compact ? 18 : 25), size: compact ? 14 : 20, font: bold, color: titleColor });
-  page.drawText("YAPI SİSTEMLERİ", { x: wordX, y: y + (compact ? 6 : 8), size: compact ? 5.8 : 7.2, font: regular, color: COLORS.copper });
+function text(page: PDFPage, value: string, x: number, y: number, font: PDFFont, size = 9, color = C.navy, width = 500, limit = 1) {
+  const lines = bounded(clean(value), font, size, width, limit);
+  lines.forEach((line, i) => page.drawText(line, { x, y: y - i * size * 1.35, font, size, color }));
+  return lines.length * size * 1.35;
 }
-
-function drawLabel(page: PDFPage, value: string, x: number, y: number, font: PDFFont, color = COLORS.slate) {
-  page.drawText(value.toLocaleUpperCase("tr-TR"), { x, y, size: 5.4, font, color });
+function rule(page: PDFPage, x: number, y: number, width: number, color = C.line, thickness = .6) {
+  page.drawLine({ start: { x, y }, end: { x: x + width, y }, color, thickness });
 }
-
-export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, suppliedAssets?: TechnicalSheetAssets) {
-  const assets = await resolveAssets(suppliedAssets);
-  const document = await PDFDocument.create();
-  document.registerFontkit(fontkit);
-  const [regular, bold, logo] = await Promise.all([
-    document.embedFont(assets.regularFont, { subset: true }),
-    document.embedFont(assets.boldFont, { subset: true }),
-    document.embedPng(assets.logo),
-  ]);
-  const page = document.addPage([PAGE.width, PAGE.height]);
-  const identity = createDocumentIdentity(input);
-  if (input.traceability) await document.attach(new TextEncoder().encode(JSON.stringify(input.traceability, null, 2)), "arkemx-traceability.json", { mimeType: "application/json", description: "Concept calculation and source/document manifest; not technical approval" });
+function logoLockup(page: PDFPage, logo: PDFImage, bold: PDFFont, regular: PDFFont, x: number, y: number) {
+  page.drawImage(logo, { x, y, width: 32, height: 32 * logo.height / logo.width });
+  text(page, "ARKEM", x + 42, y + 15, bold, 19);
+  text(page, "YAPI SİSTEMLERİ", x + 43, y + 2, regular, 8, C.copper);
+}
+async function setup(input: TechnicalSheetInput, assets?: TechnicalSheetAssets) {
+  const data = await resolveAssets(assets); const document = await PDFDocument.create(); document.registerFontkit(fontkit);
+  const [regular, bold, logo] = await Promise.all([document.embedFont(data.regularFont, { subset: true }), document.embedFont(data.boldFont, { subset: true }), document.embedPng(data.logo)]);
+  document.setAuthor("Arkem Yapı Sistemleri"); document.setCreator("ARKEMX Teknik Çıktı Motoru");
+  document.setProducer("ARKEMX / Kurumsal Pafta Standardı 4.0"); document.setSubject(clean(input.module));
   document.setTitle(`${clean(input.projectCode)} - ${clean(input.drawingTitle)}`);
-  document.setAuthor("Arkem Yapı Sistemleri");
-  document.setCreator("ARKEMX Teknik Çıktı Motoru");
-  document.setProducer("ARKEMX / Kurumsal Pafta Standardı 2.0");
-  document.setSubject(clean(input.module));
-  document.setKeywords(["Arkem", "ARKEMX", "teknik pafta", clean(input.projectCode), clean(input.sheetNo), identity.reference, ...(input.calculationIds ?? [])]);
-
-  page.drawRectangle({ x: 0, y: 0, width: PAGE.width, height: PAGE.height, color: COLORS.pale });
-  page.drawRectangle({ x: 18, y: 18, width: PAGE.width - 36, height: PAGE.height - 36, color: COLORS.white, borderColor: COLORS.navy, borderWidth: 1.25 });
-
-  const header = { x: 18, y: 728, width: PAGE.width - 36, height: 96 };
-  page.drawRectangle({ ...header, color: COLORS.navy });
-  page.drawRectangle({ x: header.x, y: header.y, width: 8, height: header.height, color: COLORS.copper });
-  drawLogoLockup(page, logo, regular, bold, 42, 750);
-  page.drawLine({ start: { x: 357, y: 746 }, end: { x: 357, y: 806 }, color: COLORS.blue, thickness: .6 });
-  drawLabel(page, "ARKEMX teknik çıktı standardı", 382, 789, bold, COLORS.copper);
-  page.drawText("İzlenebilir mühendislik verisi", { x: 382, y: 767, size: 12, font: regular, color: COLORS.white });
-  page.drawText("MİMARİ  •  MÜHENDİSLİK  •  YAPIM", { x: 382, y: 749, size: 6.5, font: regular, color: COLORS.blue });
-
-  drawLabel(page, clean(input.module), 806, 798, bold, COLORS.copper);
-  const headerTitle = clean(input.drawingTitle).toLocaleUpperCase("tr-TR");
-  const headerTitleSize = fitSize(bold, headerTitle, 14.5, 320, 10);
-  drawMultiline(page, headerTitle, { x: 806, y: 775, width: 320, font: bold, size: headerTitleSize, color: COLORS.white, maxLines: 2, leading: headerTitleSize * 1.2 });
-  page.drawText(`PAFTA ${clean(input.sheetNo, "A-001")}`, {
-    x: 1088,
-    y: 742,
-    size: 6.5,
-    font: bold,
-    color: COLORS.pale,
-  });
-
-  if (input.reviewBanner) {
-    page.drawRectangle({ x: 42, y: 705, width: 1107, height: 19, color: COLORS.warning });
-    const warningText = clean(input.reviewBanner);
-    page.drawText(warningText, {
-      x: 52, y: 710.7,
-      size: fitSize(bold, warningText, 9.3, 1085, 6.8),
-      font: bold, color: COLORS.white,
-    });
-  }
-
-  const drawing = { x: 42, y: 172, width: 750, height: 530 };
-  const sidebar = { x: 808, y: 172, width: 341, height: 530 };
-  page.drawRectangle({ ...drawing, color: COLORS.paper, borderColor: COLORS.line, borderWidth: .7 });
-  page.drawRectangle({ ...sidebar, color: COLORS.white, borderColor: COLORS.line, borderWidth: .7 });
-  drawLabel(page, "Teknik görünüş / model uzayı", drawing.x + 14, drawing.y + drawing.height - 24, bold, COLORS.copper);
-  const scaleLabel = clean(input.scale, "Ölçek: otomatik");
-  page.drawText(scaleLabel, {
-    x: drawing.x + drawing.width - 16 - bold.widthOfTextAtSize(scaleLabel, 6.2),
-    y: drawing.y + drawing.height - 24,
-    size: 6.2,
-    font: bold,
-    color: COLORS.slate,
-  });
-  page.drawLine({
-    start: { x: drawing.x + 14, y: drawing.y + drawing.height - 35 },
-    end: { x: drawing.x + drawing.width - 14, y: drawing.y + drawing.height - 35 },
-    color: COLORS.line,
-    thickness: .55,
-  });
-
-  const allPoints = input.polylines.flatMap((polyline) => polyline.points).filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
-  const minX = allPoints.length ? Math.min(...allPoints.map((point) => point.x)) : 0;
-  const maxX = allPoints.length ? Math.max(...allPoints.map((point) => point.x)) : 1;
-  const minY = allPoints.length ? Math.min(...allPoints.map((point) => point.y)) : 0;
-  const maxY = allPoints.length ? Math.max(...allPoints.map((point) => point.y)) : 1;
-  const inner = { x: drawing.x + 42, y: drawing.y + 56, width: drawing.width - 84, height: drawing.height - 110 };
-  const plotScale = Math.min(inner.width / Math.max(1, maxX - minX), inner.height / Math.max(1, maxY - minY));
-  const usedWidth = (maxX - minX) * plotScale;
-  const usedHeight = (maxY - minY) * plotScale;
-  const offsetX = inner.x + (inner.width - usedWidth) / 2;
-  const offsetY = inner.y + (inner.height - usedHeight) / 2;
-  const mapPoint = (point: TechnicalSheetPoint) => ({
-    x: offsetX + (point.x - minX) * plotScale,
-    y: offsetY + (point.y - minY) * plotScale,
-  });
-  const roleColor = {
-    primary: COLORS.copper,
-    secondary: COLORS.navy,
-    grid: COLORS.blue,
-    warning: COLORS.warning,
-  };
-
-  for (let index = 0; index <= 10; index += 1) {
-    const gx = inner.x + inner.width * index / 10;
-    const gy = inner.y + inner.height * index / 10;
-    page.drawLine({ start: { x: gx, y: inner.y }, end: { x: gx, y: inner.y + inner.height }, color: COLORS.faint, thickness: .3 });
-    page.drawLine({ start: { x: inner.x, y: gy }, end: { x: inner.x + inner.width, y: gy }, color: COLORS.faint, thickness: .3 });
-  }
-
-  input.polylines.forEach((polyline) => {
-    if (polyline.points.length < 2) return;
-    const mapped = polyline.points.map(mapPoint);
-    const color = roleColor[polyline.role ?? "secondary"];
-    const thickness = polyline.role === "primary" ? 2.2 : polyline.role === "warning" ? 1.6 : 1.05;
-    mapped.slice(1).forEach((point, index) => page.drawLine({ start: mapped[index], end: point, color, thickness }));
-    if (polyline.closed !== false && mapped.length > 2) page.drawLine({ start: mapped[mapped.length - 1], end: mapped[0], color, thickness });
-    polyline.points.forEach((point, index) => {
+  return { document, regular, bold, logo, identity: createDocumentIdentity(input) };
+}
+type Box = { x: number; y: number; width: number; height: number };
+function geometryPlot(page: PDFPage, input: TechnicalSheetInput, box: Box, regular: PDFFont, bold: PDFFont) {
+  page.drawRectangle({ ...box, color: C.pale, borderColor: C.line, borderWidth: .7 });
+  const lines = input.polylines.filter(p => p.points.length >= 2 && p.points.every(v => Number.isFinite(v.x) && Number.isFinite(v.y)));
+  const points = lines.flatMap(p => p.points);
+  if (!points.length) { text(page, "Geometri henüz eklenmedi", box.x + 20, box.y + box.height / 2, bold, 12); return "Ölçeksiz"; }
+  const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x));
+  const minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
+  const w = Math.max(maxX - minX, .01), h = Math.max(maxY - minY, .01);
+  const available = { width: box.width - 90, height: box.height - 115 };
+  const needed = Math.max(w * 2834.645669 / available.width, h * 2834.645669 / available.height);
+  const scales = [10, 20, 25, 50, 75, 100, 125, 200, 250, 500, 750, 1000, 1500, 2000, 5000, 10000];
+  const denominator = scales.find(s => s >= needed) ?? Math.ceil(needed / 10000) * 10000;
+  const factor = 2834.645669 / denominator; // input metres -> PDF points at the stated physical print scale
+  const x0 = box.x + (box.width - w * factor) / 2, y0 = box.y + 63 + (available.height - h * factor) / 2;
+  const map = (p: TechnicalSheetPoint) => ({ x: x0 + (p.x - minX) * factor, y: y0 + (p.y - minY) * factor });
+  text(page, "TEKNİK GÖRÜNÜŞ", box.x + 16, box.y + box.height - 23, bold, 8.5, C.copper);
+  text(page, `1:${denominator}  ·  %100 baskı`, box.x + box.width - 170, box.y + box.height - 23, regular, 8.5, C.slate, 154);
+  lines.sort((a, b) => (a.role === "grid" ? -1 : 0) - (b.role === "grid" ? -1 : 0)).forEach(p => {
+    const mapped = p.points.map(map); const color = ROLES[p.role ?? "secondary"];
+    const thickness = p.role === "primary" ? 1.7 : p.role === "grid" ? .45 : 1.05;
+    const draw = (a: TechnicalSheetPoint, b: TechnicalSheetPoint) => page.drawLine({ start: a, end: b, color, thickness });
+    mapped.slice(1).forEach((point, i) => draw(mapped[i], point));
+    if (p.closed !== false && mapped.length > 2) draw(mapped[mapped.length - 1], mapped[0]);
+    p.points.forEach((point, i) => {
       if (!point.label) return;
-      const mappedPoint = mapped[index];
-      page.drawRectangle({ x: mappedPoint.x - 2.3, y: mappedPoint.y - 2.3, width: 4.6, height: 4.6, color: COLORS.white, borderColor: color, borderWidth: .65 });
-      page.drawText(point.label, { x: mappedPoint.x + 5, y: mappedPoint.y + 3.2, size: 5.2, font: bold, color: COLORS.slate });
+      const q = mapped[i]; page.drawCircle({ x: q.x, y: q.y, size: 2.3, color: C.white, borderColor: color, borderWidth: .8 });
+      text(page, point.label, q.x + 5, q.y + 5, bold, 8, C.navy, 80);
     });
   });
-
-  page.drawText("N", { x: drawing.x + drawing.width - 39, y: drawing.y + drawing.height - 61, size: 8, font: bold, color: COLORS.navy });
-  page.drawLine({ start: { x: drawing.x + drawing.width - 36, y: drawing.y + drawing.height - 99 }, end: { x: drawing.x + drawing.width - 36, y: drawing.y + drawing.height - 68 }, color: COLORS.copper, thickness: 1.7 });
-  page.drawSvgPath("M 0 0 L 5 12 L 10 0 Z", { x: drawing.x + drawing.width - 41, y: drawing.y + drawing.height - 69, color: COLORS.copper });
-
-  page.drawLine({ start: { x: drawing.x + 30, y: drawing.y + 30 }, end: { x: drawing.x + 150, y: drawing.y + 30 }, color: COLORS.navy, thickness: 2 });
-  [30, 90, 150].forEach((offset) => page.drawLine({ start: { x: drawing.x + offset, y: drawing.y + 25 }, end: { x: drawing.x + offset, y: drawing.y + 35 }, color: COLORS.navy, thickness: .8 }));
-  page.drawText("GRAFİK ÖLÇEK  /  ÇİZİM BİRİMİ: METRE", { x: drawing.x + 30, y: drawing.y + 14, size: 5.4, font: bold, color: COLORS.slate });
-
-  let sideY = sidebar.y + sidebar.height - 25;
-  const sideLeft = sidebar.x + 16;
-  const sideRight = sidebar.x + sidebar.width - 16;
-  const sideHeading = (label: string) => {
-    drawLabel(page, label, sideLeft, sideY, bold, COLORS.copper);
-    sideY -= 10;
-    page.drawLine({ start: { x: sideLeft, y: sideY }, end: { x: sideRight, y: sideY }, color: COLORS.line, thickness: .5 });
-    sideY -= 15;
-  };
-  const sideField = (label: string, value: string) => {
-    drawLabel(page, label, sideLeft, sideY, bold);
-    const cleaned = clean(value);
-    const valueSize = fitSize(bold, cleaned, 6.4, 205, 5.2);
-    page.drawText(cleaned, { x: sideLeft + 102, y: sideY, size: valueSize, font: bold, color: COLORS.navy });
-    sideY -= 17;
-  };
-
-  sideHeading("Proje kimliği");
-  sideField("Proje", input.projectName);
-  sideField("Proje kodu", input.projectCode);
-  sideField("Modül", input.module);
-  sideField("Veri statüsü", input.status ?? "Kavramsal / ön değerlendirme");
-  sideField("Koordinat", input.coordinateSystem ?? "Yerel / proje bazlı");
-
-  sideHeading("Teknik özet");
-  (input.metrics ?? []).slice(0, 7).forEach(([label, value]) => {
-    drawLabel(page, label, sideLeft, sideY, bold);
-    const cleaned = clean(value);
-    const size = fitSize(bold, cleaned, 6.8, 122, 5.4);
-    page.drawText(cleaned, { x: sideRight - bold.widthOfTextAtSize(cleaned, size), y: sideY, size, font: bold, color: COLORS.navy });
-    sideY -= 15;
-  });
-
-  if (input.coordinates?.length) {
-    sideHeading("Koordinat özeti");
-    input.coordinates.slice(0, 5).forEach(([point, first, second]) => {
-      page.drawText(point, { x: sideLeft, y: sideY, size: 5.8, font: bold, color: COLORS.copper });
-      page.drawText(first, { x: sideLeft + 43, y: sideY, size: 5.6, font: regular, color: COLORS.navy });
-      page.drawText(second, { x: sideLeft + 180, y: sideY, size: 5.6, font: regular, color: COLORS.navy });
-      sideY -= 12;
-    });
-    sideY -= 3;
+  // Never invent a north direction for non-georeferenced module drawings.
+  if (Number.isFinite(input.northAngleDegrees)) {
+    const angle = input.northAngleDegrees! * Math.PI / 180;
+    const base = { x: box.x + box.width - 28, y: box.y + box.height - 72 };
+    const tip = { x: base.x + Math.sin(angle) * 25, y: base.y + Math.cos(angle) * 25 };
+    page.drawLine({ start: base, end: tip, color: C.navy, thickness: 1.5 });
+    text(page, "K", tip.x - 3, tip.y + 6, bold, 9);
   }
+  const barMetres = denominator / 50, barLength = barMetres * factor;
+  const barX = box.x + 20, barY = box.y + 30;
+  rule(page, barX, barY, barLength, C.navy, 2);
+  [0, .5, 1].forEach(f => {
+    page.drawLine({ start: { x: barX + barLength * f, y: barY - 3 }, end: { x: barX + barLength * f, y: barY + 3 }, color: C.navy, thickness: .8 });
+    text(page, `${barMetres * f}${f === 1 ? " m" : ""}`, barX + barLength * f - 2, barY + 8, regular, 8);
+  });
+  text(page, "Çizim birimi: metre · Kaynak hassasiyeti ile sınırlıdır", barX, box.y + 10, regular, 8, C.slate, box.width - 35);
+  return `1:${denominator}`;
+}
 
-  if (input.legend?.length) {
-    sideHeading("Çizim lejantı");
-    input.legend.slice(0, 3).forEach(([label, role]) => {
-      page.drawLine({ start: { x: sideLeft, y: sideY + 2 }, end: { x: sideLeft + 30, y: sideY + 2 }, color: roleColor[role], thickness: role === "primary" ? 2.1 : 1.1 });
-      page.drawText(label, { x: sideLeft + 42, y: sideY, size: 5.9, font: regular, color: COLORS.slate });
-      sideY -= 12;
+/** One A3 landscape sheet: intentionally concise; the A4 report retains the complete record. */
+export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, suppliedAssets?: TechnicalSheetAssets) {
+  const { document, regular, bold, logo, identity } = await setup(input, suppliedAssets);
+  const page = document.addPage([1190.55, 841.89]); const right = 1158.55;
+  page.drawRectangle({ x: 20, y: 20, width: 1150.55, height: 801.89, borderColor: C.navy, borderWidth: 1 });
+  logoLockup(page, logo, bold, regular, 38, 766);
+  text(page, clean(input.module), 280, 789, bold, 9, C.copper, 590);
+  text(page, input.drawingTitle, 280, 765, bold, 18, C.navy, 675, 2);
+  text(page, `A3 / ${clean(input.sheetNo, "A-001")}`, 1000, 789, bold, 12, C.navy, 150);
+  text(page, `Rev. ${clean(input.revision, "P01")}`, 1000, 768, regular, 9, C.slate, 150);
+  rule(page, 32, 737, right - 32, C.navy, 1.1);
+  const scale = geometryPlot(page, input, { x: 32, y: 182, width: 765, height: 538 }, regular, bold);
+  const sx = 818, sw = 325; let sy = 703;
+  const heading = (label: string) => { text(page, label, sx, sy, bold, 10, C.copper, sw); sy -= 10; rule(page, sx, sy, sw); sy -= 19; };
+  const field = (label: string, value: string, lines = 2) => { text(page, label, sx, sy, regular, 8, C.slate, sw); sy -= 14; sy -= text(page, value, sx, sy, bold, 10, C.navy, sw, lines) + 8; };
+  heading("01 / PROJE KİMLİĞİ");
+  field("Proje / parsel", input.projectName);
+  field("Proje kodu", input.projectCode, 1);
+  field("Veri durumu", clean(input.status, "Kavramsal / doğrulama bekliyor"));
+  heading("02 / TEKNİK ÖZET");
+  const metrics = (input.metrics ?? []).slice(0, 7);
+  metrics.forEach(([label, value]) => {
+    text(page, label, sx, sy, regular, 9, C.slate, 165, 2);
+    text(page, value, sx + 173, sy, bold, 10, C.navy, sw - 173, 2);
+    sy -= 31;
+  });
+  if (sy > 239) {
+    heading("03 / ÇİZİM LEJANTI");
+    (input.legend ?? [["Ön yapı", "primary"], ["Kaynak sınırı", "secondary"]]).slice(0, Math.max(0, Math.floor((sy - 212) / 19))).forEach(([label, role]) => {
+      rule(page, sx, sy + 3, 23, ROLES[role as keyof typeof ROLES], role === "primary" ? 1.7 : .8);
+      text(page, label, sx + 33, sy, regular, 9, C.slate, sw - 33); sy -= 19;
     });
-    sideY -= 2;
   }
-
-  sideHeading("Açıklama ve kapsam");
-  (input.notes ?? []).slice(0, 3).forEach((note, index) => {
-    page.drawText(String(index + 1).padStart(2, "0"), { x: sideLeft, y: sideY, size: 5.7, font: bold, color: COLORS.copper });
-    const lineCount = drawMultiline(page, note, { x: sideLeft + 27, y: sideY, width: sideRight - sideLeft - 27, font: regular, size: 5.5, color: COLORS.slate, maxLines: 2, leading: 7 });
-    sideY -= lineCount * 7 + 8;
+  text(page, "Tam veri, kaynak ve notlar: A4 özet rapor", sx, 192, regular, 8, C.slate, sw);
+  page.drawRectangle({ x: 32, y: 65, width: right - 32, height: 99, color: C.pale, borderColor: C.line, borderWidth: .7 });
+  text(page, "KAPSAM VE KAYNAK", 46, 144, bold, 8.5, C.copper);
+  text(page, clean(input.drawingSubtitle, DISCLAIMER), 46, 126, regular, 9, C.navy, 625, 2);
+  text(page, clean(input.notes?.[0], DISCLAIMER), 46, 94, regular, 8.5, C.slate, 625, 2);
+  const meta = [["Ölçek / birim", `${scale} / metre`], ["Koordinat", clean(input.coordinateSystem, "Yerel model / yön doğrulanmadı")], ["Hazırlayan / kontrol", `${clean(input.preparedBy, "ARKEMX")} / ${clean(input.checkedBy, "Uzman kontrolü bekliyor")}`], ["Oluşturma tarihi", new Date().toLocaleDateString("tr-TR")]];
+  meta.forEach(([label, value], i) => {
+    text(page, label, 705, 145 - i * 21, regular, 8, C.slate, 126);
+    text(page, value, 838, 145 - i * 21, bold, 8.5, C.navy, 304);
   });
+  text(page, DISCLAIMER, 32, 47, regular, 8.2, C.slate, right - 32);
+  text(page, identity.reference, 32, 31, regular, 8, C.slate, 945);
+  text(page, "ARKEM-TS / 3.0 · A3", 1000, 31, bold, 8, C.copper, 150);
+  return document.save({ useObjectStreams: false });
+}
 
-  const title = { x: 42, y: 42, width: 1107, height: 105 };
-  page.drawRectangle({ ...title, color: COLORS.white, borderColor: COLORS.navy, borderWidth: .8 });
-  page.drawRectangle({ x: title.x, y: title.y, width: 228, height: title.height, color: COLORS.navy });
-  page.drawRectangle({ x: title.x, y: title.y, width: 7, height: title.height, color: COLORS.copper });
-  drawLogoLockup(page, logo, regular, bold, title.x + 20, title.y + 42, { compact: true });
-  page.drawText("MİMARİ  •  MÜHENDİSLİK  •  YAPIM", { x: title.x + 20, y: title.y + 18, size: 5.2, font: regular, color: COLORS.pale });
-
-  const titleInfoX = title.x + 248;
-  const titleMetaX = title.x + 862;
-  page.drawLine({ start: { x: titleInfoX, y: title.y + 35 }, end: { x: titleMetaX, y: title.y + 35 }, color: COLORS.line, thickness: .55 });
-  drawLabel(page, "Pafta adı", titleInfoX, title.y + 82, bold);
-  const drawingTitle = clean(input.drawingTitle);
-  const drawingTitleSize = fitSize(bold, drawingTitle, 13.5, titleMetaX - titleInfoX - 18, 9.5);
-  drawMultiline(page, drawingTitle, { x: titleInfoX, y: title.y + 57, width: titleMetaX - titleInfoX - 18, font: bold, size: drawingTitleSize, color: COLORS.navy, maxLines: 2, leading: drawingTitleSize * 1.18 });
-  const subtitle = clean(input.drawingSubtitle, "ARKEMX teknik çalışma çıktısı");
-  const subtitleSize = fitSize(regular, subtitle, 6.5, titleMetaX - titleInfoX - 18, 5.2);
-  page.drawText(subtitle, { x: titleInfoX, y: title.y + 16, size: subtitleSize, font: regular, color: COLORS.slate });
-
-  page.drawLine({ start: { x: titleMetaX, y: title.y }, end: { x: titleMetaX, y: title.y + title.height }, color: COLORS.line, thickness: .65 });
-  page.drawLine({ start: { x: titleMetaX + 113, y: title.y }, end: { x: titleMetaX + 113, y: title.y + title.height }, color: COLORS.line, thickness: .65 });
-  [title.y + 35, title.y + 70].forEach((y) => page.drawLine({ start: { x: titleMetaX, y }, end: { x: title.x + title.width, y }, color: COLORS.line, thickness: .65 }));
-
-  const metaCell = (label: string, value: string, x: number, y: number, width: number, accent = false) => {
-    drawLabel(page, label, x + 12, y + 22, bold);
-    const cleaned = clean(value);
-    const size = fitSize(bold, cleaned, 7.2, width - 24, 5.4);
-    page.drawText(cleaned, { x: x + 12, y: y + 8, size, font: bold, color: accent ? COLORS.copper : COLORS.navy });
+/** Complete A4 report. Rows and paragraphs continue onto new pages, never shrink or silently disappear. */
+export async function createCorporateSummaryPdf(input: TechnicalSheetInput, suppliedAssets?: TechnicalSheetAssets) {
+  const { document, regular, bold, logo, identity } = await setup(input, suppliedAssets);
+  document.setTitle(`${clean(input.projectCode)} - A4 Proje Özet Raporu`);
+  const width = 595.28, height = 841.89, left = 38, contentWidth = width - 76;
+  let page: PDFPage; let y = 0;
+  const newPage = () => {
+    page = document.addPage([width, height]); logoLockup(page, logo, bold, regular, left, height - 72);
+    text(page, "PROJE ÖZET RAPORU", 312, height - 52, bold, 11, C.navy, 245);
+    text(page, `${clean(input.sheetNo, "GEO-001")} / Rev. ${clean(input.revision, "P01")}`, 312, height - 69, regular, 9, C.slate, 245);
+    rule(page, left, height - 88, contentWidth, C.navy); y = height - 113;
   };
-  metaCell("Revizyon", input.revision ?? "Bekleniyor", titleMetaX, title.y + 70, 113, true);
-  metaCell("Pafta no", input.sheetNo ?? "A-001", titleMetaX + 113, title.y + 70, 132);
-  metaCell("Tarih", new Date().toLocaleDateString("tr-TR"), titleMetaX, title.y + 35, 113);
-  metaCell("Ölçek", input.scale ?? "Otomatik", titleMetaX + 113, title.y + 35, 132);
-  metaCell("Hazırlayan", input.preparedBy ?? "ARKEMX", titleMetaX, title.y, 113);
-  metaCell("Kontrol", input.checkedBy ?? "Projeye özel", titleMetaX + 113, title.y, 132);
-
-  page.drawText("Bu pafta kavramsal karar, veri hazırlığı ve koordinasyon içindir; ruhsat, aplikasyon veya uygulama projesi yerine geçmez.", {
-    x: 42,
-    y: 27,
-    size: 5.3,
-    font: regular,
-    color: COLORS.slate,
-  });
-  page.drawText(identity.reference, { x: 790, y: 27, size: fitSize(bold, identity.reference, 5.5, 260, 4.5), font: bold, color: COLORS.slate });
-  page.drawText(identity.references.status === "unsupported" ? "Hesap / eleman kaynak baglari eksik: izlenebilir teknik teslim desteklenmiyor." : "Beyan edilen hesap / eleman baglari ayrica dogrulanmalidir.", { x: 42, y: 17, size: 5.3, font: regular, color: COLORS.copper });
-  page.drawText("ARKEM-TS / 3.0", { x: 1060, y: 27, size: 5.5, font: bold, color: COLORS.copper });
-
-  for (const table of input.calculationTables ?? []) {
-    // Repeat column headings and source identity on every continuation page.
-    const rowsPerPage = 26;
-    for (let offset = 0; offset < Math.max(1, table.rows.length); offset += rowsPerPage) {
-      const resultPage = document.addPage([PAGE.width, PAGE.height]);
-      const width = PAGE.width - 84, cellWidth = width / table.headers.length;
-      resultPage.drawText("ARKEMX · Lineer 3B hesap tabloları", { x: 42, y: 795, size: 20, font: bold, color: COLORS.navy });
-      resultPage.drawText(clean(input.reviewBanner, "Teknik onay bekliyor"), { x: 42, y: 765, size: 11, font: bold, color: COLORS.warning });
-      drawMultiline(resultPage, clean(table.title), { x: 42, y: 728, width, font: bold, size: 15, color: COLORS.navy, maxLines: 2, leading: 18 });
-      resultPage.drawText(clean(table.context), { x: 42, y: 680, size: 10, font: regular, color: COLORS.slate });
-      const drawRow = (values: string[], y: number, heading = false) => {
-        resultPage.drawRectangle({ x: 42, y: y - 7, width, height: 21, color: heading ? COLORS.navy : COLORS.paper });
-        values.forEach((value, i) => {
-          const text = clean(value), font = heading ? bold : regular;
-          resultPage.drawText(text, { x: 48 + i * cellWidth, y, size: fitSize(font, text, 10, cellWidth - 12, 5), font, color: heading ? COLORS.white : COLORS.navy });
-        });
-      };
-      drawRow(table.headers, 642, true);
-      table.rows.slice(offset, offset + rowsPerPage).forEach((row, i) => drawRow(row, 613 - i * 20));
-      resultPage.drawText(`Satırlar: ${table.rows.length ? offset + 1 : 0}–${Math.min(offset + rowsPerPage, table.rows.length)} / ${table.rows.length}`, { x: 42, y: 65, size: 9, font: regular, color: COLORS.slate });
-      resultPage.drawText("Prizmatik lineer elastik çerçeve; kapasite, deprem ve resmî teknik onay içermez.", { x: 42, y: 46, size: 9, font: regular, color: COLORS.warning });
-      resultPage.drawText((input.calculationIds ?? []).join(" · "), { x: 42, y: 28, size: 8, font: regular, color: COLORS.slate });
-      resultPage.drawText(`Sayfa ${document.getPageCount()}`, { x: PAGE.width - 100, y: 65, size: 9, font: bold, color: COLORS.navy });
+  const ensure = (space: number) => { if (y - space < 84) newPage(); };
+  const paragraph = (value: string, size = 10, color = C.navy) => {
+    const lines = wrap(value, regular, size, contentWidth - 16);
+    for (const line of lines) { ensure(size * 1.45); text(page, line, left + 8, y, regular, size, color, contentWidth - 16); y -= size * 1.45; }
+    y -= 9;
+  };
+  const heading = (value: string) => { ensure(62); y -= 5; text(page, value, left, y, bold, 11, C.copper, contentWidth); y -= 10; rule(page, left, y, contentWidth); y -= 23; };
+  const row = (label: string, value: string) => {
+    const labelLines = wrap(label, regular, 9.5, 170), valueLines = wrap(value, bold, 10, contentWidth - 198);
+    const count = Math.max(labelLines.length, valueLines.length);
+    for (let i = 0; i < count; i++) {
+      ensure(17);
+      if (labelLines[i]) text(page, labelLines[i], left + 8, y, regular, 9.5, C.slate, 170);
+      if (valueLines[i]) text(page, valueLines[i], left + 192, y, bold, 10, C.navy, contentWidth - 198);
+      y -= 15;
     }
+    rule(page, left, y + 3, contentWidth, C.line, .35); y -= 10;
+  };
+  newPage();
+  text(page!, input.projectName, left, y, bold, 17, C.navy, contentWidth, 2); y -= 49;
+  paragraph(clean(input.status, "Kavramsal / doğrulama bekliyor"), 10, C.copper);
+  paragraph(DISCLAIMER, 9, C.slate);
+  heading("01 / Çalışma kaydı");
+  row("Proje / parsel", clean(input.projectName)); row("Proje kodu", clean(input.projectCode)); row("Modül", clean(input.module));
+  row("Pafta", clean(input.drawingTitle)); row("Koordinat referansı", clean(input.coordinateSystem, "Yerel model"));
+  row("Oluşturma tarihi", new Date().toLocaleDateString("tr-TR"));
+  row("Hazırlayan / kontrol", `${clean(input.preparedBy, "ARKEMX")} / ${clean(input.checkedBy, "Uzman kontrolü bekliyor")}`);
+  if (input.metrics?.length) { heading("02 / Hesap ve karar özeti"); input.metrics.forEach(([label, value]) => row(label, value)); }
+  if (input.polylines.length) {
+    ensure(249); y -= 217;
+    geometryPlot(page!, input, { x: left, y, width: contentWidth, height: 229 }, regular, bold); y -= 27;
   }
+  heading("03 / Kaynak, varsayım ve değerlendirme notları");
+  if (input.drawingSubtitle) paragraph(input.drawingSubtitle);
+  (input.notes?.length ? input.notes : ["Bu çalışma için kaynak ve hesap kabulleri henüz eklenmedi. Yetkili uzman incelemesi gereklidir."]).forEach((note, i) => paragraph(`${String(i + 1).padStart(2, "0")} · ${note}`));
+  if (input.coordinates?.length) {
+    heading("04 / Kaynak koordinatları");
+    paragraph(`Referans: ${clean(input.coordinateSystem, "Belirtilmedi")}. Yerel model geometrisi ile kaynak koordinatları farklı referanslarda olabilir; aplikasyon ölçüsü değildir.`, 9, C.slate);
+    input.coordinates.forEach(([name, first, second]) => row(name, `${first}  /  ${second}`));
+  }
+  heading("SONRAKİ ADIM / Aynı proje ile devam edin");
+  paragraph("Pafta ve bu raporu birlikte saklayın. Kaynakları doğruladıktan sonra sistem seçimi, ön maliyet ve iş programı modüllerine aynı proje kaydıyla devam edin. İmar bulunamadıysa çalışma kavramsal senaryo olarak sürdürülür; izin verilen yapılaşma hakkı anlamına gelmez.", 10);
+  document.getPages().forEach((p, i, pages) => {
+    rule(p, left, 65, contentWidth);
+    text(p, "Ön değerlendirme · Resmî onay veya uygulama projesi değildir.", left, 50, regular, 8, C.slate, contentWidth);
+    text(p, identity.reference, left, 35, regular, 8, C.slate, contentWidth - 52);
+    text(p, `${i + 1} / ${pages.length}`, width - 72, 35, bold, 9, C.navy, 40);
+  });
   return document.save({ useObjectStreams: false });
 }

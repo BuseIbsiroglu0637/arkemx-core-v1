@@ -92,13 +92,6 @@ const floorSelfWeight: Record<StructuralSystem, number> = {
   hybrid: 2.1,
 };
 
-export function permanentAreaLoadComponents(input: StructuralConceptInput) {
-  const slabSelfWeight = input.system === "concrete" || input.system === "hybrid"
-    ? input.slabThickness * 25
-    : floorSelfWeight[input.system];
-  return { slabSelfWeight, superDeadLoad: input.superDeadLoad, frameAllowance: frameAllowance[input.system] };
-}
-
 function round(value: number, digits = 2) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -112,9 +105,10 @@ export function calculateStructuralConcept(input: StructuralConceptInput) {
   const spanY = input.depth / Math.max(1, input.baysY);
   const maxSpan = Math.max(spanX, spanY);
   const columnsPerFloor = (input.baysX + 1) * (input.baysY + 1);
-  const permanentComponents = permanentAreaLoadComponents(input);
-  const { slabSelfWeight } = permanentComponents;
-  const permanentLoad = slabSelfWeight + permanentComponents.superDeadLoad + permanentComponents.frameAllowance;
+  const slabSelfWeight = input.system === "concrete" || input.system === "hybrid"
+    ? input.slabThickness * 25
+    : floorSelfWeight[input.system];
+  const permanentLoad = slabSelfWeight + input.superDeadLoad + frameAllowance[input.system];
   const variableLoad = input.liveLoad;
   const ulsAreaLoad = 1.4 * permanentLoad + 1.6 * variableLoad;
   const serviceAreaLoad = permanentLoad + variableLoad;
@@ -127,7 +121,7 @@ export function calculateStructuralConcept(input: StructuralConceptInput) {
   const reducedSpectrum = elasticSpectrum * input.importance / Math.max(input.behaviorFactor, 1);
   const baseShearProxy = seismicWeight * reducedSpectrum;
   const totalFactoredGravity = ulsAreaLoad * totalArea;
-  const tributaryColumn = totalFactoredGravity / Math.max(1, columnsPerFloor) / Math.max(1, input.floors);
+  const tributaryColumn = totalFactoredGravity / Math.max(1, columnsPerFloor);
   const concreteVolume = input.system === "concrete" || input.system === "hybrid"
     ? totalArea * input.slabThickness
       + columnsPerFloor * input.columnSize ** 2 * input.floorHeight * input.floors
@@ -155,6 +149,14 @@ export function calculateStructuralConcept(input: StructuralConceptInput) {
   const rainRoofArea = floorArea;
 
   const checks: EngineeringCheck[] = [
+    {
+      id: "roof-snow",
+      title: "Kar yükü kapsamı",
+      value: `${round(input.roofSnowLoad)} kN/m²`,
+      limit: "ayrı yük birleşimi ve çatı hesabı gerekli",
+      state: "review",
+      note: "Kar yükü kaydedilir; bu parametrik hesabın düşey yük ve deprem talep formüllerinde uygulanmaz.",
+    },
     {
       id: "span",
       title: "Aks açıklığı",
@@ -255,7 +257,7 @@ export type DxfSheetMeta = {
   scale?: string;
   preparedBy?: string;
   checkedBy?: string;
-  traceability?: unknown;
+  northAngleDegrees?: number;
 };
 
 function dxfAscii(value: string) {
@@ -273,7 +275,6 @@ export function createLayeredDxf(input: {
   polylines?: DxfPolyline[];
   grid?: { baysX: number; baysY: number };
   notes?: string[];
-  warningNotes?: string[];
   sheet?: DxfSheetMeta;
 }) {
   const entities: string[] = [];
@@ -292,20 +293,33 @@ export function createLayeredDxf(input: {
     rotation = 0,
     style = "ARKEM_SANS",
   ) => entities.push(
-    `0\nTEXT\n8\n${normalizedLayer(layer)}\n7\n${style}\n10\n${n(x)}\n20\n${n(y)}\n30\n0.0000\n40\n${n(height)}\n41\n0.8200\n1\n${dxfAscii(value)}\n50\n${n(rotation)}\n`,
+    `0\nTEXT\n8\n${normalizedLayer(layer)}\n7\n${style}\n10\n${n(x)}\n20\n${n(y)}\n30\n0.0000\n40\n${n(height)}\n41\n1.0000\n1\n${dxfAscii(value)}\n50\n${n(rotation)}\n`,
   );
   const polyline = (points: DxfPoint[], layer: string, closed = true) => {
     if (points.length < 2) return;
     const safeLayer = normalizedLayer(layer);
-    entities.push(`0\nPOLYLINE\n8\n${safeLayer}\n66\n1\n70\n${closed ? 1 : 0}\n`);
+    const stroke = (safeLayer === "ON_YAPI" ? .35 : safeLayer === "PARSEL" ? .25 : .13) * paperUnit;
+    entities.push(`0\nPOLYLINE\n8\n${safeLayer}\n66\n1\n70\n${closed ? 1 : 0}\n40\n${n(stroke)}\n41\n${n(stroke)}\n`);
     points.forEach((point) => entities.push(`0\nVERTEX\n8\n${safeLayer}\n10\n${n(point.x)}\n20\n${n(point.y)}\n30\n0.0000\n`));
     entities.push(`0\nSEQEND\n8\n${safeLayer}\n`);
   };
 
-  const margin = Math.max(2, Math.max(input.width, input.depth) * .08);
-  const textHeight = Math.max(.25, Math.min(.55, Math.min(input.width, input.depth) * .0125));
-  const textWidth = (value: string, height: number) => dxfAscii(value).length * height * .48;
-  const fitTextHeight = (value: string, preferred: number, maxWidth: number, minimum = .16) => {
+  // The frame scales to the model, never the other way round. A3 print typography
+  // is specified in millimetres; the original metre coordinates remain untouched.
+  const validPolylines = (input.polylines ?? []).filter(p => p.points.every(v => Number.isFinite(v.x) && Number.isFinite(v.y)));
+  const points = validPolylines.flatMap(p => p.points);
+  const minX = points.length ? Math.min(...points.map(p => p.x)) : 0;
+  const minY = points.length ? Math.min(...points.map(p => p.y)) : 0;
+  const maxX = points.length ? Math.max(...points.map(p => p.x)) : Math.max(.01, input.width);
+  const maxY = points.length ? Math.max(...points.map(p => p.y)) : Math.max(.01, input.depth);
+  const neededScale = Math.max((maxX - minX) / .254, (maxY - minY) / .191, 10);
+  const denominator = [10, 20, 25, 50, 75, 100, 125, 200, 250, 500, 750, 1000, 1500, 2000, 5000, 10000].find(s => s >= neededScale) ?? Math.ceil(neededScale / 10000) * 10000;
+  const paperUnit = denominator / 1000;
+  const margin = 12 * paperUnit;
+  const textHeight = 6 * paperUnit;
+  // Conservative per-glyph width bounds avoid font-substitution overflow in CAD.
+  const textWidth = (value: string, height: number) => [...dxfAscii(value)].reduce((sum, char) => sum + ("MW@%".includes(char) ? 1.15 : "ilI1 .,:;|'".includes(char) ? .4 : .82), 0) * height;
+  const fitTextHeight = (value: string, preferred: number, maxWidth: number, minimum = 2.5 * paperUnit) => {
     const estimated = textWidth(value, preferred);
     if (estimated <= maxWidth) return preferred;
     return Math.max(minimum, preferred * maxWidth / Math.max(estimated, .001));
@@ -319,13 +333,26 @@ export function createLayeredDxf(input: {
     layer = "YAZI",
     rotation = 0,
     style = "ARKEM_SANS",
-    minimum = .16,
+    minimum = 2.5 * paperUnit,
   ) => {
-    const safe = dxfAscii(value);
-    text(x, y, fitTextHeight(safe, preferredHeight, maxWidth, minimum), safe, layer, rotation, style);
+    let safe = dxfAscii(value);
+    const height = fitTextHeight(safe, Math.max(preferredHeight, minimum), maxWidth, minimum);
+    if (textWidth(safe, height) > maxWidth) {
+      while (safe.length && textWidth(`${safe}...`, height) > maxWidth) safe = safe.slice(0, -1);
+      safe += "...";
+    }
+    text(x, y, height, safe, layer, rotation, style);
   };
   const wrapText = (value: string, preferredHeight: number, maxWidth: number, maxLines: number) => {
-    const words = dxfAscii(value).replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const words = dxfAscii(value).replace(/\s+/g, " ").trim().split(" ").filter(Boolean).flatMap(word => {
+      const pieces: string[] = []; let piece = "";
+      for (const char of word) {
+        if (piece && textWidth(piece + char, preferredHeight) > maxWidth) { pieces.push(piece); piece = ""; }
+        piece += char;
+      }
+      if (piece) pieces.push(piece);
+      return pieces;
+    });
     const lines: string[] = [];
     let current = "";
     for (const word of words) {
@@ -374,34 +401,42 @@ export function createLayeredDxf(input: {
       text(-margin * .72, py - textHeight * .28, textHeight, String(y + 1), "AKS_YAZI", 0, "ARKEM_SANS_BOLD");
     }
   }
-  (input.polylines ?? []).forEach((item) => {
+  validPolylines.forEach((item) => {
     polyline(item.points, item.layer, item.closed ?? true);
     item.points.forEach((point, index) => {
       if (point.label) text(point.x + textHeight * .45, point.y + textHeight * .45, textHeight * .7, point.label, "NOKTA_YAZI", 0, "ARKEM_SANS_BOLD");
       else if (normalizedLayer(item.layer) === "PARSEL") text(point.x + textHeight * .45, point.y + textHeight * .45, textHeight * .7, `P${index + 1}`, "NOKTA_YAZI", 0, "ARKEM_SANS_BOLD");
     });
   });
-  line(0, -margin, input.width, -margin, "OLCU");
-  fittedText(input.width / 2 - textHeight * 2, -margin + textHeight * .35, textHeight, `${input.width.toFixed(2)} m`, textHeight * 8, "OLCU_YAZI", 0, "ARKEM_SANS_BOLD");
-  line(input.width + margin, 0, input.width + margin, input.depth, "OLCU");
-  fittedText(input.width + margin - textHeight * .35, input.depth / 2, textHeight, `${input.depth.toFixed(2)} m`, textHeight * 8, "OLCU_YAZI", 90, "ARKEM_SANS_BOLD");
+  line(minX, minY - margin, maxX, minY - margin, "OLCU");
+  [minX, maxX].forEach(x => {
+    line(x, minY - 2 * paperUnit, x, minY - margin - 2 * paperUnit, "OLCU");
+    line(x - paperUnit, minY - margin - paperUnit, x + paperUnit, minY - margin + paperUnit, "OLCU");
+  });
+  fittedText((minX + maxX) / 2 - textHeight * 2, minY - margin + textHeight * .35, textHeight * .6, `${(maxX - minX).toFixed(2)} m`, textHeight * 10, "OLCU_YAZI", 0, "ARKEM_SANS_BOLD");
+  line(maxX + margin, minY, maxX + margin, maxY, "OLCU");
+  [minY, maxY].forEach(y => {
+    line(maxX + 2 * paperUnit, y, maxX + margin + 2 * paperUnit, y, "OLCU");
+    line(maxX + margin - paperUnit, y - paperUnit, maxX + margin + paperUnit, y + paperUnit, "OLCU");
+  });
+  fittedText(maxX + margin - textHeight * .35, (minY + maxY) / 2, textHeight * .6, `${(maxY - minY).toFixed(2)} m`, textHeight * 10, "OLCU_YAZI", 90, "ARKEM_SANS_BOLD");
 
   const sheet = input.sheet ?? {};
-  const frameLeft = -margin * 1.45;
-  const frameBottom = -margin * 4.2;
-  const drawingRight = input.width + margin * 1.45;
-  const frameTop = input.depth + margin * 1.45;
-  const titleWidth = Math.max(17, input.width * .42);
-  const frameRight = drawingRight + titleWidth;
+  const frameLeft = (minX + maxX) / 2 - 145 * paperUnit;
+  const frameBottom = (minY + maxY) / 2 - 145 * paperUnit;
+  const drawingRight = frameLeft + 294 * paperUnit;
+  const frameTop = frameBottom + 277 * paperUnit;
+  const titleWidth = 106 * paperUnit;
+  const frameRight = frameLeft + 400 * paperUnit;
   const titleX = drawingRight;
-  const innerPad = Math.max(.45, margin * .19);
+  const innerPad = 5 * paperUnit;
   const titleInnerWidth = titleWidth - innerPad * 2;
   const frameHeight = frameTop - frameBottom;
-  const brandHeight = Math.max(2.8, frameHeight * .13);
-  const identityHeight = Math.max(5.8, frameHeight * .25);
-  const drawingHeight = Math.max(5.1, frameHeight * .22);
-  const notesHeight = Math.max(6.1, frameHeight * .26);
-  const metaHeight = Math.max(3.8, frameHeight - brandHeight - identityHeight - drawingHeight - notesHeight);
+  const brandHeight = 31 * paperUnit;
+  const identityHeight = 61 * paperUnit;
+  const drawingHeight = 60 * paperUnit;
+  const notesHeight = 86 * paperUnit;
+  const metaHeight = frameHeight - brandHeight - identityHeight - drawingHeight - notesHeight;
   const brandBottom = frameTop - brandHeight;
   const identityBottom = brandBottom - identityHeight;
   const drawingBottom = identityBottom - drawingHeight;
@@ -420,7 +455,7 @@ export function createLayeredDxf(input: {
   fittedText(
     frameLeft + innerPad,
     frameTop - textHeight * 1.6,
-    textHeight * 1.18,
+    textHeight * .85,
     topTitle,
     drawingRight - frameLeft - innerPad * 2,
     "PAFTA_YAZI",
@@ -432,19 +467,10 @@ export function createLayeredDxf(input: {
     frameLeft + innerPad,
     frameTop - textHeight * 2.8,
     textHeight * .58,
-    "BIRIM: METRE  /  FORMAT: AUTOCAD R12 ASCII DXF  /  KATMANLI TEKNIK CIKTI",
+    `A3 YATAY / 1:${denominator} / MODEL BIRIMI: METRE / KATMANLI DXF`,
     drawingRight - frameLeft - innerPad * 2,
     "PAFTA_YAZI",
   );
-
-  if (input.warningNotes?.length) {
-    const warnings = input.warningNotes.slice(0, 3);
-    warnings.forEach((warning, index) => fittedText(
-      frameLeft + innerPad, frameTop - textHeight * (4.4 + index * .95),
-      textHeight * .62, warning, drawingRight - frameLeft - innerPad * 2,
-      "ARKEM_UYARI", 0, "ARKEM_SANS_BOLD",
-    ));
-  }
 
   const logoX = titleX + innerPad;
   const logoY = brandBottom + brandHeight * .23;
@@ -462,13 +488,13 @@ export function createLayeredDxf(input: {
   fittedText(logoX + logoW * 1.52, frameTop - brandHeight * .48, textHeight * 1.35, "ARKEM", titleInnerWidth - logoW * 1.52, "ARKEM_LOGO", 0, "ARKEM_SANS_BOLD", textHeight * .8);
   fittedText(logoX + logoW * 1.54, brandBottom + brandHeight * .18, textHeight * .48, "YAPI SISTEMLERI / ARKEMX", titleInnerWidth - logoW * 1.54, "ARKEM_LOGO");
 
-  const labelHeight = textHeight * .42;
-  const valueHeight = textHeight * .69;
+  const labelHeight = 2.5 * paperUnit;
+  const valueHeight = 3.5 * paperUnit;
   fittedText(titleX + innerPad, brandBottom - innerPad * 1.1, labelHeight, "PROJE", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
   multiline(titleX + innerPad, brandBottom - innerPad * 2.35, valueHeight, sheet.projectName ?? "ARKEMX PROJESI", titleInnerWidth, 2, valueHeight * 1.35, "ARKEM_BILGI", "ARKEM_SANS_BOLD");
   const identityMetaY = identityBottom + identityHeight * .28;
-  fittedText(titleX + innerPad, identityMetaY + valueHeight, labelHeight, "PROJE KODU / MODUL", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
-  multiline(titleX + innerPad, identityMetaY, textHeight * .54, `${sheet.projectCode ?? "ARK-26-0001"} / ${sheet.module ?? "TEKNIK CALISMA"}`, titleInnerWidth, 2, textHeight * .72, "ARKEM_BILGI");
+  fittedText(titleX + innerPad, identityMetaY + 6 * paperUnit, labelHeight, "PROJE KODU / MODUL", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
+  multiline(titleX + innerPad, identityMetaY, 3 * paperUnit, `${sheet.projectCode ?? "KOD BELIRTILMEDI"} / ${sheet.module ?? "TEKNIK CALISMA"}`, titleInnerWidth, 2, 4.5 * paperUnit, "ARKEM_BILGI");
 
   fittedText(titleX + innerPad, identityBottom - innerPad * 1.15, labelHeight, "PAFTA ADI", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
   multiline(titleX + innerPad, identityBottom - innerPad * 2.45, valueHeight, sheet.drawingTitle ?? input.title, titleInnerWidth, 2, valueHeight * 1.36, "ARKEM_BILGI", "ARKEM_SANS_BOLD");
@@ -477,16 +503,16 @@ export function createLayeredDxf(input: {
 
   fittedText(titleX + innerPad, drawingBottom - innerPad * 1.15, labelHeight, "PAFTA NOTLARI", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
   const standardNotes = [
-    ...(input.notes ?? []).slice(0, 3),
-    "CIZIM BIRIMI METREDIR.",
     "RUHSAT, APLIKASYON VEYA UYGULAMA PROJESI YERINE GECMEZ.",
+    "TAM KAYNAK VE HESAP NOTLARI A4 OZET RAPORDA YER ALIR.",
+    ...(input.notes ?? []).slice(0, 3),
   ];
   let noteY = drawingBottom - innerPad * 2.45;
   for (const [index, note] of standardNotes.entries()) {
     const prefix = `${String(index + 1).padStart(2, "0")}  `;
-    const lines = wrapText(`${prefix}${note}`, textHeight * .43, titleInnerWidth, 2);
-    lines.forEach((row, rowIndex) => fittedText(titleX + innerPad, noteY - rowIndex * textHeight * .63, textHeight * .43, row, titleInnerWidth, "ARKEM_NOTLAR"));
-    noteY -= lines.length * textHeight * .63 + textHeight * .36;
+    const lines = wrapText(`${prefix}${note}`, 2.5 * paperUnit, titleInnerWidth, 3);
+    lines.forEach((row, rowIndex) => fittedText(titleX + innerPad, noteY - rowIndex * 3.7 * paperUnit, 2.5 * paperUnit, row, titleInnerWidth, "ARKEM_NOTLAR"));
+    noteY -= (lines.length * 3.7 + 2) * paperUnit;
     if (noteY < notesBottom + innerPad) break;
   }
 
@@ -494,9 +520,9 @@ export function createLayeredDxf(input: {
   const metaLabelY = metaTop - metaHeight * .34;
   const metaValueY = frameBottom + metaHeight * .24;
   fittedText(titleX + innerPad, metaLabelY, labelHeight, "REV / PAFTA / OLCEK", metaCellWidth - innerPad * 2, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
-  fittedText(titleX + innerPad, metaValueY, textHeight * .58, `${sheet.revision ?? "P01"} / ${sheet.drawingNo ?? "A-001"} / ${sheet.scale ?? "MODEL 1:1"}`, metaCellWidth - innerPad * 2, "ARKEM_REVIZYON", 0, "ARKEM_SANS_BOLD");
-  fittedText(titleX + metaCellWidth + innerPad, metaLabelY, labelHeight, "TARIH / HAZIRLAYAN / KONTROL", metaCellWidth - innerPad * 2, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
-  fittedText(titleX + metaCellWidth + innerPad, metaValueY, textHeight * .5, `${new Date().toISOString().slice(0, 10)} / ${sheet.preparedBy ?? "ARKEMX"} / ${sheet.checkedBy ?? "PROJEYE OZEL"}`, metaCellWidth - innerPad * 2, "ARKEM_REVIZYON", 0, "ARKEM_SANS_BOLD");
+  multiline(titleX + innerPad, metaValueY + 4 * paperUnit, 3 * paperUnit, `${sheet.revision ?? "P01"} / ${sheet.drawingNo ?? "A-001"} / 1:${denominator}`, metaCellWidth - innerPad * 2, 2, 4.5 * paperUnit, "ARKEM_REVIZYON", "ARKEM_SANS_BOLD");
+  fittedText(titleX + metaCellWidth + innerPad, metaLabelY, labelHeight, "TARIH / KONTROL", metaCellWidth - innerPad * 2, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");
+  multiline(titleX + metaCellWidth + innerPad, metaValueY + 4 * paperUnit, 2.5 * paperUnit, `${new Date().toISOString().slice(0, 10)} / ${sheet.preparedBy ?? "ARKEMX"} / ${sheet.checkedBy ?? "KONTROL BEKLIYOR"}`, metaCellWidth - innerPad * 2, 3, 3.7 * paperUnit, "ARKEM_REVIZYON");
 
   multiline(
     frameLeft + innerPad,
@@ -508,11 +534,32 @@ export function createLayeredDxf(input: {
     textHeight * .6,
     "ARKEM_NOTLAR",
   );
+
+  // Graphic scale and legend are part of the model-space sheet. Their physical
+  // A3 sizes remain stable for a small building or a large parcel alike.
+  const barX = frameLeft + 10 * paperUnit;
+  const barY = frameBottom + 27 * paperUnit;
+  const barMetres = denominator / 50;
+  line(barX, barY, barX + barMetres, barY, "OLCU");
+  [0, .5, 1].forEach(fraction => {
+    const x = barX + barMetres * fraction;
+    line(x, barY - 1.5 * paperUnit, x, barY + 1.5 * paperUnit, "OLCU");
+    text(x, barY + 3 * paperUnit, 2.5 * paperUnit, `${barMetres * fraction}${fraction === 1 ? " m" : ""}`, "OLCU_YAZI");
+  });
+  const legend = Array.from(new Set(validPolylines.map(p => normalizedLayer(p.layer)))).slice(0, 4).join(" / ");
+  fittedText(frameLeft + 56 * paperUnit, barY, 2.5 * paperUnit, `KATMANLAR: ${legend || "AKS"} / OLCULER GENEL EN-BOYDUR`, 229 * paperUnit, "PAFTA_YAZI");
+  if (Number.isFinite(sheet.northAngleDegrees)) {
+    const angle = sheet.northAngleDegrees! * Math.PI / 180;
+    const x = drawingRight - 13 * paperUnit, y = frameTop - 37 * paperUnit;
+    const tipX = x + Math.sin(angle) * 12 * paperUnit, tipY = y + Math.cos(angle) * 12 * paperUnit;
+    line(x, y, tipX, tipY, "OLCU");
+    text(tipX - paperUnit, tipY + 3 * paperUnit, 3 * paperUnit, "K", "PAFTA_YAZI", 0, "ARKEM_SANS_BOLD");
+  }
   multiline(
     frameLeft + innerPad,
     frameBottom + textHeight * .65,
     textHeight * .42,
-    "DWG ICIN BU KATMANLI DXF DOSYASINI CAD ORTAMINDA ACIP KAYDEDIN. YAZI STILI: ARKEM_SANS / ARIAL.",
+    "A3 (420x297 MM) / CERCEVE 400x277 MM / MODELIN TAMAMI GERCEK METRE BIRIMINDEDIR.",
     drawingRight - frameLeft - innerPad * 2,
     1,
     textHeight * .6,
@@ -524,7 +571,7 @@ export function createLayeredDxf(input: {
     ["0", 7], ["AKS", 8], ["AKS_BALON", 8], ["AKS_YAZI", 7], ["PARSEL", 1],
     ["ON_YAPI", 30], ["KOLON", 1], ["PERDE", 3], ["MAHAL", 5], ["CEKIRDEK", 4],
     ["BOSLUK", 6], ["NOKTA_YAZI", 7], ["YAZI", 7], ["OLCU", 8], ["OLCU_YAZI", 7], ["PAFTA_YAZI", 7],
-    ["ARKEM_CERCEVE", 8], ["ARKEM_ANTET", 8], ["ARKEM_UYARI", 1], ["ARKEM_LOGO", 30], ["ARKEM_BILGI", 7], ["ARKEM_REVIZYON", 30], ["ARKEM_NOTLAR", 8],
+    ["ARKEM_CERCEVE", 7], ["ARKEM_ANTET", 8], ["ARKEM_LOGO", 30], ["ARKEM_BILGI", 7], ["ARKEM_REVIZYON", 30], ["ARKEM_NOTLAR", 7],
     ...dynamicLayers.filter((name) => !["0", "AKS", "AKS_BALON", "AKS_YAZI", "PARSEL", "ON_YAPI", "KOLON", "PERDE", "MAHAL", "CEKIRDEK", "BOSLUK", "NOKTA_YAZI", "YAZI", "OLCU", "OLCU_YAZI", "PAFTA_YAZI"].includes(name)).map((name) => [name, 7] as [string, number]),
   ];
   const layerTable = layers.map(([name, color]) => `0\nLAYER\n2\n${name}\n70\n0\n62\n${color}\n6\nCONTINUOUS\n`).join("");
@@ -535,7 +582,7 @@ export function createLayeredDxf(input: {
 }
 
 export function createGridDxf(width: number, depth: number, baysX: number, baysY: number, sheet?: DxfSheetMeta) {
-  const drawing = createLayeredDxf({
+  return createLayeredDxf({
     title: "ARKEM AKS VE ON BOYUTLANDIRMA PLANI",
     width,
     depth,
@@ -544,6 +591,4 @@ export function createGridDxf(width: number, depth: number, baysX: number, baysY
     notes: [`AKS DUZENI: ${baysX} x ${baysY}`],
     sheet,
   });
-  // DXF 999 comments carry the full machine-readable link without changing CAD geometry.
-  return sheet?.traceability ? `999\nARKEMX_TRACEABILITY ${JSON.stringify(sheet.traceability)}\n${drawing}` : drawing;
 }

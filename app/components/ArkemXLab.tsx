@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
-import { moduleRecord, restoreModuleValue, useModuleRestore } from "./useModuleRestore";
-import { projectUsageKey } from "../lib/project-input-mapping";
 
 type Tab = "brief" | "lca" | "dfma" | "site" | "passport" | "twin";
 type System = "Betonarme" | "Betonarme Prefabrik" | "Yapısal Çelik" | "Hafif Çelik";
@@ -28,12 +26,7 @@ const systems: Record<System, { a1a3: number; mass: number; construction: number
 const assetFields = ["Model konumu / GUID", "Üretici ve ürün kodu", "EPD / malzeme kaydı", "Montaj ve test belgesi", "Garanti ve bakım planı", "Söküm / yeniden kullanım", "Yetkili sorumlu", "Revizyon geçmişi"];
 
 export function ArkemXLab() {
-  const { project } = useProjectKernel();
-  return <ArkemXLabSession key={project.id} />;
-}
-
-function ArkemXLabSession() {
-  const { project, patchModule, thread } = useProjectKernel();
+  const { patchModule, thread } = useProjectKernel();
   const [tab, setTab] = useState<Tab>("brief");
   const [area, setArea] = useState(2400);
   const [type, setType] = useState("Sanayi / Üretim");
@@ -53,31 +46,8 @@ function ArkemXLabSession() {
   const [captureCoverage, setCaptureCoverage] = useState(84);
   const [issues, setIssues] = useState(7);
   const [material, setMaterial] = useState("Ana taşıyıcı çelik kolon");
-  const [assetChecks, setAssetChecks] = useState<boolean[]>(assetFields.map(() => false));
+  const [assetChecks, setAssetChecks] = useState([true, true, false, true, true, false, true, true]);
   const [scenario, setScenario] = useState("Baz işletme");
-  const draftReady = useModuleRestore("arkem-x", (saved) => {
-    const input = { ...moduleRecord(saved.site), ...moduleRecord(saved.asset), ...moduleRecord(saved.twin), ...moduleRecord(saved.input) };
-    setArea(restoreModuleValue(input.area, area));
-    setType(restoreModuleValue(input.type, type));
-    setPriority(restoreModuleValue(input.priority, priority));
-    if (typeof input.system === "string" && Object.hasOwn(systems, input.system)) setSystem(input.system as System); else setSystem(system);
-    setTransport(restoreModuleValue(input.transport, transport));
-    setRecycled(restoreModuleValue(input.recycled, recycled));
-    if (["Ürün EPD", "Sektör EPD", "Genel katsayı"].includes(String(input.epdQuality))) setEpdQuality(input.epdQuality as typeof epdQuality); else setEpdQuality(epdQuality);
-    setServiceLife(restoreModuleValue(input.serviceLife, serviceLife));
-    setModuleWidth(restoreModuleValue(input.moduleWidth, moduleWidth));
-    setModuleLength(restoreModuleValue(input.moduleLength, moduleLength));
-    setPieceWeight(restoreModuleValue(input.pieceWeight, pieceWeight));
-    setCraneCapacity(restoreModuleValue(input.craneCapacity, craneCapacity));
-    setRepetition(restoreModuleValue(input.repetition, repetition));
-    setPlanned(restoreModuleValue(input.planned, planned));
-    setActual(restoreModuleValue(input.actual, actual));
-    setCaptureCoverage(restoreModuleValue(input.captureCoverage, captureCoverage));
-    setIssues(restoreModuleValue(input.issues, issues));
-    setMaterial(restoreModuleValue(input.material, material));
-    setAssetChecks(restoreModuleValue(input.assetChecks, assetChecks));
-    setScenario(restoreModuleValue(input.scenario, scenario));
-  });
 
   const lca = useMemo(() => {
     const profile = systems[system];
@@ -122,21 +92,21 @@ function ArkemXLabSession() {
     return { energy: 100, occupancy: 58, alerts: 2, temperature: 23.6 };
   }, [scenario]);
 
-  const projectData = useMemo(() => ({ input: { area, type, priority, system, transport, recycled, epdQuality, serviceLife, moduleWidth, moduleLength, pieceWeight, craneCapacity, repetition, planned, actual, captureCoverage, issues, material, assetChecks, scenario }, lca, dfma, site: { planned, actual, captureCoverage, issues }, asset: { material, completeness: 0, declarationCoverage: passportCompleteness, verified: false, technicalApproval: false }, twin: { scenario, ...scenarioMetrics }, status: "pre-assessment" }), [actual, area, assetChecks, captureCoverage, craneCapacity, dfma, epdQuality, issues, lca, material, moduleLength, moduleWidth, passportCompleteness, pieceWeight, planned, priority, recycled, repetition, scenario, scenarioMetrics, serviceLife, system, transport, type]);
+  const projectData = useMemo(() => ({ input: { area, type, priority, system }, lca, dfma, site: { planned, actual, captureCoverage, issues }, asset: { material, completeness: passportCompleteness }, twin: { scenario, ...scenarioMetrics }, status: "pre-assessment" }), [actual, area, captureCoverage, dfma, issues, lca, material, passportCompleteness, planned, priority, scenario, scenarioMetrics, system, type]);
 
-  useEffect(() => { if (!draftReady) return; patchModule("arkem-x", projectData); }, [draftReady, patchModule, projectData]);
+  useEffect(() => { patchModule("arkem-x", projectData); }, [patchModule, projectData]);
   const exportData = () => downloadTextFile("arkem-x-teknik-karar-kaydi.json", JSON.stringify({ schema: "ARKEM-X/2.0", generatedAt: new Date().toISOString(), ...projectData }, null, 2), "application/json");
   const importEngineeringData = () => {
     if (thread.canonical.architecture.grossArea > 0) setArea(Math.max(100, Math.round(thread.canonical.architecture.grossArea)));
     const sourceSystem = thread.canonical.structure.system as System;
     if (Object.prototype.hasOwnProperty.call(systems, sourceSystem)) setSystem(sourceSystem);
-    const projectUse = projectUsageKey(thread.canonical.architecture.use);
-    if (projectUse === "konut") setType("Konut / Karma yaşam"); else if (projectUse === "ticari") setType("Ticari / Sosyal"); else if (projectUse === "sanayi" || projectUse === "tarimsal") setType("Sanayi / Üretim");
+    const projectUse = thread.canonical.architecture.use.toLocaleLowerCase("tr-TR");
+    if (projectUse.includes("konut")) setType("Konut / Karma yaşam"); else if (projectUse.includes("depo")) setType("Depo / Lojistik"); else if (projectUse.includes("ticari") || projectUse.includes("ofis")) setType("Ticari / Sosyal"); else if (projectUse) setType("Sanayi / Üretim");
     setIssues(thread.issues.length);
   };
 
   return <section className="arkem-x-lab xlab-professional" data-testid="arkem-x-lab">
-    <ProjectKernelBar moduleKey="arkem-x" module="ARKEMX DECISION LAB" confidence="Altı teknik ön değerlendirme" />
+    <ProjectKernelBar module="ARKEMX DECISION LAB" confidence="Altı teknik ön değerlendirme" />
     <header className="xlab-command"><div><span>ARKEMX / ENGINEERING DECISION LAB</span><b>Tek proje verisi · izlenebilir varsayım · açık çıktı</b></div><div><button onClick={importEngineeringData}>METRAJ / MODEL AKTAR ↘</button><button onClick={exportData}>TEKNİK KAYIT JSON ↓</button></div></header>
     <nav className="xlab-tabs" role="tablist" aria-label="ARKEMX teknik modülleri">{tabs.map((item) => <button type="button" role="tab" aria-label={item.label} id={`xlab-tab-${item.id}`} aria-controls="xlab-panel" aria-selected={tab === item.id} key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><i>{item.code}</i><span>{item.no}</span><b>{item.label}</b></button>)}</nav>
     <div className="xlab-body" id="xlab-panel" role="tabpanel" aria-labelledby={`xlab-tab-${tab}`} tabIndex={0}>
@@ -148,11 +118,10 @@ function ArkemXLabSession() {
 
       {tab === "site" && <><div className="xlab-controls"><p className="xlab-kicker">GERÇEKLİK YAKALAMA & PROGRAM</p><h3>Fotoğraf arşivini ölçülebilir ilerleme ve kalite kanıtına dönüştürün.</h3><label>Planlanan ilerleme<input type="range" min="0" max="100" value={planned} onChange={(event) => setPlanned(Number(event.target.value))}/><b>%{planned}</b></label><label>Doğrulanmış gerçekleşen<input type="range" min="0" max="100" value={actual} onChange={(event) => setActual(Number(event.target.value))}/><b>%{actual}</b></label><label>Yakalama kapsamı<input type="range" min="0" max="100" value={captureCoverage} onChange={(event) => setCaptureCoverage(Number(event.target.value))}/><b>%{captureCoverage}</b></label><label>Açık saha kaydı<input type="number" min="0" max="99" value={issues} onChange={(event) => setIssues(Number(event.target.value))}/><i>adet</i></label><div className="xlab-status-list"><span><i className="ok"></i>Model revizyonu bağlandı</span><span><i className={captureCoverage > 80 ? "ok" : "warn"}></i>360° kapsama %{captureCoverage}</span><span><i className={issues > 5 ? "warn" : "ok"}></i>{issues} açık kalite kaydı</span></div></div><div className="xlab-output site xlab-reality-output"><header><div><span>MODEL–SAHA–PROGRAM EŞLEME</span><b>22 TEM 2026 · Örnek veri seti</b></div><strong className={scheduleVariance < -3 ? "risk" : "good"}>{scheduleVariance > 0 ? "+" : ""}{scheduleVariance}<small>puan sapma</small></strong></header><div className="site-camera"><div className="site-build" style={{ clipPath: `inset(${100 - actual}% 0 0)` }}></div><b>360° / BLOK A / AKS C–F</b><small>Kaynak görünüm + koordinasyon modeli</small></div><div className="reality-progress"><p><span>Plan</span><i><b style={{ width: `${planned}%` }}></b></i><strong>%{planned}</strong></p><p><span>Gerçek</span><i><b className={scheduleVariance < -3 ? "risk" : ""} style={{ width: `${actual}%` }}></b></i><strong>%{actual}</strong></p></div><div className="site-kpis"><b>%{captureCoverage}<small>Görsel kapsama</small></b><b>{issues}<small>Açık kayıt</small></b><b>{Math.max(0, issues - 3)}<small>Kritik yol bağı</small></b></div></div></>}
 
-      {tab === "passport" && <><div className="xlab-controls"><p className="xlab-kicker">AIM / DİJİTAL TESLİM</p><h3>Varlığı model GUID’inden bakım ve yeniden kullanıma kadar izleyin.</h3><label>Varlık / bileşen<select value={material} onChange={(event) => setMaterial(event.target.value)}><option>Ana taşıyıcı çelik kolon</option><option>Prefabrik cephe paneli</option><option>Çatı drenaj pompası</option><option>Yangın damperi</option><option>Hafif çelik duvar paneli</option></select></label><div className="asset-field-checks">{assetFields.map((field, index) => <button key={field} className={assetChecks[index] ? "declared" : ""} onClick={() => setAssetChecks((values) => values.map((value, itemIndex) => itemIndex === index ? !value : value))}><i>{assetChecks[index] ? "✓" : "+"}</i><span>{field}</span><b>{assetChecks[index] ? "İŞARETLENDİ · DOĞRULANMADI" : "EKSİK"}</b></button>)}</div></div><div className="xlab-output passport xlab-asset-output"><span>ARKEM ASSET INFORMATION MODEL</span><div className="passport-code">{project.id}-AIM-TASLAK</div><h3>{material}</h3><div className="passport-ring" style={{ background: `conic-gradient(#b96636 ${passportCompleteness}%,#d8e0e1 0)` }}><i><b>%{passportCompleteness}</b><span>İŞARET KAPSAMI</span></i></div><div className="asset-state"><p><span>Model kimliği</span><b>Kaynak GUID bekleniyor</b></p><p><span>Bilgi durumu</span><b>Kaynak doğrulaması bekleniyor</b></p><p><span>Güvenlik sınıfı</span><b>İşveren / bakım ekibi</b></p></div><p className="xlab-method-note">Bu işaretler belge veya model bağlantısı oluşturmaz. Kaynak dosya, GUID, sorumlu ve revizyon doğrulanmadan pasaport teslim için hazır sayılmaz.</p></div></>}
+      {tab === "passport" && <><div className="xlab-controls"><p className="xlab-kicker">AIM / DİJİTAL TESLİM</p><h3>Varlığı model GUID’inden bakım ve yeniden kullanıma kadar izleyin.</h3><label>Varlık / bileşen<select value={material} onChange={(event) => setMaterial(event.target.value)}><option>Ana taşıyıcı çelik kolon</option><option>Prefabrik cephe paneli</option><option>Çatı drenaj pompası</option><option>Yangın damperi</option><option>Hafif çelik duvar paneli</option></select></label><div className="asset-field-checks">{assetFields.map((field, index) => <button key={field} className={assetChecks[index] ? "done" : ""} onClick={() => setAssetChecks((values) => values.map((value, itemIndex) => itemIndex === index ? !value : value))}><i>{assetChecks[index] ? "✓" : "+"}</i><span>{field}</span><b>{assetChecks[index] ? "BAĞLI" : "EKSİK"}</b></button>)}</div></div><div className="xlab-output passport xlab-asset-output"><span>ARKEM ASSET INFORMATION MODEL</span><div className="passport-code">ARX-AIM-26-0041</div><h3>{material}</h3><div className="passport-ring" style={{ background: `conic-gradient(#b96636 ${passportCompleteness}%,#d8e0e1 0)` }}><i><b>%{passportCompleteness}</b><span>VERİ TAMLIĞI</span></i></div><div className="asset-state"><p><span>Model kimliği</span><b>ARK-A-GF-C-041</b></p><p><span>Bilgi durumu</span><b>{passportCompleteness >= 88 ? "Teslime yakın" : passportCompleteness >= 63 ? "Eksik veri var" : "Teslime hazır değil"}</b></p><p><span>Güvenlik sınıfı</span><b>İşveren / bakım ekibi</b></p></div><p className="xlab-method-note">Pasaport, belgeyi kopyalamaz; kontrollü kaynağa, sorumluya, revizyona ve fiziksel varlık konumuna bağlar.</p></div></>}
 
       {tab === "twin" && <><div className="xlab-controls"><p className="xlab-kicker">SENARYO TABANLI DİJİTAL İKİZ</p><h3>Sensör gerçeği ile simülasyon varsayımını ayırarak işletme senaryosu sınayın.</h3><label>İşletme senaryosu<select value={scenario} onChange={(event) => setScenario(event.target.value)}><option>Baz işletme</option><option>Yoğun kullanım</option><option>Sıcak hava dalgası</option><option>Bakım modu</option></select></label><div className="twin-data-contract"><span>VERİ SÖZLEŞMESİ</span>{["BMS / enerji sayacı", "İç ortam sensörleri", "Bakım iş emirleri", "Doluluk / kullanım", "As-built model"].map((item, index) => <p key={item}><i className={index < 3 ? "live" : "model"}></i><b>{item}</b><small>{index < 3 ? "Canlı bağlantı gerektirir" : "Senaryo girdisi"}</small></p>)}</div></div><div className="xlab-output twin xlab-twin-output"><header><div><span>DIGITAL TWIN / {scenario.toUpperCase()}</span><b>Canlı sensör yerine örnek senaryo verisi</b></div><strong>{scenarioMetrics.alerts}<small>uyarı</small></strong></header><div className="twin-model">{Array.from({ length: 30 }, (_, index) => <i key={index} className={(index + scenarioMetrics.alerts) % 9 === 0 ? "alert" : index % 5 === 0 ? "watch" : ""}></i>)}</div><div className="site-kpis"><b>{scenarioMetrics.temperature.toFixed(1)}°C<small>İç ortam</small></b><b>%{scenarioMetrics.occupancy}<small>Kapasite</small></b><b>{scenarioMetrics.energy}<small>Enerji endeksi</small></b></div><div className="twin-rule-log"><span>KURAL MOTORU</span><p><i>IF</i> sıcaklık &gt; 28°C ve doluluk &gt; %75 <b>THEN</b> zon set değeri + gölgeleme senaryosu incele</p><p><i>IF</i> enerji endeksi &gt; 125 <b>THEN</b> baz çizgi ve ekipman çalışma saatini karşılaştır</p></div></div></>}
     </div>
     <footer className="xlab-disclaimer"><b>Teknik statü</b><p>Laboratuvar; karar yöntemini, veri ihtiyacını ve açık çıktıyı gösteren ön değerlendirme sistemidir. Statik hesap, sertifikalı LCA, vinç planı, hakediş, iş güvenliği planı veya canlı bina otomasyonu değildir. Proje kararları yetkili uzman ve doğrulanmış kaynak verilerle kapatılır.</p></footer>
   </section>;
 }
-

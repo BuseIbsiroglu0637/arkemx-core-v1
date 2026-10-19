@@ -116,7 +116,6 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
   const targetPlateArea = Math.max(targetGross, grossDemand) / floors;
 
   const massing = record(input.massingModel);
-  const massingSource = record(massing.source);
   const envelope = record(massing.envelope);
   const alternatives = Array.isArray(massing.alternatives) ? massing.alternatives.map(record) : [];
   const requestedMassingId = input.selectedMassingId || stringValue(massing.recommendedAlternativeId);
@@ -286,9 +285,10 @@ export function createArchitecturalScheme(input: ArchitecturalSchemeInput) {
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     source: {
       massingConnected,
-      authoritativeMassing: massingConnected && massingSource.authoritative === true,
+      authoritativeMassing: false,
+      needsReview: true,
       selectedMassingId: selectedMassingId || null,
-      massingTrust: stringValue(massingSource.trust, massingConnected ? "conceptual" : "missing"),
+      massingTrust: massingConnected ? "derived" : "missing",
     },
     plate: {
       width: round(plateWidth),

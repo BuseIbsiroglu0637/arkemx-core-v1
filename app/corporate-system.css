@@ -1,0 +1,458 @@
+/* One corporate identity; legacy tool layouts remain intact. */
+:root {
+  --ds-navy-950: var(--brand-deep);
+  --ds-navy-900: var(--brand-navy);
+  --ds-copper: var(--brand-copper);
+  --ds-copper-strong: #793515;
+  --ds-paper: var(--brand-paper);
+  --ds-surface: var(--brand-surface);
+  --ds-surface-muted: #eaf0f5;
+  --ds-ink: var(--brand-ink);
+  --ds-muted: var(--brand-muted);
+  --ds-line: var(--brand-line);
+  --ds-radius: 6px;
+  --ds-container: 1280px;
+  --ds-section: clamp(64px, 6vw, 96px);
+  --navy: var(--brand-deep);
+  --navy2: var(--brand-navy);
+  --paper: var(--brand-paper);
+  --cream: #eaf0f5;
+  --copper: var(--brand-copper);
+  --ink: var(--brand-ink);
+  --muted: var(--brand-muted);
+}
+
+body.arkem-corporate-site {
+  color: var(--brand-ink);
+  background: var(--brand-paper);
+  font-family: var(--font-inter), sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+  accent-color: var(--brand-copper);
+  caret-color: var(--brand-copper);
+}
+body.arkem-corporate-site ::selection { background: #c8dce9; color: var(--brand-deep); }
+body.arkem-corporate-site :focus-visible,
+body.arkem-corporate-site #main-content :focus-visible { outline: 3px solid var(--brand-copper) !important; outline-offset: 4px !important; box-shadow: 0 0 0 3px white !important; }
+body.arkem-corporate-site #main-content:focus { outline: none; }
+body.arkem-corporate-site :where(h1,h2,h3) { text-wrap: balance; letter-spacing: -.03em; }
+body.arkem-corporate-site :where(p,li,dd) { text-wrap: pretty; }
+body.arkem-corporate-site main p { font-size: 1rem; line-height: 1.75; }
+body.arkem-corporate-site :where(button,input,select,textarea) { font-family: inherit; }
+body.arkem-corporate-site :where(input,select,textarea) { font-size: 1rem !important; }
+body.arkem-corporate-site :where(label,legend) { font-size: .875rem !important; line-height: 1.5 !important; }
+body.arkem-corporate-site :where(button,.button,.v4-button,.v21-button) {
+  min-height: 44px;
+  font-size: .875rem;
+  line-height: 1.4;
+  letter-spacing: .015em;
+  cursor: pointer;
+}
+body.arkem-corporate-site button:disabled { cursor: not-allowed; }
+body.arkem-corporate-site :where(.button,.v4-button,.v21-button) { font-size: .875rem !important; border-radius: 5px; }
+body.arkem-corporate-site :where(.v4-arrow-icon,.button > span[aria-hidden],.v21-button > span[aria-hidden]) { display: none; }
+body.arkem-corporate-site :where(.eyebrow,.v4-index,.v21-index) { font-size: .875rem !important; letter-spacing: .035em; }
+body.arkem-corporate-site :where(.v4-hero-copy > .v4-index,.v4-section-head .v4-index,.v4-engineering-copy > .v4-index,.v4-about-grid > div > .v4-index,.v4-contact-frame .v4-index,.v4-arkemx-copy > .v4-index) { display: none; }
+body.arkem-corporate-site .v4-button.is-primary,
+body.arkem-corporate-site .button.copper,
+body.arkem-corporate-site .v21-button-copper { color: white; background: var(--brand-copper); border-color: var(--brand-copper); }
+body.arkem-corporate-site :where(.v4-text-link,.v21-text-link,.text-link,.v4-section-link a) { font-size: .875rem !important; min-height: 44px; }
+body.arkem-corporate-site :where(img,video,iframe,canvas) { max-width: 100%; }
+body.arkem-corporate-site :where(.shell,.form-grid > *,.v4-section-head > *,.project-intake-section-grid > *) { min-width: 0; }
+
+/* Navigation has the same type scale on every public page. */
+body.arkem-corporate-site .v4-site-header { height: 88px !important; min-height: 88px !important; gap: 20px !important; }
+body.arkem-corporate-site .v4-site-header .brand { height: 88px; }
+body.arkem-corporate-site .v4-site-header::before { background: var(--brand-surface) !important; backdrop-filter: none !important; }
+body.arkem-corporate-site .v4-site-header.is-dark::before { background: var(--brand-deep) !important; }
+body.arkem-corporate-site .v4-desktop-navigation { margin: 0 !important; gap: 0 !important; }
+body.arkem-corporate-site .v4-nav-group > button,
+body.arkem-corporate-site .v4-nav-direct { min-height: 88px; padding: 0 10px; font-size: .8125rem; letter-spacing: .01em; }
+body.arkem-corporate-site .v4-nav-cta { gap: 12px; min-height: 48px; padding: 10px 16px; }
+body.arkem-corporate-site .v4-nav-cta b { font-size: .8125rem !important; letter-spacing: 0; }
+body.arkem-corporate-site .v117-project-shortcut { min-height: 44px; display: flex; align-items: center; font-size: .8125rem; }
+body.arkem-corporate-site .v4-mega-menu { border-radius: 0 0 8px 8px; box-shadow: 0 18px 38px rgba(7,29,43,.18); }
+body.arkem-corporate-site .v4-mega-menu { top: 88px !important; }
+body.arkem-corporate-site .v118-menu-backdrop { top: 88px; }
+body.arkem-corporate-site .v4-mega-intro > span { display: none; }
+body.arkem-corporate-site .v4-mega-intro p { color: var(--brand-muted); font-size: 1rem; }
+body.arkem-corporate-site .v4-mega-columns :where(small,b) { font-size: .875rem; }
+body.arkem-corporate-site .v4-mega-columns a { min-height: 72px; }
+body.arkem-corporate-site .v4-mega-columns a span { font-size: .875rem; color: var(--brand-muted); }
+body.arkem-corporate-site .v4-mobile-nav-content :where(p,small,span) { font-size: .875rem; color: var(--brand-on-dark); }
+
+/* Page hierarchy: readable long titles, no oversized mobile introduction. */
+body.arkem-corporate-site main h1 {
+  max-width: 1100px;
+  font-size: clamp(2.25rem,4.8vw,4.5rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.035em !important;
+  overflow-wrap: break-word;
+}
+body.arkem-corporate-site .inner-page > section:first-child > .shell:not(.v4-site-header),
+body.arkem-corporate-site .v21-standard-hero > .shell:last-child,
+body.arkem-corporate-site .inner-hero-content {
+  padding-top: clamp(44px,5vw,76px) !important;
+  padding-bottom: clamp(48px,5vw,80px) !important;
+}
+body.arkem-corporate-site .inner-page > section:first-child p:not(.eyebrow):not(.v21-index) { max-width: 70ch; font-size: 1.0625rem !important; }
+body.arkem-corporate-site :where(.v4-section-head,.section-heading,.v21-section-head) { align-items: start; gap: 36px; }
+body.arkem-corporate-site :where(.v4-section-head,.section-heading,.v21-section-head) h2 { font-size: clamp(1.875rem,3.5vw,3.125rem); line-height: 1.18; letter-spacing: -.03em; }
+body.arkem-corporate-site :where(.article-content,.v21-section) p { max-width: 72ch; }
+body.arkem-corporate-site .breadcrumb { display: flex; flex-wrap: wrap; gap: 10px; font-size: .875rem; line-height: 1.5; margin-bottom: 24px; }
+body.arkem-corporate-site .breadcrumb a { text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site .inner-page > section:first-child :where(.premium-hero-trust,.assistant-trust) { flex-wrap: wrap; }
+
+/* The home page leads with real engineering and project records. */
+body.arkem-corporate-site .v4-hero { padding-bottom: 36px; }
+body.arkem-corporate-site .v4-hero-grid { gap: 48px; align-items: center; }
+body.arkem-corporate-site .v4-hero-copy { padding: 64px 0 48px; }
+body.arkem-corporate-site .v4-hero-copy h1 { font-weight: 650; }
+body.arkem-corporate-site .v4-hero-copy h1 em { color: var(--brand-copper); }
+body.arkem-corporate-site .v4-hero-lead { color: var(--brand-muted); max-width: 52ch; font-size: 1.125rem !important; }
+body.arkem-corporate-site .v4-hero-process :where(b,span) { font-size: .875rem; }
+body.arkem-corporate-site .v4-hero-stage { border-radius: 6px; overflow: hidden; box-shadow: 0 20px 44px rgba(7,29,43,.14); }
+body.arkem-corporate-site .corporate-project-media { position: absolute; top: 16px; right: 16px; z-index: 3; display: flex; gap: 8px; }
+body.arkem-corporate-site .corporate-project-media button { min-height: 44px; padding: 8px 12px; border: 1px solid #d5dee6; border-radius: 4px; background: white; color: var(--brand-ink); font-size: .875rem; }
+body.arkem-corporate-site .corporate-project-media button[aria-pressed=true] { background: var(--brand-navy); color: white; }
+body.arkem-corporate-site .v4-stage-meta :is(small,i) { font-size: .8125rem !important; line-height: 1.5; letter-spacing: 0; color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-stage-meta b { font-size: 1rem !important; }
+body.arkem-corporate-site .v4-stage-meta > a { font-size: .875rem; letter-spacing: 0; }
+body.arkem-corporate-site .v4-hero-stage-media img.v4-stage-image,
+body.arkem-corporate-site .v4-hero-stage-media video.v4-stage-video { transform: none; }
+body.arkem-corporate-site .v117-choice-label { margin-bottom: 16px; font-size: .875rem; color: var(--brand-muted); letter-spacing: .025em; }
+body.arkem-corporate-site .v4-capability-band { gap: 0; border: 1px solid var(--brand-line); background: white; }
+body.arkem-corporate-site .v4-capability-band a {
+  /* The index and arrow are hidden: do not retain their legacy grid columns. */
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 10px; min-width: 0; min-height: 140px; height: auto; padding: 24px;
+  border: 0 !important; border-right: 1px solid var(--brand-line) !important;
+}
+body.arkem-corporate-site .v4-capability-band a:last-child { border-right: 0 !important; }
+body.arkem-corporate-site .v4-capability-band a > span { display: none; }
+body.arkem-corporate-site .v4-capability-band :is(strong,small) { display: block; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: break-word; text-transform: none; letter-spacing: 0; }
+body.arkem-corporate-site .v4-capability-band a strong { font-size: 1.125rem; font-weight: 650; line-height: 1.4; }
+body.arkem-corporate-site .v4-capability-band small { font-size: .875rem !important; font-weight: 400; color: var(--brand-muted); line-height: 1.6; }
+body.arkem-corporate-site .v4-capability-band a:is(:hover,:focus-visible) { background: var(--brand-navy); color: white; }
+body.arkem-corporate-site .v4-capability-band a:is(:hover,:focus-visible) small { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-home > :where(.v4-systems,.v4-outputs) { background: var(--brand-paper); color: var(--brand-ink); border-top-color: var(--brand-line); }
+body.arkem-corporate-site .v4-home > :where(.v4-systems,.v4-outputs) .v4-section-head h2 { color: var(--brand-ink); }
+body.arkem-corporate-site .v4-home > :where(.v4-systems,.v4-outputs) .v4-section-head > p { color: var(--brand-muted); }
+body.arkem-corporate-site .v4-systems-stage nav { background: var(--brand-navy); }
+body.arkem-corporate-site .v4-systems-stage nav :where(small,span) { color: var(--brand-on-dark); font-size: .875rem; }
+body.arkem-corporate-site .v4-project-editorial :where(small,dt) { font-size: .8125rem; color: var(--brand-muted); letter-spacing: .025em; }
+body.arkem-corporate-site .v4-project-editorial dd { font-size: .9375rem; }
+body.arkem-corporate-site .v4-project-image { border-radius: 5px; }
+body.arkem-corporate-site .v4-project-image img { transition: transform .25s ease-out; }
+body.arkem-corporate-site .v4-project-image:hover img { transform: scale(1.025); }
+body.arkem-corporate-site .v4-engineering-copy ol { gap: 0; }
+body.arkem-corporate-site .v4-engineering-copy ol li { font-size: 1rem; padding: 12px 0; }
+body.arkem-corporate-site .v4-arkemx-copy :where(p,span),
+body.arkem-corporate-site .v4-arkemx-map > p { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-arkemx-counts { display: none; }
+body.arkem-corporate-site .v4-arkemx-copy h2 em,
+body.arkem-corporate-site .v4-group-map > a > span { color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-group-map b { font-size: 1rem; line-height: 1.4; }
+body.arkem-corporate-site .v4-group-map small { font-size: .875rem; font-weight: 400; line-height: 1.6; }
+body.arkem-corporate-site .v4-group-map > a:is(:hover,:focus-visible) { background: var(--brand-copper); color: white; }
+body.arkem-corporate-site .v4-group-map > a:is(:hover,:focus-visible) :is(span,b,small) { color: white; }
+body.arkem-corporate-site :is(.v117-digital-hero,.v117-digital-final,.v4-x-hero) .v4-index { color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-method-flow b { font-size: 1rem; line-height: 1.4; }
+body.arkem-corporate-site .v4-method-flow small { font-size: .875rem; font-weight: 400; line-height: 1.6; }
+body.arkem-corporate-site .v4-output-mosaic figure { border-radius: 5px; }
+body.arkem-corporate-site .v4-leadership :where(small,span) { font-size: .875rem; color: var(--brand-muted); }
+body.arkem-corporate-site .v4-contact-frame p { color: var(--brand-on-dark); }
+
+/* Evidence, editorial and corporate pages. */
+body.arkem-corporate-site .corporate-hero-copy { position: relative; }
+body.arkem-corporate-site .corporate-hero-stats { display: none; }
+body.arkem-corporate-site :where(.corporate-statement,.corporate-founder,.corporate-journey) { gap: 56px; }
+body.arkem-corporate-site .founder-portrait { margin: 0; }
+body.arkem-corporate-site .founder-portrait img { border-radius: 5px; }
+body.arkem-corporate-site .founder-source-note { display: block; font-size: .875rem; color: var(--brand-muted); line-height: 1.6; }
+body.arkem-corporate-site .founder-credentials { display: none; }
+body.arkem-corporate-site :where(.visual-service-row,.system-hub-card) { gap: clamp(28px,5vw,64px); padding-top: 40px; padding-bottom: 40px; }
+body.arkem-corporate-site :where(.visual-service-row,.system-hub-card,.platform-card) img { object-fit: cover; }
+body.arkem-corporate-site :where(.service-row-tags,.system-card-tags,.audience-tags) span { font-size: .875rem; line-height: 1.5; }
+body.arkem-corporate-site .platform-grid { gap: 28px; }
+body.arkem-corporate-site .platform-card { border-radius: 6px; overflow: hidden; background: white; }
+body.arkem-corporate-site .platform-card .card-body { padding: 28px; }
+body.arkem-corporate-site .platform-card h2 { font-size: 1.5rem; line-height: 1.25; }
+body.arkem-corporate-site .platform-card .card-body > a { min-height: 44px; font-size: .875rem; }
+body.arkem-corporate-site .platform-card .card-body > small { font-size: .875rem; line-height: 1.6; }
+body.arkem-corporate-site .commerce-status { border: 1px solid var(--brand-line); background: white; gap: 24px; }
+body.arkem-corporate-site .commerce-status span { font-size: 1rem; color: var(--brand-ink); letter-spacing: 0; }
+body.arkem-corporate-site :where(.resource-card-copy,.reference-ledger,.project-archive) { min-width: 0; }
+body.arkem-corporate-site .resource-library-v2 :where(.resource-more-filters,.resource-card-category,.resource-card-meta) { font-size: .875rem; }
+body.arkem-corporate-site .article-content { max-width: 76ch; padding: 64px 0 80px; }
+body.arkem-corporate-site .article-content :where(p,li) { font-size: 1.0625rem; line-height: 1.85; }
+body.arkem-corporate-site .article-meta { flex-wrap: wrap; font-size: .875rem; }
+body.arkem-corporate-site .article-disclaimer { border: 1px solid var(--brand-line); background: #eaf0f5; }
+body.arkem-corporate-site .technical-record-note { color: var(--brand-muted); font-size: .875rem; }
+
+/* Technical records remain legible instead of shrinking to fit a dashboard. */
+body.arkem-corporate-site :is(.v115-source-band,.v115-clash-board,.v115-delivery-board,.v116-health-gates,.v116-work-board,.v116-revision-grid,.v116-source-note,.federation-rules) :is(small,span,dt,dd,p,em,button) {
+  font-size: .875rem !important; line-height: 1.6 !important; letter-spacing: 0 !important;
+}
+body.arkem-corporate-site :is(.v115-source-band,.v115-clash-board,.v115-delivery-board,.v116-health-gates,.v116-work-board,.v116-revision-grid,.v116-source-note,.federation-rules) :is(b,h4,strong) {
+  font-size: 1rem !important; line-height: 1.5 !important;
+}
+body.arkem-corporate-site :is(.v115-source-band,.v115-clash-board) :is(small,dt,p) { color: var(--brand-muted); }
+body.arkem-corporate-site .v116-source-note :is(small,dt,p) { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v115-carbon :is(span,small) { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v115-clash-board article > button,
+body.arkem-corporate-site .v116-work-board article > button { min-height: 48px; }
+body.arkem-corporate-site .v115-clash-board article > button { color: var(--brand-copper); }
+body.arkem-corporate-site .v116-work-board article > button { color: white; }
+body.arkem-corporate-site .v115-clash-board article > button:hover { color: white; background: var(--brand-copper); }
+body.arkem-corporate-site .v115-cost-list p { grid-template-columns: minmax(0,1fr) minmax(8ch,auto); }
+body.arkem-corporate-site .v115-4d > article { grid-template-columns: minmax(0,1fr) minmax(80px,1fr) minmax(7ch,auto); padding: 12px 0; }
+body.arkem-corporate-site .v116-work-board { grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); }
+body.arkem-corporate-site .v116-revision-grid article { grid-template-columns: minmax(0,1fr) minmax(6ch,auto) minmax(8ch,auto); }
+body.arkem-corporate-site .v116-revision-grid article > b { grid-column: 1 / -1; }
+
+/* Form and operating surfaces do not inherit marketing-sized labels. */
+body.arkem-corporate-site .form-grid :where(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+  min-height: 48px; color: var(--brand-ink); background: white; border: 1px solid #9cabb7;
+}
+body.arkem-corporate-site input::placeholder,
+body.arkem-corporate-site textarea::placeholder { color: #596c7c; opacity: 1; }
+body.arkem-corporate-site .form-grid input:focus,
+body.arkem-corporate-site .form-grid select:focus,
+body.arkem-corporate-site .form-grid textarea:focus { border-color: var(--brand-copper); }
+body.arkem-corporate-site .project-intake-section { background: var(--brand-paper); }
+body.arkem-corporate-site .project-intake-section legend { letter-spacing: 0; }
+body.arkem-corporate-site .customer-guide .customer-summary { display: block; border: 0; background: transparent; }
+body.arkem-corporate-site .customer-guide .customer-summary > div { min-width: 0; }
+body.arkem-corporate-site .customer-guide-heading { padding-top: 20px; }
+body.arkem-corporate-site .customer-guide-heading h1 { max-width: 26ch; }
+body.arkem-corporate-site .customer-guide .customer-error { color: #923425; }
+body.arkem-corporate-site .customer-technical { margin: 0 auto 64px; border: 1px solid var(--brand-line); background: white; }
+body.arkem-corporate-site .customer-technical > summary { min-height: 56px; padding: 20px 24px; font-size: 1rem; }
+body.arkem-corporate-site .customer-technical .v21-x-hero-copy h2 { font-size: clamp(1.75rem,3.6vw,3rem); line-height: 1.15; }
+body.arkem-corporate-site .customer-technical .thread-page-hero h2 { font-size: clamp(1.75rem,3.6vw,3rem); line-height: 1.15; }
+body.arkem-corporate-site :where(.customer-guide-kicker,.account-dashboard-hero > .shell > .eyebrow) { font-size: .875rem; }
+body.arkem-corporate-site .contact-lines :where(span,b) { font-size: 1rem; }
+body.arkem-corporate-site .contact-note { font-size: .875rem !important; color: var(--brand-muted); }
+body.arkem-corporate-site :where(.tool-tabs,.resource-filters,.project-filter-bar) button { min-height: 44px; font-size: .875rem; }
+
+/* A compact, visible directory with smaller links beneath clear headings. */
+body.arkem-corporate-site .v4-footer { background: var(--brand-deep); color: white; padding: 36px 0 12px; border-top: 2px solid var(--brand-copper); }
+body.arkem-corporate-site .corporate-footer-main { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 48px; padding-bottom: 24px; }
+body.arkem-corporate-site .corporate-footer-brand { display: grid; grid-template-columns: 168px minmax(0,360px); gap: 32px; align-items: center; min-width: 0; }
+body.arkem-corporate-site .corporate-footer-brand .brand { min-height: 44px; padding: 0; }
+body.arkem-corporate-site .corporate-footer-brand .official-logo { width: 168px; max-width: 168px; }
+body.arkem-corporate-site .corporate-footer-brand p { margin: 0; color: var(--brand-on-dark); font-size: 1rem; line-height: 1.65; }
+body.arkem-corporate-site .corporate-footer-contact { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+body.arkem-corporate-site .corporate-footer-contact-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 20px; border: 1px solid #78909f; border-radius: 4px; font-size: .875rem; color: white; transition: background-color .18s, color .18s; }
+body.arkem-corporate-site .corporate-footer-contact-cta:hover { background: white; color: var(--brand-deep); }
+body.arkem-corporate-site .corporate-footer-contact > a:not(.corporate-footer-contact-cta) { display: inline-flex; align-items: center; min-height: 44px; color: var(--brand-on-dark); font-size: .875rem; font-variant-numeric: tabular-nums; }
+body.arkem-corporate-site .corporate-footer-navigation { border-top: 1px solid #294350; padding-top: 24px; padding-bottom: 20px; }
+body.arkem-corporate-site .corporate-footer-directory { min-width: 0; }
+body.arkem-corporate-site .corporate-footer-directory-content { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 24px; padding: 0; }
+body.arkem-corporate-site .corporate-footer-group { min-width: 0; }
+body.arkem-corporate-site .corporate-footer-group h3 { margin: 0 0 12px; color: white; font-size: 1rem; font-weight: 600; line-height: 1.5; letter-spacing: 0; }
+body.arkem-corporate-site .corporate-footer-group > div { display: flex; flex-direction: column; }
+body.arkem-corporate-site .corporate-footer-group a { display: flex; align-items: center; min-height: 44px; padding: 8px 0; color: var(--brand-on-dark); font-size: .875rem; line-height: 1.5; }
+body.arkem-corporate-site .corporate-footer-group a:is(:hover,:focus-visible) { color: white; text-decoration: underline; text-underline-offset: 5px; }
+body.arkem-corporate-site .corporate-footer-connect { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; padding-bottom: 8px; }
+body.arkem-corporate-site .corporate-footer-connect > span { color: var(--brand-on-dark); font-size: .8125rem; line-height: 1.6; }
+body.arkem-corporate-site .corporate-footer-social { display: flex; flex-wrap: wrap; gap: 8px; }
+body.arkem-corporate-site .corporate-footer-social a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 1px solid #3a5363; border-radius: 50%; color: var(--brand-on-dark); font-size: .875rem; transition: background-color .18s, border-color .18s; }
+body.arkem-corporate-site .corporate-footer-social .corporate-social-icon { display: block; width: 22px; height: 22px; object-fit: contain; filter: brightness(0) invert(1); }
+body.arkem-corporate-site .corporate-footer-social a:is(:hover,:focus-visible) { background: #1b394b; border-color: var(--brand-copper-light); }
+body.arkem-corporate-site .corporate-footer-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 24px; border-top: 1px solid #294350; padding-top: 4px; }
+body.arkem-corporate-site .corporate-footer-meta > span { color: var(--brand-on-dark); font-size: .8125rem; line-height: 1.6; }
+body.arkem-corporate-site .corporate-footer-meta nav { display: flex; flex-wrap: wrap; gap: 0 24px; }
+body.arkem-corporate-site .corporate-footer-meta a { display: inline-flex; align-items: center; min-height: 44px; color: var(--brand-on-dark); font-size: .875rem; }
+body.arkem-corporate-site .corporate-footer-meta a:hover { color: white; text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site .corporate-footer-legal p { margin: 0; max-width: 80ch; padding: 8px 0 16px; color: var(--brand-on-dark); font-size: .8125rem; line-height: 1.6; }
+@media (max-width:1180px) {
+  body.arkem-corporate-site .corporate-footer-directory-content { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:980px) {
+  body.arkem-corporate-site .corporate-footer-brand { grid-template-columns: minmax(0,1fr); gap: 16px; }
+}
+@media (max-width:760px) {
+  body.arkem-corporate-site .corporate-footer-main { grid-template-columns: minmax(0,1fr); gap: 20px; }
+  body.arkem-corporate-site .corporate-footer-brand p { max-width: 48ch; }
+  body.arkem-corporate-site .corporate-footer-contact { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+  body.arkem-corporate-site .corporate-footer-meta { align-items: flex-start; flex-direction: column; gap: 4px; padding-top: 12px; }
+}
+@media (max-width:600px) {
+  body.arkem-corporate-site .v4-footer { padding-top: 28px; }
+  body.arkem-corporate-site .corporate-footer-directory-content { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px 20px; }
+  body.arkem-corporate-site .corporate-footer-connect { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width:359px) {
+  body.arkem-corporate-site .corporate-footer-directory-content { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.arkem-corporate-site .corporate-footer-social a,
+  body.arkem-corporate-site .corporate-footer-contact-cta { transition: none; }
+}
+body.arkem-corporate-site .v4-floating-contact { border-radius: 6px; }
+
+/* Clean photo windows preserve the original files and their proportions. */
+body.arkem-corporate-site .project-photo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; container-type: size; background: #e6ebee; }
+body.arkem-corporate-site .project-photo.is-natural { position: relative; inset: auto; height: auto; aspect-ratio: 4 / 3; }
+body.arkem-corporate-site .project-photo-plane { position: absolute; width: max(100cqw,100cqh); height: max(100cqw,100cqh); left: 50%; top: 50%; transform: translate(-50%,-50%); }
+body.arkem-corporate-site .project-photo .project-photo-plane > img {
+  position: absolute !important; inset: auto !important; max-width: none !important;
+  width: var(--photo-width) !important; height: var(--photo-height) !important;
+  left: var(--photo-left) !important; top: var(--photo-top) !important;
+  object-fit: fill !important; transform: none !important; filter: none !important; border-radius: 0 !important;
+}
+body.arkem-corporate-site .project-photo > img { object-fit: cover; }
+body.arkem-corporate-site .v31-project-archive-media:has(.project-photo)::before,
+body.arkem-corporate-site .v31-project-archive-media:has(.project-photo)::after { display: none; }
+
+/* Calm opening: a wider project carousel and a clear four-choice route. */
+body.arkem-corporate-site .v4-home .v4-hero { background: var(--brand-deep); color: white; padding-bottom: 36px; }
+body.arkem-corporate-site .v4-home .v4-hero-grid { display: grid !important; grid-template-columns: minmax(0,.95fr) minmax(0,1.15fr); min-height: 0 !important; gap: 32px; padding-top: 40px; padding-bottom: 32px; }
+body.arkem-corporate-site .v4-home .v4-hero-copy { grid-column: auto; order: 0; min-width: 0; padding: 24px 0; border: 0; }
+body.arkem-corporate-site .v4-home .v4-hero-copy h1 { color: white; font-size: clamp(2rem,3.7vw,3.25rem) !important; line-height: 1.15 !important; }
+body.arkem-corporate-site .v4-home .v4-hero-copy h1 em { color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-home .v4-hero-lead { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-home .v4-hero-process { color: var(--brand-on-dark); flex-wrap: wrap; }
+body.arkem-corporate-site .v4-home .v4-hero-process li span { color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-home .v4-hero .v4-button.is-secondary { background: transparent; border-color: #839ba9; color: white; }
+body.arkem-corporate-site .v4-home .v4-hero .v4-button.is-secondary:is(:hover,:focus-visible) { background: white; color: var(--brand-deep); }
+body.arkem-corporate-site .home-project-selection { order: 1; width: 100%; justify-self: stretch; min-width: 0; }
+body.arkem-corporate-site .home-project-selection > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+body.arkem-corporate-site .home-project-selection h2 { margin: 0; color: white; font-size: 1rem !important; font-weight: 600; letter-spacing: 0; line-height: 1.5 !important; }
+body.arkem-corporate-site .home-project-selection > header > a { display: inline-flex; align-items: center; padding: 8px 0; min-height: 44px; font-size: .875rem; color: var(--brand-copper-light); text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site .home-project-track { display: flex; gap: 16px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #647f91 transparent; padding: 4px 0 12px; }
+body.arkem-corporate-site .home-project-slide { display: flex; flex: 0 0 calc((100% - 16px) / 2); flex-direction: column; gap: 12px; min-width: 0; scroll-snap-align: start; border-radius: 8px; }
+body.arkem-corporate-site .home-project-slide-image { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 8px; background: #e6ebee; }
+body.arkem-corporate-site .home-project-slide-caption { display: grid; gap: 4px; min-width: 0; padding: 0 2px; }
+body.arkem-corporate-site .home-project-slide-caption b { font-size: 1rem; font-weight: 600; line-height: 1.4; color: white; }
+body.arkem-corporate-site .home-project-slide-caption small { font-size: .8125rem !important; font-weight: 400; line-height: 1.5; color: var(--brand-on-dark); }
+body.arkem-corporate-site .home-project-slide:is(:hover,:focus-visible) b { color: var(--brand-copper-light); text-decoration: underline; text-underline-offset: 4px; }
+body.arkem-corporate-site #main-content :is(.home-project-track,.home-project-slide):focus-visible { outline: 2px solid var(--brand-copper-light) !important; outline-offset: -2px !important; box-shadow: none !important; }
+body.arkem-corporate-site .home-project-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; }
+body.arkem-corporate-site .home-project-position { color: var(--brand-on-dark); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+body.arkem-corporate-site .home-project-controls > div { display: flex; gap: 8px; }
+body.arkem-corporate-site .home-project-controls button { min-width: 76px; min-height: 44px; padding: 8px 12px; color: white; background: transparent; border: 1px solid #617e90; border-radius: 4px; font-size: .875rem; cursor: pointer; }
+body.arkem-corporate-site .home-project-controls button:disabled { color: #93a8b5; border-color: #334e60; cursor: default; }
+body.arkem-corporate-site .home-project-controls button:not(:disabled):is(:hover,:focus-visible) { background: #173d54; border-color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-home .v117-choice-label { margin-top: 0; color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-home .v4-capability-band { margin-top: 0; gap: 12px; border: 0; background: transparent; }
+body.arkem-corporate-site .v4-home .v4-capability-band a { justify-content: flex-start; min-height: 166px; padding: 20px; border: 1px solid #3b596a !important; border-radius: 6px; background: #0f3044; color: white; transition: transform .18s ease, background-color .18s ease, border-color .18s ease; }
+body.arkem-corporate-site .v4-home .home-capability-symbol { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 4px; color: var(--brand-copper-light); }
+body.arkem-corporate-site .v4-home .home-capability-symbol span { color: #adc0cb; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+body.arkem-corporate-site .v4-home .v4-capability-band small { color: var(--brand-on-dark); }
+body.arkem-corporate-site .v4-home .v4-capability-band a:is(:hover,:focus-visible) { transform: translateY(-3px); background: #173d54; border-color: var(--brand-copper-light) !important; }
+body.arkem-corporate-site .v4-home .v4-capability-band a:focus-visible { outline: 2px solid var(--brand-copper-light); outline-offset: 3px; }
+
+/* Title first; description second, with its own lighter, smaller line. */
+body.arkem-corporate-site .v117-entry-panel a { height: auto; min-height: 104px; padding: 20px 24px; }
+body.arkem-corporate-site .v117-entry-panel a > div { gap: 8px; min-width: 0; }
+body.arkem-corporate-site .v117-entry-panel a b { font-size: 1.125rem; font-weight: 650; line-height: 1.4; }
+body.arkem-corporate-site .v117-entry-panel a small { font-size: .875rem; font-weight: 400; line-height: 1.6; }
+body.arkem-corporate-site .v4-systems-stage nav a > div { display: grid; gap: 8px; min-width: 0; }
+body.arkem-corporate-site .v4-systems-stage nav a b { font-size: 1.125rem; font-weight: 650; line-height: 1.4; }
+body.arkem-corporate-site .v4-systems-stage nav a small { font-size: .875rem !important; font-weight: 400; line-height: 1.6; }
+body.arkem-corporate-site :is(.geo-workflow,.xlab-tabs,.v108-primary-nav,.project-start-steps) > button { height: auto; max-height: none; min-height: 88px !important; padding: 16px !important; white-space: normal; text-align: left; }
+body.arkem-corporate-site :is(.geo-workflow,.xlab-tabs,.v108-primary-nav,.project-start-steps) > button b { min-width: 0; font-size: 1rem !important; font-weight: 650; line-height: 1.4 !important; letter-spacing: 0; word-break: normal; overflow-wrap: break-word; }
+body.arkem-corporate-site :is(.geo-workflow,.v108-primary-nav,.project-start-steps) > button small { min-width: 0; font-size: .8125rem !important; font-weight: 400; line-height: 1.5 !important; letter-spacing: 0; word-break: normal; overflow-wrap: break-word; }
+body.arkem-corporate-site .geo-workflow > button > span { min-width: 0; gap: 8px; }
+body.arkem-corporate-site .geo-workflow > button small { margin-top: 0; }
+body.arkem-corporate-site .geo-workflow > button:last-child { grid-column: auto !important; }
+body.arkem-corporate-site .project-start-steps > button small { margin-top: 8px; }
+body.arkem-corporate-site .v108-primary-nav > button { row-gap: 8px; }
+body.arkem-corporate-site .v108-primary-nav > button :is(b,small) { grid-column: 2; }
+body.arkem-corporate-site .xlab-professional > .xlab-tabs { grid-template-columns: repeat(6,minmax(190px,1fr)); overflow-x: auto; }
+body.arkem-corporate-site .xlab-tabs > button { gap: 5px 10px; }
+body.arkem-corporate-site .xlab-tabs > button > span { font-size: .6875rem !important; line-height: 1.4 !important; }
+
+/* The intro owns its spacing; the logo and navigation have their own bar. */
+body.arkem-corporate-site .project-start-page .project-start-hero > .project-start-hero-content.shell:not(.v4-site-header) { padding-top: 36px !important; padding-bottom: 40px !important; }
+body.arkem-corporate-site .project-start-page .project-start-hero h1 { max-width: 900px; font-size: clamp(2rem,3.6vw,3rem) !important; line-height: 1.2 !important; }
+body.arkem-corporate-site .project-start-page .project-start-hero-content > p:not(.eyebrow) { max-width: 76ch; color: var(--brand-on-dark); }
+body.arkem-corporate-site .project-start-page .project-start-hero-flow { display: grid !important; grid-template-columns: repeat(6,minmax(0,1fr)) !important; gap: 12px !important; width: 100% !important; max-width: none !important; margin: 28px 0 0 !important; padding: 0; list-style: none; overflow: visible; }
+body.arkem-corporate-site .project-start-page .project-start-hero-flow > li { display: flex; align-items: center; gap: 14px; min-width: 0; min-height: 96px; padding: 18px; border: 1px solid #6a8394; border-radius: 6px; background: #123448; }
+body.arkem-corporate-site .project-start-page .project-start-hero-flow i { flex-shrink: 0; font-size: 1.5rem !important; font-weight: 600; font-style: normal; line-height: 1.2; letter-spacing: 0; color: var(--brand-copper-light); }
+body.arkem-corporate-site .project-start-page .project-start-hero-flow b { font-size: 1rem !important; font-weight: 600; line-height: 1.4; letter-spacing: 0; color: white; }
+
+@media (max-width:1180px) {
+  body.arkem-corporate-site .v4-desktop-site-header { display: none !important; }
+  body.arkem-corporate-site .v118-menu-backdrop { display: none; }
+  body.arkem-corporate-site .v4-mobile-site-header {
+    display: grid !important; position: relative; z-index: 8000;
+    grid-template-columns: minmax(0,1fr) 48px 48px; align-items: center; gap: 12px;
+    min-height: calc(76px + env(safe-area-inset-top)); height: auto;
+    padding: env(safe-area-inset-top) max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left));
+    border-bottom: 1px solid var(--brand-line); background: white; color: var(--brand-ink);
+  }
+  body.arkem-corporate-site .v4-mobile-site-header.is-dark { background: var(--brand-deep); border-color: #334a59; }
+  body.arkem-corporate-site .v4-mobile-site-header .official-logo { width: 148px; }
+  body.arkem-corporate-site .v4-mobile-nav-trigger { display: flex !important; width: 48px !important; height: 48px !important; align-items: center; justify-content: center; }
+  body.arkem-corporate-site .v4-hero-grid { gap: 32px; }
+  body.arkem-corporate-site .v4-capability-band { grid-template-columns: 1fr 1fr; }
+  body.arkem-corporate-site .v4-capability-band a { border-bottom: 1px solid var(--brand-line) !important; }
+  body.arkem-corporate-site .project-start-page .v4-mobile-site-header { padding-left: max(var(--ds-gutter),env(safe-area-inset-left)); padding-right: max(var(--ds-gutter),env(safe-area-inset-right)); }
+  body.arkem-corporate-site .v4-footer-navigation { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:980px) {
+  body.arkem-corporate-site .v4-home .v4-hero-grid { grid-template-columns: 1fr; gap: 20px; }
+  body.arkem-corporate-site .project-start-page .project-start-hero-flow { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  body.arkem-corporate-site .v4-footer-identity { grid-template-columns: 156px minmax(0,1fr); }
+  body.arkem-corporate-site .v4-footer-identity > span { grid-column: 2; }
+}
+@media (max-width:760px) {
+  body.arkem-corporate-site :is(.v115-source-band,.v115-delivery-layout,.v115-clash-board > div,.v116-revision-grid article) { grid-template-columns: 1fr; }
+  body.arkem-corporate-site .v116-revision-grid article > * { grid-column: auto; grid-row: auto; }
+  body.arkem-corporate-site .v115-4d > article { grid-template-columns: minmax(0,1fr) minmax(7ch,auto); }
+  body.arkem-corporate-site .v115-4d > article > i { grid-column: 1 / -1; grid-row: 2; }
+  body.arkem-corporate-site main h1 { font-size: clamp(2rem,8.5vw,3.25rem) !important; line-height: 1.15 !important; }
+  body.arkem-corporate-site .v4-hero-grid { grid-template-columns: 1fr; }
+  body.arkem-corporate-site .v4-home .v4-hero-grid { grid-template-columns: 1fr; width: calc(100% - 40px) !important; gap: 24px; padding-top: 12px; padding-bottom: 28px; }
+  body.arkem-corporate-site .v4-home .v4-hero-copy { padding: 24px 0 0; }
+  body.arkem-corporate-site .v4-home .v4-hero-copy h1 { font-size: clamp(1.8rem,6.7vw,2.75rem) !important; }
+  body.arkem-corporate-site .v4-hero-copy { padding: 40px 0 12px; }
+  body.arkem-corporate-site .v4-hero-stage { min-height: 390px; aspect-ratio: auto; }
+  body.arkem-corporate-site .v4-stage-meta { grid-template-columns: minmax(0,1fr) 120px; }
+  body.arkem-corporate-site .v4-hero-copy h1 { max-width: 100%; }
+  body.arkem-corporate-site :where(.v4-section-head,.section-heading,.v21-section-head,.visual-service-row,.system-hub-card,.corporate-statement,.contact-layout) { grid-template-columns: 1fr; gap: 28px; }
+  body.arkem-corporate-site .section-heading { display: grid; }
+  body.arkem-corporate-site :where(.v4-section-head,.section-heading,.v21-section-head) h2 { font-size: 2rem; }
+  body.arkem-corporate-site .v4-footer-statement { grid-template-columns: 1fr; gap: 20px; }
+  body.arkem-corporate-site .v4-footer-contact-cta { justify-self: start; }
+  body.arkem-corporate-site .v4-footer-grid { grid-template-columns: 1fr; gap: 24px; }
+  body.arkem-corporate-site .v4-footer-identity { grid-template-columns: 1fr; gap: 14px; }
+  body.arkem-corporate-site .v4-footer-identity > span { grid-column: auto; }
+  body.arkem-corporate-site .v4-footer-navigation { grid-template-columns: 1fr 1fr; }
+  body.arkem-corporate-site .v4-contact-actions { width: 100%; }
+  body.arkem-corporate-site .v4-contact-actions a { white-space: normal; text-align: center; }
+  body.arkem-corporate-site .platform-grid { grid-template-columns: 1fr; }
+  body.arkem-corporate-site .commerce-status { grid-template-columns: 1fr; gap: 12px; padding: 24px; }
+  body.arkem-corporate-site .article-content { width: calc(100% - 40px); }
+}
+@media (max-width:600px) {
+  body.arkem-corporate-site .home-project-slide { flex-basis: 82%; }
+  body.arkem-corporate-site .home-project-slide-image { aspect-ratio: 16 / 10; }
+  body.arkem-corporate-site .v4-home .v4-capability-band a { min-height: 150px; }
+  body.arkem-corporate-site .project-start-page .project-start-hero-flow { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  body.arkem-corporate-site .project-start-page .project-start-hero-flow > li { min-height: 88px; padding: 14px; gap: 12px; }
+  body.arkem-corporate-site .v4-footer-navigation { grid-template-columns: 1fr; gap: 8px; }
+  body.arkem-corporate-site .v4-footer-accordion summary { min-height: 52px; }
+  body.arkem-corporate-site .v4-footer-statement { gap: 12px; }
+}
+@media (max-width:480px) {
+  body.arkem-corporate-site .v4-home .v4-capability-band a { min-height: 132px; padding: 18px; }
+  body.arkem-corporate-site .v4-capability-band { grid-template-columns: 1fr; }
+  body.arkem-corporate-site .v4-capability-band a { min-height: 88px; padding: 18px; border-right: 0 !important; }
+  body.arkem-corporate-site .v4-actions { display: grid; grid-template-columns: 1fr; }
+  body.arkem-corporate-site .v4-hero-process { flex-wrap: wrap; gap: 10px 14px; }
+  body.arkem-corporate-site .v4-footer-navigation { grid-template-columns: 1fr; gap: 8px; }
+  body.arkem-corporate-site .v4-footer-accordion summary { min-height: 52px; }
+  body.arkem-corporate-site .v4-floating-contact { right: 16px; bottom: max(16px,env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.arkem-corporate-site .v4-home .v4-capability-band a { transition: none; transform: none !important; }
+  body.arkem-corporate-site .v4-project-image img,
+  body.arkem-corporate-site .v4-button,
+  body.arkem-corporate-site .button { transition: background-color .1s, color .1s; transform: none !important; }
+}

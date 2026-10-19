@@ -18,3 +18,4 @@ const sections = [
 export default function EnglishEngineeringPage() {
   return <EnglishContentPage eyebrow="03 / ENGINEERING" title="THE CALCULATION IS A STEP. ENGINEERING IS THE CHAIN." lead="ARKEM carries the structural decision from system selection and analysis into detailing, production preparation and the site." image="/visuals/arkem-x-design-v2.webp" imageAlt="ARKEMX structural analysis and engineering model" sections={sections} />;
 }
+

@@ -1,0 +1,26 @@
+import Link from 'next/link';
+import { ArrowLeft, ArrowUpRight, Box } from 'lucide-react';
+import { type ProjectPresentation, projectPresentations } from '../data/project-presentations';
+import { SiteHeader, SiteFooter } from './SiteChrome';
+import { PresentationGallery } from './PresentationGallery';
+import { ReferenceModel } from './ReferenceModel';
+import { ProjectPhoto } from './ProjectPhoto';
+import type { V3PublishedProjectRecord } from '../lib/project-evidence';
+import { site } from '../data/site';
+
+export function ProjectPresentationPage({ project, archiveRecord }: { project: ProjectPresentation; archiveRecord?: V3PublishedProjectRecord }) {
+  const related = projectPresentations.filter(item => item.slug !== project.slug && item.category === project.category).slice(0, 3);
+  return <main className="ref-experience ref-detail">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: project.title, description: project.summary, url: `${site.domain}/projeler/${project.slug}`, publisher: { '@type': 'Organization', name: site.name }, inLanguage: 'tr-TR' }).replaceAll('<', '\\u003c') }} />
+    <SiteHeader dark={false} />
+    <header className="ref-detail-heading shell"><nav aria-label="Sayfa yolu"><Link href="/projeler"><ArrowLeft size={16} aria-hidden="true" />Projeler</Link><span>{project.category}</span></nav><div><p className="ref-eyebrow">ARKEM / REFERANS ÇALIŞMALARI</p><h1>{project.title}</h1><p className="ref-lead">{project.summary}</p></div><div className="ref-detail-nav"><a href="#proje-galerisi">Görseller <ArrowUpRight size={16} /></a>{project.model && <a href="#uc-boyut"><Box size={17} />3B incele</a>}<a href="#proje-kapsami">Proje bilgisi</a></div></header>
+    <section className="shell ref-detail-gallery" id="proje-galerisi" aria-label="Proje galerisi"><PresentationGallery images={project.gallery} title={project.title} /></section>
+    <span id="proje-sureci" aria-hidden="true" />
+    <section className="shell ref-detail-story" id="proje-kapsami"><div><p className="ref-eyebrow">PROJENİN YAKINDAN OKUMASI</p><h2>Yapıyı, sistemi ve<br /><em>ayrıntıları keşfedin.</em></h2>{project.description.map((paragraph, i) => <p key={i}>{paragraph}</p>)}</div><aside><h3>Proje bilgisi</h3><dl><div><dt>Çalışma alanı</dt><dd>{project.category}</dd></div><div><dt>Sunum kaynağı</dt><dd>ARKEM tarafından sağlanan referans arşivi</dd></div>{project.facts.map((fact, i) => <div key={i}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></aside></section>
+    {project.model && <section className="ref-model-section" id="uc-boyut"><div className="shell"><header><div><p className="ref-eyebrow">ETKİLEŞİMLİ PROJE SUNUMU</p><h2>Kendi açınızdan<br /><em>inceleyin.</em></h2></div><p>Modeli döndürün, farklı açılara geçin ve elemanların birbiriyle ilişkisini keşfedin. Kaynak geometri oranları korunur.</p></header><ReferenceModel model={project.model} poster={project.gallery.find(g => g.kind === 'model') || project.cover} title={project.title} />{project.additionalModels?.map(m => <details className="ref-additional-model" key={m.src}><summary>{m.label}</summary><ReferenceModel model={m} poster={project.gallery[project.gallery.length - 1]} title={m.label} /></details>)}</div></section>}
+    <section className="shell ref-scope"><div><span>İÇERİK VE MODEL KAPSAMI</span><p>{project.scopeNote}</p>{project.modelNotice && <p>{project.modelNotice}</p>}<small>Kaynak paketi: {project.package}. Yayın seçkisi: Ekim 2026. Bilinmeyen alan, tarih veya uygulama sonucu tahminle tamamlanmaz.</small></div><Link href={`/iletisim?proje=${encodeURIComponent(project.title)}`}>Bu proje hakkında görüşelim <ArrowUpRight size={19} aria-hidden="true" /></Link></section>
+    {archiveRecord && <section className="shell ref-archive-evidence"><details><summary>Önceki teknik kayıt ve yayımlanmış proje belgeleri · {archiveRecord.code}</summary><h2>PROJE KÜNYESİ</h2><p>TEKNİK KAYIT · KAYNAK KONTROLÜ — Önceden yayımlanmış kayıtlar korunur. Her bilginin kaynağı ve doğrulama durumu aşağıda ayrıca gösterilir.</p><dl>{Object.values(archiveRecord.facts).map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}<small>{f.status} · {f.source}</small></dd></div>)}</dl><div className="ref-archive-stages">{archiveRecord.caseStudy.filter(stage => stage.status !== 'arşiv doğrulaması').map(stage => <article key={stage.code}><h3>{stage.title}</h3><p>{stage.summary}</p><small>{stage.evidenceNeeded}</small></article>)}</div>{archiveRecord.engineeringEvidence.map(item => <p key={item.id}><a href={item.href}>{item.summary} ↗</a><small>{item.sourceLabel}</small></p>)}{archiveRecord.publishedMedia.map(item => <p key={item.id}><a href={item.href} target="_blank" rel="noreferrer">{item.caption || item.fileName} ↗</a><small>{item.sourceLabel}</small></p>)}</details></section>}
+    {related.length > 0 && <section className="shell ref-related"><header><h2>Benzer çalışmalar</h2><Link href="/projeler">Tüm projeler ↗</Link></header><div>{related.map(p => <Link key={p.slug} href={`/projeler/${p.slug}`}><ProjectPhoto src={p.cover.src} alt={p.cover.alt} /><span>{p.title}<ArrowUpRight size={18} /></span></Link>)}</div></section>}
+    <SiteFooter />
+  </main>;
+}

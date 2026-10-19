@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArkemXRegistryExplorer } from "../components/ArkemXRegistryExplorer";
+import { CustomerProjectGuide } from "../components/CustomerProjectGuide";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import {
   arkemXDevelopmentJournal,
@@ -44,12 +45,14 @@ const moduleStructuredData = {
 export default function ArkemXPage() {
   return <main className="inner-page v21-arkemx v31-arkemx v4-arkemx-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(moduleStructuredData) }} />
+    <div className="customer-site-header"><SiteHeader /></div>
+    <CustomerProjectGuide />
+    <details className="customer-technical"><summary>Mühendislik modülleri ve teknik kapsam</summary>
     <section className="v21-x-hero v31-x-hero">
-      <SiteHeader />
       <div className="shell v21-x-hero-copy">
         <p className="v21-index">00 / ARKEMX</p>
         <span className="v31-x-status">AKTİF · SÜREKLİ GELİŞTİRİLİYOR</span>
-        <h1>FARKLI SİSTEMLER.<br /><em>ORTAK PROJE VERİSİ.</em></h1>
+        <h2>FARKLI SİSTEMLER.<br /><em>ORTAK PROJE VERİSİ.</em></h2>
         <p>ARKEMX, ARKEM’in mühendislik Ar-Ge ve dijital proje platformudur. Yapısal analizden sistem tasarımına, detaylandırmadan metraj ve yapım aşamalarına uzanan mühendislik süreçlerini ortak proje verisi üzerinde geliştirir.</p>
         <div className="v21-actions">
           <a className="v21-button v21-button-copper" href="#proje-modulleri">Ortak Proje Omurgasını İnceleyin <span aria-hidden="true">↓</span></a>
@@ -159,6 +162,7 @@ export default function ArkemXPage() {
       </div>
     </section>
 
+    </details>
     <SiteFooter />
   </main>;
 }

@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { parseParcelGeoJson, parcelOperationMatches } from "../lib/parcel-experience";
+import { fetchTkgmJson as fetchTkgm, assertParcelResponseIdentity } from "../lib/tkgm-client";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createEGovernmentZoningSearch, resolveZoningAuthority, resolveZoningPortal, ZONING_AUTHORITY_ROUTES } from "../data/zoning-authorities";
 import { polygonArea, type GeoPoint } from "../lib/geo";
-import { createParcelRecord, resolveParcelSourceNetwork } from "../lib/parcel-record";
+import { createParcelRecord, resolveParcelSourceNetwork, parcelIdentityKey } from "../lib/parcel-record";
+import { emptyParcelPlanning, restorePlanningScopes } from '../lib/parcel-zoning-scope';
+import { isParcelIdentityReady } from '../lib/parcel-journey-gates';
 import { createZoningDocumentAudit, extractZoningConditions, type ParsedZoningCondition } from "../lib/zoning-document-parser";
 import {
   createZoningEvidenceBundle,
@@ -39,32 +43,6 @@ type DiscoverySource = {
   href?: string;
 };
 
-const FALLBACK_PROVINCES: Option[] = ZONING_AUTHORITY_ROUTES.map((item, index) => ({
-  id: String(index + 1),
-  label: item.province,
-}));
-
-const FALLBACK_DISTRICTS: Record<string, string[]> = {
-  Sakarya: ["Adapazarı", "Akyazı", "Arifiye", "Erenler", "Ferizli", "Geyve", "Hendek", "Karapürçek", "Karasu", "Kaynarca", "Kocaali", "Pamukova", "Sapanca", "Serdivan", "Söğütlü", "Taraklı"],
-  Kastamonu: ["Merkez", "Abana", "Ağlı", "Araç", "Azdavay", "Bozkurt", "Cide", "Çatalzeytin", "Daday", "Devrekani", "Doğanyurt", "Hanönü", "İhsangazi", "İnebolu", "Küre", "Pınarbaşı", "Seydiler", "Şenpazar", "Taşköprü", "Tosya"],
-  İstanbul: ["Adalar", "Arnavutköy", "Ataşehir", "Avcılar", "Bağcılar", "Bahçelievler", "Bakırköy", "Başakşehir", "Bayrampaşa", "Beşiktaş", "Beykoz", "Beylikdüzü", "Beyoğlu", "Büyükçekmece", "Çatalca", "Çekmeköy", "Esenler", "Esenyurt", "Eyüpsultan", "Fatih", "Gaziosmanpaşa", "Güngören", "Kadıköy", "Kağıthane", "Kartal", "Küçükçekmece", "Maltepe", "Pendik", "Sancaktepe", "Sarıyer", "Silivri", "Sultanbeyli", "Sultangazi", "Şile", "Şişli", "Tuzla", "Ümraniye", "Üsküdar", "Zeytinburnu"],
-  Ankara: ["Altındağ", "Ayaş", "Bala", "Beypazarı", "Çankaya", "Çubuk", "Elmadağ", "Etimesgut", "Gölbaşı", "Kahramankazan", "Keçiören", "Mamak", "Polatlı", "Pursaklar", "Sincan", "Şereflikoçhisar", "Yenimahalle"],
-  İzmir: ["Aliağa", "Balçova", "Bayraklı", "Bornova", "Buca", "Çeşme", "Çiğli", "Gaziemir", "Güzelbahçe", "Karabağlar", "Karşıyaka", "Kemalpaşa", "Konak", "Menemen", "Narlıdere", "Seferihisar", "Selçuk", "Torbalı", "Urla"],
-  Bursa: ["Gemlik", "Gürsu", "İnegöl", "Kestel", "Mudanya", "Mustafakemalpaşa", "Nilüfer", "Osmangazi", "Yıldırım"],
-  Kocaeli: ["Başiskele", "Çayırova", "Darıca", "Derince", "Dilovası", "Gebze", "Gölcük", "İzmit", "Kandıra", "Karamürsel", "Kartepe", "Körfez"],
-};
-
-function fallbackDistrictOptions(provinceName: string): Option[] {
-  return (FALLBACK_DISTRICTS[provinceName] ?? ["Merkez / ilçe bilgisini proje notunda belirtin"]).map((label, index) => ({
-    id: `fallback-district-${index + 1}`,
-    label,
-  }));
-}
-
-const FALLBACK_NEIGHBORHOODS: Option[] = [
-  { id: "fallback-neighborhood-1", label: "Mahalle / köy bilgisini proje notunda belirtin" },
-];
-
 const STEPS: Array<{ id: Step; no: string; label: string; note: string }> = [
   { id: "parcel", no: "01", label: "Parsel", note: "Resmî kimlik ve geometri" },
   { id: "conditions", no: "02", label: "İmar koşulları", note: "Plan, nizam ve sınırlar" },
@@ -95,12 +73,6 @@ function administrativeOptions(data: RecordValue): Option[] {
   }).filter((item): item is Option => Boolean(item)).sort((a, b) => a.label.localeCompare(b.label, "tr"));
 }
 
-async function fetchTkgm(path: string) {
-  const response = await fetch(`/api/tkgm?path=${encodeURIComponent(path)}`, { headers: { Accept: "application/json" } });
-  const data = await response.json().catch(() => ({})) as RecordValue & { error?: string };
-  if (!response.ok) throw new Error(data.error || "TKGM servisine erişilemedi.");
-  return data;
-}
 
 function pointsFromGeometry(value: unknown): GeoPoint[] {
   const geometry = record(value);
@@ -131,21 +103,15 @@ function clampPositive(value: number, fallback: number) {
 function evidenceSourceType(value: ZoningVerification): ZoningEvidenceSourceType {
   return {
     "user-declared": "user-declaration",
-    "document-pending-review": "user-declaration",
     "municipal-viewer": "municipal-viewer",
     "approved-plan": "approved-plan",
     "certified-document": "certified-document",
   }[value] as ZoningEvidenceSourceType;
 }
 
-function evidenceVerification(value: ZoningVerification): ZoningEvidenceVerification {
-  return {
-    "user-declared": "self-declared",
-    "document-pending-review": "self-declared",
-    "municipal-viewer": "screen-record",
-    "approved-plan": "plan-reviewed",
-    "certified-document": "document-reviewed",
-  }[value] as ZoningEvidenceVerification;
+function evidenceVerification(_value: ZoningVerification): ZoningEvidenceVerification {
+  // Selecting a source type is only a declaration, never a completed expert review.
+  return "self-declared";
 }
 
 function dateInputToIso(value: string, endOfDay = false) {
@@ -155,10 +121,10 @@ function dateInputToIso(value: string, endOfDay = false) {
 
 export function ZoningIntegrationCenter() {
   const { project, hydrated, patchModule } = useProjectKernel();
-  const transferApplied = useRef(false);
+  const transferApplied = useRef("");
   const discoveryRef = useRef<HTMLElement>(null);
   const [step, setStep] = useState<Step>("parcel");
-  const [provinceOptions, setProvinceOptions] = useState<Option[]>(FALLBACK_PROVINCES);
+  const [provinceOptions, setProvinceOptions] = useState<Option[]>([]);
   const [districtOptions, setDistrictOptions] = useState<Option[]>([]);
   const [neighborhoodOptions, setNeighborhoodOptions] = useState<Option[]>([]);
   const [administrativeSource, setAdministrativeSource] = useState<AdministrativeSource>("fallback");
@@ -195,51 +161,55 @@ export function ZoningIntegrationCenter() {
   const [evidenceValidUntil, setEvidenceValidUntil] = useState("");
   const [handoffMessage, setHandoffMessage] = useState("");
 
+  const parcelRequest = useRef({ key: "", sequence: 0, controller: null as AbortController | null });
+  const selectedParcelKey = JSON.stringify([project.id, provinceId, districtId, neighborhoodId, block, parcelNo]);
+  useLayoutEffect(() => {
+    parcelRequest.current.controller?.abort();
+    parcelRequest.current.sequence++;
+    const previousKey = parcelRequest.current.key;
+    parcelRequest.current.key = selectedParcelKey;
+    if (previousKey && previousKey !== selectedParcelKey) {
+      setParcelGeometry([]); setParcelArea(0); setParcelWidth(0); setParcelDepth(0);
+      setParcelState("idle"); setDiscoveryState("idle"); setDiscoverySources([]);
+      setZoning({...DEFAULT_ZONING, taks:0, kaks:0, hmax:0, frontSetback:0, sideSetback:0, rearSetback:0, verification:"user-declared", sourceDocument:""});
+      setDocumentName(""); setDocumentText(""); setParsed([]);
+      setParcelMessage("Parsel seçimi değişti. Yeni parseli sorgulayın; önceki geometri ve imar değerleri temizlendi.");
+    }
+    return () => { parcelRequest.current.controller?.abort(); parcelRequest.current.sequence++; };
+  }, [selectedParcelKey]);
+
+  const [directoryAttempt, setDirectoryAttempt] = useState(0);
   useEffect(() => {
-    void fetchTkgm("idariYapi/ilListe").then((data) => {
-      const options = administrativeOptions(data);
-      if (!options.length) throw new Error("Boş il listesi");
-      setProvinceOptions(options);
-      setAdministrativeSource("official");
-    }).catch(() => {
-      setProvinceOptions(FALLBACK_PROVINCES);
-      setAdministrativeSource("fallback");
-      setParcelMessage("TKGM idari listesi şu anda yanıt vermiyor. İl ve ilçe seçimi açık; resmî geometri yeniden bağlantıda veya Parsel & Arazi Stüdyosu’nda doğrulanacak.");
-    });
-  }, []);
+    const c = new AbortController();
+    fetchTkgm("idariYapi/ilListe", c.signal).then(data => {
+      if (c.signal.aborted) return;
+      setProvinceOptions(administrativeOptions(data)); setAdministrativeSource("official");
+    }).catch(() => { if (!c.signal.aborted) { setProvinceOptions([]); setParcelMessage("İl listesi yüklenemedi. Yeniden deneyin."); } });
+    return () => c.abort();
+  }, [directoryAttempt]);
+  useEffect(() => {
+    const c = new AbortController();
+    if (!/^\d+$/.test(provinceId)) return;
+    fetchTkgm(`idariYapi/ilceListe/${provinceId}`, c.signal).then(data => {
+      if (!c.signal.aborted) setDistrictOptions(administrativeOptions(data));
+    }).catch(() => { if (!c.signal.aborted) { setDistrictOptions([]); setParcelMessage("İlçe listesi yüklenemedi. Yeniden deneyin."); } });
+    return () => c.abort();
+  }, [provinceId, directoryAttempt]);
+  useEffect(() => {
+    const c = new AbortController();
+    if (!/^\d+$/.test(districtId)) return;
+    fetchTkgm(`idariYapi/mahalleListe/${districtId}`, c.signal).then(data => {
+      if (!c.signal.aborted) setNeighborhoodOptions(administrativeOptions(data));
+    }).catch(() => { if (!c.signal.aborted) { setNeighborhoodOptions([]); setParcelMessage("Mahalle listesi yüklenemedi. Yeniden deneyin."); } });
+    return () => c.abort();
+  }, [districtId, directoryAttempt]);
 
   useEffect(() => {
-    if (!provinceId || administrativeSource === "fallback") return;
-    const fallback = () => {
-      setDistrictOptions(fallbackDistrictOptions(province));
-      setAdministrativeSource("fallback");
-    };
-    void fetchTkgm(`idariYapi/ilceListe/${provinceId}`).then((data) => {
-      const options = administrativeOptions(data);
-      if (!options.length) throw new Error("Boş ilçe listesi");
-      setDistrictOptions(options);
-      setAdministrativeSource("official");
-    }).catch(fallback);
-  }, [administrativeSource, province, provinceId]);
-
-  useEffect(() => {
-    if (!districtId) return;
-    if (districtId.startsWith("fallback-")) return;
-    void fetchTkgm(`idariYapi/mahalleListe/${districtId}`).then((data) => {
-      const options = administrativeOptions(data);
-      if (!options.length) throw new Error("Boş mahalle listesi");
-      setNeighborhoodOptions(options);
-      setAdministrativeSource("official");
-    }).catch(() => {
-      setNeighborhoodOptions(FALLBACK_NEIGHBORHOODS);
-      setAdministrativeSource("fallback");
-    });
-  }, [districtId]);
-
-  useEffect(() => {
-    if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
+    if (!hydrated || transferApplied.current === project.id) return;
+    const restoreSequence = parcelRequest.current.sequence;
     const timer = window.setTimeout(() => {
+      if (parcelRequest.current.sequence !== restoreSequence || provinceId || districtId || neighborhoodId || block || parcelNo) return;
+      transferApplied.current = project.id;
       const saved = record(project.modules["geo-parcel"]);
       const metrics = record(saved.metrics);
       const savedZoning = record(saved.zoning);
@@ -248,6 +218,8 @@ export function ZoningIntegrationCenter() {
         return Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng));
       }).map((point) => ({ lat: Number(point.lat), lng: Number(point.lng) })) : [];
       if (!Object.keys(saved).length) return;
+      // Accept exactly this restore batch, without suppressing subsequent user-selection resets.
+      parcelRequest.current.key = JSON.stringify([project.id, textValue(saved.provinceId), textValue(saved.districtId), textValue(saved.neighborhoodId), textValue(saved.block), textValue(saved.parcelNo)]);
       setProvince((current) => current || textValue(saved.province));
       setDistrict((current) => current || textValue(saved.district));
       setNeighborhood((current) => current || textValue(saved.neighborhood));
@@ -282,9 +254,9 @@ export function ZoningIntegrationCenter() {
   }, [hydrated, project.modules]);
 
   const parcelReference = [province, district, neighborhood, block && `Ada ${block}`, parcelNo && `Parsel ${parcelNo}`].filter(Boolean).join(" / ") || "Parsel seçimi bekleniyor";
-  const authority = useMemo(() => resolveZoningAuthority(province, district), [province, district]);
-  const localPortal = useMemo(() => resolveZoningPortal(province, district), [province, district]);
-  const hasVerifiedConditions = zoning.verification !== "user-declared" && Boolean(
+  const authority = useMemo(() => resolveZoningAuthority(province, district, neighborhood), [province, district, neighborhood]);
+  const localPortal = useMemo(() => resolveZoningPortal(province, district, neighborhood), [province, district, neighborhood]);
+  const hasSourceConditions = zoning.verification !== "user-declared" && Boolean(
     zoning.sourceDocument || zoning.sourceUrl || zoning.planId || zoning.planName,
   );
   const envelope = useMemo(() => createZoningEnvelope({
@@ -413,7 +385,7 @@ export function ZoningIntegrationCenter() {
             ? `${localPortal.limitation} Bağlantı ${localPortal.verifiedAt} tarihinde kontrol edildi.`
             : `${authority?.administrativeRoute || "Yetkili belediye/idare"} için parsel bazlı e-İmar adaptörü veya onaylı belge gerekir.`,
           status: localPortal ? "available" : "verification-required",
-          statusLabel: localPortal ? (localPortal.queryMode === "e-government-service" ? "E-DEVLET SERVİSİ" : "DOĞRULANMIŞ PORTAL") : "ADAPTÖR / BELGE",
+          statusLabel: localPortal ? (localPortal.queryMode === "e-government-service" ? "E-DEVLET SERVİSİ" : "RESMÎ KAYNAĞA YÖNLENDİRME") : "YETKİ / KAYNAK DOĞRULANMALI",
           href: localPortal?.href,
         },
         {
@@ -427,11 +399,11 @@ export function ZoningIntegrationCenter() {
         {
           id: "conditions",
           label: "Yapılaşma koşulları",
-          detail: hasVerifiedConditions
+          detail: hasSourceConditions
             ? `${zoningVerificationLabel(zoning.verification)}. Kayıtlı koşullar otomatik sonuç kartına alındı.`
             : "TAKS, KAKS/emsal, Hmax/Yençok, nizam ve çekmeler için onaylı plan veya imar durumu belgesi bekleniyor.",
-          status: hasVerifiedConditions ? "matched" : "verification-required",
-          statusLabel: hasVerifiedConditions ? "KANITA BAĞLI" : "DOĞRULAMA GEREKLİ",
+          status: hasSourceConditions ? "matched" : "verification-required",
+          statusLabel: hasSourceConditions ? "KAYNAK BEYANI VAR / İNCELEME GEREKLİ" : "DOĞRULAMA GEREKLİ",
         },
       ];
       setDiscoverySources(sources);
@@ -448,7 +420,7 @@ export function ZoningIntegrationCenter() {
     block,
     discoveryRequest,
     district,
-    hasVerifiedConditions,
+    hasSourceConditions,
     localPortal,
     parcelGeometry.length,
     parcelNo,
@@ -462,39 +434,20 @@ export function ZoningIntegrationCenter() {
       setParcelMessage("Parsel sorgusu için il, ilçe, mahalle/köy, ada ve parsel alanlarının tamamını seçin.");
       return;
     }
-    if (administrativeSource === "fallback" || neighborhoodId.startsWith("fallback-")) {
-      setParcelState("identified");
-      setParcelMessage("Parsel kimliği proje girdisi olarak hazır; ancak çevrimdışı liste resmî mahalle kimliği taşımadığı için sınır geometrisi çağrılamaz. TKGM yeniden bağlandığında sorgulayın veya doğrulanmış KML/GeoJSON verisini Parsel & Arazi Stüdyosu’ndan aktarın.");
-      patchModule("geo-parcel", {
-        ...record(project.modules["geo-parcel"]),
-        reference: parcelReference,
-        province, provinceId, district, districtId, neighborhood, neighborhoodId, block, parcelNo,
-        metrics: { ...record(record(project.modules["geo-parcel"]).metrics), area: parcelArea },
-        parcelRecord: createParcelRecord({
-          identity: { province, district, neighborhood, block, parcelNo },
-          geometry: [],
-          source: {
-            kind: "coordinate",
-            authority: "Kullanıcı / çevrimdışı idari liste",
-            label: "Parsel kimliği beyanı · sınır bekleniyor",
-            capturedAt: new Date().toISOString(),
-            url: "",
-          },
-        }),
-        parcelSourceNetwork: resolveParcelSourceNetwork(province, district),
-        dataStatus: "Çevrimdışı idari seçim · resmî geometri doğrulaması bekleniyor",
-        status: "Parsel kimliği kaydedildi; resmî sınır doğrulaması bekleniyor",
-      });
-      setDiscoveryState("scanning");
-      setDiscoveryRequest((current) => current + 1);
-      return;
-    }
+    if (!/^\d+$/.test(neighborhoodId)) return;
+    const queryKey = parcelRequest.current.key;
+    const sequence = ++parcelRequest.current.sequence;
+    parcelRequest.current.controller?.abort();
+    const controller = new AbortController(); parcelRequest.current.controller = controller;
+    const isCurrent = () => !controller.signal.aborted && parcelOperationMatches(sequence, parcelRequest.current.sequence, queryKey, parcelRequest.current.key);
     setParcelState("loading");
     setParcelMessage("TKGM parsel geometrisi sorgulanıyor…");
     try {
-      const data = await fetchTkgm(`parsel/${neighborhoodId}/${encodeURIComponent(block.trim())}/${encodeURIComponent(parcelNo.trim())}`);
+      const data = await fetchTkgm(`parsel/${neighborhoodId}/${encodeURIComponent(block.trim())}/${encodeURIComponent(parcelNo.trim())}`, controller.signal);
+      if (!isCurrent()) return;
       const features = Array.isArray(data.features) ? data.features as TkgmFeature[] : [];
-      const points = pointsFromGeometry(features[0]?.geometry ?? data.geometry);
+      assertParcelResponseIdentity(record(features[0]?.properties ?? data.properties), { provinceId, districtId, neighborhoodId, block, parcelNo });
+      const points = parseParcelGeoJson(data);
       if (points.length < 3) throw new Error("Parsel geometrisi bulunamadı.");
       const area = polygonArea(points);
       setParcelGeometry(points);
@@ -518,13 +471,14 @@ export function ZoningIntegrationCenter() {
             url: "https://parselsorgu.tkgm.gov.tr/",
           },
         }),
-        parcelSourceNetwork: resolveParcelSourceNetwork(province, district),
+        parcelSourceNetwork: resolveParcelSourceNetwork(province, district, neighborhood),
         dataStatus: "TKGM MEGSİS geometrisi bulundu · tapu/ruhsat belgesi değildir",
         status: "Resmî parsel geometrisi imar çalışma alanına bağlandı",
       });
       setDiscoveryState("scanning");
       setDiscoveryRequest((current) => current + 1);
     } catch (error) {
+      if (!isCurrent()) return;
       setParcelState("error");
       setParcelMessage(error instanceof Error ? error.message : "Parsel bulunamadı.");
     }
@@ -546,7 +500,7 @@ export function ZoningIntegrationCenter() {
 
   const applyParsedValues = () => {
     const next = { ...zoning };
-    parsed.forEach((item) => {
+    parsed.filter(item => item.confidence === 'high').forEach((item) => {
       if (item.field === "buildingOrder" && typeof item.value === "string") {
         next.buildingOrder = item.value;
         return;
@@ -567,6 +521,12 @@ export function ZoningIntegrationCenter() {
   };
 
   const sendHandoff = () => {
+    const identity = { province, district, neighborhood, block, parcelNo };
+    if (!isParcelIdentityReady(identity)) { setHandoffMessage('İl, ilçe, mahalle, ada ve parsel bilgilerini tamamlayın. İmar değerleri belirsiz bir parsele bağlanmadı.'); return; }
+    const scopeKey = parcelIdentityKey(identity);
+    const geo = record(project.modules['geo-parcel']);
+    const scopes = restorePlanningScopes(geo.planningScopes);
+    const scopedDraft = scopes[scopeKey] ?? emptyParcelPlanning();
     patchModule("zoning-integration", {
       ...handoff,
       ruleResult,
@@ -579,13 +539,9 @@ export function ZoningIntegrationCenter() {
         : "İmar koşulları ve yapı zarfı proje çekirdeğine aktarıldı",
     });
     patchModule("geo-parcel", {
-      ...record(project.modules["geo-parcel"]),
-      reference: parcelReference,
-      province, provinceId, district, districtId, neighborhood, neighborhoodId, block, parcelNo,
-      parcel: parcelGeometry,
-      parcelWidth, parcelDepth,
-      metrics: { ...record(record(project.modules["geo-parcel"]).metrics), area: parcelArea, allowedFootprint: envelope.footprint, allowedGross: envelope.grossArea },
-      ...(zoningEvidenceBundle.status === "conflict" ? {} : { zoning }),
+      ...geo,
+      // Conditions belong to this exact parcel; never reassign an existing boundary or guess net area.
+      ...(zoningEvidenceBundle.status === 'conflict' ? {} : { planningScopes: { ...scopes, [scopeKey]: { ...scopedDraft, zoning: { ...zoning }, mode: 'zoning', inputsConfirmed: false } } }),
       zoningEvidenceBundle,
       status: zoningEvidenceBundle.status === "conflict"
         ? "Parsel kanıtları kaydedildi; çelişkili imar değeri projeye uygulanmadı"
@@ -593,7 +549,7 @@ export function ZoningIntegrationCenter() {
     });
     setHandoffMessage(zoningEvidenceBundle.status === "conflict"
       ? "Kanıt seti kaydedildi. Çelişkili alanlar seçilmedi; uzman incelemesi tamamlanmadan tasarım limiti güncellenmedi."
-      : "Parsel kimliği, imar koşulları, zarf ve kanıt statüsü ARKEMX proje çekirdeğine kaydedildi.");
+      : "İmar girdileri bu parselin Arsa Rehberi kaydına aktarıldı. Net imar alanını, eksik değerleri ve kaynakları 3. adımda gözden geçirin; sınır geometrisi değiştirilmedi.");
   };
 
   const reportIndex = createZoningReportIndex({
@@ -621,7 +577,7 @@ export function ZoningIntegrationCenter() {
       scale: "Şematik / ölçeksiz",
       coordinateSystem: project.coordinateReference,
       preparedBy: "ARKEMX",
-      checkedBy: "Yetkili idare / proje ekibi",
+      checkedBy: "Yetkili idare doğrulaması gerekli",
       polylines: [
         { role: "secondary", closed: true, points: [{ x: 0, y: 0 }, { x: parcelWidth, y: 0 }, { x: parcelWidth, y: parcelDepth }, { x: 0, y: parcelDepth }] },
         { role: "primary", closed: true, points: [{ x: insetX, y: zoning.frontSetback }, { x: parcelWidth - insetX, y: zoning.frontSetback }, { x: parcelWidth - insetX, y: parcelDepth - zoning.rearSetback }, { x: insetX, y: parcelDepth - zoning.rearSetback }] },
@@ -643,12 +599,13 @@ export function ZoningIntegrationCenter() {
         { layer: "IMAR_ZARFI", points: [{ x: insetX, y: zoning.frontSetback }, { x: parcelWidth - insetX, y: zoning.frontSetback }, { x: parcelWidth - insetX, y: parcelDepth - zoning.rearSetback }, { x: insetX, y: parcelDepth - zoning.rearSetback }] },
       ],
       notes: [`TAKS ${zoning.taks.toFixed(2)} / KAKS ${zoning.kaks.toFixed(2)} / HMAX ${zoning.hmax.toFixed(2)} m`, zoningVerificationLabel(zoning.verification), authority?.limitation || ""],
-      sheet: { projectName: `${province} / ${district}`, projectCode: project.id, module: "IMAR ENTEGRASYONU", drawingTitle: "PARSEL VE IMAR ZARFI", drawingNo: "IMR-001", revision: project.revision, status: zoning.verification, coordinateSystem: project.coordinateReference, scale: "MODEL 1:1", preparedBy: "ARKEMX", checkedBy: "YETKILI IDARE" },
+      sheet: { projectName: `${province} / ${district}`, projectCode: project.id, module: "IMAR ENTEGRASYONU", drawingTitle: "PARSEL VE IMAR ZARFI", drawingNo: "IMR-001", revision: project.revision, status: zoning.verification, coordinateSystem: project.coordinateReference, scale: "MODEL 1:1", preparedBy: "ARKEMX", checkedBy: "YETKILI IDARE DOGRULAMASI GEREKLI" },
     });
     downloadTextFile(`${project.id}-imar-zarfi.dxf`, dxf, "application/dxf");
   };
 
   return <div className="zoning-workbench">
+    <div className="module-example-notice"><b>Kaynak türü seçimi belge doğrulaması değildir.</b><p>Bu alan beyan edilen koşullarla aritmetik ön kontrol üretir. Planın geçerliliği, gerçek çekme mesafesi geometrisi ve yetkili idare onayı incelenmedi. PDF ve DXF yetkili idare tarafından kontrol edilmiş belge değildir.</p></div>
     <header className="zoning-workbench-head">
       <div><span>ARKEMX / İMAR ÇALIŞMA ALANI</span><h2>Parseli seçin.<br/><em>Koşulu kanıtıyla yönetin.</em></h2></div>
       <aside><b>{ruleResult.pass ? "ÖN KONTROL UYUMLU" : "REVİZYON GEREKİYOR"}</b><small>{zoningVerificationLabel(zoning.verification)}</small><strong>{parcelReference}</strong></aside>
@@ -659,10 +616,10 @@ export function ZoningIntegrationCenter() {
     </nav>
 
     {step === "parcel" && <section className="zoning-stage">
-      <div className="zoning-stage-intro"><span>01 / RESMÎ PARSEL KİMLİĞİ</span><h3>İdari sırayla seçin; geometriyi tek seferde projeye alın.</h3><p>{administrativeSource === "official" ? "TKGM MEGSİS bağlantısı canlı. İl, ilçe ve mahalle/köy listeleri resmî servis kimlikleriyle yükleniyor." : "Kesintiye dayanıklı seçim açık. İl ve ilçe bilgisi kaydedilebilir; resmî parsel geometrisi TKGM bağlantısı veya doğrulanmış KML/GeoJSON ile tamamlanır."}</p></div>
-      <div className="zoning-form-grid">
-        <label>İl<select value={provinceId} onChange={(event) => { const id = event.target.value; const selectedProvince = provinceOptions.find((item) => item.id === id)?.label || ""; setProvinceId(id); setProvince(selectedProvince); setDistrictId(""); setDistrict(""); setDistrictOptions(administrativeSource === "fallback" && selectedProvince ? fallbackDistrictOptions(selectedProvince) : []); setNeighborhoodId(""); setNeighborhood(""); setNeighborhoodOptions([]); }}><option value="">İl seçin</option>{provinceOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-        <label>İlçe<select value={districtId} disabled={!provinceId} onChange={(event) => { const id = event.target.value; setDistrictId(id); setDistrict(districtOptions.find((item) => item.id === id)?.label || ""); setNeighborhoodId(""); setNeighborhood(""); if (id.startsWith("fallback-")) { setNeighborhoodOptions(FALLBACK_NEIGHBORHOODS); setAdministrativeSource("fallback"); } else setNeighborhoodOptions([]); }}><option value="">İlçe seçin</option>{districtOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <div className="zoning-stage-intro"><span>01 / RESMÎ PARSEL KİMLİĞİ</span><h3>İdari sırayla seçin; geometriyi tek seferde projeye alın.</h3><p>{administrativeSource === "official" ? "TKGM MEGSİS bağlantısı canlı. İl, ilçe ve mahalle/köy listeleri resmî servis kimlikleriyle yükleniyor." : "Seçim listesi bekleniyor. Kaynak yanıt vermediğinde gerçek dışı kimlik üretilmez."}</p></div>
+      <button type="button" onClick={() => setDirectoryAttempt(n => n + 1)}>Seçim listesini yenile</button><div className="zoning-form-grid">
+        <label>İl<select value={provinceId} onChange={(event) => { const id = event.target.value; const selectedProvince = provinceOptions.find((item) => item.id === id)?.label || ""; setProvinceId(id); setProvince(selectedProvince); setDistrictId(""); setDistrict(""); setDistrictOptions([]); setNeighborhoodId(""); setNeighborhood(""); setNeighborhoodOptions([]); }}><option value="">İl seçin</option>{provinceOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+        <label>İlçe<select value={districtId} disabled={!provinceId} onChange={(event) => { const id = event.target.value; setDistrictId(id); setDistrict(districtOptions.find((item) => item.id === id)?.label || ""); setNeighborhoodId(""); setNeighborhood(""); setNeighborhoodOptions([]); }}><option value="">İlçe seçin</option>{districtOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         <label>Mahalle / köy<select value={neighborhoodId} disabled={!districtId} onChange={(event) => { const id = event.target.value; setNeighborhoodId(id); setNeighborhood(neighborhoodOptions.find((item) => item.id === id)?.label || ""); }}><option value="">Mahalle / köy seçin</option>{neighborhoodOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         <label>Ada<input value={block} inputMode="numeric" onChange={(event) => setBlock(event.target.value.replace(/[^\d/-]/g, ""))} placeholder="Örn. 115"/></label>
         <label>Parsel<input value={parcelNo} inputMode="numeric" onChange={(event) => setParcelNo(event.target.value.replace(/[^\d/-]/g, ""))} placeholder="Örn. 46"/></label>
@@ -670,16 +627,16 @@ export function ZoningIntegrationCenter() {
       </div>
       <div className={`zoning-status ${parcelState}`} role="status"><i>{parcelState === "found" || parcelState === "identified" ? "✓" : parcelState === "error" ? "!" : "i"}</i><div><b>{parcelReference}</b><p>{parcelMessage}</p></div><Link href="/arsa-fizibilite-studyosu">Harita stüdyosunu açın ↗</Link></div>
       {discoveryState !== "idle" && <section ref={discoveryRef} className={`zoning-auto-discovery ${discoveryState}`} aria-live="polite">
-        <header><div><span>OTOMATİK İMAR DURUMU BULUCU</span><h4>{discoveryState === "scanning" ? "Resmî kaynak rotası taranıyor…" : "Parselin imar kanıt zinciri hazır."}</h4></div><aside><b>{discoveryState === "scanning" ? "KAYNAKLAR KONTROL EDİLİYOR" : `${discoverySources.filter((item) => item.status !== "verification-required").length}/${discoverySources.length} KAYNAK HAZIR`}</b><small>{discoveryCheckedAt || parcelReference}</small></aside></header>
+        <header><div><span>İMAR KAYNAKLARI VE BEYANLAR</span><h4>{discoveryState === "scanning" ? "Resmî kaynak rotası taranıyor…" : "İmar kaynakları ve kayıtlı beyanlar gösteriliyor."}</h4></div><aside><b>{discoveryState === "scanning" ? "KAYNAKLAR KONTROL EDİLİYOR" : `${discoverySources.filter((item) => item.status !== "verification-required").length}/${discoverySources.length} KAYNAK HAZIR`}</b><small>{discoveryCheckedAt || parcelReference}</small></aside></header>
         {discoveryState === "ready" && <>
           <div className="zoning-discovery-sources">{discoverySources.map((source, index) => <article key={source.id} data-status={source.status}><i>{String(index + 1).padStart(2, "0")}</i><div><b>{source.label}</b><p>{source.detail}</p><em>{source.statusLabel}</em></div>{source.href ? <a href={source.href} target="_blank" rel="noreferrer" aria-label={`${source.label} kaynağını açın`}>↗</a> : <span aria-hidden="true">—</span>}</article>)}</div>
           <div className="zoning-discovery-result">
-            <div><span>KULLANIM</span><b>{hasVerifiedConditions ? zoning.landUse : "Resmî kayıt bekleniyor"}</b></div>
-            <div><span>NİZAM</span><b>{hasVerifiedConditions ? zoning.buildingOrder : "—"}</b></div>
-            <div><span>TAKS</span><b>{hasVerifiedConditions ? zoning.taks.toFixed(2) : "—"}</b></div>
-            <div><span>KAKS / EMSAL</span><b>{hasVerifiedConditions ? zoning.kaks.toFixed(2) : "—"}</b></div>
-            <div><span>HMAX / YENÇOK</span><b>{hasVerifiedConditions ? `${zoning.hmax.toFixed(2)} m` : "—"}</b></div>
-            <button type="button" onClick={() => setStep("conditions")}>{hasVerifiedConditions ? "Kanıtlı koşulları inceleyin" : "Belge ve plan koşullarını tamamlayın"} <span>→</span></button>
+            <div><span>KULLANIM</span><b>{hasSourceConditions ? zoning.landUse : "Resmî kayıt bekleniyor"}</b></div>
+            <div><span>NİZAM</span><b>{hasSourceConditions ? zoning.buildingOrder : "—"}</b></div>
+            <div><span>TAKS</span><b>{hasSourceConditions ? zoning.taks.toFixed(2) : "—"}</b></div>
+            <div><span>KAKS / EMSAL</span><b>{hasSourceConditions ? zoning.kaks.toFixed(2) : "—"}</b></div>
+            <div><span>HMAX / YENÇOK</span><b>{hasSourceConditions ? `${zoning.hmax.toFixed(2)} m` : "—"}</b></div>
+            <button type="button" onClick={() => setStep("conditions")}>{hasSourceConditions ? "Beyan edilen koşulları inceleyin" : "Belge ve plan koşullarını tamamlayın"} <span>→</span></button>
           </div>
           <p className="zoning-discovery-note">Otomatik bulucu yalnız erişilebilen resmî görüntüleyici, kayıtlı proje verisi ve kullanıcı belgesini eşleştirir. Açık servis sunulmayan belediyelerde yapılaşma hakkı tahmin edilmez.</p>
         </>}
@@ -722,7 +679,7 @@ export function ZoningIntegrationCenter() {
       <section className="v110-evidence-center" data-status={zoningEvidenceBundle.status} aria-labelledby="v110-evidence-title">
         <header>
           <div><span>V110 / PARSEL VE İMAR KANIT MERKEZİ</span><h4 id="v110-evidence-title">Değer, kaynak ve güncellik aynı kayıtta.</h4><p>{parcelReference}</p></div>
-          <aside><b>{zoningEvidenceBundle.status === "conflict" ? "KAYNAK ÇATIŞMASI" : zoningEvidenceBundle.status === "verified" ? "DOĞRULANMIŞ SET" : zoningEvidenceBundle.status === "incomplete" ? "EKSİK KANIT" : "UZMAN KONTROLÜNE HAZIR"}</b><small>{zoningEvidenceBundle.records.length} kaynak · {zoningEvidenceBundle.conflicts.length} çatışma</small></aside>
+          <aside><b>{zoningEvidenceBundle.status === "conflict" ? "KAYNAK ÇATIŞMASI" : zoningEvidenceBundle.status === "verified" ? "KAYNAK BEYANI" : zoningEvidenceBundle.status === "incomplete" ? "EKSİK KANIT" : "UZMAN KONTROLÜNE HAZIR"}</b><small>{zoningEvidenceBundle.records.length} kaynak · {zoningEvidenceBundle.conflicts.length} çatışma</small></aside>
         </header>
         {zoningEvidenceBundle.status === "conflict" && <div className="v110-evidence-alert" role="alert"><b>Kaynak çatışması</b><p>{zoningEvidenceBundle.nextAction}</p></div>}
         <div className="v110-evidence-section-head"><span>Kaynak sicili</span><small>Kurum · sorgu tarihi · belge/servis · geçerlilik</small></div>
@@ -731,7 +688,7 @@ export function ZoningIntegrationCenter() {
         </article>)}</div>
         <div className="v110-evidence-section-head"><span>Alan bazlı kanıt</span><small>Çelişkide sistem değer seçmez.</small></div>
         <div className="v110-evidence-condition-grid">{Object.values(zoningEvidenceBundle.conditions).map((condition) => <article key={condition.field} data-status={condition.status}>
-          <header><span>{condition.label}</span><em>{condition.status === "verified" ? "DOĞRULANDI" : condition.status === "supported" ? "KANITLI / KONTROL" : condition.status === "conflict" ? "ÇATIŞMA" : "EKSİK"}</em></header>
+          <header><span>{condition.label}</span><em>{condition.status === "verified" ? "İNCELEME KAYDI" : condition.status === "supported" ? "KANITLI / KONTROL" : condition.status === "conflict" ? "ÇATIŞMA" : "EKSİK"}</em></header>
           <strong>{condition.value === null ? "—" : `${condition.value}${condition.unit ? ` ${condition.unit}` : ""}`}</strong>
           <div>{condition.candidates.map((candidate) => <p key={`${condition.field}-${candidate.recordId}`}><b>{candidate.value}{condition.unit ? ` ${condition.unit}` : ""}</b><span>{candidate.sourceLabel}</span></p>)}</div>
         </article>)}</div>

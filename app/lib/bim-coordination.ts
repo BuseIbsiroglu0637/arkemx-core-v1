@@ -1,22 +1,3 @@
-export type CoordinationSectionStrategy = "stacked" | "integrated";
-
-export function calculateConceptualClearHeight(
-  floorHeight: number,
-  beamDepth: number,
-  serviceZone: number,
-  ceilingBuildUp: number,
-  raisedFloor: number,
-  strategy: CoordinationSectionStrategy = "stacked",
-) {
-  const occupiedCeilingZone = strategy === "integrated"
-    ? Math.max(beamDepth, serviceZone)
-    : beamDepth + serviceZone;
-  return {
-    occupiedCeilingZone,
-    clearHeight: floorHeight - occupiedCeilingZone - ceilingBuildUp - raisedFloor,
-  };
-}
-
 export type BimCoordinationInput = {
   projectId: string;
   projectRevision: string;
@@ -29,7 +10,6 @@ export type BimCoordinationInput = {
   serviceZone: number;
   ceilingBuildUp: number;
   raisedFloor: number;
-  sectionStrategy?: CoordinationSectionStrategy;
   shaftArea: number;
   plantArea: number;
   factoredGravity: number;
@@ -99,37 +79,40 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const program = record(architecture.program);
   const cores = Array.isArray(architecture.cores) ? architecture.cores.map(record) : [];
   const structure = record(input.structuralStudio);
-  const structureSource = record(structure.source);
   const structureGeometry = record(structure.geometry);
   const recommendation = record(structure.recommendation);
   const alternatives = Array.isArray(structure.alternatives) ? structure.alternatives.map(record) : [];
-  const architectureConnected = architecture.schema === "ARKEM-ARCH-SCHEME/3.0";
-  const structureConnected = structure.schema === "ARKEM-STRUCTURAL-STUDIO/3.0";
-  const selectedSystem = stringValue(structure.activeSystem, stringValue(recommendation.system));
+  const validGeometry = (geometry: UnknownRecord) =>
+    [geometry.width, geometry.depth].every(value => typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 5_000)
+    && typeof geometry.floorHeight === "number" && Number.isFinite(geometry.floorHeight) && geometry.floorHeight > 0 && geometry.floorHeight <= 30
+    && typeof geometry.floors === "number" && Number.isInteger(geometry.floors) && geometry.floors >= 1 && geometry.floors <= 200;
+  const architectureConnected = architecture.schema === "ARKEM-ARCH-SCHEME/3.0" && validGeometry(plate);
+  const structureConnected = structure.schema === "ARKEM-STRUCTURAL-STUDIO/3.0" && validGeometry(structureGeometry);
+  const selectedSystem = stringValue(recommendation.system, stringValue(structure.activeSystem));
   const selectedAlternative = alternatives.find((alternative) => stringValue(alternative.system) === selectedSystem) ?? alternatives[0] ?? {};
   const preliminary = record(selectedAlternative.preliminary);
   const preliminaryNumeric = record(preliminary.numeric);
   const indices = record(selectedAlternative.indices);
   const structuralQuantities = record(selectedAlternative.quantities);
 
-  const width = numberValue(plate.width, numberValue(structureGeometry.width, 1));
-  const depth = numberValue(plate.depth, numberValue(structureGeometry.depth, 1));
-  const floors = Math.max(1, Math.round(numberValue(plate.floors, numberValue(structureGeometry.floors, 1))));
-  const floorHeight = numberValue(input.floorHeight, numberValue(plate.floorHeight, numberValue(structureGeometry.floorHeight, 3)));
+  const geometry = architectureConnected ? plate : structureConnected ? structureGeometry : {};
+  const width = numberValue(geometry.width, 1);
+  const depth = numberValue(geometry.depth, 1);
+  const floors = numberValue(geometry.floors, 1);
+  const floorHeight = numberValue(input.floorHeight, numberValue(geometry.floorHeight, 3));
   const floorPlate = Math.max(1, numberValue(plate.area, width * depth));
   const totalArea = Math.max(floorPlate * floors, numberValue(structureGeometry.totalArea));
-  const baysX = Math.max(1, Math.round(numberValue(structureGeometry.baysX, 1)));
-  const baysY = Math.max(1, Math.round(numberValue(structureGeometry.baysY, 1)));
+  const boundedBayCount = (value: unknown) => typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100 ? value : 1;
+  const baysX = boundedBayCount(structureGeometry.baysX);
+  const baysY = boundedBayCount(structureGeometry.baysY);
   const beamDepth = numberValue(input.beamDepth, numberValue(preliminaryNumeric.beamDepth, .6));
   const slabDepth = numberValue(input.slabDepth, numberValue(preliminaryNumeric.slabThickness, .16));
   const serviceZone = clamp(input.serviceZone, .15, 2);
   const ceilingBuildUp = clamp(input.ceilingBuildUp, 0, .5);
   const raisedFloor = clamp(input.raisedFloor, 0, .5);
-  const sectionStrategy: CoordinationSectionStrategy = input.sectionStrategy === "integrated" ? "integrated" : "stacked";
-  const sectionBudget = calculateConceptualClearHeight(floorHeight, beamDepth, serviceZone, ceilingBuildUp, raisedFloor, sectionStrategy);
-  const clearHeight = sectionBudget.clearHeight;
   const shaftArea = clamp(input.shaftArea, 1, 5_000);
   const plantArea = clamp(input.plantArea, 1, 20_000);
+  const clearHeight = floorHeight - beamDepth - serviceZone - ceilingBuildUp - raisedFloor;
   const shaftRatio = shaftArea / floorPlate * 100;
   const serviceRatio = serviceZone / floorHeight * 100;
   const bearingPressure = input.factoredGravity > 0 ? input.factoredGravity / floorPlate : 0;
@@ -153,15 +136,17 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   };
 
   const coordinateReference = input.coordinateReference.trim() || "PROJECT LOCAL · ORIGIN UNVERIFIED";
-  const coordinateVerified = /EPSG|ITRF|TUREF|UTM/i.test(coordinateReference) && !/UNVERIFIED|BİLİNMİYOR|UNKNOWN/i.test(coordinateReference);
+  // A typed CRS label alone cannot verify survey datum, origin and true north.
+  const coordinateVerified = false;
   const geometryMatches = architectureConnected && structureConnected
     && Math.abs(numberValue(plate.width) - numberValue(structureGeometry.width)) <= .05
     && Math.abs(numberValue(plate.depth) - numberValue(structureGeometry.depth)) <= .05
-    && Math.round(numberValue(plate.floors)) === Math.round(numberValue(structureGeometry.floors));
+    && Math.round(numberValue(plate.floors)) === Math.round(numberValue(structureGeometry.floors))
+    && Math.abs(numberValue(plate.floorHeight) - numberValue(structureGeometry.floorHeight)) <= .01;
 
   const layers = [
-    { code: "ARC", label: "Mimari mekânsal şema", state: architectureConnected ? "connected" as const : "missing" as const, revision: input.projectRevision, sourceSchema: stringValue(architecture.schema, "—") },
-    { code: "STR", label: "Taşıyıcı sistem ve ön boyut", state: structureConnected ? "connected" as const : "missing" as const, revision: input.projectRevision, sourceSchema: stringValue(structure.schema, "—") },
+    { code: "ARC", label: "Mimari mekânsal şema", state: architectureConnected ? "connected" as const : "missing" as const, revision: stringValue(architecture.sourceRevision, "Kaynak revizyonu kayıtlı değil"), sourceSchema: stringValue(architecture.schema, "—") },
+    { code: "STR", label: "Taşıyıcı sistem ve ön boyut", state: structureConnected ? "connected" as const : "missing" as const, revision: stringValue(structure.sourceRevision, "Kaynak revizyonu kayıtlı değil"), sourceSchema: stringValue(structure.schema, "—") },
     { code: "MEP", label: "Servis zonu ve şaft rezervi", state: "conceptual" as const, revision: input.projectRevision, sourceSchema: "ARKEM-MEP-ZONE/1.0" },
     { code: "FIRE", label: "Yangın koordinasyon senaryosu", state: "conceptual" as const, revision: input.projectRevision, sourceSchema: "ARKEM-FIRE-SCREEN/1.0" },
     { code: "GEO", label: "Koordinat ve zemin girdisi", state: coordinateVerified ? "connected" as const : "conceptual" as const, revision: input.projectRevision, sourceSchema: coordinateVerified ? coordinateReference : "PROJECT-LOCAL" },
@@ -172,14 +157,12 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   if (clearHeight < 2.4) addClash(clashes, input.projectId, {
     type: "hard", severity: "critical", title: "Kiriş ve MEP zonu net kullanım yüksekliğini ihlal ediyor",
     disciplines: ["STR", "MEP", "ARC"], location: "Tip kat · ana servis koridoru",
-    evidence: sectionStrategy === "integrated"
-      ? `${floorHeight.toFixed(2)} m kat − max(${beamDepth.toFixed(2)} m kiriş, ${serviceZone.toFixed(2)} m MEP) − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · entegre servis bandı`
-      : `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net · ayrık servis bandı`,
+    evidence: `${floorHeight.toFixed(2)} m kat − ${beamDepth.toFixed(2)} m kiriş − ${serviceZone.toFixed(2)} m MEP − ${(ceilingBuildUp + raisedFloor).toFixed(2)} m paket = ${clearHeight.toFixed(2)} m net`,
     requiredAction: "Kiriş güzergâhını, kanal/boru kotunu veya kat yüksekliğini ortak kesitte yeniden çözün.", assignee: "BIM Koordinatörü", sourceRefs: ["ARC:LEVELS", "STR:PRELIMINARY-BEAM", "MEP:SERVICE-ZONE"],
   });
   else if (clearHeight < 2.7) addClash(clashes, input.projectId, {
     type: "soft", severity: "review", title: "Net kullanım yüksekliği inceleme bandında",
-    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik · ${sectionStrategy === "integrated" ? "entegre servis bandı" : "ayrık servis bandı"}`,
+    disciplines: ["ARC", "MEP"], location: "Tip kat · asma tavan zonu", evidence: `${clearHeight.toFixed(2)} m net yükseklik`,
     requiredAction: "Mahal kullanım hedefi ile bakım boşluklarını doğrulayın.", assignee: "Mimar", sourceRefs: ["ARC:LEVELS", "MEP:SERVICE-ZONE"],
   });
   if (shaftRatio < 1.5) addClash(clashes, input.projectId, {
@@ -235,9 +218,9 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
   const criticalClashes = clashes.filter((clash) => clash.severity === "critical").length;
   const checks = [
     { code: "BIM-115-01", label: "V113 mimari şema bağlantısı", state: architectureConnected ? "pass" as const : "risk" as const, value: architectureConnected ? `${width.toFixed(1)} × ${depth.toFixed(1)} m` : "Bağlantı yok", note: "Kat, çekirdek ve kullanıcı yükü mimari şemadan okunur." },
-    { code: "BIM-115-02", label: "V114 taşıyıcı stüdyo bağlantısı", state: structureConnected ? "pass" as const : "risk" as const, value: structureConnected ? stringValue(selectedAlternative.label, selectedSystem) : "Bağlantı yok", note: "Aks, kesit sınıfı, miktar ve göreli göstergeler taşıyıcı stüdyodan okunur." },
+    { code: "BIM-115-02", label: "V114 taşıyıcı stüdyo bağlantısı", state: structureConnected ? "pass" as const : "risk" as const, value: structureConnected ? stringValue(recommendation.label, selectedSystem) : "Bağlantı yok", note: "Aks, kesit sınıfı, miktar ve göreli göstergeler taşıyıcı stüdyodan okunur." },
     { code: "BIM-115-03", label: "Ortak koordinat referansı", state: coordinateVerified ? "pass" as const : "review" as const, value: coordinateReference, note: "Gerçek IFC yerleşimi için proje baz noktası, kuzey ve düşey datum ayrıca doğrulanır." },
-    { code: "BIM-115-04", label: "Aks, plaka ve kat eşleşmesi", state: geometryMatches ? "pass" as const : architectureConnected && structureConnected ? "risk" as const : "review" as const, value: `${baysX}×${baysY} aks · ${floors} kat`, note: "Mimari ve taşıyıcı geometri aynı revizyonda karşılaştırılır." },
+    { code: "BIM-115-04", label: "Plaka ölçüsü, kat ve yükseklik eşleşmesi", state: geometryMatches ? "pass" as const : architectureConnected && structureConnected ? "risk" as const : "review" as const, value: `${baysX}×${baysY} aks · ${floors} kat`, note: "Yalnız geçerli ölçü, kat ve yükseklik karşılaştırılır; aks ve kaynak revizyonu ayrıca incelenmelidir." },
     { code: "BIM-115-05", label: "Açık çakışma kapısı", state: criticalClashes ? "risk" as const : clashes.length ? "review" as const : "pass" as const, value: `${clashes.length} açık · ${criticalClashes} kritik`, note: "Kritik issue kapanmadan koordinasyon dondurma kapısı geçmez." },
     { code: "BIM-115-06", label: "IFC / BCF teslim sınırı", state: "review" as const, value: "Hazırlık manifestosu", note: "Yerel şema gerçek IFC modeli veya native BCFZIP üretmez; GUID, viewpoint ve CDE bağlantısı gerekir." },
   ];
@@ -250,8 +233,11 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
     source: {
       architectureConnected,
       structureConnected,
-      authoritativeGeometry: architectureConnected && structureConnected && architectureSource.authoritativeMassing === true && structureSource.architectureTrust === "verified",
+      authoritativeGeometry: false,
+      needsReview: true,
       geometryMatches,
+      geometryMatchScope: "width-depth-floors-floorHeight-only",
+      gridAndSourceRevisionsVerified: false,
       selectedMassingId: stringValue(architectureSource.selectedMassingId) || null,
       selectedStructuralSystem: selectedSystem || null,
     },
@@ -272,8 +258,6 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
     },
     coordination: {
       clearHeightM: round(clearHeight),
-      sectionStrategy,
-      occupiedCeilingZoneM: round(sectionBudget.occupiedCeilingZone),
       serviceZoneM: round(serviceZone),
       serviceRatioPct: round(serviceRatio, 1),
       shaftRatioPct: round(shaftRatio, 2),
@@ -300,6 +284,7 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
       intensityKgCO2eM2: totalArea > 0 ? round(structuralCarbon / totalArea, 1) : 0,
       coverage: linkedToStructuralAlternative ? "structural-indicator-only" as const : "missing" as const,
       certifiedLca: false as const,
+      factorBasis: "Temsili V114 beton/metal katsayıları; ürün EPD doğrulaması yok.",
     },
     schedule4D: { phases, totalWeeks: round(cursor, 1), baselineSchedule: false as const, linkedModelElements: false as const },
     cost5D: {
@@ -324,6 +309,7 @@ export function createBimCoordinationModel(input: BimCoordinationInput) {
     checks,
     limitations: [
       "Bu kayıt IFC4 hazırlık manifestosudur; native IFC modelini üretmez, doğrulamaz veya dönüştürmez.",
+      "Geometri kaynağı eksik veya geçersizse gösterim varsayımları yalnız örnektir; bağlantı ve geometri eşleşmesi kabul edilmez.",
       "Issue listesi BCF uyumluluğuna hazırlıktır; model GUID'leri, kamera viewpoint'leri ve yetkili CDE olmadan gerçek BCFZIP değildir.",
       "Metraj ve karbon yalnız V114 ön sistem göstergelerine bağlıdır; keşif, teklif, üretici EPD'si veya sertifikalı LCA değildir.",
       "4B ve 5B alanları göreli planlama göstergesidir; onaylı iş programı, hakediş veya maliyet kontrol sistemi değildir.",

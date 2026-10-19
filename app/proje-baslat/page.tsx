@@ -1,48 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { ProjectStartIntro, ProjectStartStudio } from "../components/ProjectStartStudio";
-import "../sade-arac-paneli.css";
-import "./sade-baslangic.css";
+import { ProjectStartStudio } from "../components/ProjectStartStudio";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 export const metadata: Metadata = {
-  title: "Proje Başlangıcı | ARKEMX",
-  description: "Yeni proje oluşturun veya aktif projenizin başlangıç bilgilerini yönetin.",
+  title: "ARKEMX Proje Başlat",
+  description: "Proje hedefinizi, parsel hazırlığını, bütçe ve zaman kararlarını beş sade adımda tanımlayın; ARKEMX size kaynak ve doğrulama sınırları açık kişisel proje yol haritası oluştursun.",
   alternates: { canonical: "/proje-baslat" },
-  robots: { index: false, follow: false },
+  openGraph: { title: "ARKEMX Proje Başlat | ARKEM Yapı Sistemleri", description: "Proje hedefinizi, parsel hazırlığını, bütçe ve zaman kararlarını beş sade adımda tanımlayın; ARKEMX size bir proje yol haritası oluştursun.", url: "/proje-baslat", images: [{ url: "/arkem-social-share.png", width: 1200, height: 630, alt: "ARKEM Yapı Sistemleri — mühendislikten sahaya" }] },
 };
 
-type ProjectStartPageProps = {
-  searchParams?: Promise<{
-    view?: string | string[];
-    new?: string | string[];
-    fresh?: string | string[];
-  }>;
-};
-
-export default async function ProjectStartPage({ searchParams }: ProjectStartPageProps) {
-  const params = await searchParams;
-  const rawView = Array.isArray(params?.view) ? params?.view[0] : params?.view;
-  const rawNew = Array.isArray(params?.new) ? params?.new[0] : params?.new;
-  const rawFresh = Array.isArray(params?.fresh) ? params?.fresh[0] : params?.fresh;
-  const summaryMode = rawView === "summary";
-  const newProjectMode = rawNew === "1";
-  const freshProjectMode = rawFresh === "1";
-
-  return (
-    <main className="arx-simple-home arx-start-page">
-      <div className="arx-simple-shell">
-        <header className="arx-simple-head">
-          <Link href="/" className="arx-simple-brand" aria-label="ARKEMX araçlar ana sayfası">ARKEM<span>X</span></Link>
-          <Link href="/dijital-proje-merkezi" className="arx-start-back"><ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" /> Proje Çalışma Alanına Dön</Link>
-        </header>
-        <ProjectStartIntro summaryMode={summaryMode} newProjectMode={newProjectMode} />
-        <ProjectStartStudio
-          summaryMode={summaryMode}
-          newProjectMode={newProjectMode}
-          freshProjectMode={freshProjectMode}
-        />
+export default function ProjectStartPage() {
+  return <main className="inner-page project-start-page">
+    <section className="project-start-hero customer-start-hero">
+      <SiteHeader />
+      <div className="shell project-start-hero-content">
+        <nav className="breadcrumb" aria-label="Sayfa yolu"><Link href="/">Ana Sayfa</Link><span>/</span><Link href="/arkemx">ARKEMX</Link><span>/</span><span>Proje Başlat</span></nav>
+        <p className="eyebrow light">ARKEMX / PROJE BAŞLANGIÇ SİSTEMİ</p>
+        <h1>Bir kez anlatın.<br/><em>Tüm proje birlikte ilerlesin.</em></h1>
+        <p>İhtiyaç, konum, belge hazırlığı, alan, bütçe ve önceliklerinizi bir kez girin. ARKEMX size özel proje yolunu oluşturur; resmî veri, müşteri beyanı ve uzman incelemesini birbirine karıştırmaz.</p>
+        <ol className="project-start-hero-flow" aria-label="Projeden teslime altı aşama">{["Hedef", "Arsa", "İmar", "Mimari", "Sistem", "Teslim"].map((item, index) => <li key={item}><i>{String(index + 1).padStart(2, "0")}</i><b>{item}</b></li>)}</ol>
       </div>
-    </main>
-  );
+    </section>
+    <section className="section shell"><ProjectStartStudio /></section>
+    <section className="start-assurance"><div className="shell">{[
+      ["01", "Kişisel proje yolu", "Sıradaki işlem; parsel, belge, bütçe ve teknik hazırlığınıza göre belirlenir."],
+      ["02", "Kaynak görünürlüğü", "Kullanıcı girdisi, resmî veri ve mühendislik sonucu birbirinden ayrılır."],
+      ["03", "Açık teknik çıktı", "Proje JSON, düzenli CSV ve katmanlı DXF ile taşınabilir kalır."],
+      ["04", "Yetki sınırı", "Ön değerlendirme ile yetkili proje ve onay süreçleri açık biçimde ayrılır."],
+    ].map(([no, title, copy]) => <article key={no}><span>{no}</span><h2>{title}</h2><p>{copy}</p></article>)}</div></section>
+    <SiteFooter />
+  </main>;
 }

@@ -1,5 +1,4 @@
 "use client";
-import { ContentImage } from "./ContentImage";
 
 import { useEffect, useState } from "react";
 import { site } from "../data/site";
@@ -18,7 +17,7 @@ export function SocialContentFeed(){
   useEffect(()=>{if(paused)return;const timer=window.setInterval(()=>setActive((value)=>(value+1)%items.length),7200);return()=>window.clearInterval(timer)},[paused]);
   const item=items[active];
   return <div className="content-feed content-feed-v2" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocusCapture={()=>setPaused(true)} onBlurCapture={()=>setPaused(false)}>
-    <div className="content-feed-stage">{item.type==="video"?<video key={item.src} controls playsInline poster={item.poster}><source src={item.src} type="video/mp4"/></video>:<ContentImage key={item.src} src={item.src} alt={item.title}/>}<div className="content-feed-topline"><span>ARKEM MEDIA / {String(active+1).padStart(2,"0")}</span><b>{item.status}</b></div><div className="content-feed-overlay"><span>{item.platform}</span><h3>{item.title}</h3><p>{item.copy}</p><a href={item.href} target={"external" in item&&item.external?"_blank":undefined} rel={"external" in item&&item.external?"noreferrer":undefined}>İçeriği açın ↗</a></div></div>
+    <div className="content-feed-stage">{item.type==="video"?<video key={item.src} controls playsInline poster={item.poster}><source src={item.src} type="video/mp4"/></video>:<img key={item.src} src={item.src} alt={item.title}/>}<div className="content-feed-topline"><span>ARKEM MEDIA / {String(active+1).padStart(2,"0")}</span><b>{item.status}</b></div><div className="content-feed-overlay"><span>{item.platform}</span><h3>{item.title}</h3><p>{item.copy}</p><a href={item.href} target={"external" in item&&item.external?"_blank":undefined} rel={"external" in item&&item.external?"noreferrer":undefined}>İçeriği açın ↗</a></div></div>
     <div className="content-feed-rail"><header><span>SEÇİLİ YAYINLAR</span><b>{items.length} doğrulanmış içerik yüzeyi</b></header>{items.map((entry,index)=><button type="button" className={active===index?"active":""} key={entry.title} onClick={()=>setActive(index)} aria-pressed={active===index}><span>{String(index+1).padStart(2,"0")} / {entry.platform}</span><b>{entry.title}</b><small>{entry.status}</small></button>)}<footer><i className={paused?"paused":""}></i>{paused?"Akış duraklatıldı":"Otomatik yayın geçişi aktif"}</footer></div>
   </div>;
 }

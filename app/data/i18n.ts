@@ -635,6 +635,7 @@ const exact: Record<string, string> = {
   "Konum": "Location",
   "Program": "Program",
   "Öncelik": "Priority",
+  "Ne yapmak istiyorsunuz?": "What would you like to do?",
   "Proje türü": "Project type",
   "Yapı kullanımı": "Building use",
   "Hedef brüt alan": "Target gross area",

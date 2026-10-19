@@ -1,25 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { PDFDocument } from "pdf-lib";
+import { useMemo, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
-import { deliveryDigest, deliverySourceKey, inspectDeliveryArtifact, validateDeliveryArtifacts, type DeliveryArtifact, type DeliveryFile } from "../lib/delivery-artifacts";
+import { validateDeliveryPackage } from "../lib/delivery-package";
 import { createCollaborationAudit } from "../lib/collaboration-audit";
 import { INTEGRATION_SECURITY_REGISTRY } from "../lib/integration-security";
 import { formatProjectDateTime } from "../lib/date-format";
-import { PROJECT_JOURNEY, deriveProjectJourneyState, useProjectKernel } from "./ProjectKernel";
-import { portalStageStatus } from "../lib/portal-stage-status";
-import { portalStructuralGate, type StructuralGate } from "../lib/portal-structural-gate";
-import { portalRecords, nextPortalDecisionId, recordPortalApproval, type ApprovalState } from "../lib/portal-records";
+import { PROJECT_JOURNEY, useProjectKernel } from "./ProjectKernel";
 
 type PortalView = "overview" | "engineering" | "approvals" | "deliverables" | "assistant" | "asset" | "review" | "readiness" | "integrations";
+type ApprovalState = "Bekliyor" | "İncelemede" | "İnceleme tamamlandı";
 
 const primaryPortalViews: Array<[PortalView, string]> = [
   ["overview", "Proje özeti"],
   ["engineering", "Teknik inceleme"],
-  ["approvals", "Karar & onay"],
+  ["approvals", "Karar & inceleme"],
   ["deliverables", "Teslim paketi"],
 ];
 
@@ -52,21 +49,33 @@ function safeNumber(value: unknown) {
 }
 
 export function ClientTechnicalProjectRoom() {
-  const { project, thread, hydrated, setIdentity, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
+  const { project } = useProjectKernel();
+  return <ScopedTechnicalProjectRoom key={project.id} />;
+}
+
+function ScopedTechnicalProjectRoom() {
+  const { project, thread, patchModule, synchronizeProject, importProject, applyHandoff } = useProjectKernel();
   const storedPortal = safeRecord(project.modules["client-portal"]);
   const demolition = safeRecord(project.modules["demolition-screening"]);
   const projectOs = safeRecord(project.modules["project-os"]);
   const earnedValue = safeRecord(projectOs.earnedValue);
-  const numericLabel = (value: unknown, digits = 2) => typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "Veri yok";
-  const progressLabel = (key: string) => typeof earnedValue[key] === "number" && Number.isFinite(earnedValue[key]) ? `%${Number(earnedValue[key]).toFixed(0)}` : "Veri yok";
   const demolitionInput = safeRecord(demolition.input);
   const demolitionAnalysis = safeRecord(demolition.analysis);
   const demolitionGates = Array.isArray(demolition.gates) ? demolition.gates.map(safeRecord) : [];
-  const { approvals, decisions, staleApprovals } = portalRecords(storedPortal, project.revision);
+  const reviewScope = JSON.stringify({ site: thread.canonical.site, architecture: thread.canonical.architecture, structure: thread.canonical.structure, coordination: thread.canonical.coordination });
+  const currentReviewScope = storedPortal.approvalsKind === "customer-local-review" && storedPortal.approvalsScope === reviewScope;
+  const storedApprovals = currentReviewScope ? safeRecord(storedPortal.approvals) : {};
+  const reviewState = (value: unknown): ApprovalState => value === "İncelemede" || value === "İnceleme tamamlandı" ? value : "Bekliyor";
   const [view, setView] = useState<PortalView>("overview");
   const [role, setRole] = useState("İşveren");
+  const [approvals, setApprovals] = useState<Record<string, ApprovalState>>({
+    scope: reviewState(storedApprovals.scope),
+    system: reviewState(storedApprovals.system),
+    coordination: reviewState(storedApprovals.coordination),
+    delivery: reviewState(storedApprovals.delivery),
+  });
   const [assets, setAssets] = useState({
-    model: true,
+    model: false,
     warranty: false,
     maintenance: false,
     products: false,
@@ -84,75 +93,48 @@ export function ClientTechnicalProjectRoom() {
   const [handoffMessage, setHandoffMessage] = useState("");
   const [decisionText, setDecisionText] = useState("");
   const [decisionOwner, setDecisionOwner] = useState("İşveren");
+  const [decisions, setDecisions] = useState<Array<{ id: string; text: string; owner: string; status: string; createdAt: string }>>(() => {
+    const values = storedPortal.decisions;
+    return Array.isArray(values) ? values as Array<{ id: string; text: string; owner: string; status: string; createdAt: string }> : [];
+  });
   const [assistantTopic, setAssistantTopic] = useState<"next" | "risk" | "evidence" | "delivery">("next");
   const [reviewMode, setReviewMode] = useState<"desktop" | "vr" | "ar">("desktop");
   const [reviewLanguage, setReviewLanguage] = useState("Türkçe");
 
-  const approvedCount = Object.values(approvals).filter((state) => state === "Onaylandı").length;
-  const journey = deriveProjectJourneyState(thread);
-  const portalStatus = portalStageStatus(thread, journey, approvedCount);
-  const upstreamReady = portalStatus.architectureReady && journey.completed[3] === true;
-  const [structuralControl, setStructuralControl] = useState<{ project: typeof project; upstreamReady: boolean; gate: StructuralGate } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void portalStructuralGate(project, upstreamReady).then(gate => {
-      if (!cancelled) setStructuralControl({ project, upstreamReady, gate });
-    });
-    return () => { cancelled = true; };
-  }, [project, upstreamReady]);
-  const structuralGate = structuralControl?.project === project && structuralControl.upstreamReady === upstreamReady
-    ? structuralControl.gate : { ready: false, label: "Kontrol ediliyor", requirement: "Güncel kaynak ve hesap kaydı doğrulanıyor" };
-  const completedJourney = PROJECT_JOURNEY.map((step, index) => ({ ...step, ...portalStatus.stages[index] }));
+  const completedJourney = useMemo(() => PROJECT_JOURNEY.map((step) => ({
+    ...step,
+    done: step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)),
+  })), [thread.nodes]);
+  const effectiveApprovals: Record<string, ApprovalState> = currentReviewScope ? approvals : { scope: "Bekliyor", system: "Bekliyor", coordination: "Bekliyor", delivery: "Bekliyor" };
+  const approvedCount = Object.values(effectiveApprovals).filter((state) => state === "İnceleme tamamlandı").length;
   const deliverables = [
     ["Proje veri paketi", project.events.length ? "Hazır" : "Başlatılmadı", `${project.events.length} denetlenebilir işlem`],
     ["Disiplin kayıtları", thread.metrics.activeCount ? "Hazır" : "Eksik", `${thread.metrics.activeCount}/${thread.metrics.totalCount} modül`],
     ["Koordinasyon kontrolü", thread.metrics.critical ? "Düzeltme gerekli" : "Kontrollü", `${thread.metrics.critical} kritik issue`],
-    ["Müşteri onayları", approvedCount === 4 ? "Tamamlandı" : "Devam ediyor", `${approvedCount}/4 onay`],
+    ["Müşteri inceleme beyanları", approvedCount === 4 ? "Tamamlandı" : "Devam ediyor", `${approvedCount}/4 inceleme`],
   ];
-  const [deliveryArtifacts, setDeliveryArtifacts] = useState<Partial<Record<DeliveryFile["format"], DeliveryArtifact>>>({});
-  const [exportBusy, setExportBusy] = useState<Partial<Record<DeliveryFile["format"], boolean>>>({});
-  const exportLocks = useRef(new Set<string>());
-  const sourceKey = deliverySourceKey(project);
-  const deliveryPackage = validateDeliveryArtifacts([
-    { name: `${project.id}-${project.revision}-yonetici-ozeti.pdf`, format: "PDF", sourceModule: "technical-sheet" },
-    { name: `${project.id}-${project.revision}-model.dxf`, format: "DXF", sourceModule: "design-studios" },
-    { name: `${project.id}-${project.revision}-teslim-indeksi.csv`, format: "CSV", sourceModule: "project-kernel" },
-    { name: `${project.id}-${project.revision}-teslim-manifestosu.json`, format: "JSON", sourceModule: "client-portal" },
-  ], deliveryArtifacts, sourceKey);
-
-  const produceDelivery = async (format: "PDF" | "CSV" | "JSON", name: string, produce: () => Promise<string | Uint8Array> | string | Uint8Array, mime: string) => {
-    if (!hydrated || exportLocks.current.has(format)) return;
-    exportLocks.current.add(format);
-    setExportBusy(current => ({ ...current, [format]: true }));
-    setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey } }));
-    try {
-      const content = await produce();
-      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, content } }));
-      const validation = await inspectDeliveryArtifact(format, content, { projectId: project.id, revision: project.revision, sourceKey, text: typeof content === "string" ? content : undefined });
-      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, content, validation } }));
-      if (validation.valid) downloadTextFile(name, content, mime);
-    } catch (error) {
-      setDeliveryArtifacts(current => ({ ...current, [format]: { sourceKey, error: error instanceof Error ? error.message : "Dosya üretilemedi" } }));
-    } finally {
-      exportLocks.current.delete(format);
-      setExportBusy(current => ({ ...current, [format]: false }));
-    }
-  };
+  const deliveryPackage = validateDeliveryPackage([
+    // No retained file bytes/hash exist here. Module readiness is not file verification.
+    { name: `${project.id}-pafta.pdf`, format: "PDF", bytes: 0, revision: project.revision, sourceModule: "technical-sheet" },
+    { name: `${project.id}-model.dxf`, format: "DXF", bytes: 0, revision: project.revision, coordinateReference: project.coordinateReference, sourceModule: "design-studios" },
+    { name: `${project.id}-index.csv`, format: "CSV", bytes: 0, revision: project.revision, sourceModule: "project-kernel" },
+    { name: `${project.id}-manifest.json`, format: "JSON", bytes: 0, revision: project.revision, sourceModule: "client-portal" },
+  ]);
   const stageGates = [
     { code: "G01", label: "Brief", route: "/proje-baslat", ready: thread.nodes.some((node) => node.id === "decision-assistant" && node.active), requirement: "Yatırım hedefi ve başarı ölçütü" },
     { code: "G02", label: "Parsel", route: "/arsa-fizibilite-studyosu", ready: thread.canonical.site.parcelArea > 1 && thread.canonical.site.geometryValid, requirement: "Doğrulanabilir sınır ve koordinat" },
-    { code: "G03", label: "Mimari", route: "/mimari-program-studyosu", ready: portalStatus.architectureReady, requirement: "İhtiyaç onayı, plan ve önceki aşama kontrolleri" },
-    { code: "G04", route: "/tasarim-calismalari#tasiyici-on-tasarim", ...structuralGate, statusLabel: structuralGate.label, label: "Taşıyıcı" },
+    { code: "G03", label: "Mimari", route: "/mimari-program-studyosu", ready: thread.canonical.architecture.grossArea > 1, requirement: "Mahal programı ve brüt alan" },
+    { code: "G04", label: "Taşıyıcı", route: "/tasarim-calismalari#tasiyici-on-tasarim", ready: Boolean(thread.canonical.structure.system && thread.canonical.structure.width), requirement: "Sistem, aks ve ön boyut" },
     { code: "G05", label: "Koordinasyon", route: "/muhendislik-koordinasyon", ready: thread.nodes.some((node) => node.id === "engineering-coordination" && node.active) && thread.metrics.critical === 0, requirement: "Kritik issue kapanışı" },
-    { code: "G06", label: "Teslim", route: "/dijital-proje-merkezi", ready: portalStatus.deliveryReady, requirement: "Önceki kontroller, teslim kapsamı ve kayıtlı onaylar" },
+    { code: "G06", label: "Teslim", route: "/proje-os", ready: approvedCount === 4 && thread.nodes.some((node) => node.id === "project-os" && node.active), requirement: "Onay, indeks ve varlık paketi" },
   ];
   const readyGateCount = stageGates.filter((gate) => gate.ready).length;
   const readinessScore = Math.round((thread.metrics.readiness + thread.metrics.quality + approvedCount * 25 + readyGateCount / stageGates.length * 100) / 4);
   const readinessVerdict = thread.metrics.critical > 0 ? "Kritik kayıtlar kapatılmalı" : readinessScore >= 80 ? "Teknik görüşmeye hazır" : readinessScore >= 55 ? "Koşullu ilerleme" : "Veri hazırlığı gerekli";
   const readinessPillars = [
     { code: "01", label: "Proje verisi", value: thread.metrics.readiness, note: `${thread.metrics.activeCount}/${thread.metrics.totalCount} bağlı modül` },
-    { code: "02", label: "Mühendislik kanıtı", value: thread.metrics.quality, note: `${thread.metrics.critical} kritik · ${thread.metrics.review} inceleme` },
-    { code: "03", label: "Karar yetkisi", value: approvedCount * 25, note: `${approvedCount}/4 müşteri onayı` },
+    { code: "02", label: "Kural tabanlı kayıt kontrolü", value: thread.metrics.quality, note: `${thread.metrics.critical} kritik · ${thread.metrics.review} inceleme` },
+    { code: "03", label: "Müşteri inceleme beyanı", value: approvedCount * 25, note: `${approvedCount}/4 müşteri inceleme beyanı` },
     { code: "04", label: "Aşama kapıları", value: Math.round(readyGateCount / stageGates.length * 100), note: `${readyGateCount}/${stageGates.length} kalite kapısı` },
     { code: "05", label: "Dijital teslim", value: Math.round((Number(assets.model) + Number(assets.products) + Number(assets.maintenance) + Number(assets.warranty)) / 4 * 100), note: `${Object.values(assets).filter(Boolean).length}/4 varlık katmanı` },
   ];
@@ -160,13 +142,12 @@ export function ClientTechnicalProjectRoom() {
     next: { title: `Sıradaki çalışma: ${thread.nextAction.label}`, copy: `Aktif ${thread.metrics.activeCount}/${thread.metrics.totalCount} modüle ve mevcut bağımlılıklara göre tamamlanabilir ilk adım budur.`, route: thread.nextAction.route, action: "Çalışma alanını açın" },
     risk: { title: `${thread.metrics.critical} kritik, ${thread.metrics.review} inceleme kaydı`, copy: thread.issues[0] ? `${thread.issues[0].title}: ${thread.issues[0].action}` : "Mevcut ön değerlendirme verisinde açık kritik issue görünmüyor.", route: thread.issues[0]?.route || "/muhendislik-koordinasyon", action: "Risk kaydını inceleyin" },
     evidence: { title: `Kanıt hazırlığı %${thread.metrics.quality}`, copy: `Parsel, mimari, taşıyıcı ve koordinasyon kayıtlarının tutarlılığına göre hesaplanır. ${snapshots.length} geri dönüş noktası ve ${project.events.length} işlem kaydı bulunuyor.`, route: "/dijital-proje-merkezi", action: "Proje grafiğini açın" },
-    delivery: { title: `Teslim hazırlığı: ${approvedCount}/4 onay`, copy: `Kurumsal PDF, CSV ve JSON canlıdır. Gerçek DWG, CDE ve dijital ikiz bağlantıları lisans veya proje kurulumu gerektirir.`, route: "/proje-os", action: "Teslim kapsamını açın" },
+    delivery: { title: `Teslim hazırlığı: ${approvedCount}/4 inceleme`, copy: `Kurumsal PDF, CSV ve JSON canlıdır. Gerçek DWG, CDE ve dijital ikiz bağlantıları lisans veya proje kurulumu gerektirir.`, route: "/proje-os", action: "Teslim kapsamını açın" },
   };
 
-  const saveApproval = (id: string, state: ApprovalState) => {
-    if (!hydrated) return;
-    const next = recordPortalApproval(storedPortal, id, state, project.revision, role, new Date().toISOString());
-    if (next) patchModule("client-portal", { ...next, role, status: "Müşteri portalı etkin" });
+  const saveApprovals = (next: Record<string, ApprovalState>) => {
+    setApprovals(next);
+    patchModule("client-portal", { approvals: next, approvalsKind: "customer-local-review", approvalsScope: reviewScope, reviewRecordedAt: new Date().toISOString(), sourceRevision: project.revision, needsReview: true, role, status: "Yerel müşteri inceleme beyanı; teknik kabul değildir" });
   };
 
   const saveSnapshot = () => {
@@ -192,36 +173,36 @@ export function ClientTechnicalProjectRoom() {
   };
 
   const cycleApproval = (id: string) => {
-    const current = approvals[id];
-    const nextState: ApprovalState = current === "Bekliyor" ? "İncelemede" : current === "İncelemede" ? "Onaylandı" : "Bekliyor";
-    saveApproval(id, nextState);
+    const current = effectiveApprovals[id as keyof typeof effectiveApprovals];
+    const nextState: ApprovalState = current === "Bekliyor" ? "İncelemede" : current === "İncelemede" ? "İnceleme tamamlandı" : "Bekliyor";
+    saveApprovals({ ...effectiveApprovals, [id]: nextState });
   };
 
   const addDecision = () => {
     const text = decisionText.trim();
-    if (!hydrated || !text) return;
-    const next = [{ id: nextPortalDecisionId(decisions), text, owner: decisionOwner, status: "Açık", createdAt: new Date().toISOString() }, ...decisions];
+    if (!text) return;
+    const next = [{ id: `DEC-${String(decisions.length + 1).padStart(3, "0")}`, text, owner: decisionOwner, status: "Açık", createdAt: new Date().toISOString() }, ...decisions].slice(0, 20);
+    setDecisions(next);
     setDecisionText("");
     patchModule("client-portal", { decisions: next, role, status: "Müşteri karar kaydı etkin" });
   };
 
   const toggleDecision = (id: string) => {
-    if (!hydrated) return;
     const next = decisions.map((decision) => decision.id === id ? { ...decision, status: decision.status === "Açık" ? "Kapalı" : "Açık" } : decision);
+    setDecisions(next);
     patchModule("client-portal", { decisions: next });
   };
 
   const exportManifest = () => {
-    void produceDelivery("JSON", `${project.id}-${project.revision}-teslim-manifestosu.json`, () => JSON.stringify({
+    downloadTextFile(`${project.id}-${project.revision}-teslim-manifestosu.json`, JSON.stringify({
       schema: "ARKEM-DELIVERY/2.0",
       generatedAt: new Date().toISOString(),
       project: { id: project.id, name: project.name, revision: project.revision, phase: project.phase },
       readiness: thread.metrics,
-      approvals,
-      approvalRecords: storedPortal.approvalRecords,
-      approvalHistory: storedPortal.approvalHistory,
-      collaboration: createCollaborationAudit({ projectId: project.id, revision: project.revision, decisions, approvals }),
-      deliveryValidation: { ...deliveryPackage, checks: deliveryPackage.checks.filter(file => file.format !== "JSON"), summary: undefined, scope: "Önceden üretilmiş diğer dosyaların kontrolü; bu manifest kendi doğrulama sonucunu içermez" },
+      approvals: effectiveApprovals,
+      approvalBoundary: "Cihazdaki müşteri inceleme beyanlarıdır; kimlik/yetki doğrulaması, elektronik imza, mühendis onayı veya sözleşmesel kabul değildir.",
+      collaboration: createCollaborationAudit({ projectId: project.id, revision: project.revision, decisions, approvals: effectiveApprovals }),
+      deliveryValidation: deliveryPackage,
       modules: thread.nodes.map(({ id, code, label, active, readiness }) => ({ id, code, label, active, readiness })),
       limits: "Ön değerlendirme çıktısıdır; yetkili proje, resmi onay veya uygulama projesi yerine geçmez.",
     }, null, 2), "application/json");
@@ -229,14 +210,13 @@ export function ClientTechnicalProjectRoom() {
 
   const exportCsv = () => {
     const rows = [
-      ["Proje", "Revizyon", "Kod", "Modül", "Aşama", "Durum", "Hazırlık"],
-      ...thread.nodes.map((node) => [project.id, project.revision, node.code, node.label, node.stage, node.active ? "Aktif" : "Bekliyor", `${node.readiness}%`]),
+      ["Kod", "Modül", "Aşama", "Durum", "Hazırlık"],
+      ...thread.nodes.map((node) => [node.code, node.label, node.stage, node.active ? "Aktif" : "Bekliyor", `${node.readiness}%`]),
     ];
-    void produceDelivery("CSV", `${project.id}-${project.revision}-teslim-indeksi.csv`, () => `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\n")}`, "text/csv;charset=utf-8");
+    downloadTextFile(`${project.id}-${project.revision}-teslim-indeksi.csv`, `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\n")}`, "text/csv;charset=utf-8");
   };
 
   const exportPdf = async () => {
-    await produceDelivery("PDF", `${project.id}-${project.revision}-yonetici-ozeti.pdf`, async () => {
     const width = Math.max(12, thread.canonical.structure.width || 30);
     const depth = Math.max(8, thread.canonical.structure.depth || 20);
     const pdf = await createCorporateTechnicalPdf({
@@ -251,13 +231,13 @@ export function ClientTechnicalProjectRoom() {
       scale: "Şematik / ölçeksiz",
       coordinateSystem: project.coordinateReference,
       preparedBy: "ARKEMX",
-      checkedBy: "Proje ekibi",
+      checkedBy: "Yetkili uzman doğrulaması gerekli",
       polylines: [{ role: "primary", closed: true, points: [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: depth }, { x: 0, y: depth }] }],
       metrics: [
         ["Proje hazırlığı", `%${thread.metrics.readiness}`],
-        ["Kalite skoru", `%${thread.metrics.quality}`],
+        ["Kayıt göstergesi", `%${thread.metrics.quality}`],
         ["Aktif modül", `${thread.metrics.activeCount}/${thread.metrics.totalCount}`],
-        ["Müşteri onayı", `${approvedCount}/4`],
+        ["Müşteri incelemesi", `${approvedCount}/4`],
       ],
       notes: [
         `Sıradaki önerilen adım: ${thread.nextAction.label}.`,
@@ -265,10 +245,7 @@ export function ClientTechnicalProjectRoom() {
         "Bu pafta ön değerlendirme ve karar iletişimi içindir; yetkili uygulama projesi değildir.",
       ],
     });
-    const document = await PDFDocument.load(pdf);
-    document.setSubject(JSON.stringify({ projectId: project.id, revision: project.revision, sourceDigest: await deliveryDigest(sourceKey), technicalApproval: false }));
-    return document.save();
-    }, "application/pdf");
+    downloadTextFile(`${project.id}-${project.revision}-yonetici-ozeti.pdf`, pdf, "application/pdf");
   };
 
   const exportReviewBrief = () => {
@@ -301,9 +278,10 @@ export function ClientTechnicalProjectRoom() {
       score: readinessScore,
       verdict: readinessVerdict,
       pillars: readinessPillars,
-      gates: stageGates.map((gate) => ({ code: gate.code, label: gate.label, ready: gate.ready, requirement: gate.requirement, status: "statusLabel" in gate ? gate.statusLabel : gate.ready ? "Hazır" : "Eksik" })),
+      gates: stageGates.map(({ code, label, ready, requirement }) => ({ code, label, ready, requirement })),
       openIssues: thread.issues.map(({ id, title, severity, evidence, action }) => ({ id, title, severity, evidence, action })),
-      approvals,
+      approvals: effectiveApprovals,
+      approvalBoundary: "Cihazdaki müşteri inceleme beyanlarıdır; kimlik/yetki doğrulaması, elektronik imza, mühendis onayı veya sözleşmesel kabul değildir.",
       nextAction: thread.nextAction,
       limits: "Karar destek özetidir; resmi fizibilite, ruhsat, uygulama projesi, mali teklif veya yatırım tavsiyesi değildir.",
     }, null, 2), "application/json");
@@ -328,15 +306,16 @@ export function ClientTechnicalProjectRoom() {
     </aside>
 
     <section className="client-portal-stage">
+      <div className="module-example-notice"><b>Müşteri çalışma alanı — teknik onay ekranı değildir.</b><p>İnceleme işaretleri yalnız cihazınızdaki müşteri beyanlarıdır; kimlik, yetki, mühendis imzası veya sözleşmesel kabul kanıtı oluşturmaz. Proje verisi değişince bu beyanlar yeniden istenir. Yüzdeler kayıt hazırlığını gösterir; dosya ve teknik içerik doğrulaması değildir. Görünüm rolü erişim yetkisi vermez.</p></div>
       <header><div><span>{role} görünümü</span><h3>{portalViews.find(([id]) => id === view)?.[1]}</h3></div><div className="client-portal-health"><small>Proje hazırlığı</small><b>%{thread.metrics.readiness}</b></div></header>
 
       {view === "overview" && <div className="client-portal-view">
         <div className="client-next-action"><span>Sıradaki doğru adım</span><h4>{thread.nextAction.label}</h4><p>Mevcut proje kayıtlarına göre tamamlanabilir ilk teknik çalışma.</p><Link href={thread.nextAction.route}>Çalışma alanını açın <span>↗</span></Link></div>
         <section className="client-gate-board">
           <header><div><span>V62 / YÖNLENDİRMELİ KALİTE KAPILARI</span><h4>Teknoloji bilmeden ilerleyin.</h4></div><p>Her kapı bir sonraki disipline aktarılacak asgari, anlaşılır veri setini kontrol eder.</p></header>
-          <div>{stageGates.map((gate) => <Link href={gate.route} className={gate.ready ? "ready" : ""} key={gate.code}><span>{gate.code}</span><b>{gate.label}</b><small>{gate.requirement}</small><em>{"statusLabel" in gate ? gate.statusLabel : gate.ready ? "Hazır ✓" : "Tamamlayın →"}</em></Link>)}</div>
+          <div>{stageGates.map((gate) => <Link href={gate.route} className={gate.ready ? "ready" : ""} key={gate.code}><span>{gate.code}</span><b>{gate.label}</b><small>{gate.requirement}</small><em>{gate.ready ? "Hazır ✓" : "Tamamlayın →"}</em></Link>)}</div>
         </section>
-        <div className="client-kpi-grid"><article><span>Aktif modül</span><b>{thread.metrics.activeCount}/{thread.metrics.totalCount}</b><small>Ortak proje kimliğine bağlı</small></article><article><span>Kalite skoru</span><b>%{thread.metrics.quality}</b><small>{thread.metrics.critical} kritik kayıt</small></article><article><span>Müşteri onayı</span><b>{approvedCount}/4</b><small>Karar kapısı tamamlandı</small></article><article><span>Son revizyon</span><b>{project.revision}</b><small>{project.phase}</small></article></div>
+        <div className="client-kpi-grid"><article><span>Aktif modül</span><b>{thread.metrics.activeCount}/{thread.metrics.totalCount}</b><small>Ortak proje kimliğine bağlı</small></article><article><span>Kayıt göstergesi</span><b>%{thread.metrics.quality}</b><small>{thread.metrics.critical} kritik kayıt</small></article><article><span>Müşteri incelemesi</span><b>{approvedCount}/4</b><small>Yerel beyan; teknik kabul değildir</small></article><article><span>Son revizyon</span><b>{project.revision}</b><small>{project.phase}</small></article></div>
         <section className="client-source-provenance">
           <div><span>PARSEL KAYNAĞI</span><b>{thread.canonical.site.dataStatus || "Kaynak bekleniyor"}</b></div>
           <div><span>İMAR KOŞULLARI</span><b>{thread.canonical.site.allowedFootprint > 0 || thread.canonical.site.allowedGross > 0 || thread.canonical.site.maxHeight > 0 ? "Kayıt var · kaynağı kontrol edin" : "Resmî doğrulama bekliyor"}</b></div>
@@ -354,16 +333,16 @@ export function ClientTechnicalProjectRoom() {
           <footer><span>Canlı: kullanıcı koordinatı ve dosyası</span><span>TKGM: kurumsal protokol gerektirir</span><Link href="/arsa-fizibilite-studyosu">Parsel çalışma alanını açın ↗</Link></footer>
         </section>
         <section className="four-five-d-summary">
-          <header><div><span>V70 / 4B–5B YÖNETİCİ ÖZETİ</span><h4>Zaman, maliyet ve karar tek göstergede.</h4></div><Link href="/proje-takibi">Proje takibini açın ↗</Link></header>
+          <header><div><span>V70 / 4B–5B YÖNETİCİ ÖZETİ</span><h4>Zaman, maliyet ve karar tek göstergede.</h4></div><Link href="/proje-os">Proje OS’i açın ↗</Link></header>
           <div>
-            <article><span>Rapor haftası</span><b>{projectOs.progress ? numericLabel(projectOs.week, 0) : "Veri yok"}</b><small>Beyan edilen proje kaydı</small></article>
+            <article><span>Simülasyon haftası</span><b>{safeNumber(projectOs.week) || "—"}</b><small>36 haftalık demo ekseni</small></article>
             <article><span>Proje sağlığı</span><b>{safeNumber(projectOs.projectHealth) ? `%${safeNumber(projectOs.projectHealth)}` : "—"}</b><small>Karar + saha + teslim verisi</small></article>
-            <article><span>SPI / CPI</span><b>{numericLabel(earnedValue.spi)} / {numericLabel(earnedValue.cpi)}</b><small>Program / maliyet verimi</small></article>
+            <article><span>SPI / CPI</span><b>{safeNumber(earnedValue.spi) ? `${safeNumber(earnedValue.spi).toFixed(2)} / ${safeNumber(earnedValue.cpi).toFixed(2)}` : "—"}</b><small>Program / maliyet verimi</small></article>
             <article><span>Tamamlanma tahmini</span><b>{safeNumber(earnedValue.eac) ? `₺${safeNumber(earnedValue.eac).toFixed(1)}M` : "—"}</b><small>Mevcut CPI sürerse</small></article>
           </div>
-          <footer><i style={{ width: `${Math.min(100, Math.max(0, safeNumber(earnedValue.actual)))}%` }}></i><span>Gerçekleşen {progressLabel("actual")}</span><span>Plan {progressLabel("planned")}</span><small>Program ve maliyet göstergeleri kayıtlı proje girdilerinden hesaplanır; eksik değerler veri yok olarak gösterilir.</small></footer>
+          <footer><i style={{ width: `${Math.min(100, Math.max(0, safeNumber(earnedValue.actual)))}%` }}></i><span>Gerçekleşen %{safeNumber(earnedValue.actual).toFixed(0) || 0}</span><span>Plan %{safeNumber(earnedValue.planned).toFixed(0) || 0}</span><small>Temsili Proje OS veri seti gerçek program ve bütçe bağlanana kadar “demo” olarak etiketlenir.</small></footer>
         </section>
-        <div className="client-journey">{completedJourney.map((step, index) => <Link className={step.done ? "done" : ""} href={step.href} key={step.short}><span>{String(index + 1).padStart(2, "0")}</span><b>{step.short}</b><small>{step.label}</small></Link>)}</div>
+        <div className="client-journey">{completedJourney.map((step, index) => <Link className={step.done ? "done" : ""} href={step.href} key={step.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{step.short}</b><small>{step.done ? "Kayıt var" : step.output}</small></Link>)}</div>
         <button className="portal-sync" onClick={() => synchronizeProject()}>Tüm bağlı modülleri şimdi eşitleyin <span>↻</span></button>
         <section className="project-vault">
           <header><div><span>V61 / PROJE KASASI</span><h4>Revizyon geri dönüş noktaları</h4></div><button onClick={saveSnapshot}>Mevcut durumu kaydet <span>＋</span></button></header>
@@ -377,16 +356,7 @@ export function ClientTechnicalProjectRoom() {
         ["system", "Taşıyıcı sistem kararı", "Alternatif, gerekçe ve ön boyut"],
         ["coordination", "Disiplin koordinasyonu", "Kritik issue ve çözüm sorumlusu"],
         ["delivery", "Dijital teslim paketi", "Model, doküman ve varlık verisi"],
-      ].map(([id, title, copy]) => <button disabled={!hydrated || !project.revision.trim()} onClick={() => cycleApproval(id)} key={id}><span className={`approval-state state-${approvals[id].toLocaleLowerCase("tr-TR")}`}>{approvals[id]}</span><div><b>{title}</b><small>{copy} · {project.revision}</small>{staleApprovals.includes(id) && <small>Önceki kayıt: {String(safeRecord(storedPortal.approvals)[id])} · {String(safeRecord(safeRecord(storedPortal.approvalRecords)[id]).revision || "Revizyon belirsiz")} · Yeniden inceleme gerekli</small>}</div><span>→</span></button>)}</div>
-        <form aria-label="Proje revizyonunu güncelle" onSubmit={event => {
-          event.preventDefault();
-          const revision = String(new FormData(event.currentTarget).get("revision") || "").trim().toUpperCase();
-          if (hydrated && revision) setIdentity({ revision });
-        }}>
-          <label>Proje revizyonu <input key={`${project.id}-${project.revision}`} name="revision" defaultValue={project.revision} maxLength={8} required /></label>
-          <button disabled={!hydrated} type="submit">Revizyonu güncelle</button>
-          <p>Yeni revizyon için önceki onaylar yeniden incelenir.</p>
-        </form>
+      ].map(([id, title, copy]) => <button onClick={() => cycleApproval(id)} key={id}><span className={`approval-state state-${effectiveApprovals[id as keyof typeof effectiveApprovals].toLocaleLowerCase("tr-TR")}`}>{effectiveApprovals[id as keyof typeof effectiveApprovals]}</span><div><b>{title}</b><small>{copy}</small></div><span>→</span></button>)}</div>
         <section className="decision-register">
           <header><div><span>Karar / yorum kaydı</span><b>Toplantı notunu sorumlu, zaman ve durumla bağlayın.</b></div><small>Yerel prototip · sunucu tabanlı CDE değildir</small></header>
           <div className="decision-entry"><input value={decisionText} onChange={(event) => setDecisionText(event.target.value)} placeholder="Örn. Güney cephede gölgeleme alternatifi karşılaştırılsın"/><select value={decisionOwner} onChange={(event) => setDecisionOwner(event.target.value)}><option>İşveren</option><option>Mimari</option><option>Statik</option><option>MEP</option><option>Saha</option></select><button onClick={addDecision}>Karar ekle ＋</button></div>
@@ -418,7 +388,7 @@ export function ClientTechnicalProjectRoom() {
             <article><span>Yapısal çelik</span><b>{thread.canonical.structure.steelTonnage ? `${thread.canonical.structure.steelTonnage.toFixed(1)} t` : "—"}</b><small>Kavramsal metraj</small></article>
             <article><span>Donatı</span><b>{thread.canonical.structure.reinforcementTonnage ? `${thread.canonical.structure.reinforcementTonnage.toFixed(1)} t` : "—"}</b><small>Kavramsal metraj</small></article>
           </div>
-          <footer><span className={thread.metrics.critical ? "warning" : "pass"}>{thread.metrics.critical ? `${thread.metrics.critical} kritik disiplin çakışması` : "Kritik disiplin çakışması yok"}</span><p>Sonlu eleman analizi, zemin–yapı etkileşimi, deprem performansı ve uygulama projesi yetkili mühendislik hesabında tamamlanır.</p></footer>
+          <footer><span className={thread.metrics.critical ? "warning" : "pass"}>{thread.metrics.critical ? `${thread.metrics.critical} kritik disiplin çakışması` : "Bu ön taramada açık kayıt yok; tam çakışma analizi yapılmadı"}</span><p>Sonlu eleman analizi, zemin–yapı etkileşimi, deprem performansı ve uygulama projesi yetkili mühendislik hesabında tamamlanır.</p></footer>
         </section>
         <section className="demolition-review">
           <header><div><span>V66 / KONTROLLÜ YIKIM GÜVENLİK KAPISI</span><h4>Yöntem puanından önce kanıt hazırlığını görün.</h4></div><Link href="/yikim-karar-studyosu">Yıkım karar stüdyosunu açın ↗</Link></header>
@@ -441,11 +411,11 @@ export function ClientTechnicalProjectRoom() {
 
       {view === "deliverables" && <div className="client-portal-view">
         <div className="client-section-copy"><span>V68 / KURUMSAL TESLİM KALİTE MERKEZİ</span><h4>Okunabilir pafta, açık veri ve izlenebilir indeks.</h4><p>Çıktılar proje kimliği, revizyonu, kurumsal antet ve teknik sınır notlarıyla üretilir.</p></div>
-        <div className="delivery-readiness"><article><span>Paket hazırlığı</span><b>%{Math.round((thread.metrics.readiness + thread.metrics.quality + approvedCount * 25) / 3)}</b><small>Modül + kalite + onay bileşik göstergesi</small></article><div>{[["PDF / A3", "Canlı", "Gömülü logo, Unicode font, pafta kimliği"],["CSV", "Canlı", "UTF-8 BOM, başlık ve disiplin indeksi"],["JSON", "Canlı", "Şema, revizyon, modül ve sınır notu"],["DXF", "Modüllerde canlı", "Katmanlı açık CAD değişim formatı"],["DWG", "Lisans bağlantısı", "Gerçek DWG için lisanslı dönüştürücü gerekir"]].map(([format, state, note]) => <article key={format}><b>{format}</b><span>{state}</span><small>{note}</small></article>)}</div></div>
+        <div className="delivery-readiness"><article><span>Ön hazırlık</span><b>%{Math.round((thread.metrics.readiness + thread.metrics.quality + approvedCount * 25) / 3)}</b><small>Kayıt ve yerel inceleme göstergesi; dosya doğrulaması değil</small></article><div>{[["PDF / A3", "Canlı", "Gömülü logo, Unicode font, pafta kimliği"],["CSV", "Canlı", "UTF-8 BOM, başlık ve disiplin indeksi"],["JSON", "Canlı", "Şema, revizyon, modül ve sınır notu"],["DXF", "Modüllerde canlı", "Katmanlı açık CAD değişim formatı"],["DWG", "Lisans bağlantısı", "Gerçek DWG için lisanslı dönüştürücü gerekir"]].map(([format, state, note]) => <article key={format}><b>{format}</b><span>{state}</span><small>{note}</small></article>)}</div></div>
         <div className="delivery-list">{deliverables.map(([title, status, note]) => <article key={title}><div><b>{title}</b><small>{note}</small></div><span>{status}</span></article>)}</div>
-        <section className="delivery-package-v86"><header><div><span>V86 / DOSYA DOĞRULAMA ZİNCİRİ</span><b>Gerçek dosya içeriği, proje ve revizyon kontrolü.</b></div><strong>{deliveryPackage.summary.valid}/{deliveryPackage.summary.total} doğrulandı</strong></header><p>Kontrol bu oturumda üretilen dosyalar içindir. Proje değişirse yeniden üretin. Sayfa yenilenince dosyaları tekrar oluşturun. Dosya doğrulaması mühendislik onayı değildir. DXF bu ekranda üretilmez.</p><div className="delivery-package-v86-grid">{deliveryPackage.checks.map((file) => <article key={file.name} data-valid={file.valid}><b>{file.format} · {file.name}</b><span>{exportBusy[file.format] && file.status === "Oluşturulmadı" ? "Üretiliyor" : file.status}</span><small>{file.issues.join(" · ") || `${file.bytes.toLocaleString("tr-TR")} bayt · ${project.revision} · içerik kontrolü geçti`}</small></article>)}</div></section>
-        <div className="delivery-checks">{[["Proje kodu", Boolean(project.id)],["Revizyon", Boolean(project.revision)],["Koordinat referansı", Boolean(project.coordinateReference)],["Teknik sınır notu", true],["Kurumsal antet", true],["Müşteri onayı", approvedCount === 4]].map(([label, pass]) => <span className={pass ? "pass" : ""} key={String(label)}>{pass ? "✓" : "○"} {label}</span>)}</div>
-        <div className="portal-export-actions"><button disabled={!hydrated || exportBusy.PDF} onClick={exportPdf}>Kurumsal PDF <span>↓</span></button><button disabled={!hydrated || exportBusy.CSV} onClick={exportCsv}>Teslim CSV <span>↓</span></button><button disabled={!hydrated || exportBusy.JSON} onClick={exportManifest}>Proje JSON <span>↓</span></button></div>
+        <section className="delivery-package-v86"><header><div><span>V86 / DOSYA DOĞRULAMA ZİNCİRİ</span><b>Boş dosya, revizyon ve koordinat kontrolü.</b></div><strong>{deliveryPackage.summary.valid}/{deliveryPackage.summary.total} hazır</strong></header><div className="delivery-package-v86-grid">{deliveryPackage.checks.map((file) => <article key={file.name}><b>{file.format} · {file.name}</b><span>{file.valid ? "DOSYA KAYDI MEVCUT" : "DOSYA KANITI YOK"}</span><small>{file.issues.join(" · ") || `${file.sourceModule} kaynağı · ${file.revision}`}</small></article>)}</div></section>
+        <div className="delivery-checks">{[["Proje kodu", Boolean(project.id)],["Revizyon", Boolean(project.revision)],["Koordinat referansı", Boolean(project.coordinateReference)],["Teknik sınır notu", true],["Kurumsal antet", true],["Müşteri incelemesi", approvedCount === 4]].map(([label, pass]) => <span className={pass ? "pass" : ""} key={String(label)}>{pass ? "✓" : "○"} {label}</span>)}</div>
+        <div className="portal-export-actions"><button onClick={exportPdf}>Kurumsal PDF <span>↓</span></button><button onClick={exportCsv}>Teslim CSV <span>↓</span></button><button onClick={exportManifest}>Proje JSON <span>↓</span></button></div>
       </div>}
 
       {view === "assistant" && <div className="client-portal-view">
@@ -453,7 +423,7 @@ export function ClientTechnicalProjectRoom() {
         <section className="project-assistant">
           <nav>{([["next","Sırada ne var?"],["risk","En kritik risk"],["evidence","Kanıt yeterli mi?"],["delivery","Teslime hazır mı?"]] as const).map(([id, label]) => <button className={assistantTopic === id ? "active" : ""} onClick={() => setAssistantTopic(id)} key={id}>{label}</button>)}</nav>
           <article><span>ARKEMX / KURAL TABANLI YANIT</span><h4>{assistantResponses[assistantTopic].title}</h4><p>{assistantResponses[assistantTopic].copy}</p><Link href={assistantResponses[assistantTopic].route}>{assistantResponses[assistantTopic].action} ↗</Link></article>
-          <aside><b>Yanıt dayanağı</b><span>{thread.metrics.activeCount} aktif modül</span><span>{thread.issues.length} issue kaydı</span><span>{project.events.length} revizyon olayı</span><span>{approvedCount} müşteri onayı</span><Link href="/dokumanlar">Teknik bilgi bankası ↗</Link></aside>
+          <aside><b>Yanıt dayanağı</b><span>{thread.metrics.activeCount} aktif modül</span><span>{thread.issues.length} issue kaydı</span><span>{project.events.length} revizyon olayı</span><span>{approvedCount} müşteri inceleme beyanı</span><Link href="/dokumanlar">Teknik bilgi bankası ↗</Link></aside>
         </section>
         <section className="context-knowledge">
           <header><div><span>V72 / BAĞLAMSAL TEKNİK BİLGİ BANKASI</span><h4>Proje aşamasına göre okunacak kaynağı öne çıkarın.</h4></div><Link href="/dokumanlar">Tüm dokümanları açın ↗</Link></header>
@@ -502,7 +472,7 @@ export function ClientTechnicalProjectRoom() {
             ["01", "Model", assets.model ? "As-built / koordinasyon modeli seçili" : "Model paketi bekleniyor", assets.model],
             ["02", "Gündem", `${thread.issues.length} issue · ${decisions.filter((decision) => decision.status === "Açık").length} açık karar`, true],
             ["03", "Deneyim", reviewMode === "desktop" ? "Tarayıcı içinde güvenli ön izleme" : "Cihaz ve WebXR doğrulaması gerekir", reviewMode === "desktop"],
-            ["04", "Kayıt", `${project.events.length} revizyon olayı · ${approvedCount}/4 onay`, project.events.length > 0],
+            ["04", "Kayıt", `${project.events.length} revizyon olayı · ${approvedCount}/4 inceleme`, project.events.length > 0],
           ].map(([code, title, detail, ready]) => <article className={ready ? "ready" : ""} key={String(code)}><span>{code}</span><b>{title}</b><p>{detail}</p><em>{ready ? "Hazır" : "Bağlantı gerekli"}</em></article>)}</div>
           <footer><div><b>Güvenli erişim sınırı</b><p>VR/AR veya çok kullanıcılı canlı oturum; uyumlu cihaz, yayınlanmış model ve rol tabanlı erişim sağlandığında açılır. Site bu bağlantıları varmış gibi göstermez.</p></div><div><Link href="/3b-model-kutuphanesi">3B model kütüphanesi ↗</Link><Link href="/tasarim-calismalari">Tasarım stüdyosu ↗</Link><button onClick={exportReviewBrief}>İnceleme paketini indirin ↓</button></div></footer>
         </section>

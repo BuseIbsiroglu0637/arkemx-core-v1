@@ -14,6 +14,9 @@ import {
 import { formatProjectDateTime } from "../lib/date-format";
 import { downloadTextFile } from "../lib/engineering";
 import { useProjectKernel } from "./ProjectKernel";
+import { customerStepLabels, deriveCustomerJourney, customerRecord } from "../lib/customer-journey";
+import { rememberAccountRevision } from "../lib/customer-account-revision";
+import { isDigitalBrief } from "../lib/digital-brief";
 
 type PortalView = "today" | "project" | "records";
 
@@ -86,7 +89,6 @@ export function ClientProjectPortal({
 
   const loadWorkspace = useCallback(async () => {
     setLoadState("loading");
-    setRecordMessage("");
     try {
       const response = await fetch("/api/customer-workspace", { cache: "no-store" });
       const body = await response.json() as WorkspaceData & { error?: string };
@@ -102,6 +104,7 @@ export function ClientProjectPortal({
       }
       setWorkspace(body);
       setLoadState("ready");
+      setRecordMessage("");
     } catch {
       setLoadState("error");
       setRecordMessage("Bağlantı kurulamadı. Bu cihazdaki proje korunuyor.");
@@ -129,10 +132,11 @@ export function ClientProjectPortal({
     [core],
   );
   const decisions = useMemo(() => readPortalDecisions(project), [project]);
+  const customerProgress = deriveCustomerJourney(project);
 
   const saveProjectToAccount = async () => {
     if (loadState === "signed-out") {
-      window.location.assign("/giris?return_to=%2Fmusteri-proje-portali");
+      window.location.assign("/giris");
       return;
     }
     setRecordMessage("Hesap kaydı güncelleniyor…");
@@ -150,7 +154,7 @@ export function ClientProjectPortal({
           expectedAccountUpdatedAt: recordState.matchingProject?.updatedAt ?? null,
         }),
       });
-      const body = await response.json() as { error?: string };
+      const body = await response.json() as { error?: string; updatedAt?: string };
       if (!response.ok) {
         const error = body.error || "Proje hesabınıza kaydedilemedi.";
         if (response.status === 409) await loadWorkspace();
@@ -158,6 +162,7 @@ export function ClientProjectPortal({
         return;
       }
       setRecordMessage("Bu cihazdaki sürüm hesabınıza kaydedildi.");
+      if (body.updatedAt) rememberAccountRevision(project.id, body.updatedAt);
       await loadWorkspace();
     } catch {
       setRecordMessage("Bağlantı kurulamadı; cihazdaki proje değişmedi.");
@@ -169,7 +174,10 @@ export function ClientProjectPortal({
       setRecordMessage("Hesap projesinin veri paketi doğrulanamadı; cihaz kaydı değiştirilmedi.");
       return;
     }
+    if (meaningfulProject && !window.confirm("Hesaptaki sürüm açılsın mı? Bu cihazdaki projenin yedeği önce indirilecek.")) return;
+    if (meaningfulProject) downloadTextFile(`${project.id}-cihaz-yedegi.arkem.json`, JSON.stringify(project, null, 2), "application/json");
     const imported = importProject(accountProject.payload);
+    if (imported) rememberAccountRevision(accountProject.id, accountProject.updatedAt);
     setRecordMessage(imported
       ? `${accountProject.name} bu cihazda açıldı.`
       : "Hesap projesi doğrulanamadı; cihaz kaydı değiştirilmedi.");
@@ -247,6 +255,7 @@ export function ClientProjectPortal({
   };
 
   return <div className="v108-portal" data-portal-state={recordState.state}>
+    <div className="customer-resume">{isDigitalBrief((project.modules["digital-tools-brief"] as { input?: unknown } | undefined)?.input) ? <><b>Ön görüşme dosyanız kayıtlı çalışma projesinde</b><p>Müşteri beyanlarını ve önerilen hizmet yolunu gözden geçirin. <Link href="/dijital-donusum">Ön görüşme dosyama devam et</Link></p></> : <><b>{customerProgress.count} / 6 hazırlık adımı</b><p>Sıradaki adım: {customerStepLabels[customerProgress.next]}. <Link href="/arkemx">Proje rehberime devam et</Link></p></>}</div>
     <header className="v108-portal-head">
       <div>
         <span>ARKEMX / MÜŞTERİ PORTALI V108</span>
@@ -292,7 +301,7 @@ export function ClientProjectPortal({
         {recordState.state === "loading" && <div className="v108-record-skeleton" aria-label="Yükleniyor"><i></i><i></i></div>}
         {recordState.state === "empty" && <Link href="/proje-baslat">İlk projenizi başlatın <span>→</span></Link>}
         {recordState.state === "device-only" && (loadState === "signed-out"
-          ? <Link href="/giris?return_to=%2Fmusteri-proje-portali">Hesabıma giriş yap <span>→</span></Link>
+          ? <Link href="/giris">Hesabıma giriş yap <span>→</span></Link>
           : <button type="button" onClick={() => { void saveProjectToAccount(); }}>Hesabıma kaydet <span>→</span></button>)}
         {recordState.state === "aligned" && <button type="button" onClick={() => { void saveProjectToAccount(); }}>Hesap kaydını güncelle <span>↻</span></button>}
         {recordState.state === "account-only" && recordState.accountProjectCount > 0 && <button type="button" onClick={() => setView("project")}>Hesap projelerini göster <span>→</span></button>}
@@ -315,10 +324,10 @@ export function ClientProjectPortal({
           <div className="v108-next-action">
             <div>
               <span>SIRADAKİ DOĞRU ADIM</span>
-              <h3>{thread.nextAction.label}</h3>
+              <h3>{customerStepLabels[customerProgress.next]}</h3>
               <p>Mevcut proje kayıtlarına göre şimdi tamamlanabilir ilk çalışma.</p>
             </div>
-            <Link href={thread.nextAction.route}>Çalışmaya devam edin <span>→</span></Link>
+            <Link href={isDigitalBrief(customerRecord(project.modules["digital-tools-brief"]).input) ? "/dijital-donusum" : "/arkemx"}>Çalışmaya devam edin</Link>
           </div>
           <div className="v108-today-grid">
             <section>
@@ -331,7 +340,7 @@ export function ClientProjectPortal({
                   <p>{item.detail}</p>
                   <dl><div><dt>Sorumlu</dt><dd>{item.owner}</dd></div><div><dt>Hedef</dt><dd>{item.target}</dd></div></dl>
                 </div>
-                <Link href={item.route} aria-label={`${item.title} kaydını aç`}>→</Link>
+                {item.route === "#kararlar-ve-dosyalar" ? <button type="button" onClick={() => setView("records")} aria-label={`${item.title} kaydını aç`}>Aç</button> : <Link href={item.route} aria-label={`${item.title} kaydını aç`}>Aç</Link>}
               </article>)}</div>
             </section>
             <aside className="v108-today-summary">
@@ -430,7 +439,7 @@ export function ClientProjectPortal({
 
     <footer className="v108-portal-footer">
       <p><b>Veri sınırı:</b> Resmî veri, kullanıcı beyanı ve ön değerlendirme birbirine karıştırılmaz.</p>
-      <div><Link href="/teknik-altyapi">Teknik altyapı</Link><Link href="/dokumanlar">Bilgi bankası</Link><Link href="/musteri-proje-portali/teknik-oda">Teknik proje odası</Link>{account && <Link href="/hesabim">Hesabım</Link>}</div>
+      <div><Link href="/teknik-altyapi">Teknik altyapı</Link><Link href="/dokumanlar">Bilgi bankası</Link><Link href="/musteri-proje-portali/teknik-oda">Teknik proje odası</Link>{account && <Link href="/uyelik/ayarlar">Hesap ayarları</Link>}</div>
       {account && <small>{account.displayName} · {account.email}</small>}
     </footer>
   </div>;

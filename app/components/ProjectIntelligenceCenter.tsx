@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Activity, ArrowRight, Check, CircleAlert, Download, FileCheck2, Radar, ShieldCheck } from "lucide-react";
-import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
+import { useExportFeedback } from "./useExportFeedback";
 import { PROJECT_MODULES } from "../lib/project-graph";
 import { useProjectKernel } from "./ProjectKernel";
 
@@ -53,6 +53,7 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
   const [objective, setObjective] = useState<(typeof objectives)[number][0]>("balanced");
   const [evidence, setEvidence] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+  const { runExport, exportState, exportMessage } = useExportFeedback();
 
   const intelligence = useMemo(() => {
     const stageIndex = stageOptions.find((item) => item[0] === stage)?.[2] ?? 0;
@@ -86,6 +87,9 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
   const saveSnapshot = () => {
     patchModule("decision-assistant", {
       intelligence: {
+        method: "rule-based",
+        methodVersion: "readiness-1.1",
+        documentVerification: "user-declared-not-reviewed",
         stage,
         objective,
         evidence,
@@ -99,7 +103,8 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
     setSaved(true);
   };
 
-  const exportPdf = async () => {
+  const exportPdf = () => runExport(async () => {
+    const { createCorporateTechnicalPdf } = await import("../lib/technical-sheet");
     const modules = intelligence.modules.map((module) => `${module.code} / ${module.label}`);
     const bytes = await createCorporateTechnicalPdf({
       projectName: project.name,
@@ -120,8 +125,8 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
       ],
       metrics: [
         ["Veri hazırlığı", `%${intelligence.readiness}`],
-        ["Karar güveni", `%${intelligence.confidence}`],
-        ["Belirsizlik", `%${intelligence.uncertainty}`],
+        ["Veri hazırlık endeksi", `${intelligence.confidence}/100`],
+        ["Eksik veri endeksi", `${intelligence.uncertainty}/100`],
         ["Bağlı modül", `${thread.metrics.activeCount}/${thread.metrics.totalCount}`],
         ["Kritik issue", `${thread.metrics.critical}`],
         ["Karar kapısı", intelligence.gate],
@@ -131,11 +136,12 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
         `Önerilen modüller: ${modules.join(" · ")}`,
         `Eksik veri: ${intelligence.missing.map((item) => item[1]).join(" · ") || "Temel veri seti tamamlandı"}`,
         "Bu çıktı ön değerlendirmedir; ruhsat, uygulama projesi, statik hesap veya yetkili teknik onay yerine geçmez.",
+        "Yöntem: sabit kurallı hazırlık-1.1. Endeksler istatistiksel güven/olasılık değildir. Belge seçimi kullanıcı beyanıdır; içerik incelemesi yapılmamıştır.",
       ],
-      legend: [["Veri hazırlığı", "primary"], ["Karar güveni", "secondary"], ["Gösterge alanı", "grid"]],
+      legend: [["Veri hazırlığı", "primary"], ["Veri hazırlık endeksi", "secondary"], ["Gösterge alanı", "grid"]],
     });
     downloadBytes(`${project.id}-arkem-x-proje-zekasi.pdf`, bytes, "application/pdf");
-  };
+  });
 
   return <section className={`project-intelligence${compact ? " compact" : ""}`} data-testid="project-intelligence">
     <header className="intelligence-head">
@@ -160,8 +166,8 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
             <span>PROJE HAZIRLIĞI</span><strong>{intelligence.readiness}<small>/100</small></strong><i><b style={{ width: `${intelligence.readiness}%` }}/></i><em>{intelligence.gate}</em>
           </div>
           <div className="intelligence-kpis">
-            <article><Activity size={17}/><span>Karar güveni</span><b>%{intelligence.confidence}</b><small>Girdi ve bağlı modül verisine göre</small></article>
-            <article><Radar size={17}/><span>Belirsizlik</span><b>%{intelligence.uncertainty}</b><small>{intelligence.missing.length} temel veri başlığı açık</small></article>
+            <article><Activity size={17}/><span>Veri hazırlık endeksi</span><b>{intelligence.confidence}/100</b><small>Sabit kurallı gösterge; teknik onay değil</small></article>
+            <article><Radar size={17}/><span>Eksik veri endeksi</span><b>{intelligence.uncertainty}/100</b><small>{intelligence.missing.length} temel veri başlığı açık</small></article>
             <article><ShieldCheck size={17}/><span>Proje zinciri</span><b>{thread.metrics.activeCount}/{thread.metrics.totalCount}</b><small>{thread.metrics.critical} kritik · {thread.metrics.review} inceleme</small></article>
           </div>
           <section className="intelligence-next"><span>ÖNERİLEN SONRAKİ ADIM</span><div><i>{intelligence.modules[0]?.code ?? "PIR"}</i><div><b>{intelligence.modules[0]?.label ?? "Yatırım briefi"}</b><small>{intelligence.modules[0]?.output}</small></div><Link href={intelligence.modules[0]?.route ?? "/proje-baslat"}>Çalışma alanını açın <ArrowRight size={15}/></Link></div></section>
@@ -179,8 +185,9 @@ export function ProjectIntelligenceCenter({ compact = false }: { compact?: boole
 
         {view === "deliverables" && <div className="intelligence-deliverables">
           <header><FileCheck2 size={19}/><div><span>KURUMSAL KARAR DOSYASI</span><h3>Teknik başlangıç paketi</h3></div></header>
-          <div>{["Proje hazırlık ve güven göstergesi","Eksik veri ve doğrulama listesi","Önerilen ARKEMX modül rotası","Karar kapısı ve yetki sınırı","Proje kimliği ve revizyon kaydı"].map((item, index) => <p key={item}><i>0{index + 1}</i><b>{item}</b><Check size={14}/></p>)}</div>
-          <button type="button" onClick={exportPdf}><Download size={16}/> Kurumsal PDF karar dosyasını indirin</button>
+          <div>{["Proje ve veri hazırlık göstergeleri","Eksik veri ve doğrulama listesi","Önerilen ARKEMX modül rotası","Karar kapısı ve yetki sınırı","Proje kimliği ve revizyon kaydı"].map((item, index) => <p key={item}><i>0{index + 1}</i><b>{item}</b><Check size={14}/></p>)}</div>
+          <button type="button" onClick={exportPdf} disabled={exportState === "busy"}><Download size={16}/> Kurumsal PDF karar dosyasını indirin</button>
+          <p className={`module-feedback ${exportState}`} role="status">{exportMessage}</p>
         </div>}
 
         <footer className="intelligence-actions">

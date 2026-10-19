@@ -1,5 +1,4 @@
 "use client";
-import { ContentImage } from "./ContentImage";
 
 import Link from "next/link";
 import {
@@ -178,7 +177,7 @@ export function ImmersiveEngineeringExperience() {
       <div className="digital-xray">
         <header><div><span>ARKEM / DIGITAL X-RAY</span><b>YAPI KATMANI İNCELEME</b></div><i>{activeLayer.code}</i></header>
         <div className={`xray-visual layer-${layer}`}>
-          <ContentImage src="/visuals/arkem-premium-command-center.png" alt="Taşıyıcı, temel, cephe ve tesisat katmanları ayrıştırılmış endüstriyel yapı BIM modeli"/>
+          <img src="/visuals/arkem-premium-command-center.png" alt="Taşıyıcı, temel, cephe ve tesisat katmanları ayrıştırılmış endüstriyel yapı BIM modeli"/>
           <span className="xray-scan"/>
           <div className="xray-readout"><small>AKTİF KATMAN</small><strong>{activeLayer.title}</strong><p>{activeLayer.copy}</p></div>
           <div className="xray-coordinate"><Ruler size={13}/> WGS84 · BIM ORIGIN · LOD 300</div>
@@ -194,7 +193,7 @@ export function ImmersiveEngineeringExperience() {
       <div className="presentation-progress">{presentationSteps.map((step,index)=><button type="button" key={step.code} className={presentationStep === index ? "active" : ""} onClick={()=>setPresentationStep(index)}><span>{step.code}</span><b>{step.label}</b></button>)}</div>
       <main>
         <div className="presentation-copy"><p>{presentationSteps[presentationStep].code} / {presentationSteps[presentationStep].label}</p><h2 id="presentation-title">{presentationSteps[presentationStep].title}</h2><p>{presentationSteps[presentationStep].copy}</p><Link href={presentationSteps[presentationStep].href} onClick={()=>setPresentationOpen(false)}>İlgili çalışma alanını aç <ArrowRight size={17}/></Link></div>
-        <div className="presentation-image"><ContentImage src="/visuals/arkem-premium-command-center.png" alt="Arkem bütünleşik mühendislik sürecini temsil eden ayrıştırılmış BIM yapı modeli"/><span>{presentationSteps[presentationStep].code}</span></div>
+        <div className="presentation-image"><img src="/visuals/arkem-premium-command-center.png" alt="Arkem bütünleşik mühendislik sürecini temsil eden ayrıştırılmış BIM yapı modeli"/><span>{presentationSteps[presentationStep].code}</span></div>
       </main>
       <footer><button type="button" disabled={presentationStep === 0} onClick={()=>setPresentationStep((current)=>Math.max(0,current-1))}><ArrowLeft size={17}/> Önceki</button><span>Parsel → Tasarım → Koordinasyon → Dijital Teslim</span><button type="button" onClick={()=>presentationStep === presentationSteps.length-1 ? setPresentationOpen(false) : setPresentationStep((current)=>Math.min(presentationSteps.length-1,current+1))}>{presentationStep === presentationSteps.length-1 ? "Deneyimi tamamla" : "Sonraki"} <ArrowRight size={17}/></button></footer>
     </div>}

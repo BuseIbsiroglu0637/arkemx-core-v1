@@ -6,7 +6,7 @@ export const documents: PlatformCard[] = [
   { title: "Çelik Yapı Teklif Karşılaştırma Şablonu", category: "Şablon", description: "Teklifleri kapsam, tonaj, kaplama, montaj ve teslim koşullarına göre karşılaştırın.", meta: "XLSX · Şablon" },
 ];
 
-export const designs: PlatformCard[] = [
+export const designs: (PlatformCard & { image: string; imageAlt: string })[] = [
   { title: "Hafif Çelik Konut Sistemi", category: "Sistem Tasarımı", description: "Taşıyıcı karkas, cephe katmanları ve tamamlanmış mimariyi birlikte gösteren temsili çalışma.", meta: "Temsili Arkem çalışma alanı", image: "/portfolio/light-steel-house.webp", imageAlt: "Galvaniz hafif çelik karkası ve tamamlanmış cephesi görünen konut" },
   { title: "BIM ve Statik Koordinasyon", category: "Dijital Mühendislik", description: "Statik tasarım, imalat hazırlığı ve saha koordinasyonunun aynı model üzerinde birleştiği temsili çalışma.", meta: "Temsili Arkem çalışma alanı", image: "/portfolio/bim-engineering.webp", imageAlt: "BIM modeliyle koordine edilen çelik ve prefabrik yapı" },
   { title: "Geniş Açıklıklı Üretim Tesisi", category: "Çelik Yapı", description: "Çelik taşıyıcı sistem ve prefabrik elemanların birlikte değerlendirildiği endüstriyel yapı yaklaşımı.", meta: "Temsili Arkem çalışma alanı", image: "/portfolio/industrial-steel.webp", imageAlt: "Çelik taşıyıcı ve prefabrik panelli endüstriyel tesis" },
@@ -14,7 +14,7 @@ export const designs: PlatformCard[] = [
 
 export const completedWorks: PlatformCard[] = [
   { title: "ROMON Group Yapı Modeli", category: "Prefabrik ve Çelik", description: "Taşıyıcı sistem geometrisi, çatı makasları ve yapı bileşenlerinin üç boyutlu teknik model üzerinden değerlendirildiği çalışma.", meta: "Gerçek proje arşivi · 3B model", image: "https://static.wixstatic.com/media/44ce0e_b689c732462945e78a9f4ed35d25f5d4~mv2.png", imageAlt: "ROMON Group prefabrik ve çelik yapı üç boyutlu teknik modeli", href: "https://static.wixstatic.com/media/44ce0e_b689c732462945e78a9f4ed35d25f5d4~mv2.png" },
-  { title: "DİYAMET Taşıyıcı Sistem Modeli", category: "3B Projelendirme", description: "Prefabrikasyon, çelik çerçeve ve yapı bileşenlerinin bütüncül olarak incelendiği dijital mühendislik çalışması.", meta: "Gerçek proje arşivi · Model ve PDF", image: "https://static.wixstatic.com/media/44ce0e_f81db79215f24f048da62f06351b4d60~mv2.png", imageAlt: "DİYAMET üç boyutlu taşıyıcı sistem modeli", href: "https://d68d317f-d589-4260-b3db-f7c0dc79ed55.usrfiles.com/ugd/44ce0e_cf2016d3507743f182d18b46ec4e23e0.pdf" },
+  { title: "DİYANET Taşıyıcı Sistem Modeli", category: "3B Projelendirme", description: "Prefabrikasyon, çelik çerçeve ve yapı bileşenlerinin bütüncül olarak incelendiği dijital mühendislik çalışması.", meta: "Gerçek proje arşivi · Model ve PDF", image: "https://static.wixstatic.com/media/44ce0e_f81db79215f24f048da62f06351b4d60~mv2.png", imageAlt: "DİYANET üç boyutlu taşıyıcı sistem modeli", href: "https://d68d317f-d589-4260-b3db-f7c0dc79ed55.usrfiles.com/ugd/44ce0e_cf2016d3507743f182d18b46ec4e23e0.pdf" },
   { title: "Plaza Yapı İncelemesi", category: "Teknik Değerlendirme", description: "Taşıyıcı sistem ve saha verilerinin görsel kayıt üzerinden incelendiği teknik çalışma arşivi.", meta: "Gerçek proje arşivi · 64 sn video", image: "https://static.wixstatic.com/media/44ce0e_f4dbc637852345b4af72dc83dd8177c9f002.jpg", imageAlt: "Plaza projesi teknik inceleme videosu", href: "https://video.wixstatic.com/video/44ce0e_f4dbc637852345b4af72dc83dd8177c9/720p/mp4/file.mp4" },
 ];
 

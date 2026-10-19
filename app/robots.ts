@@ -9,8 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/api/",
         "/giris",
-        "/hesap-kurulum",
-        "/hesabim",
         "/kayit",
         "/uyelik",
         "/hesap-baglantisi",

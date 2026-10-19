@@ -1,14 +1,8 @@
 export type ZoningVerification =
   | "user-declared"
-  | "document-pending-review"
   | "municipal-viewer"
   | "approved-plan"
   | "certified-document";
-
-export type ZoningExpertReviewStatus =
-  | "not-reviewed"
-  | "reviewed-consistent"
-  | "reviewed-revision-required";
 
 export type ZoningForm = {
   landUse: string;
@@ -23,18 +17,9 @@ export type ZoningForm = {
   sideSetback: number;
   rearSetback: number;
   planNoteReference: string;
-  sourceType: string;
-  sourceDate: string;
   sourceUrl: string;
   sourceDocument: string;
-  sourceNote: string;
   verification: ZoningVerification;
-  expertReviewStatus: ZoningExpertReviewStatus;
-  expertReviewer: string;
-  expertReviewerRole: string;
-  expertReviewDate: string;
-  expertReviewBasis: string;
-  expertReviewNote: string;
 };
 
 export const ZONING_CONNECTORS = [
@@ -73,92 +58,45 @@ export const ZONING_CONNECTORS = [
 ] as const;
 
 export const DEFAULT_ZONING: ZoningForm = {
-  landUse: "",
+  landUse: "Kullanıcı girişi bekleniyor",
   planName: "",
-  planScale: "",
+  planScale: "1/1000 Uygulama İmar Planı",
   planId: "",
-  buildingOrder: "",
-  // -1 is the explicit "not entered" sentinel for numeric zoning fields.
-  // It serializes safely, unlike NaN, and is never interpreted as a right.
-  taks: -1,
-  kaks: -1,
-  hmax: -1,
-  frontSetback: -1,
-  sideSetback: -1,
-  rearSetback: -1,
+  buildingOrder: "Plan notuna göre",
+  taks: 0.4,
+  kaks: 1.2,
+  hmax: 15.5,
+  frontSetback: 5,
+  sideSetback: 3,
+  rearSetback: 3,
   planNoteReference: "",
-  sourceType: "",
-  sourceDate: "",
   sourceUrl: "",
   sourceDocument: "",
-  sourceNote: "",
   verification: "user-declared",
-  expertReviewStatus: "not-reviewed",
-  expertReviewer: "",
-  expertReviewerRole: "",
-  expertReviewDate: "",
-  expertReviewBasis: "",
-  expertReviewNote: "",
 };
-
-/**
- * A browser form or legacy device-local record is user-supplied evidence only.
- * Verified states remain in the domain model for future authenticated source
- * adapters; they must never be minted by a dropdown or a local import.
- */
-export function normalizeUntrustedZoningVerification(value: unknown, hasDocument: boolean): ZoningVerification {
-  if (value === "municipal-viewer") return "municipal-viewer";
-  if (hasDocument && (
-    value === "document-pending-review" ||
-    value === "approved-plan" ||
-    value === "certified-document"
-  )) return "document-pending-review";
-  return "user-declared";
-}
-
-export function normalizeZoningSourceUrl(value: unknown) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "";
-  try {
-    const url = new URL(raw);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : "";
-  } catch {
-    return "";
-  }
-}
 
 export function zoningVerificationLabel(value: ZoningVerification) {
   return {
     "user-declared": "Kullanıcı girdisi · doğrulanmadı",
-    "document-pending-review": "Belge eklendi · uzman doğrulaması bekliyor",
-    "municipal-viewer": "e-İmar kaynak kaydı · doğrulama bekliyor",
-    "approved-plan": "Onaylı plan ve plan notundan aktarıldı",
-    "certified-document": "Onaylı imar durumu belgesiyle doğrulandı",
+    "municipal-viewer": "Belediye ekranı beyanı · inceleme bekleniyor",
+    "approved-plan": "Plan / plan notu beyanı · inceleme bekleniyor",
+    "certified-document": "İmar belgesi beyanı · inceleme bekleniyor",
   }[value];
 }
 
 export function createZoningProvenance(zoning: ZoningForm, parcelReference: string) {
-  const sourceUrl = normalizeZoningSourceUrl(zoning.sourceUrl);
-  const expertReviewComplete = Boolean(
-    zoning.expertReviewStatus === "reviewed-consistent"
-    && zoning.expertReviewer.trim()
-    && zoning.expertReviewerRole.trim()
-    && zoning.expertReviewDate
-    && zoning.expertReviewBasis.trim()
-  );
   return {
     schema: "ARKEM-ZONING-PROVENANCE/1.0",
-    parcelReference,
+    // Target context is not evidence that the document belongs to this parcel.
+    parcelReference: null,
+    targetParcelReference: parcelReference,
+    sourceParcelReference: null,
+    parcelIdentityVerified: false,
+    needsReview: true,
+    evidenceKind: "customer-source-declaration",
     capturedAt: new Date().toISOString(),
     verification: zoning.verification,
-    source: {
-      type: zoning.sourceType || null,
-      date: zoning.sourceDate || null,
-      url: sourceUrl || null,
-      document: zoning.sourceDocument || null,
-      note: zoning.sourceNote || null,
-    },
-    sourceUrl: sourceUrl || null,
+    sourceUrl: zoning.sourceUrl || null,
     sourceDocument: zoning.sourceDocument || null,
     plan: {
       name: zoning.planName || null,
@@ -167,32 +105,19 @@ export function createZoningProvenance(zoning: ZoningForm, parcelReference: stri
       noteReference: zoning.planNoteReference || null,
     },
     conditions: {
-      landUse: zoning.landUse || null,
-      buildingOrder: zoning.buildingOrder || null,
-      taks: zoning.taks >= 0 ? zoning.taks : null,
-      kaks: zoning.kaks >= 0 ? zoning.kaks : null,
-      hmax: zoning.hmax >= 0 ? zoning.hmax : null,
+      landUse: zoning.landUse,
+      buildingOrder: zoning.buildingOrder,
+      taks: zoning.taks,
+      kaks: zoning.kaks,
+      hmax: zoning.hmax,
       setbacks: {
-        front: zoning.frontSetback >= 0 ? zoning.frontSetback : null,
-        side: zoning.sideSetback >= 0 ? zoning.sideSetback : null,
-        rear: zoning.rearSetback >= 0 ? zoning.rearSetback : null,
+        front: zoning.frontSetback,
+        side: zoning.sideSetback,
+        rear: zoning.rearSetback,
       },
     },
-    expertReview: {
-      status: zoning.expertReviewStatus,
-      reviewer: zoning.expertReviewer.trim() || null,
-      role: zoning.expertReviewerRole.trim() || null,
-      reviewedAt: zoning.expertReviewDate || null,
-      basis: zoning.expertReviewBasis.trim() || null,
-      note: zoning.expertReviewNote.trim() || null,
-      complete: expertReviewComplete,
-    },
-    expertReviewed: expertReviewComplete,
-    authoritative:
-      zoning.verification === "certified-document" ||
-      zoning.verification === "approved-plan",
+    authoritative: false,
     limitation:
       "Plan paftası, plan notları ve yetkili idarenin güncel imar durumu birlikte doğrulanmadan ruhsat veya yatırım kararı üretmez.",
   };
 }
-

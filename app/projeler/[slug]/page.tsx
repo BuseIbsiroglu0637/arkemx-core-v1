@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { ProjectPhoto } from "../../components/ProjectPhoto";
+import { selectProjectPhoto } from "../../lib/project-photo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteFooter, SiteHeader } from "../../components/SiteChrome";
@@ -8,6 +9,8 @@ import { applyPublishedProjectEvidence } from "../../lib/project-evidence";
 import { getPublishedProjectEvidence } from "../../lib/project-evidence-store";
 import { site } from "../../data/site";
 import { engineeringCapabilities } from "../../data/engineering-v3";
+import { getProjectPresentation, projectPresentations } from "../../data/project-presentations";
+import { ProjectPresentationPage } from "../../components/ProjectPresentationPage";
 
 function recordStatusLabel(status: string) {
   if (status === "doğrulandı") return "YAYINDA";
@@ -18,11 +21,14 @@ function recordStatusLabel(status: string) {
 export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
-  return v3Projects.map((project) => ({ slug: project.slug }));
+  return Array.from(new Set([...v3Projects, ...projectPresentations].map(project => project.slug))).map(slug => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const project = getV3Project((await params).slug);
+  const slug = (await params).slug;
+  const presentation = getProjectPresentation(slug);
+  if (presentation) return { title: presentation.title, description: presentation.summary, alternates: { canonical: `/projeler/${slug}` }, openGraph: { title: `${presentation.title} | ARKEM`, description: presentation.summary, url: `/projeler/${slug}`, images: [{ url: presentation.cover.src, alt: presentation.cover.alt }] } };
+  const project = getV3Project(slug);
   if (!project) return {};
   return {
     title: project.title,
@@ -40,10 +46,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const baseProject = getV3Project((await params).slug);
+  const slug = (await params).slug;
+  const presentation = getProjectPresentation(slug);
+  const baseProject = getV3Project(slug);
+  if (presentation) {
+    const archiveRecord = baseProject ? applyPublishedProjectEvidence(baseProject, await getPublishedProjectEvidence(baseProject.slug)) : undefined;
+    return <ProjectPresentationPage project={presentation} archiveRecord={archiveRecord} />;
+  }
   if (!baseProject) notFound();
   const project = applyPublishedProjectEvidence(baseProject, await getPublishedProjectEvidence(baseProject.slug));
-  const heroMedia = project.publishedMedia.find((item) => item.contentType.startsWith("image/"));
+  const heroMedia = selectProjectPhoto(project.slug, project.publishedMedia);
 
   const schema = {
     "@context": "https://schema.org",
@@ -66,7 +78,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <p>{project.summary}</p>
         <div className="v3-project-hero-status"><strong>{recordStatusLabel(project.evidenceStatus)}</strong><span>Yayımlanan her teknik değer ve medya kendi kaynak kaydıyla ilişkilendirilir.</span></div>
         {heroMedia && <figure className="v32-project-hero-media">
-          <Image src={heroMedia.href} alt={heroMedia.caption || `${project.shortTitle} proje kaydı`} width={1600} height={1000} priority unoptimized />
+          <ProjectPhoto src={heroMedia.href} alt={heroMedia.caption || `${project.shortTitle} proje kaydı`} priority natural />
           <figcaption><strong>{heroMedia.caption}</strong><span>{heroMedia.sourceLabel}</span></figcaption>
         </figure>}
       </div>
@@ -81,7 +93,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </article>)}</div>
     </div></section>
 
-    <section className="v21-section v3-project-case"><div className="shell">
+    <section className="v21-section v3-project-case" id="proje-sureci"><div className="shell">
       <header className="v21-section-head v21-section-head-light"><div><p className="v21-index">01 / PROJE SÜRECİ</p><h2>Proje kararları.<br /><em>Uygulamadaki karşılığı.</em></h2></div><p>Proje ihtiyacından sonuca uzanan yedi bölüm, ilgili teknik kaynak proje kaydıyla eşleştiğinde yayımlanır.</p></header>
       <ol>{project.caseStudy.map((stage) => <li key={stage.code}>
         <span>{stage.code}</span>
@@ -109,7 +121,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         })}</div>
       </div>}
       {project.publishedMedia.length > 0 && <div className="v3-project-media-grid">{project.publishedMedia.map((item) => <figure key={item.id}>
-        {item.contentType.startsWith("image/") ? <Image src={item.href} alt={item.caption || `${project.shortTitle} proje kaydı`} width={1280} height={800} unoptimized/> : item.contentType.startsWith("video/") ? <video controls preload="metadata"><source src={item.href} type={item.contentType}/></video> : <a className="v3-project-media-file" href={item.href}><span>TEKNİK DOSYA</span><strong>{item.fileName}</strong><small>Dosyayı açın ↗</small></a>}
+        {item.contentType.startsWith("image/") ? <ProjectPhoto src={item.href} alt={item.caption || `${project.shortTitle} proje kaydı`} natural /> : item.contentType.startsWith("video/") ? <video controls preload="metadata"><source src={item.href} type={item.contentType}/></video> : <a className="v3-project-media-file" href={item.href}><span>TEKNİK DOSYA</span><strong>{item.fileName}</strong><small>Dosyayı açın ↗</small></a>}
         <figcaption><strong>{item.caption || item.fileName}</strong><span>{item.sourceLabel}</span></figcaption>
       </figure>)}</div>}
     </div></section>

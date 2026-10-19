@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { downloadTextFile } from "../lib/engineering";
-import { preserveProjectSwitchBackup } from "../lib/project-switch-backup";
 import {
   deriveGuidedProjectRoadmap,
   type GuidedProjectIntake,
@@ -14,16 +13,9 @@ import {
   stampProjectModule,
   type ProjectCoreSnapshot,
 } from "../lib/project-core";
-import { deriveProjectThread, type ProjectThread, type ProjectModuleKey } from "../lib/project-graph";
-import { MODULE_JOURNEY_INDEX } from "../lib/module-navigation";
-import { buildProgramPlanElements, deriveProgramFloorPlates } from "../lib/plan-program";
-import { reconcileFloorPlateIds } from "../lib/floor-plate-identity";
-import { canRefreshGeneratedPlan, generatedPlanGeometry } from "../lib/program-plan-refresh";
-import { declaredModuleUnits, projectIntegrityIssues, resolvePlanHandoffGeometry } from "../lib/project-integrity";
-import { isPortalProject } from "../lib/customer-portal";
-import { structuralAnalysisBlockers, planGeometrySnapshot } from "../lib/source-reference-integrity";
-import { traceJson } from "../lib/structural-traceability";
-import { clearProjectStorage, loadProjectFromStorage, PROJECT_STORAGE_KEY, saveProjectToStorage, reconcileProjectSnapshots } from "../lib/project-storage";
+import { deriveProjectThread, type ProjectThread } from "../lib/project-graph";
+import { loadProjectFromStorage, saveProjectToStorage } from "../lib/project-storage";
+import { isKernelProject } from "../lib/project-validation";
 
 type ProjectPhase = "Fikir" | "Ön fizibilite" | "Avan proje" | "Uygulama projesi" | "Yapım" | "Teslim";
 export type ProjectExperienceMode = "guided" | "technical";
@@ -75,141 +67,20 @@ type ProjectKernelContextValue = {
   synchronizeProject: () => number;
   removeModule: (key: string) => void;
   importProject: (value: unknown) => boolean;
-  startProject: (intake: ProjectIntake) => void;
+  startProject: (intake: ProjectIntake, updateExisting?: boolean) => void;
   reset: () => void;
-  clearLocalProject: () => Promise<void>;
 };
 
 const STORAGE_KEY = "arkem-project-kernel-v1";
-const SESSION_RECOVERY_KEY = "arkem-project-kernel-session-v1";
 export const PROJECT_JOURNEY = [
   { label: "İhtiyacı tanımla", short: "Brief", output: "Proje hedefi", href: "/proje-baslat", modules: ["DECISION", "BRIEF", "START"], projectKeys: ["decision-assistant"] },
   { label: "Parseli doğrula", short: "Arazi", output: "Konum + sınır", href: "/arsa-fizibilite-studyosu", modules: ["GEO", "PARCEL", "SITE"], projectKeys: ["geo-parcel", "quick-site-scenario"] },
   { label: "Mimari programı kur", short: "Mimari", output: "Alan + mahal + plan", href: "/mimari-program-studyosu", modules: ["ARCHITECT", "PROGRAM", "PLAN"], projectKeys: ["architectural-program", "plan-editor"] },
-  { label: "Sistemi ve yöntemi seç", short: "Sistem", output: "Taşıyıcı karar", href: "/sistem-karsilastirma", modules: ["MCDA", "STRUCTURAL", "DEMOLITION", "SYSTEM"], projectKeys: ["system-comparison", "demolition-screening"] },
-  { label: "Tasarımı koordine et", short: "Koordinasyon", output: "Ortak model", href: "/bim-koordinasyon", modules: ["COORDINATION", "ENGINEERING", "CAD"], projectKeys: ["structural-concept", "engineering-coordination"] },
-  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-takibi", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
+  { label: "Sistemi ve yöntemi seç", short: "Sistem", output: "Taşıyıcı karar", href: "/yapi-sistemi-karsilastirma", modules: ["MCDA", "STRUCTURAL", "DEMOLITION", "SYSTEM"], projectKeys: ["system-comparison", "demolition-screening"] },
+  { label: "Tasarımı koordine et", short: "Koordinasyon", output: "Ortak model", href: "/muhendislik-koordinasyon", modules: ["COORDINATION", "ENGINEERING", "CAD"], projectKeys: ["structural-concept", "engineering-coordination"] },
+  { label: "Süre ve maliyeti yönet", short: "Planlama", output: "4B + bütçe", href: "/proje-os", modules: ["PROJECT OS", "4D", "COST"], projectKeys: ["project-os"] },
   { label: "Dijital teslimi tamamla", short: "Teslim", output: "Onaylı paket", href: "/dijital-proje-merkezi", modules: ["DIGITAL", "DELIVERY", "CDE"], projectKeys: ["digital-delivery-scope", "model-library-review"] },
 ] as const;
-
-const EXPLICIT_MODULE_JOURNEY_INDEX: Record<string, number> = {
-  "decision-assistant": 0,
-  "geo-parcel": 1,
-  "quick-site-scenario": 1,
-  "demolition-screening": 1,
-  "architectural-program": 2,
-  "plan-editor": 2,
-  "system-comparison": 3,
-  // Structural predesign is part of the System decision phase in the guided UX.
-  "structural-concept": 3,
-  "engineering-coordination": 4,
-  "digital-delivery-scope": 4,
-  "arkem-x": 4,
-  "project-os": 5,
-  "model-library-review": 6,
-};
-
-export function projectJourneyIndexForModule(module: string) {
-  return Object.prototype.hasOwnProperty.call(EXPLICIT_MODULE_JOURNEY_INDEX, module)
-    ? EXPLICIT_MODULE_JOURNEY_INDEX[module]
-    : null;
-}
-
-export function deriveProjectJourneyState(thread: ProjectThread) {
-  const systemValue = thread.canonical.structure.system.trim();
-  const systemDecisionReady = Boolean(systemValue)
-    && !["Karar Bekleniyor", "undecided", "Belirsiz", "—", "-"].includes(systemValue);
-
-  const rawCompleted = PROJECT_JOURNEY.map((step) => {
-    if (step.short === "Arazi") {
-      return thread.nodes.some((node) => node.id === "quick-site-scenario" && node.active);
-    }
-    if (step.short === "Mimari") {
-      const architectureNode = thread.nodes.find((node) => node.id === "architectural-program");
-      const planNode = thread.nodes.find((node) => node.id === "plan-editor");
-      return Boolean(
-        architectureNode?.milestoneComplete
-        && planNode?.milestoneComplete
-      );
-    }
-    if (step.short === "Sistem") {
-      const systemNode = thread.nodes.find((node) => node.id === "system-comparison");
-      return Boolean(systemDecisionReady && systemNode?.milestoneComplete);
-    }
-    if (step.short === "Koordinasyon") {
-      const structuralNode = thread.nodes.find((node) => node.id === "structural-concept");
-      const coordinationNode = thread.nodes.find((node) => node.id === "engineering-coordination");
-      return Boolean(
-        structuralNode?.milestoneComplete
-        && coordinationNode?.milestoneComplete
-      );
-    }
-    if (step.short === "Planlama") return Boolean(thread.nodes.find(node => node.id === "project-os")?.milestoneComplete);
-    return step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active));
-  });
-
-  // "Achieved" means the stage has genuinely been worked, while "completed"
-  // still means all of its own gates and all earlier sequential gates are
-  // closed. This distinction matters for draft workflows that proceed beyond
-  // an unresolved zoning/parcel check.
-  const node = (id: string) => thread.nodes.find((item) => item.id === id);
-  const achieved = rawCompleted.map((value, index) => {
-    if (value) return true;
-    const step = PROJECT_JOURNEY[index];
-    if (step.short === "Mimari") {
-      return Boolean(node("architectural-program")?.active || node("plan-editor")?.active);
-    }
-    if (step.short === "Sistem") {
-      return Boolean(node("system-comparison")?.worked || node("structural-concept")?.worked);
-    }
-    if (step.short === "Koordinasyon") {
-      return Boolean(node("engineering-coordination")?.worked);
-    }
-    if (step.short === "Planlama") return Boolean(node("project-os")?.worked);
-    return false;
-  });
-
-  // Project journey is intentionally sequential. A later module may already
-  // contain seeded or historical data, but it must not appear completed while
-  // an earlier decision gate is still open.
-  const completed = rawCompleted.map((value, index) =>
-    value && rawCompleted.slice(0, index).every(Boolean)
-  );
-
-  const firstIncompleteIndex = completed.findIndex((value) => !value);
-  const currentIndex = firstIncompleteIndex < 0 ? PROJECT_JOURNEY.length - 1 : firstIncompleteIndex;
-
-  // "Current required gate" and "where the user is actually working" are not
-  // always the same thing. Draft/provisional workflows may continue while an
-  // earlier parcel or zoning check remains open. Keep that earlier gate as a
-  // backlog item without visually sending the project backwards.
-  const workingSignals = [
-    Boolean(node("decision-assistant")?.active),
-    Boolean(node("quick-site-scenario")?.milestoneComplete || node("geo-parcel")?.readiness && node("geo-parcel")!.readiness >= 35),
-    Boolean(node("architectural-program")?.milestoneComplete || node("plan-editor")?.active),
-    // Structural predesign still belongs to the System stage. Merely seeded
-    // downstream modules must not pull the visible journey forward.
-    Boolean(node("system-comparison")?.worked || node("structural-concept")?.worked),
-    Boolean(node("engineering-coordination")?.worked),
-    Boolean(node("project-os")?.worked),
-    Boolean(node("digital-delivery-scope")?.milestoneComplete || node("model-library-review")?.milestoneComplete),
-  ];
-  const furthestWorkingIndex = workingSignals.reduce((furthest, started, index) => started ? Math.max(furthest, index) : furthest, 0);
-  const workingIndex = Math.max(currentIndex, furthestWorkingIndex);
-  const nextStep = PROJECT_JOURNEY[currentIndex];
-
-  return {
-    completed,
-    achieved,
-    currentIndex,
-    workingIndex,
-    firstIncompleteIndex,
-    hasBacklog: firstIncompleteIndex >= 0 && firstIncompleteIndex < workingIndex,
-    nextStep,
-    systemDecisionReady,
-    allComplete: firstIncompleteIndex < 0,
-  };
-}
 
 const createDefaultProject = (): ProjectKernelState => ({
   schema: "ARKEM-PROJECT/1.0",
@@ -251,13 +122,6 @@ function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
-function normalizeProjectName(value: string) {
-  const cleaned = value
-    .replace(/\s+Proje\s+türü\s*:\s*.+$/iu, "")
-    .trim();
-  return cleaned || "Yeni ARKEMX Projesi";
-}
-
 function projectUse(value: string) {
   const normalized = value.toLocaleLowerCase("tr-TR");
   if (normalized.includes("konut")) return "residential";
@@ -280,7 +144,7 @@ function mergeModuleValue(previous: unknown, incoming: unknown) {
   const incomingModule = record(incoming);
   if (!Object.keys(incomingModule).length) return incoming;
   const merged: UnknownRecord = { ...previousModule, ...incomingModule };
-  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination", "calculationRegistry", "documentRegistry", "floorStudyRegistry", "floorDocumentRegistry", "frameRegistry", "frameDocumentRegistry", "projectShellSources"].forEach((key) => {
+  ["input", "upstream", "source", "siteContext", "programContext", "architectureContext", "modelContext", "coordination"].forEach((key) => {
     if (incomingModule[key] && typeof incomingModule[key] === "object" && !Array.isArray(incomingModule[key])) {
       merged[key] = { ...record(previousModule[key]), ...record(incomingModule[key]) };
     }
@@ -296,6 +160,52 @@ function structuralSystem(value: string) {
   if (normalized.includes("çelik") || normalized.includes("steel")) return "steel";
   if (normalized.includes("beton") || normalized.includes("concrete")) return "concrete";
   return ["light", "hybrid", "steel", "precast", "concrete"].includes(normalized) ? normalized : "";
+}
+
+function programPlanElements(spaces: unknown[], baysX: number, baysY: number, floors: number, liveLoad: number) {
+  const cellsPerFloor = Math.max(1, baysX * baysY);
+  const maximumCells = Math.min(cellsPerFloor * Math.max(1, floors), 160);
+  const expanded: UnknownRecord[] = [];
+  spaces.forEach((value) => {
+    const space = record(value);
+    const count = Math.max(1, Math.min(24, numeric(space.count, 1)));
+    for (let index = 0; index < count && expanded.length < maximumCells; index += 1) expanded.push(space);
+  });
+  const elements = expanded.map((space, index) => {
+    const level = Math.floor(index / cellsPerFloor) + 1;
+    const cell = index % cellsPerFloor;
+    return {
+      id: `program-${stringValue(space.id, "space")}-${index + 1}`,
+      type: "space",
+      level,
+      x: cell % baysX,
+      y: Math.floor(cell / baysX),
+      orientation: "x",
+      label: stringValue(space.name, "Mahal"),
+      load: numeric(space.liveLoad, liveLoad),
+      fire: "Projede belirlenecek",
+      section: "—",
+      sourceSpaceId: stringValue(space.id),
+      sourceZone: stringValue(space.zone),
+    };
+  });
+  for (let level = 1; level <= Math.max(1, floors); level += 1) {
+    elements.push({
+      id: `program-core-${level}`,
+      type: "core",
+      level,
+      x: Math.max(0, Math.floor(baysX / 2) - 1),
+      y: Math.max(0, Math.floor(baysY / 2) - 1),
+      orientation: "x",
+      label: "Merdiven / asansör çekirdeği",
+      load: liveLoad,
+      fire: "REI 120",
+      section: "—",
+      sourceSpaceId: "vertical-core",
+      sourceZone: "Sirkülasyon",
+    });
+  }
+  return elements;
 }
 
 const HANDOFF_IDS = ["H-01", "H-02", "H-03", "H-04", "H-05", "H-06"] as const;
@@ -327,7 +237,7 @@ function stampHandoffModules(
     if (!contract) return;
     contract.targets.forEach((target) => {
       if (!stamped[target]) return;
-      stamped[target] = stampProjectModule({ ...record(stamped[target]), ...(declaredModuleUnits(target) ? { units: declaredModuleUnits(target) } : {}) }, {
+      stamped[target] = stampProjectModule(stamped[target], {
         ...identity,
         sourceModule: contract.source,
         action: "handoff",
@@ -337,14 +247,14 @@ function stampHandoffModules(
   return stamped;
 }
 
-function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[], identity?: { id: string; revision: string }) {
+function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: readonly string[]) {
   const modules = { ...sourceModules };
   const applied: string[] = [];
   const synchronizedAt = new Date().toISOString();
 
   handoffIds.forEach((handoffId) => {
-    const sourceKey = HANDOFF_MODULES[handoffId]?.source;
-    if (identity && sourceKey && modules[sourceKey] && projectIntegrityIssues({ ...identity, modules }).some(issue => issue.startsWith(sourceKey + ":"))) return;
+    const contract = HANDOFF_MODULES[handoffId];
+    if (contract && record(modules[contract.source]).needsReview === true) return;
     const thread = deriveProjectThread(modules);
 
     if (handoffId === "H-01" && modules["geo-parcel"]) {
@@ -401,30 +311,20 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const architecturalScheme = record(architecture.architecturalScheme);
       const schemePlate = record(architecturalScheme.plate);
       const spaces = Array.isArray(architecture.spaces) ? architecture.spaces : [];
-      const relationships = Array.isArray(architecture.relationships) ? architecture.relationships : [];
       if (numeric(schemePlate.width) <= 0 && numeric(architectureResult.plateWidth) <= 0 && numeric(architectureResult.grossDemand) <= 0 && !spaces.length) return;
       const target = record(modules["plan-editor"]);
       const targetGross = numeric(architectureInput.targetGross) || numeric(architectureResult.grossDemand) || thread.canonical.architecture.grossArea;
       const floors = numeric(architectureInput.floors) || thread.canonical.architecture.floors || 1;
       const aspect = Math.max(.5, numeric(architectureInput.aspect, 1.45));
-      const netRatio = numeric(architectureInput.netRatio, 78);
-      const floorPlates = reconcileFloorPlateIds(deriveProgramFloorPlates(spaces, relationships, floors, netRatio, aspect, numeric(architectureResult.liveLoad, 3.5)), Array.isArray(target.floorPlates) ? target.floorPlates as Array<{ level: number; id?: string }> : []);
-      const largestPlate = floorPlates.reduce((best, item) => item.grossArea > best.grossArea ? item : best, floorPlates[0] ?? { level: 1, netArea: 0, grossArea: targetGross / Math.max(1, floors), width: 0, depth: 0 });
-      const fallbackFloorArea = targetGross / Math.max(1, floors);
-      const fallbackDepth = numeric(schemePlate.depth) || numeric(architectureResult.plateDepth) || Math.sqrt(Math.max(fallbackFloorArea, 1) / aspect);
-      const fallbackWidth = numeric(schemePlate.width) || numeric(architectureResult.plateWidth) || fallbackDepth * aspect;
-      const plateWidth = largestPlate.width || fallbackWidth;
-      const plateDepth = largestPlate.depth || fallbackDepth;
+      const floorArea = targetGross / Math.max(1, floors);
+      const plateDepth = numeric(schemePlate.depth) || numeric(architectureResult.plateDepth) || Math.sqrt(Math.max(floorArea, 1) / aspect);
+      const plateWidth = numeric(schemePlate.width) || numeric(architectureResult.plateWidth) || plateDepth * aspect;
       const baysX = Math.max(2, Math.min(16, Math.round(plateWidth / 5)));
       const baysY = Math.max(2, Math.min(16, Math.round(plateDepth / 5)));
       const existingElements = Array.isArray(target.elements) ? target.elements : [];
-      const previousContext = record(target.programContext);
-      // Only regenerate an untouched generated draft. Legacy and edited plans
-      // require the editor's explicit rebuild action instead of losing work.
-      const regenerateDraft = canRefreshGeneratedPlan(target);
-      const generatedElements = !regenerateDraft
+      const generatedElements = existingElements.length
         ? existingElements
-        : buildProgramPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5), plateWidth / baysX, plateDepth / baysY, relationships, floorPlates);
+        : programPlanElements(spaces, baysX, baysY, floors, numeric(architectureResult.liveLoad, 3.5));
       modules["plan-editor"] = {
         ...target,
         level: Math.min(numeric(target.level, 1), floors),
@@ -433,23 +333,17 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
         baysY,
         spanX: Number((plateWidth / baysX).toFixed(3)),
         spanY: Number((plateDepth / baysY).toFixed(3)),
-        floorPlates,
         elements: generatedElements,
-        metrics: regenerateDraft ? undefined : target.metrics,
         programContext: {
           spaces,
           relationships: architecture.relationships,
           architecturalScheme: architecture.architecturalScheme,
           checks: architecture.checks,
           siteContext: architectureInput.siteContext,
-          generatedElementCount: regenerateDraft ? generatedElements.length : 0,
-          generatedPlanSnapshot: regenerateDraft ? { elements: generatedElements, geometry: generatedPlanGeometry({
-            floorCount: floors, baysX, baysY, spanX: Number((plateWidth / baysX).toFixed(3)),
-            spanY: Number((plateDepth / baysY).toFixed(3)), floorPlates,
-          }) } : previousContext.generatedPlanSnapshot,
+          generatedElementCount: existingElements.length ? 0 : generatedElements.length,
         },
         handoff: { id: handoffId, source: "architectural-program", target: "plan-editor", synchronizedAt, payload: ["mahal listesi", "zonlar", "komşuluk", "dolaşım", "çekirdek", "günışığı", "kaçış", "plaka", "kat", "aks başlangıcı"], state: "synchronized" },
-        status: !regenerateDraft ? "Mimari program mevcut plan modeline bağlandı; mahal eşleşmesi editörde doğrulanmalı" : "Mimari programdan düzenlenebilir başlangıç planı üretildi",
+        status: existingElements.length ? "Mimari program mevcut plan modeline bağlandı" : "Mimari programdan düzenlenebilir başlangıç planı üretildi",
       };
       if (modules["system-comparison"]) {
         const comparison = record(modules["system-comparison"]);
@@ -460,7 +354,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
             usage: projectUse(stringValue(architectureInput.use)),
             floors,
             area: targetGross,
-            span: Math.max(...floorPlates.map((item) => Math.max(item.width / baysX, item.depth / baysY)), plateWidth / baysX, plateDepth / baysY),
+            span: Math.max(plateWidth / baysX, plateDepth / baysY),
           },
           upstream: { source: "architectural-program", synchronizedAt },
           status: "Mimari geometri sistem karşılaştırmasına bağlandı",
@@ -471,8 +365,6 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-03" && modules["plan-editor"]) {
       const plan = record(modules["plan-editor"]);
-      const geometry = resolvePlanHandoffGeometry(plan);
-      const sourceRevision = stringValue(record(plan._kernel).projectRevision) || null;
       const target = record(modules["structural-concept"]);
       const input = record(target.input);
       const baysX = numeric(plan.baysX);
@@ -481,42 +373,16 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const spanY = numeric(plan.spanY);
       if (baysX <= 0 || baysY <= 0 || spanX <= 0 || spanY <= 0) return;
       const elements = Array.isArray(plan.elements) ? plan.elements.map(record) : [];
-      const ids = elements.map(element => stringValue(element.id));
-      const inputElementIds = ids.length && ids.every(Boolean) && new Set(ids).size === ids.length ? ids : null;
       const architecture = record(modules["architectural-program"]);
       const architectureResult = record(architecture.result);
       const planLoads = elements.map((element) => numeric(element.load)).filter((value) => value > 0);
       const liveLoad = planLoads.length ? Math.max(...planLoads) : numeric(architectureResult.liveLoad);
-      const planHandoffSourceKey = traceJson({
-        geometry: planGeometrySnapshot(plan),
-        elements: [...elements].sort((a, b) => stringValue(a.id).localeCompare(stringValue(b.id))),
-        sourceRevision,
-        liveLoad,
-        floorCoordination: plan.floorCoordination ?? null,
-        floorHeight: thread.canonical.architecture.floorHeight,
-        usage: structuralUse(thread.canonical.architecture.use),
-      });
-      if (target.planHandoffSourceKey === planHandoffSourceKey) return;
       modules["structural-concept"] = {
         ...target,
-        planHandoffSourceKey,
-        floorStudyId: null,
-        floorStudyStatus: "source-changed",
-        result: null,
-        alternatives: [],
-        structuralStudio: null,
-        geometrySupport: { status: structuralAnalysisBlockers({ modelContext: { floorPlates: geometry.floorPlates } }).length ? "unsupported-nonuniform-floor-analysis" : "uniform-concept-only", fullBuildingAnalysis: false, technicalApproval: false },
-        units: declaredModuleUnits("structural-concept"),
-        sourceRevision,
-        inputElementIds,
-        inputElementSnapshot: inputElementIds ? JSON.parse(JSON.stringify(elements)) : null,
-        inputGeometrySnapshot: JSON.parse(JSON.stringify(planGeometrySnapshot(plan))),
-        calculationId: null,
-        referenceStatus: sourceRevision && inputElementIds ? "pending-calculation" : "unsupported-source",
         input: {
           ...input,
-          width: geometry.width,
-          depth: geometry.depth,
+          width: baysX * spanX || numeric(input.width),
+          depth: baysY * spanY || numeric(input.depth),
           floors: numeric(plan.floorCount) || numeric(input.floors),
           floorHeight: thread.canonical.architecture.floorHeight || numeric(input.floorHeight),
           baysX: baysX || numeric(input.baysX),
@@ -525,12 +391,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           ...(liveLoad > 0 ? { liveLoad } : {}),
         },
         modelContext: {
-          planRevision: sourceRevision,
-          selectedLevel: geometry.selectedLevel,
-          floorPlates: geometry.floorPlates,
-          ...(plan.floorCoordination === undefined ? {} : { floorCoordination: plan.floorCoordination }),
-          geometrySource: geometry.geometrySource,
-          fullBuildingAnalysis: geometry.fullBuildingAnalysis,
+          planRevision: stringValue(plan.revision, "current"),
           elementCount: elements.length,
           columns: elements.filter((element) => element.type === "column").length,
           walls: elements.filter((element) => element.type === "wall").length,
@@ -558,14 +419,8 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const target = record(modules["structural-concept"]);
       const input = record(target.input);
       const selectedSystem = structuralSystem(stringValue(winner.id) || stringValue(winner.name) || stringValue(comparisonInput.preferredSystem));
-      const mcdaHandoffSourceKey = traceJson({ selectedSystem, usage: comparisonInput.usage, winner, shortlist: comparison.shortlist });
-      if (target.mcdaHandoffSourceKey === mcdaHandoffSourceKey) return;
-      const inputChanged = (selectedSystem && selectedSystem !== input.system)
-        || stringValue(comparisonInput.usage, stringValue(input.usage, "office")) !== input.usage;
       modules["structural-concept"] = {
         ...target,
-        mcdaHandoffSourceKey,
-        ...(inputChanged ? { calculationId: null, referenceStatus: "pending-calculation", floorStudyId: null, floorStudyStatus: "source-changed" } : {}),
         input: {
           ...input,
           ...(selectedSystem ? { system: selectedSystem } : {}),
@@ -584,7 +439,6 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-05" && modules["structural-concept"]) {
       const structure = record(modules["structural-concept"]);
-      if (structuralAnalysisBlockers(structure).length) return;
       const structureResult = record(structure.result);
       const structureGeometry = record(structureResult.geometry);
       if (numeric(structureGeometry.totalArea) <= 0) return;
@@ -620,10 +474,6 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
       const coordination = record(modules["engineering-coordination"]);
       if (!coordination.result && !coordination.issues) return;
       const bimCoordination = record(coordination.bimCoordination);
-      const clashes = Array.isArray(bimCoordination.clashes) ? bimCoordination.clashes.map(record) : [];
-      const criticalClashes = clashes.filter((clash) => clash.severity === "critical");
-      const reviewedIds = Array.isArray(coordination.reviewed) ? coordination.reviewed.filter((id): id is string => typeof id === "string") : [];
-      const reviewedCriticalClashes = criticalClashes.filter((clash) => reviewedIds.includes(stringValue(clash.guid)));
       const target = record(modules["project-os"]);
       modules["project-os"] = {
         ...target,
@@ -631,15 +481,6 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           ...record(target.coordination),
           source: coordination,
           bimCoordination,
-          reviewedIssueIds: reviewedIds,
-          issueGate: {
-            blocked: criticalClashes.length > 0,
-            activeCriticalClashes: criticalClashes.length,
-            reviewedCriticalClashes: reviewedCriticalClashes.length,
-            technicalApproval: false,
-            state: criticalClashes.length ? "review-blocked" : "conceptual-only",
-            limitation: "İnceleme işareti teknik çözüm değildir; 4B/5B sonuçları onaylı program veya bütçe değildir.",
-          },
           openIssues: thread.canonical.coordination.openIssues,
           schedule4D: bimCoordination.schedule4D,
           cost5D: bimCoordination.cost5D,
@@ -648,9 +489,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
           synchronizedAt,
         },
         handoff: { id: handoffId, source: "engineering-coordination", target: "project-os", synchronizedAt, payload: ["IFC/BCF hazırlık", "çakışma", "issue", "metraj", "karbon", "4B süre", "5B göreli maliyet"], state: "synchronized" },
-        status: criticalClashes.length > 0
-          ? "V115 kritik çakışmalar Proje OS'e taşındı; 4B/5B onay kararı bekletiliyor"
-          : "V115 BIM koordinasyonu ile kavramsal 4B/5B göstergeleri Proje OS'e bağlandı",
+        status: "V115 BIM koordinasyonu, 4B ve 5B göstergeleri Proje OS'e bağlandı",
       };
       applied.push(handoffId);
     }
@@ -659,15 +498,12 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
   return { modules, applied, synchronizedAt };
 }
 
-
 const ProjectKernelContext = createContext<ProjectKernelContextValue | null>(null);
 
 export function ProjectKernelProvider({ children }: { children: React.ReactNode }) {
+  const rejectedStorage = useRef(false);
   const [project, setProject] = useState<ProjectKernelState>(createDefaultProject);
-  const currentProjectId = useRef(project.id);
-  useEffect(()=>{currentProjectId.current=project.id;},[project.id]);
   const [hydrated, setHydrated] = useState(false);
-  const skippedPersistenceSnapshotRef = useRef<ProjectKernelState | null>(null);
   const [persistence, setPersistence] = useState<ProjectKernelContextValue["persistence"]>({
     state: "loading",
     integrity: "missing",
@@ -681,55 +517,33 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       try {
         const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
         if (stored.value) {
+          if (!isKernelProject(stored.value)) {
+            rejectedStorage.current = true;
+            throw new Error("Stored project failed schema validation");
+          }
           const parsed = stored.value;
-          if (parsed?.schema === "ARKEM-PROJECT/1.0" && parsed.id && parsed.modules && typeof parsed.modules === "object") setProject((current) => ({
+          setProject((current) => ({
             ...parsed,
-            name: normalizeProjectName(parsed.name || current.name),
             experience: { ...current.experience, ...record(parsed.experience) },
-            events: (Array.isArray(parsed.events) ? parsed.events : []).slice(-80),
-            modules: ensureProjectModuleStamps(parsed.modules, {
+            events: [...(Array.isArray(parsed.events) ? parsed.events : []), ...current.events].slice(-80),
+            modules: ensureProjectModuleStamps({ ...current.modules, ...parsed.modules }, {
               projectId: parsed.id,
               projectRevision: parsed.revision || "P01",
               recordedAt: parsed.updatedAt || stored.savedAt || new Date().toISOString(),
             }),
           }));
           setPersistence({
-            state: ["backup", "recovery", "reconciled"].includes(stored.source) ? "recovered" : "device-saved",
+            state: stored.source === "backup" ? "recovered" : "device-saved",
             integrity: stored.integrity,
             lastSavedAt: stored.savedAt,
-            backupAvailable: ["backup", "recovery", "reconciled"].includes(stored.source) || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
+            backupAvailable: stored.source === "backup" || Boolean(window.localStorage.getItem("arkem-project-kernel-v2-backup")),
             cloud: "not-configured",
           });
         } else {
-          let sessionProject: ProjectKernelState | null = null;
-          try {
-            const rawSession = window.sessionStorage.getItem(SESSION_RECOVERY_KEY);
-            const parsedSession = rawSession ? JSON.parse(rawSession) as ProjectKernelState : null;
-            if (
-              parsedSession?.schema === "ARKEM-PROJECT/1.0"
-              && parsedSession.id
-              && parsedSession.modules
-              && typeof parsedSession.modules === "object"
-              && Object.keys(parsedSession.modules).length > 0
-            ) sessionProject = parsedSession;
-          } catch {
-            // Session recovery is best-effort.
-          }
-
-          if (sessionProject) {
-            setProject(sessionProject);
-            setPersistence((current) => ({
-              ...current,
-              state: "recovered",
-              integrity: "missing",
-              backupAvailable: true,
-            }));
-          } else {
-            setProject((current) => Object.keys(current.modules).length || current.id !== "ARK-26-0001"
-              ? current
-              : createActiveProject());
-            setPersistence((current) => ({ ...current, state: "device-saved" }));
-          }
+          setProject((current) => Object.keys(current.modules).length || current.id !== "ARK-26-0001"
+            ? current
+            : createActiveProject());
+          setPersistence((current) => ({ ...current, state: "device-saved" }));
         }
       } catch {
         setPersistence((current) => ({ ...current, state: "unavailable" }));
@@ -740,63 +554,23 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    const skippedSnapshot = skippedPersistenceSnapshotRef.current;
-    skippedPersistenceSnapshotRef.current = null;
-    if (skippedSnapshot === project) return;
-    let cancelled = false;
-    try {
-      // Persist in the same committed effect. A route change must not be able
-      // to cancel a queued timer and leave the next screen without the active project.
-      const result = saveProjectToStorage(window.localStorage, project);
+    if (!hydrated || rejectedStorage.current) return;
+    const timer = window.setTimeout(() => {
       try {
-        window.sessionStorage.setItem(SESSION_RECOVERY_KEY, JSON.stringify(result.payload));
-      } catch {
-        // Same-tab recovery is optional when session storage is unavailable.
-      }
-      // Disk is written synchronously before navigation. Publish its readback
-      // after this commit; discard a stale readback if the project changed.
-      queueMicrotask(() => {
-        if (cancelled) return;
-        if (result.reconciled && JSON.stringify(result.payload) !== JSON.stringify(project)) {
-          setProject(result.payload);
-        }
+        const result = saveProjectToStorage(window.localStorage, project);
         setPersistence({
-          state: result.reconciled ? "recovered" : "device-saved",
+          state: "device-saved",
           integrity: "verified",
           lastSavedAt: result.savedAt,
           backupAvailable: result.backupAvailable,
           cloud: "not-configured",
         });
-      });
-    } catch {
-      queueMicrotask(() => {
-        if (!cancelled) setPersistence((current) => ({ ...current, state: "unavailable" }));
-      });
-    }
-    return () => { cancelled = true; };
-  }, [hydrated, project]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const mergeExternalProject = (event: StorageEvent) => {
-      if (event.storageArea !== window.localStorage || event.key !== PROJECT_STORAGE_KEY || !event.newValue) return;
-      const stored = loadProjectFromStorage<ProjectKernelState>(window.localStorage, STORAGE_KEY);
-      const storedProject = stored.value;
-      if (!storedProject) return;
-      setProject((current) => {
-        // Another tab may write before our latest committed edit reaches disk.
-        // Compare module timestamps so that pending newer edits are retained.
-        const merged = reconcileProjectSnapshots(storedProject, current);
-        return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
-      });
-      if (stored.source === "reconciled" || stored.source === "recovery" || stored.source === "backup") {
-        setPersistence((current) => ({ ...current, state: "recovered", lastSavedAt: stored.savedAt || current.lastSavedAt }));
+      } catch {
+        setPersistence((current) => ({ ...current, state: "unavailable" }));
       }
-    };
-    window.addEventListener("storage", mergeExternalProject);
-    return () => window.removeEventListener("storage", mergeExternalProject);
-  }, [hydrated]);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [hydrated, project]);
 
   useEffect(() => {
     document.documentElement.dataset.arkemMode = project.experience.mode;
@@ -812,19 +586,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
   const patchModule = useCallback((key: string, moduleValue: unknown) => {
     if (!hydrated) return;
     setProject((current) => {
-      // Ignore pending writes from an editor belonging to a previous project.
-      if (current.id !== project.id) return current;
-      // Opening a legacy/stale draft is not a new source observation.
-      // Portal notes and revision-bound review records may be updated for the
-      // new revision; this must not refresh stale engineering source modules.
-      const portalRevisionReview = key === "client-portal" && record(record(current.modules[key])._kernel).projectId === current.id;
-      if (current.modules[key] && projectIntegrityIssues(current).some(issue => issue.startsWith(key + ":")
-        && !(portalRevisionReview && issue === key + ": project/revision conflict"))) return current;
-      const incoming = record(moduleValue);
-      const mergedValue = mergeModuleValue(current.modules[key], {
-        ...incoming,
-        ...(declaredModuleUnits(key) ? { units: incoming.units ?? declaredModuleUnits(key) } : {}),
-      });
+      const mergedValue = mergeModuleValue(current.modules[key], moduleValue);
       if (JSON.stringify(current.modules[key]) === JSON.stringify(mergedValue)) return current;
       const timestamp = new Date().toISOString();
       const action = current.modules[key] ? "update" : "create";
@@ -838,7 +600,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       const event: ProjectKernelEvent = { id: `${key}-${Date.now().toString(36)}`, module: key, action, revision: current.revision, timestamp };
       const nextModules = { ...current.modules, [key]: storedValue };
       const automatic = current.experience.autoHandoff
-        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [], current)
+        ? synchronizeModules(nextModules, SOURCE_HANDOFFS[key] ?? [])
         : { modules: nextModules, applied: [] as string[], synchronizedAt: "" };
       const stampedModules = stampHandoffModules(automatic.modules, automatic.applied, {
         projectId: current.id,
@@ -860,12 +622,12 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
         events: [...current.events, event, ...handoffEvents].slice(-80),
       };
     });
-  }, [hydrated, project.id]);
+  }, [hydrated]);
   const applyHandoff = useCallback((handoffId: string) => {
-    const preview = synchronizeModules(project.modules, [handoffId], project);
+    const preview = synchronizeModules(project.modules, [handoffId]);
     if (!preview.applied.length) return false;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, [handoffId], current);
+      const result = synchronizeModules(current.modules, [handoffId]);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
@@ -887,12 +649,12 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       };
     });
     return true;
-  }, [project]);
+  }, [project.modules]);
   const synchronizeProject = useCallback(() => {
-    const preview = synchronizeModules(project.modules, HANDOFF_IDS, project);
+    const preview = synchronizeModules(project.modules, HANDOFF_IDS);
     if (!preview.applied.length) return 0;
     setProject((current) => {
-      const result = synchronizeModules(current.modules, HANDOFF_IDS, current);
+      const result = synchronizeModules(current.modules, HANDOFF_IDS);
       if (!result.applied.length) return current;
       const timestamp = new Date().toISOString();
       return {
@@ -914,7 +676,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       };
     });
     return preview.applied.length;
-  }, [project]);
+  }, [project.modules]);
   const removeModule = useCallback((key: string) => setProject((current) => {
     if (!current.modules[key]) return current;
     const timestamp = new Date().toISOString();
@@ -923,16 +685,16 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     return { ...current, updatedAt: timestamp, modules, events: [...current.events, { id: `${key}-${Date.now().toString(36)}`, module: key, action: "remove" as const, revision: current.revision, timestamp }].slice(-80) };
   }), []);
   const importProject = useCallback((value: unknown) => {
-    if (!isPortalProject(value)) return false;
-    const candidate = value as ProjectKernelState;
-    if (candidate.schema !== "ARKEM-PROJECT/1.0" || !candidate.id || !candidate.modules || typeof candidate.modules !== "object") return false;
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Partial<ProjectKernelState>;
+    if (!isKernelProject(candidate)) return false;
+    rejectedStorage.current = false;
     const timestamp = new Date().toISOString();
     const defaults = createDefaultProject();
     setProject({
       ...defaults,
       ...candidate,
       schema: "ARKEM-PROJECT/1.0",
-      name: normalizeProjectName(candidate.name || defaults.name),
       experience: { ...defaults.experience, ...record(candidate.experience) },
       modules: ensureProjectModuleStamps(candidate.modules, {
         projectId: candidate.id,
@@ -944,7 +706,8 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     });
     return true;
   }, []);
-  const startProject = useCallback((intake: ProjectIntake) => {
+  const startProject = useCallback((intake: ProjectIntake, updateExisting = false) => {
+    rejectedStorage.current = false;
     const now = new Date();
     const timestamp = now.toISOString();
     const projectCode = createProjectCode(now);
@@ -974,11 +737,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     const floorArea = intake.targetArea / Math.max(1, intake.floors);
     const buildingWidth = Math.sqrt(floorArea * 1.45);
     const buildingDepth = floorArea / buildingWidth;
-    const locationParts = intake.location.includes("/")
-      ? intake.location.split("/").map((value) => value.trim()).filter(Boolean)
-      : intake.location.trim().split(/\s+/).filter(Boolean);
-    const province = locationParts[0] ?? "";
-    const district = locationParts.slice(1).join(" ");
+    const [province = "", district = ""] = intake.location.split("/").map((value) => value.trim());
     const comparisonWeights = {
       schedule: intake.priorities.includes("time") ? 5 : 3,
       certainty: intake.priorities.includes("cost") ? 5 : 3,
@@ -1025,7 +784,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       },
       "architectural-program": {
         input: {
-          use: intake.usage,
+          use: intake.usage === "commercial" || intake.usage === "mixed" ? "office" : intake.usage === "agricultural" ? "industrial" : intake.usage,
           targetGross: intake.targetArea,
           floors: intake.floors,
           floorHeight: intake.floorHeight,
@@ -1052,7 +811,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       input: { location: intake.location, grossArea: intake.targetArea, floors: intake.floors },
       status: "Yapı ve çevre verisi bekleniyor",
     };
-    const stampedModules = Object.fromEntries(Object.entries(modules).map(([key, value]) => [key, stampProjectModule({ ...record(value), ...(declaredModuleUnits(key) ? { units: declaredModuleUnits(key) } : {}) }, {
+    const stampedModules = Object.fromEntries(Object.entries(modules).map(([key, value]) => [key, stampProjectModule(value, {
       projectId: projectCode,
       projectRevision: "P01",
       sourceModule: key,
@@ -1060,10 +819,25 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
       action: "created",
     })]));
     const seededKeys = Object.keys(stampedModules);
+    if (updateExisting) {
+      setProject(current => {
+        const merged = { ...current.modules };
+        for (const [key, value] of Object.entries(modules)) {
+          const previous = record(current.modules[key]);
+          const incoming = record(value);
+          const geoHasWork = key === "geo-parcel" && (Object.keys(record(previous.metrics)).length > 0 || Object.keys(previous).some(field => !Object.hasOwn(incoming, field) && !["_kernel", "needsReview", "input"].includes(field)));
+          merged[key] = stampProjectModule({ ...incoming, ...previous, ...(key === "decision-assistant" || key === "geo-parcel" && !geoHasWork ? incoming : {}), input: { ...record(previous.input), ...record(incoming.input) }, ...(key === "geo-parcel" ? { parcelStatus: intake.parcelStatus, declaredDocuments: intake.documents } : {}), needsReview: key !== "decision-assistant", status: key === "decision-assistant" ? incoming.status : "Brief güncellendi; mevcut teknik çalışma yeniden kontrol edilmeli" }, { projectId: current.id, projectRevision: current.revision, sourceModule: key, recordedAt: timestamp, action: "updated" });
+        }
+        const journey = record(current.modules["customer-journey"]);
+        if (current.modules["customer-journey"]) merged["customer-journey"] = { ...journey, systemDecision: intake.system };
+        return { ...current, name: intake.name.trim(), updatedAt: timestamp, modules: merged, events: [...current.events, { id: `brief-${now.getTime().toString(36)}`, module: "decision-assistant", action: "update" as const, revision: current.revision, timestamp }].slice(-80) };
+      });
+      return;
+    }
     setProject({
       ...createDefaultProject(),
       id: projectCode,
-      name: normalizeProjectName(intake.name),
+      name: intake.name.trim() || "Yeni ARKEMX Projesi",
       phase: guidedJourney.readiness >= 45 ? "Ön fizibilite" : "Fikir",
       revision: "P01",
       updatedAt: timestamp,
@@ -1083,33 +857,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     });
     setHydrated(true);
   }, []);
-  const reset = useCallback(() => setProject(createActiveProject()), []);
-  const clearLocalProject = useCallback(async () => {
-    const {clearProjectShellStorage}=await import("../lib/project-shell-storage");
-    await clearProjectShellStorage(project.id);
-    if(currentProjectId.current!==project.id)throw Error("Aktif proje değişti; yeni projenin çalışma kaydı silinmedi.");
-    try {
-      clearProjectStorage(window.localStorage, STORAGE_KEY);
-    } catch {
-      // Local storage may be unavailable; the in-memory project is still cleared.
-    }
-    try {
-      window.sessionStorage.removeItem(SESSION_RECOVERY_KEY);
-    } catch {
-      // Session storage may be unavailable.
-    }
-    const clearedProject = createActiveProject();
-    skippedPersistenceSnapshotRef.current = clearedProject;
-    setProject(clearedProject);
-    setPersistence({
-      state: "device-saved",
-      integrity: "missing",
-      lastSavedAt: "",
-      backupAvailable: false,
-      cloud: "not-configured",
-    });
-    setHydrated(true);
-  }, [project.id]);
+  const reset = useCallback(() => { rejectedStorage.current = false; setProject(createActiveProject()); }, []);
   const thread = useMemo(() => deriveProjectThread(project.modules), [project.modules]);
   const core = useMemo(() => deriveProjectCore(project, thread), [project, thread]);
 
@@ -1128,8 +876,7 @@ export function ProjectKernelProvider({ children }: { children: React.ReactNode 
     importProject,
     startProject,
     reset,
-    clearLocalProject,
-  }), [applyHandoff, clearLocalProject, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
+  }), [applyHandoff, core, hydrated, importProject, patchModule, persistence, project, removeModule, reset, setExperience, setIdentity, startProject, synchronizeProject, thread]);
 
   return <ProjectKernelContext.Provider value={value}>{children}</ProjectKernelContext.Provider>;
 }
@@ -1140,27 +887,14 @@ export function useProjectKernel() {
   return value;
 }
 
-export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerlendirme", compact = false }: { module: string; moduleKey?: ProjectModuleKey; confidence?: string; compact?: boolean }) {
+export function ProjectKernelBar({ module, confidence = "Ön değerlendirme" }: { module: string; confidence?: string }) {
   const { project, thread, persistence, setIdentity, setExperience, synchronizeProject, reset } = useProjectKernel();
-  const integrityIssues = projectIntegrityIssues(project);
-  const integrityWarning = integrityIssues.length ? <p role="alert" data-testid="project-integrity-warning">Kaynak doğrulaması gerekli: {integrityIssues.join("; ")}. Eski veri güncel revizyon veya doğrulanmış kaynak olarak kaydedilemez.</p> : null;
   const [editing, setEditing] = useState(false);
-  const [backupNotice, setBackupNotice] = useState("");
   const journeyScrollerRef = useRef<HTMLDivElement>(null);
-  const exportProject = () => {
-    try {
-      downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
-      preserveProjectSwitchBackup(window.localStorage, project);
-      setBackupNotice("Yedek indirmesi başlatıldı; geri dönüş kopyası cihazdaki Proje Kasasında doğrulandı. Proje merkezinden yeni proje açabilirsiniz. Büyük kabuk hesap paketlerini ayrıca indirin.");
-    } catch { setBackupNotice("Cihazdaki geri dönüş kopyası doğrulanamadı; yeni projeye geçmeden önce yedeklemeyi tekrar deneyin veya hesabınıza kaydedin."); }
-  };
+  const exportProject = () => downloadTextFile(`${project.id}-${project.revision}.arkem.json`, JSON.stringify(project, null, 2), "application/json");
 
   const normalizedModule = module.toUpperCase();
-  const activeJourneyIndex = moduleKey ? MODULE_JOURNEY_INDEX[moduleKey] : Math.max(0, PROJECT_JOURNEY.findIndex((step) => step.modules.some((keyword) => normalizedModule.includes(keyword))));
-  const isArchitecture = moduleKey ? moduleKey === "architectural-program" : normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM");
-  const isPlan = moduleKey ? moduleKey === "plan-editor" : normalizedModule.includes("PLAN");
-  const isSystem = moduleKey ? moduleKey === "system-comparison" : normalizedModule.includes("SYSTEM");
-  const isStructural = moduleKey ? moduleKey === "structural-concept" : normalizedModule.includes("STRUCTURAL CONCEPT");
+  const activeJourneyIndex = Math.max(0, PROJECT_JOURNEY.findIndex((step) => step.modules.some((keyword) => normalizedModule.includes(keyword))));
   useEffect(() => {
     const scroller = journeyScrollerRef.current;
     if (!scroller) return;
@@ -1177,48 +911,18 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
       media.removeEventListener("change", revealActiveStep);
     };
   }, [activeJourneyIndex]);
-  const landResearchPending = thread.nextAction.route === "/arsa-arastirma";
-  const regularNext = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
-  const regularNextJourneyStep = regularNext.short === "Arazi" && landResearchPending
-    ? { short: "Arsa araştırması", href: "/arsa-arastirma" }
-    : regularNext;
-  const nextJourneyStep = isStructural
-    ? { short: "BIM Koordinasyon", href: "/bim-koordinasyon" }
-    : isArchitecture
-    ? { short: "Plan & Aks", href: "/plan-ve-aks" }
-    : isPlan
-      ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
-      : isSystem
-        ? { short: "Taşıyıcı ön tasarım", href: "/tasiyici-on-tasarim" }
-        : regularNextJourneyStep;
-  const regularPreviousJourneyStep = PROJECT_JOURNEY[Math.max(0, activeJourneyIndex - 1)];
-  const previousJourneyStep = isPlan
-    ? { short: "Mimari", href: "/mimari-program-studyosu" }
-    : isStructural
-      ? { short: "Sistem seçimi", href: "/sistem-karsilastirma" }
-      : isSystem
-        ? { short: "Plan & Aks", href: "/plan-ve-aks" }
-        : activeJourneyIndex === 1
-          ? { short: "Brief", href: "/proje-baslat" }
-          : activeJourneyIndex > 0
-            ? { short: regularPreviousJourneyStep.short, href: regularPreviousJourneyStep.href }
-            : null;
-  const completedJourney = deriveProjectJourneyState(thread).completed;
+  const regularNextJourneyStep = PROJECT_JOURNEY[Math.min(activeJourneyIndex + 1, PROJECT_JOURNEY.length - 1)];
+  const nextJourneyStep = normalizedModule.includes("ARCHITECT") || normalizedModule.includes("PROGRAM")
+    ? { short: "Plan", href: "/tasarim-calismalari#plan-editor" }
+    : normalizedModule.includes("PLAN")
+      ? { short: "Taşıyıcı ön tasarım", href: "/tasarim-calismalari#tasiyici-on-tasarim" }
+      : regularNextJourneyStep;
+  const completedJourney = PROJECT_JOURNEY.map((step) => step.projectKeys.some((key) => thread.nodes.some((node) => node.id === key && node.active)));
   const completedCount = completedJourney.filter(Boolean).length;
   const architectureModule = record(project.modules["architectural-program"]);
   const planModule = record(project.modules["plan-editor"]);
   const spaceCount = Array.isArray(architectureModule.spaces) ? architectureModule.spaces.reduce((sum, value) => sum + Math.max(1, numeric(record(value).count, 1)), 0) : 0;
   const planElementCount = Array.isArray(planModule.elements) ? planModule.elements.length : 0;
-  const architectureMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "architectural-program")?.milestoneComplete);
-  const planMilestoneReady = Boolean(thread.nodes.find((node) => node.id === "plan-editor")?.milestoneComplete);
-  const systemMilestoneReady = deriveProjectJourneyState(thread).systemDecisionReady;
-  const canAdvanceFromCurrentModule = isArchitecture
-    ? architectureMilestoneReady
-    : isPlan
-      ? architectureMilestoneReady && planMilestoneReady
-      : isSystem
-        ? systemMilestoneReady
-        : true;
   const structureSystemLabels: Record<string, string> = {
     undecided: "Karar bekleniyor",
     concrete: "Betonarme",
@@ -1246,32 +950,7 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
   };
   const currentModule = moduleMeta[module] ?? { code: "ARKEMX", label: module };
 
-  if (compact) {
-    return <div className="project-kernel-compact" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
-      {integrityWarning}
-      <div className="project-kernel-compact-main">
-        <span className="project-kernel-compact-code">ARKEMX / {currentModule.code}</span>
-        <button className="project-kernel-compact-name" onClick={() => setEditing(true)}>{project.name}</button>
-        {editing ? <input className="project-kernel-compact-name-input" aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : null}
-      </div>
-      <div className="project-kernel-compact-meta" aria-label="Proje durumu">
-        <span>{project.phase}</span>
-        <span>{project.revision}</span>
-        <span>{persistence.state === "recovered" ? "Yedekten kurtarıldı" : persistence.state === "unavailable" ? "Tarayıcı kaydı kapalı" : "Bu cihazda kayıtlı"}</span>
-      </div>
-      <div className="project-kernel-compact-actions">
-        {previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← {previousJourneyStep.short}</Link> : null}
-        <Link href="/dijital-proje-merkezi">Proje merkezi</Link>
-        <button onClick={exportProject}>Proje yedeği</button>
-        {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule ? <Link className="is-primary" href={nextJourneyStep.href} onClick={() => synchronizeProject()}>{nextJourneyStep.short} →</Link> : null}
-      </div>
-      {backupNotice && <p role="status">{backupNotice}</p>}
-    </div>;
-  }
-
-  return <><div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
-    {integrityWarning}
-    {backupNotice && <p role="status">{backupNotice}</p>}
+  return <>{Object.values(project.modules).some(value => record(value).needsReview === true) && <div className="customer-resume" role="status">Proje girdileri değişti. Önceki teknik sonuçlar yeniden kontrol edilmeli; işaretli kayıtlardan otomatik aktarım durduruldu. <Link href="/arkemx">Proje rehberine dön</Link></div>}<div className="project-kernel-bar" data-testid="project-kernel-bar" data-system="ARKEM PROJECT KERNEL">
     <div className="kernel-brand"><span>ARKEMX / {currentModule.code}</span><b>{currentModule.label}</b><small>{module}</small></div>
     <div className="kernel-identity"><span>PROJE</span>{editing ? <input aria-label="Proje adı" value={project.name} onChange={(event) => setIdentity({ name: event.target.value })} onBlur={() => setEditing(false)} autoFocus /> : <button onClick={() => setEditing(true)}>{project.name}</button>}<small>{project.id}</small></div>
     <label><span>AŞAMA</span><select value={project.phase} onChange={(event) => setIdentity({ phase: event.target.value as ProjectPhase })}>{["Fikir", "Ön fizibilite", "Avan proje", "Uygulama projesi", "Yapım", "Teslim"].map((phase) => <option key={phase}>{phase}</option>)}</select></label>
@@ -1287,17 +966,17 @@ export function ProjectKernelBar({ module, moduleKey, confidence = "Ön değerle
       <div><button className={project.experience.mode === "guided" ? "active" : ""} onClick={() => setExperience({ mode: "guided", autoHandoff: true })}>Yönlendirmeli</button><button className={project.experience.mode === "technical" ? "active" : ""} onClick={() => setExperience({ mode: "technical" })}>Teknik</button></div>
       <small>{project.experience.autoHandoff ? "Veri aktarımı açık" : "Elle aktarım"}</small>
     </div>
-    <div className="kernel-actions">{previousJourneyStep ? <Link href={previousJourneyStep.href} onClick={() => synchronizeProject()}>← Önceki adım</Link> : null}<Link href="/dijital-proje-merkezi">Dijital zincir ↗</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={reset}>Yeni oturum</button></div>
+    <div className="kernel-actions"><Link href="/arkemx">Proje rehberime dön</Link><Link href="/musteri-proje-portali">Hesaba kaydet</Link><button onClick={exportProject}>Proje JSON ↓</button><button onClick={() => { if (window.confirm("Yeni oturum açılsın mı? Mevcut projenizin yedeği önce indirilecek.")) { exportProject(); reset(); } }}>Yeni oturum</button></div>
   </div><nav className="project-guided-journey" aria-label="Rehberli proje akışı">
     <header><span>TEK PROJE · YEDİ BAĞLI ADIM</span><b>Her modül önceki adımın verisini kullanır</b><small>Şu an: {activeJourneyIndex + 1}. adım / {PROJECT_JOURNEY.length} · Sonuçlar aynı proje kaydında birleşir</small></header>
-    <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; const research = step.short === "Arazi" && landResearchPending; return <Link key={step.href} href={research ? "/arsa-arastirma" : step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{research ? "Aday arsaları araştır" : step.label}</small><strong>{research ? "Kriterler + kısa liste" : step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>
+    <div ref={journeyScrollerRef}>{PROJECT_JOURNEY.map((step, index) => { const done = completedJourney[index]; return <Link key={step.href} href={step.href} onClick={() => synchronizeProject()} className={`${index === activeJourneyIndex ? "active " : ""}${done && index !== activeJourneyIndex ? "passed" : ""}`.trim()} aria-current={index === activeJourneyIndex ? "step" : undefined}><i>{done && index !== activeJourneyIndex ? "✓" : String(index + 1).padStart(2, "0")}</i><span><b>{step.short}</b><small>{step.label}</small><strong>{step.output}</strong></span>{index === activeJourneyIndex ? <em>BURADASIN</em> : index < PROJECT_JOURNEY.length - 1 ? <u aria-hidden="true">→</u> : null}</Link>; })}</div>
     <aside className="project-live-handoff" aria-label="Aktarılan proje verileri">
       <span className="project-continuity-score"><small>VERİ DEVAMLILIĞI</small><b>%{Math.round(completedCount / PROJECT_JOURNEY.length * 100)} · {completedCount}/{PROJECT_JOURNEY.length} adım</b></span>
       <span><small>PARSEL</small><b>{thread.canonical.site.reference}</b></span>
       <span><small>ÖNERİLEN ALAN</small><b>{thread.canonical.site.proposedGross > 0 ? `${thread.canonical.site.proposedGross.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} m²` : "Sıradaki adımda oluşacak"}</b></span>
       <span><small>MİMARİ / PLAN</small><b>{spaceCount || planElementCount ? `${spaceCount} mahal · ${planElementCount} plan nesnesi` : "Program ve plan bekleniyor"}</b></span>
       <span><small>TAŞIYICI SİSTEM</small><b>{structureSystem ? structureSystemLabels[structureSystem] ?? structureSystem : "Sonraki adımda seçilecek"}</b></span>
-      {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && canAdvanceFromCurrentModule && <Link className="project-next-step" href={nextJourneyStep.href} onClick={() => synchronizeProject()}><small>{project.experience.autoHandoff ? "VERİLER AKTARILDI VE KAYDEDİLDİ" : "VERİLER KAYDEDİLDİ"}</small><b>{nextJourneyStep.short} adımına geç</b><i>→</i></Link>}
+      {activeJourneyIndex < PROJECT_JOURNEY.length - 1 && <Link className="project-next-step" href={nextJourneyStep.href} onClick={() => synchronizeProject()}><small>{project.experience.autoHandoff ? "VERİLER AKTARILDI VE KAYDEDİLDİ" : "VERİLER KAYDEDİLDİ"}</small><b>{nextJourneyStep.short} adımına geç</b><i>→</i></Link>}
     </aside>
   </nav></>;
 }
@@ -1314,4 +993,3 @@ export function ProjectThreadDock() {
     </Link>
   </aside>;
 }
-

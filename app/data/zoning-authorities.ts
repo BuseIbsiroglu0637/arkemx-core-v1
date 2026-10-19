@@ -1,16 +1,19 @@
+import { PRIORITY_ZONING_REGIONS, normalizeZoningPlace, priorityZoningRegion } from './zoning-regions.ts';
+
 export type ZoningAuthorityRoute = {
   province: string;
   plate: string;
   primaryAuthority: string;
   parcelSource: string;
   planSource: string;
-  localSourceState: "adapter-required";
+  localSourceState: "adapter-required" | "official-source-handoff";
 };
 
 export type ZoningPortalAdapter = {
   id: string;
   province: string;
   districts?: string[];
+  neighborhoods?: string[];
   label: string;
   authority: string;
   href: string;
@@ -18,6 +21,12 @@ export type ZoningPortalAdapter = {
   queryMode: "official-viewer" | "e-government-service";
   verifiedAt: string;
   limitation: string;
+  sourcePage?: string;
+  portalHref?: string;
+  verification?: string;
+  integrationMode?: 'official-source-handoff';
+  authorizedApi?: 'not-verified';
+  certifiedDocument?: 'not-verified';
 };
 
 const PROVINCES = [
@@ -32,15 +41,62 @@ export const ZONING_AUTHORITY_ROUTES: ZoningAuthorityRoute[] = PROVINCES.map((pr
   primaryAuthority: METROPOLITAN.has(province) ? `${province} Büyükşehir Belediyesi + ilçe belediyesi` : `${province} il/ilçe belediyesi veya yetkili idare`,
   parcelSource: "https://parselsorgu.tkgm.gov.tr/",
   planSource: "https://eplan.csb.gov.tr/",
-  localSourceState: "adapter-required",
+  localSourceState: priorityZoningRegion(province)?.routingScope === 'district-directory-only' ? "adapter-required" : priorityZoningRegion(province) ? "official-source-handoff" : "adapter-required",
 }));
 
 export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
+  ...PRIORITY_ZONING_REGIONS.filter(region => region.routingScope !== 'district-directory-only').map(region => ({
+    id: region.portalId,
+    province: region.province,
+    label: region.label,
+    authority: region.authority,
+    href: region.href,
+    scope: 'metropolitan-plan' as const,
+    queryMode: 'official-viewer' as const,
+    verifiedAt: region.verifiedAt,
+    limitation: region.limitation,
+    sourcePage: region.sourcePage,
+    verification: region.verification,
+    integrationMode: 'official-source-handoff' as const,
+    authorizedApi: 'not-verified' as const,
+    certifiedDocument: 'not-verified' as const,
+  })),
   {
-    id: "kastamonu-belediye-eimar", province: "Kastamonu", districts: ["Merkez"],
-    label: "Kastamonu Belediyesi e-İmar", authority: "Kastamonu Belediyesi / e-Devlet",
-    href: "https://www.turkiye.gov.tr/kastamonu-belediyesi-eimar-8914", scope: "parcel-zoning", queryMode: "e-government-service", verifiedAt: "2026-10-12",
-    limitation: "Kimlik doğrulaması gerekir. Belediye yetki alanı kontrol edilmelidir; Merkez ilçedeki her köy belediye kapsamında kabul edilemez.",
+    id: 'kastamonu-belediyesi',
+    province: 'Kastamonu',
+    districts: ['Merkez'],
+    neighborhoods: ['Budamış'],
+    label: 'Kastamonu Belediyesi E-İmar',
+    authority: 'Kastamonu Belediyesi',
+    href: 'https://www.kastamonu.bel.tr/e-uygulama/',
+    sourcePage: 'https://www.kastamonu.bel.tr/e-uygulama/',
+    portalHref: 'https://keos.kastamonu.bel.tr:1443/imardurumu/',
+    scope: 'parcel-zoning',
+    queryMode: 'official-viewer',
+    verifiedAt: '2026-10-11',
+    verification: 'Belediyenin e-uygulama yönlendirmesi ve Budamış mahalle bağlamı kontrol edildi. Bu kayıt parselin imar haklarını veya nihai yetki sınırını doğrulamaz.',
+    limitation: 'Budamış için belediye kaynağına yönlendirilir; il genelindeki veya Merkez ilçesindeki diğer yerleşimlere genellenmez. Güncel parsel sonucu, plan notları ve yetki durumu ayrıca doğrulanmalıdır.',
+    integrationMode: 'official-source-handoff',
+    authorizedApi: 'not-verified',
+    certifiedDocument: 'not-verified',
+  },
+  {
+    id: 'besiktas-keos',
+    province: 'İstanbul',
+    districts: ['Beşiktaş'],
+    label: 'Beşiktaş Belediyesi E-İmar',
+    authority: 'Beşiktaş Belediyesi',
+    href: 'https://besiktas.bel.tr/',
+    sourcePage: 'https://besiktas.bel.tr/',
+    portalHref: 'https://keos.besiktas.bel.tr/imardurumu/index.aspx',
+    scope: 'parcel-zoning',
+    queryMode: 'official-viewer',
+    verifiedAt: '2026-10-11',
+    verification: 'Belediye ana sayfasındaki E-İmar yönlendirmesi kontrol edildi. Kaynak kullanım koşulları gereği resmî ana sayfadan ilerlenir; parsel sonucu ve sayısal haklar doğrulanmış sayılmaz.',
+    limitation: 'Güvenlik doğrulaması ve kaynak koşulları uygulanabilir. Boğaziçi ve diğer özel yetki alanlarındaki parseller ayrıca ilgili idareden doğrulanmalıdır; ilçe eşleşmesi tek başına nihai yetki veya imar hakkı kanıtı değildir.',
+    integrationMode: 'official-source-handoff',
+    authorizedApi: 'not-verified',
+    certifiedDocument: 'not-verified',
   },
   {
     id: "adapazari-e-devlet-imar",
@@ -51,8 +107,8 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://www.turkiye.gov.tr/adapazari-belediyesi-imar-durum-sorgulama",
     scope: "parcel-zoning",
     queryMode: "e-government-service",
-    verifiedAt: "2026-10-12",
-    limitation: "Resmî sorgu formu üzerinden mahalle ve ada/parsel seçilir. Formun açılması parsel sonucunun alındığı anlamına gelmez; ruhsat eki onaylı imar durumu belgesi ayrıca yetkili idareden alınır.",
+    verifiedAt: "2026-07-28",
+    limitation: "Kimlik doğrulama ve belediye servisinin erişilebilirliği gerekir. Sonuç araştırma girdisidir; ruhsat eki onaylı imar durumu belgesi ayrıca yetkili idareden alınır.",
   },
   {
     id: "sapanca-e-devlet-imar",
@@ -63,8 +119,8 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://www.turkiye.gov.tr/sapanca-belediyesi-imar-durum-sorgulama",
     scope: "parcel-zoning",
     queryMode: "e-government-service",
-    verifiedAt: "2026-10-12",
-    limitation: "Resmî sorgu formunda parsel kimliği ve belediye yanıtı doğrulanır. Sonuç plan notları ve onaylı belgeyle birlikte değerlendirilir.",
+    verifiedAt: "2026-07-28",
+    limitation: "Kimlik doğrulama ve belediye servisinin erişilebilirliği gerekir. Sonuç araştırma girdisidir; plan notları ve onaylı belgeyle birlikte değerlendirilir.",
   },
   {
     id: "serdivan-keos",
@@ -75,8 +131,8 @@ export const VERIFIED_ZONING_PORTALS: ZoningPortalAdapter[] = [
     href: "https://keos.serdivan.bel.tr/imardurumu/",
     scope: "parcel-zoning",
     queryMode: "official-viewer",
-    verifiedAt: "2026-10-12",
-    limitation: "Ada/parsel araması resmî belediye görüntüleyicisinde tamamlanır; ekrandaki bilgi ruhsat veya tapu belgesi yerine geçmez.",
+    verifiedAt: "2026-10-03",
+    limitation: "Belediye ekranı ön bilgi sunar; işlem tesis etmeye esas resmî imar durumu belediyeden alınır. Bu kayıt otomatik API erişimi veya parselin imar koşullarının doğrulandığı anlamına gelmez.",
   },
   {
     id: "ibb-eplan",
@@ -97,29 +153,47 @@ export function createEGovernmentZoningSearch(province: string, district = "") {
   return `https://www.turkiye.gov.tr/arama?aranan=${encodeURIComponent(query)}`;
 }
 
-export function resolveZoningPortal(province: string, district = "") {
-  const normalizedProvince = province.toLocaleLowerCase("tr-TR");
-  const normalizedDistrict = district.toLocaleLowerCase("tr-TR");
-  return VERIFIED_ZONING_PORTALS.find((portal) => {
-    if (portal.province.toLocaleLowerCase("tr-TR") !== normalizedProvince) return false;
-    if (!portal.districts?.length) return true;
-    return portal.districts.some((item) => item.toLocaleLowerCase("tr-TR") === normalizedDistrict);
-  }) ?? null;
+function normalizeZoningNeighborhood(value: string) {
+  return normalizeZoningPlace(value).replace(/\s+(?:mahallesi|mah\.?)$/, '').trim();
 }
 
-export function resolveZoningAuthority(province: string, district = "") {
-  const record = ZONING_AUTHORITY_ROUTES.find((item) => item.province.toLocaleLowerCase("tr-TR") === province.toLocaleLowerCase("tr-TR"));
+export function resolveZoningPortal(province: string, district = "", neighborhood = "") {
+  const normalizedProvince = normalizeZoningPlace(province);
+  const normalizedDistrict = normalizeZoningPlace(district);
+  const normalizedNeighborhood = normalizeZoningNeighborhood(neighborhood);
+  const candidates = VERIFIED_ZONING_PORTALS.filter(portal => normalizeZoningPlace(portal.province) === normalizedProvince);
+  const districtCandidates = candidates.filter(portal => portal.districts?.some(item => normalizeZoningPlace(item) === normalizedDistrict));
+  const neighborhoodSpecific = districtCandidates.find(portal => portal.neighborhoods?.some(item => normalizeZoningNeighborhood(item) === normalizedNeighborhood));
+  if (neighborhoodSpecific) return neighborhoodSpecific;
+  const specific = districtCandidates.find(portal => !portal.neighborhoods?.length);
+  if (specific) return specific;
+  const region = priorityZoningRegion(province);
+  // A district directory does not prove municipal or provincial jurisdiction.
+  if (region?.routingScope === 'district-directory-only') return null;
+  // A mistyped or unknown district must not be presented as covered.
+  if (region && normalizedDistrict && !region.districts.some(item => normalizeZoningPlace(item) === normalizedDistrict)) return null;
+  return candidates.find(portal => !portal.districts?.length) ?? null;
+}
+
+export function resolveZoningAuthority(province: string, district = "", neighborhood = "") {
+  const record = ZONING_AUTHORITY_ROUTES.find((item) => normalizeZoningPlace(item.province) === normalizeZoningPlace(province));
   if (!record) return null;
+  const portal = resolveZoningPortal(province, district, neighborhood);
+  const primaryAuthority = portal?.authority ?? record.primaryAuthority;
   return {
     ...record,
+    primaryAuthority,
     district,
-    administrativeRoute: district ? `${record.primaryAuthority} · ${district}` : record.primaryAuthority,
+    neighborhood,
+    localSourceState: portal ? "official-source-handoff" as const : "adapter-required" as const,
+    jurisdictionVerified: false as const,
+    administrativeRoute: district ? `${primaryAuthority} · ${district}` : primaryAuthority,
     sequence: [
       "TKGM parsel kimliği ve sınır ön kontrolü",
       "e-Plan plan/pafta/PIN araştırması",
       "Yetkili belediye veya idare e-İmar/doğrulama ekranı",
       "Onaylı imar durumu ve plan notu belgesi",
     ],
-    limitation: "TAKS, KAKS/emsal, Hmax/Yençok ve nizam ancak güncel plan, plan notu ve yetkili idare belgesiyle resmî statü kazanır.",
+    limitation: [portal?.limitation, "Kaynak yönlendirmesi nihai idare yetkisi tespiti değildir. TAKS, KAKS/emsal, Hmax/Yençok ve nizam ancak güncel plan, plan notu ve yetkili idare belgesiyle resmî statü kazanır."].filter(Boolean).join(' '),
   };
 }

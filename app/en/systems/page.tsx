@@ -17,3 +17,4 @@ const sections = [
 export default function EnglishSystemsPage() {
   return <EnglishContentPage eyebrow="02 / BUILDING SYSTEMS" title="THE SYSTEM FOLLOWS THE PROJECT." lead="Span, load path, ground conditions, programme, supply and production reality shape the system decision." image="/projects/v32/cihan-tamamlanan.webp" imageAlt="Completed precast concrete industrial facility" sections={sections} />;
 }
+

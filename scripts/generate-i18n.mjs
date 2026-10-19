@@ -106,3 +106,4 @@ await Promise.all(workers);
 const ordered = Object.fromEntries(Object.entries(translations).sort(([a], [b]) => a.localeCompare(b, "tr")));
 fs.writeFileSync(outputPath, `${JSON.stringify(ordered, null, 2)}\n`);
 console.log(`generated ${Object.keys(ordered).length} public-copy translations`);
+

@@ -1,6 +1,0 @@
-{
-  "name": "ARKEMX CORE-V1 (Node 22)",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
-  "forwardPorts": [5173],
-  "portsAttributes": {"5173": {"label": "ARKEMX development", "onAutoForward": "openPreview"}}
-}

@@ -2,15 +2,16 @@
 
 import { FormEvent, useState } from "react";
 
-export function AccountOnboarding({ displayName, email, returnTo = "/dijital-proje-merkezi" }: { displayName: string; email: string; returnTo?: string }) {
+export function AccountOnboarding({ displayName, email }: { displayName: string; email: string }) {
   const [form, setForm] = useState({ displayName, company: "", phone: "", preferredLanguage: "tr" });
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
-  const [message, setMessage] = useState("Profil bilgilerinizi tamamlayarak kurulumu bitirin.");
+  const [message, setMessage] = useState("Zorunlu alanları tamamlayarak Arkem proje hesabınızı oluşturun.");
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setState("saving");
     setMessage("Hesabınız hazırlanıyor…");
+    try {
     const response = await fetch("/api/customer-workspace", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -22,42 +23,23 @@ export function AccountOnboarding({ displayName, email, returnTo = "/dijital-pro
       setMessage(body.error || "Hesap oluşturulamadı. Lütfen tekrar deneyin.");
       return;
     }
-    window.location.assign(returnTo);
+    window.location.assign("/uyelik");
+    } catch {
+      setState("error");
+      setMessage("Bağlantı kurulamadı. Bilgileriniz bu ekranda korunuyor; bağlantınızı kontrol edip tekrar deneyin.");
+    }
   };
 
   return <form className="account-onboarding-form" onSubmit={submit}>
-    <header>
-      <span>ADIM 2 / 3</span>
-      <h2>Profil bilgilerinizi tamamlayın</h2>
-      <p>{message}</p>
-    </header>
-
+    <header><span>HESAP BİLGİLERİ</span><h2>Proje çalışma alanınızı oluşturun.</h2><p role={state === "error" ? "alert" : "status"} aria-live="polite">{message}</p></header>
     <div className="account-form-grid">
-      <label>
-        Ad soyad
-        <input required autoComplete="name" value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })}/>
-      </label>
-
-      <label>
-        E-posta
-        <input readOnly value={email}/>
-        <small>Güvenli oturum hesabınızla eşleştirilir.</small>
-      </label>
-
-      <label>
-        Firma / kurum
-        <input autoComplete="organization" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Varsa firma adı"/>
-      </label>
-
-      <label>
-        Telefon
-        <input autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+90 …"/>
-      </label>
+      <label>Ad soyad<input required autoComplete="name" value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })}/></label>
+      <label>E-posta<input readOnly value={email}/><small>Güvenli oturum kimliğinizle eşleştirilir.</small></label>
+      <label>Firma / kurum<input autoComplete="organization" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Varsa firma adı"/></label>
+      <label>Telefon<input autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+90 …"/></label>
+      <label>Tercih edilen dil<select value={form.preferredLanguage} onChange={(event) => setForm({ ...form, preferredLanguage: event.target.value })}><option value="tr">Türkçe</option><option value="en">English</option><option value="az">Azərbaycanca</option><option value="ru">Русский</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="it">Italiano</option></select></label>
     </div>
-
-    <button type="submit" disabled={state === "saving"}>
-      {state === "saving" ? "Kurulum tamamlanıyor…" : "Kurulumu Tamamla"}
-      <span aria-hidden="true">→</span>
-    </button>
+    <label className="account-consent"><input required type="checkbox"/><span>Proje ve görüşme kayıtlarımın hesabımla ilişkilendirilmesini kabul ediyorum.</span></label>
+    <button type="submit" disabled={state === "saving"} aria-busy={state === "saving"}>{state === "saving" ? "Hesap hazırlanıyor…" : "Arkem hesabımı oluştur"}</button>
   </form>;
 }

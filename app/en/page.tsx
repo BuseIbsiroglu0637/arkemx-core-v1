@@ -11,3 +11,4 @@ export const metadata: Metadata = {
 export default function EnglishHome() {
   return <HomeV4 locale="en" />;
 }
+

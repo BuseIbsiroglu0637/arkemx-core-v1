@@ -1,5 +1,4 @@
 "use client";
-import { ContentImage } from "./ContentImage";
 
 import { useEffect, useState } from "react";
 import { site } from "../data/site";
@@ -16,7 +15,7 @@ const channels = [
 type Channel = (typeof channels)[number];
 
 function LiveSurface({channel}:{channel:Channel}) {
-  return <a className="social-channel-showcase" href={channel.url} target="_blank" rel="noreferrer"><ContentImage src={channel.image} alt={`${channel.name} teknik içerik vitrini`}/><div><span>{channel.tag}</span><b>{channel.title}</b><small>Resmî {channel.name} kanalını açın ↗</small></div><i aria-hidden="true">{channel.code}</i></a>;
+  return <a className="social-channel-showcase" href={channel.url} target="_blank" rel="noreferrer"><img src={channel.image} alt={`${channel.name} teknik içerik vitrini`}/><div><span>{channel.tag}</span><b>{channel.title}</b><small>Resmî {channel.name} kanalını açın ↗</small></div><i aria-hidden="true">{channel.code}</i></a>;
 }
 
 export function SocialMediaCarousel(){

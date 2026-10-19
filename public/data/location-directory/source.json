@@ -1,0 +1,702 @@
+{
+  "name": "TurkiyeAPI bağımsız yerleşim dizini",
+  "url": "https://docs.turkiyeapi.dev/tr/v2/guide/datasets",
+  "datasetVersion": "2025",
+  "capturedAt": "2026-10-10T13:04:21.494Z",
+  "counts": {
+    "provinces": 81,
+    "districts": 973,
+    "neighborhoods": 32254,
+    "villages": 18183,
+    "settlements": 50437
+  },
+  "license": "MIT",
+  "copyright": "Copyright (c) 2022-2026 Ubeyde Emir Özdemir",
+  "licenseUrl": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/LICENSE",
+  "localLicenseUrl": "/data/location-directory/LICENSE.txt",
+  "manifestUrl": "/data/location-directory/source.json",
+  "sourceCommit": "a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d",
+  "notice": "Bağımsız idari yerleşim dizinidir; resmî TKGM parsel kimliği, sınırı veya güncel imar bilgisi değildir.",
+  "sources": [
+    {
+      "file": "provinces.json",
+      "url": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/datasets/2025/provinces.json",
+      "sha256": "b33c69236d680aa3a13f66b96c70fb45037a0e88061b6cb05e8b68a2d3f59169",
+      "bytes": 48728
+    },
+    {
+      "file": "districts.json",
+      "url": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/datasets/2025/districts.json",
+      "sha256": "daface7da3c0b6b8d882bae8e59156332461c6076872eb29d4117f7dbbafb794",
+      "bytes": 278610
+    },
+    {
+      "file": "neighborhoods.json",
+      "url": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/datasets/2025/neighborhoods.json",
+      "sha256": "6e7d1bfbdb1c61fcd753472a4c1853b15f353179d1cc521ec6ae5b4de685bcd1",
+      "bytes": 7575501
+    },
+    {
+      "file": "villages.json",
+      "url": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/datasets/2025/villages.json",
+      "sha256": "bee372279790102c3f4f13444b946ddf518959c5570f61317feb9e6964202458",
+      "bytes": 3734825
+    },
+    {
+      "file": "LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/ubeydeozdmr/turkiye-api/a0ad8351cb52153e7a92aa7ba9a5bc1e3294da8d/LICENSE",
+      "sha256": "dc465f3bf6ed4639e5b1152d9f71754fd4c1ee3c017add67d6a35623e55ad8ea",
+      "bytes": 1082
+    }
+  ],
+  "shards": [
+    {
+      "id": 1,
+      "name": "Adana",
+      "file": "2025/1.2b5807814fa9.json",
+      "sha256": "2b5807814fa92e626cbcec53e6015a09b19d66a892073cc1dfc705b0ff9be5cd",
+      "districtCount": 15,
+      "settlementCount": 831
+    },
+    {
+      "id": 2,
+      "name": "Adıyaman",
+      "file": "2025/2.826a144ea05d.json",
+      "sha256": "826a144ea05da451bb8fe20d826fb6af6c33a0a14882c491bd289cdbc7651361",
+      "districtCount": 9,
+      "settlementCount": 629
+    },
+    {
+      "id": 3,
+      "name": "Afyonkarahisar",
+      "file": "2025/3.398b50af2529.json",
+      "sha256": "398b50af25292536c95318c83a4e2dab7120c4fba107d2cdef94210e1d2b0832",
+      "districtCount": 18,
+      "settlementCount": 851
+    },
+    {
+      "id": 4,
+      "name": "Ağrı",
+      "file": "2025/4.4a102a94393d.json",
+      "sha256": "4a102a94393d73e05411bdaa4aadf9397e6fb99366abf64f430c3369bcb0fc7b",
+      "districtCount": 8,
+      "settlementCount": 664
+    },
+    {
+      "id": 5,
+      "name": "Amasya",
+      "file": "2025/5.a628f6648e56.json",
+      "sha256": "a628f6648e568a843cbb5a0390b8a5173b2673f66aaf8a807d4098a24d812cfe",
+      "districtCount": 7,
+      "settlementCount": 479
+    },
+    {
+      "id": 6,
+      "name": "Ankara",
+      "file": "2025/6.93998155d3a4.json",
+      "sha256": "93998155d3a4387cf71223860a920cdbaef505131166d822537155353dc30f09",
+      "districtCount": 25,
+      "settlementCount": 1427
+    },
+    {
+      "id": 7,
+      "name": "Antalya",
+      "file": "2025/7.6b01e9d28064.json",
+      "sha256": "6b01e9d28064674faa2700799d05fd4f9eb0dbe40ceaf4df588a46828f45d2f0",
+      "districtCount": 19,
+      "settlementCount": 913
+    },
+    {
+      "id": 8,
+      "name": "Artvin",
+      "file": "2025/8.c426abdc7f14.json",
+      "sha256": "c426abdc7f140947c25c67af9086c344163e9d2d3a9ccea0b5182977c3993e30",
+      "districtCount": 9,
+      "settlementCount": 365
+    },
+    {
+      "id": 9,
+      "name": "Aydın",
+      "file": "2025/9.32b77f134b9c.json",
+      "sha256": "32b77f134b9cc6f2b4d090e586e53437a08ba27087aee223b3249a54be7a4cfa",
+      "districtCount": 17,
+      "settlementCount": 671
+    },
+    {
+      "id": 10,
+      "name": "Balıkesir",
+      "file": "2025/10.202dad66c432.json",
+      "sha256": "202dad66c432d15785e0884fe963d96f2fd26cdab72e57631b6e7dfd9b7fadfc",
+      "districtCount": 20,
+      "settlementCount": 1133
+    },
+    {
+      "id": 11,
+      "name": "Bilecik",
+      "file": "2025/11.ac7d2f34b8f1.json",
+      "sha256": "ac7d2f34b8f1666ec73bfba0c71f93fb29bf146b184c87b800efe4dcf1e335e2",
+      "districtCount": 8,
+      "settlementCount": 307
+    },
+    {
+      "id": 12,
+      "name": "Bingöl",
+      "file": "2025/12.ae2454c50d99.json",
+      "sha256": "ae2454c50d993b29dd2a1a139b56e37c4e926354f32ed820844135d67de3a8e4",
+      "districtCount": 8,
+      "settlementCount": 391
+    },
+    {
+      "id": 13,
+      "name": "Bitlis",
+      "file": "2025/13.449bf8a39821.json",
+      "sha256": "449bf8a39821dfc56214e9f3f9bfaf4d5fb8a55677e16e96a93d3d1bc6ffeedb",
+      "districtCount": 7,
+      "settlementCount": 478
+    },
+    {
+      "id": 14,
+      "name": "Bolu",
+      "file": "2025/14.ffcf71eb3049.json",
+      "sha256": "ffcf71eb3049919b1e435d8df629d31095e5fc1606a068d100ce465ad3fa3f5d",
+      "districtCount": 9,
+      "settlementCount": 580
+    },
+    {
+      "id": 15,
+      "name": "Burdur",
+      "file": "2025/15.5b1fb04fa0b5.json",
+      "sha256": "5b1fb04fa0b5b56b0b0e5630f4887bff06d916e41633fbf771456032dcdff17a",
+      "districtCount": 11,
+      "settlementCount": 322
+    },
+    {
+      "id": 16,
+      "name": "Bursa",
+      "file": "2025/16.b68ade6fa66a.json",
+      "sha256": "b68ade6fa66a16ae935d98b4da208621819ffce2fa94e9496450c370ec7ca12e",
+      "districtCount": 17,
+      "settlementCount": 1060
+    },
+    {
+      "id": 17,
+      "name": "Çanakkale",
+      "file": "2025/17.76217e6ee716.json",
+      "sha256": "76217e6ee716dee43843c18c9590fd3bbf7a84e96733ee848ade07be6e6a23cb",
+      "districtCount": 12,
+      "settlementCount": 658
+    },
+    {
+      "id": 18,
+      "name": "Çankırı",
+      "file": "2025/18.468bc2d69c0d.json",
+      "sha256": "468bc2d69c0d598722aaa509cdae43ef2cfd817173805605af3db460abc52882",
+      "districtCount": 12,
+      "settlementCount": 471
+    },
+    {
+      "id": 19,
+      "name": "Çorum",
+      "file": "2025/19.4e87136d9dab.json",
+      "sha256": "4e87136d9dab445941d653ee19d0d669ec65e69bbcc8ccd54682198c508cb78e",
+      "districtCount": 14,
+      "settlementCount": 885
+    },
+    {
+      "id": 20,
+      "name": "Denizli",
+      "file": "2025/20.241918584a6f.json",
+      "sha256": "241918584a6f2aae2400a44e5edcc763b80c27b84a715e103a1614e46eb497d4",
+      "districtCount": 19,
+      "settlementCount": 616
+    },
+    {
+      "id": 21,
+      "name": "Diyarbakır",
+      "file": "2025/21.c602ede13d0c.json",
+      "sha256": "c602ede13d0c7dead3cb682d0e481e5d8b92d5d2dc32c6832909718ef5e81022",
+      "districtCount": 17,
+      "settlementCount": 1056
+    },
+    {
+      "id": 22,
+      "name": "Edirne",
+      "file": "2025/22.e165e74f08b6.json",
+      "sha256": "e165e74f08b60051aeb78fa8a3d47f925e8b90f88936bb51a898dabad3f6bb5e",
+      "districtCount": 9,
+      "settlementCount": 353
+    },
+    {
+      "id": 23,
+      "name": "Elazığ",
+      "file": "2025/23.0d03eee8d940.json",
+      "sha256": "0d03eee8d940ce2618f53d751d8b9a3c53914666ec6ea50505aec45e2699ef39",
+      "districtCount": 11,
+      "settlementCount": 703
+    },
+    {
+      "id": 24,
+      "name": "Erzincan",
+      "file": "2025/24.48e308230dff.json",
+      "sha256": "48e308230dff9b0641955333244fde5267b02e80b03efd8e9008038fdf27337a",
+      "districtCount": 9,
+      "settlementCount": 681
+    },
+    {
+      "id": 25,
+      "name": "Erzurum",
+      "file": "2025/25.2bc0d2ff786c.json",
+      "sha256": "2bc0d2ff786c02204a3446eaadc0d253d9869f25dc0c25775fdee6d0a0b30abc",
+      "districtCount": 20,
+      "settlementCount": 1188
+    },
+    {
+      "id": 26,
+      "name": "Eskişehir",
+      "file": "2025/26.3093b88cefd9.json",
+      "sha256": "3093b88cefd9b9c7f4b70d20617a41c84f7ac4e5da221c2443a9a3f288ece076",
+      "districtCount": 14,
+      "settlementCount": 540
+    },
+    {
+      "id": 27,
+      "name": "Gaziantep",
+      "file": "2025/27.56bdc1931927.json",
+      "sha256": "56bdc1931927a1300efebb631a57af35665e99f7f4e8115d6737f3d557646c69",
+      "districtCount": 9,
+      "settlementCount": 737
+    },
+    {
+      "id": 28,
+      "name": "Giresun",
+      "file": "2025/28.26b7dad98062.json",
+      "sha256": "26b7dad9806281ced5d0e06630bef15c0cc6fe58411203821d37ae7c1b8d0864",
+      "districtCount": 16,
+      "settlementCount": 759
+    },
+    {
+      "id": 29,
+      "name": "Gümüşhane",
+      "file": "2025/29.91c95b56916f.json",
+      "sha256": "91c95b56916f7ba395218789068de25abf0a7b774751d1692dcfd6e76526a41c",
+      "districtCount": 6,
+      "settlementCount": 396
+    },
+    {
+      "id": 30,
+      "name": "Hakkari",
+      "file": "2025/30.b247f83127ba.json",
+      "sha256": "b247f83127ba105ff19022d52407d5771b913ea10e7aeda93ea00979a4a393d9",
+      "districtCount": 5,
+      "settlementCount": 185
+    },
+    {
+      "id": 31,
+      "name": "Hatay",
+      "file": "2025/31.aed7d1b82359.json",
+      "sha256": "aed7d1b82359621bc23715f650e4a4d9848a736066bc113b80aff815938761cb",
+      "districtCount": 15,
+      "settlementCount": 599
+    },
+    {
+      "id": 32,
+      "name": "Isparta",
+      "file": "2025/32.629060159d83.json",
+      "sha256": "629060159d835921f01a6780c5f84532a6dcc10a2de7cf7d419e65ec4ce83dbb",
+      "districtCount": 13,
+      "settlementCount": 422
+    },
+    {
+      "id": 33,
+      "name": "Mersin",
+      "file": "2025/33.3d1c97ee03f0.json",
+      "sha256": "3d1c97ee03f0917d2bb18d3384486d4ed597cdf627c8b3586f22059be34157ed",
+      "districtCount": 13,
+      "settlementCount": 806
+    },
+    {
+      "id": 34,
+      "name": "İstanbul",
+      "file": "2025/34.8aa2174ff7d7.json",
+      "sha256": "8aa2174ff7d7791aaf66c69a1157c70ea65f38b1c3a900c1d6156006ff701b3f",
+      "districtCount": 39,
+      "settlementCount": 961
+    },
+    {
+      "id": 35,
+      "name": "İzmir",
+      "file": "2025/35.d8b73be49d40.json",
+      "sha256": "d8b73be49d40a3ef29d2c841f31eb2ca4ce604679b0a29aca0d074153df7f9d9",
+      "districtCount": 30,
+      "settlementCount": 1299
+    },
+    {
+      "id": 36,
+      "name": "Kars",
+      "file": "2025/36.9fa393de4a9e.json",
+      "sha256": "9fa393de4a9e136ec1b58a7b0a6486e65cf041331c4f86a248b21ac5e0c3023f",
+      "districtCount": 8,
+      "settlementCount": 436
+    },
+    {
+      "id": 37,
+      "name": "Kastamonu",
+      "file": "2025/37.9b78cc5459c5.json",
+      "sha256": "9b78cc5459c52e6d582dca23fe98beae554e0f5e65aa0bdc9620b9e9291dceb8",
+      "districtCount": 20,
+      "settlementCount": 1227
+    },
+    {
+      "id": 38,
+      "name": "Kayseri",
+      "file": "2025/38.aba87d5c4cd4.json",
+      "sha256": "aba87d5c4cd46c185e38ed44d1af39751f3e5eff067670bb0885fcd71c333edb",
+      "districtCount": 16,
+      "settlementCount": 711
+    },
+    {
+      "id": 39,
+      "name": "Kırklareli",
+      "file": "2025/39.a7d6fd24b3f8.json",
+      "sha256": "a7d6fd24b3f8ed5dfbf6c4936e534cffa12f89e2e184aa08be61488a13be7c83",
+      "districtCount": 8,
+      "settlementCount": 287
+    },
+    {
+      "id": 40,
+      "name": "Kırşehir",
+      "file": "2025/40.04cec71a2cfc.json",
+      "sha256": "04cec71a2cfc835ddd9ee00609a4e4bb2bd5c629a3c680c648647da300013300",
+      "districtCount": 7,
+      "settlementCount": 319
+    },
+    {
+      "id": 41,
+      "name": "Kocaeli",
+      "file": "2025/41.fdaa493480d2.json",
+      "sha256": "fdaa493480d284c7d49ddbae29c13d1c28333035bf2e8f3e2f7ecaab4697394e",
+      "districtCount": 12,
+      "settlementCount": 472
+    },
+    {
+      "id": 42,
+      "name": "Konya",
+      "file": "2025/42.cf2b83fe476e.json",
+      "sha256": "cf2b83fe476e4b4a44535e0349585d3b866826efa90b49c6382d99d2777448ee",
+      "districtCount": 31,
+      "settlementCount": 1138
+    },
+    {
+      "id": 43,
+      "name": "Kütahya",
+      "file": "2025/43.470979bf1c79.json",
+      "sha256": "470979bf1c79ad8004d71dc57ee92bd175cc1bb81a0fa909146bcafdcd7f651b",
+      "districtCount": 13,
+      "settlementCount": 770
+    },
+    {
+      "id": 44,
+      "name": "Malatya",
+      "file": "2025/44.0c77109c596f.json",
+      "sha256": "0c77109c596fe31530cf50764cebdaeae34a904d83f6ea505332183d83806aeb",
+      "districtCount": 13,
+      "settlementCount": 719
+    },
+    {
+      "id": 45,
+      "name": "Manisa",
+      "file": "2025/45.c91a6b8d97ad.json",
+      "sha256": "c91a6b8d97ada06434bbdc9e0f9b18778d8a14e2ead50ba754b400953540c796",
+      "districtCount": 17,
+      "settlementCount": 1088
+    },
+    {
+      "id": 46,
+      "name": "Kahramanmaraş",
+      "file": "2025/46.cf8b30040421.json",
+      "sha256": "cf8b300404214fac89244efec37971ed2032c69c1561f6563c68e9057d689747",
+      "districtCount": 11,
+      "settlementCount": 721
+    },
+    {
+      "id": 47,
+      "name": "Mardin",
+      "file": "2025/47.a97a1849c166.json",
+      "sha256": "a97a1849c1666e2d9c2b1d5bbdadb5cfb70d8d87cd239ab48cbc2f9b38ac4681",
+      "districtCount": 10,
+      "settlementCount": 701
+    },
+    {
+      "id": 48,
+      "name": "Muğla",
+      "file": "2025/48.5c7d3efa35a1.json",
+      "sha256": "5c7d3efa35a1c18a2988d9304ee5d73ab7abb96cc333f129604f264124d1987a",
+      "districtCount": 13,
+      "settlementCount": 574
+    },
+    {
+      "id": 49,
+      "name": "Muş",
+      "file": "2025/49.15b5017474f2.json",
+      "sha256": "15b5017474f26ce854d49692f259d357187312e007bf51ccd2b6784bcbfd26a7",
+      "districtCount": 6,
+      "settlementCount": 492
+    },
+    {
+      "id": 50,
+      "name": "Nevşehir",
+      "file": "2025/50.86cb243080ad.json",
+      "sha256": "86cb243080ad19f9e37b2070f11e3995dcc2dfa00d19c0898ea30c14830e0983",
+      "districtCount": 8,
+      "settlementCount": 276
+    },
+    {
+      "id": 51,
+      "name": "Niğde",
+      "file": "2025/51.5a99ada16c32.json",
+      "sha256": "5a99ada16c329c6b829f8a8570847aab3d1977bd4f5777c32ccce71055bed9db",
+      "districtCount": 6,
+      "settlementCount": 239
+    },
+    {
+      "id": 52,
+      "name": "Ordu",
+      "file": "2025/52.db98d150ee73.json",
+      "sha256": "db98d150ee738f94ac7f0b20d53bee68083216a8f1a9172ddce423d36b5fc797",
+      "districtCount": 19,
+      "settlementCount": 772
+    },
+    {
+      "id": 53,
+      "name": "Rize",
+      "file": "2025/53.a2e096688402.json",
+      "sha256": "a2e096688402a96aebf1611a68c2ebedd116059493407c2f5ab1b63dee1c529a",
+      "districtCount": 12,
+      "settlementCount": 558
+    },
+    {
+      "id": 54,
+      "name": "Sakarya",
+      "file": "2025/54.be39f174851b.json",
+      "sha256": "be39f174851bce6fe255d2b39226f23a7a37ccdf6032385619924b5b6c4fb5ef",
+      "districtCount": 16,
+      "settlementCount": 672
+    },
+    {
+      "id": 55,
+      "name": "Samsun",
+      "file": "2025/55.cd31367a95c6.json",
+      "sha256": "cd31367a95c61c282f43ebe46f2a73ee9d349dd9032ee98fba0bef09de903786",
+      "districtCount": 17,
+      "settlementCount": 1251
+    },
+    {
+      "id": 56,
+      "name": "Siirt",
+      "file": "2025/56.40577adb42ca.json",
+      "sha256": "40577adb42ca44b88b019fe8abb72aa2a5145cc1b3899657d36cef0a96d998cd",
+      "districtCount": 7,
+      "settlementCount": 344
+    },
+    {
+      "id": 57,
+      "name": "Sinop",
+      "file": "2025/57.e14874a32b11.json",
+      "sha256": "e14874a32b11734ac2ad9634d91b842a999548a52429dce56ba934040cd24e33",
+      "districtCount": 9,
+      "settlementCount": 516
+    },
+    {
+      "id": 58,
+      "name": "Sivas",
+      "file": "2025/58.b44ded50cf1a.json",
+      "sha256": "b44ded50cf1a6eb8828f2d61fbf493863e566fe6eec7a433d0cbc45768e3f65f",
+      "districtCount": 17,
+      "settlementCount": 1493
+    },
+    {
+      "id": 59,
+      "name": "Tekirdağ",
+      "file": "2025/59.f78bd7c1acf5.json",
+      "sha256": "f78bd7c1acf559b53f00b8d04121f3df96cae9e84e950c853d72e81a963182c6",
+      "districtCount": 11,
+      "settlementCount": 373
+    },
+    {
+      "id": 60,
+      "name": "Tokat",
+      "file": "2025/60.4e11ab42b844.json",
+      "sha256": "4e11ab42b8443c9355cf1e60c5411544f394de27f51f62084b5dd655ccf1aa87",
+      "districtCount": 12,
+      "settlementCount": 938
+    },
+    {
+      "id": 61,
+      "name": "Trabzon",
+      "file": "2025/61.4657cf7cf550.json",
+      "sha256": "4657cf7cf550cee8f792a79635f9c26583b3b52f9b5e09f56ef0806de909eb13",
+      "districtCount": 18,
+      "settlementCount": 716
+    },
+    {
+      "id": 62,
+      "name": "Tunceli",
+      "file": "2025/62.1fbd717a5007.json",
+      "sha256": "1fbd717a50076734066de33b3e5ca346e637cf87597ce7f565ac66934283b2a5",
+      "districtCount": 8,
+      "settlementCount": 409
+    },
+    {
+      "id": 63,
+      "name": "Şanlıurfa",
+      "file": "2025/63.86cc46c605b3.json",
+      "sha256": "86cc46c605b3a6ece7a959868f34d36532e56310aa1bc2f734e539b92939c681",
+      "districtCount": 13,
+      "settlementCount": 1467
+    },
+    {
+      "id": 64,
+      "name": "Uşak",
+      "file": "2025/64.1d484ed52394.json",
+      "sha256": "1d484ed52394650f13a0b0cdb9d411e3d7abaa6896a4476737d352bf3525b9e7",
+      "districtCount": 6,
+      "settlementCount": 318
+    },
+    {
+      "id": 65,
+      "name": "Van",
+      "file": "2025/65.96c37752d529.json",
+      "sha256": "96c37752d529f42e5ba472fff97389efc28e864c695d1e304e598a1d41d3535a",
+      "districtCount": 13,
+      "settlementCount": 696
+    },
+    {
+      "id": 66,
+      "name": "Yozgat",
+      "file": "2025/66.6b0924c9ef67.json",
+      "sha256": "6b0924c9ef679a7b971a48eecb6a57180b1fef5406d08b8dc1252da77744ee5d",
+      "districtCount": 14,
+      "settlementCount": 792
+    },
+    {
+      "id": 67,
+      "name": "Zonguldak",
+      "file": "2025/67.c7371dc49960.json",
+      "sha256": "c7371dc49960a0cefb54535abd6e1ff3766e171f751ce352e920c59a86d28dbc",
+      "districtCount": 8,
+      "settlementCount": 568
+    },
+    {
+      "id": 68,
+      "name": "Aksaray",
+      "file": "2025/68.0752d1c90a20.json",
+      "sha256": "0752d1c90a201bcdc3d4539debe27dc032528ab0d5e043a7973949961a1fc021",
+      "districtCount": 8,
+      "settlementCount": 333
+    },
+    {
+      "id": 69,
+      "name": "Bayburt",
+      "file": "2025/69.09eb91879cc8.json",
+      "sha256": "09eb91879cc816d25d8e1541aa5d894ac65d7325af9a44d78f4291b27043a07c",
+      "districtCount": 3,
+      "settlementCount": 198
+    },
+    {
+      "id": 70,
+      "name": "Karaman",
+      "file": "2025/70.4d40d846bed1.json",
+      "sha256": "4d40d846bed1e749122bf288f74ae2cf8f704d80d89f38050737634f5d2089fe",
+      "districtCount": 6,
+      "settlementCount": 290
+    },
+    {
+      "id": 71,
+      "name": "Kırıkkale",
+      "file": "2025/71.2975a04f628a.json",
+      "sha256": "2975a04f628a6c337a01a7c2ec1cecfd4ea54d286b455316300ea51d53050209",
+      "districtCount": 9,
+      "settlementCount": 270
+    },
+    {
+      "id": 72,
+      "name": "Batman",
+      "file": "2025/72.de2930a83d12.json",
+      "sha256": "de2930a83d12978591244f0bb102270c04800139f62a70a9c4e4ae76b46f5a36",
+      "districtCount": 6,
+      "settlementCount": 430
+    },
+    {
+      "id": 73,
+      "name": "Şırnak",
+      "file": "2025/73.3c67c8b48e26.json",
+      "sha256": "3c67c8b48e263706b83a567ec67090026a0e7bd238fcdd4711df667db1bdd5ed",
+      "districtCount": 7,
+      "settlementCount": 299
+    },
+    {
+      "id": 74,
+      "name": "Bartın",
+      "file": "2025/74.e8513db82063.json",
+      "sha256": "e8513db8206389c0745b0b5eeba10f0173ed7384b6ec99c0412ab647c4b64df8",
+      "districtCount": 4,
+      "settlementCount": 313
+    },
+    {
+      "id": 75,
+      "name": "Ardahan",
+      "file": "2025/75.9e5ba08b343f.json",
+      "sha256": "9e5ba08b343fcbec6c1a0cb66118f895585b3f07c2529cd0ec53f25963435106",
+      "districtCount": 6,
+      "settlementCount": 266
+    },
+    {
+      "id": 76,
+      "name": "Iğdır",
+      "file": "2025/76.5d633e99c49e.json",
+      "sha256": "5d633e99c49e159f025718d7d98017e22f429b4060e3732d3220579ee967e7bc",
+      "districtCount": 4,
+      "settlementCount": 200
+    },
+    {
+      "id": 77,
+      "name": "Yalova",
+      "file": "2025/77.c997c9d6981a.json",
+      "sha256": "c997c9d6981a35944f276a3a1a4dc0906e80b9bc21e2a10b4df5adaca6fb5bf9",
+      "districtCount": 6,
+      "settlementCount": 94
+    },
+    {
+      "id": 78,
+      "name": "Karabük",
+      "file": "2025/78.cb69f73591e7.json",
+      "sha256": "cb69f73591e7d5919986b78997b10af0a488c5d420fffec908269136a18daa6b",
+      "districtCount": 6,
+      "settlementCount": 358
+    },
+    {
+      "id": 79,
+      "name": "Kilis",
+      "file": "2025/79.0a83f7665b9c.json",
+      "sha256": "0a83f7665b9ca6aec029a508a7c927bb5ea121500861f89a9a39e3508a83317a",
+      "districtCount": 4,
+      "settlementCount": 229
+    },
+    {
+      "id": 80,
+      "name": "Osmaniye",
+      "file": "2025/80.d899e59e2b04.json",
+      "sha256": "d899e59e2b040a2971150164b7454bf3ef397bae8429f894bdc1133c819c6618",
+      "districtCount": 7,
+      "settlementCount": 295
+    },
+    {
+      "id": 81,
+      "name": "Düzce",
+      "file": "2025/81.99c798d0a309.json",
+      "sha256": "99c798d0a309af6ac6e649202b8cc59cbab410332cb17ab4f8e66a3693ce0c41",
+      "districtCount": 8,
+      "settlementCount": 393
+    }
+  ]
+}

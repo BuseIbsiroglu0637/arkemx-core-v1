@@ -14,20 +14,12 @@ import {
 } from "../lib/engineering";
 import { createCorporateTechnicalPdf, type TechnicalSheetPolyline } from "../lib/technical-sheet";
 import { createStructuralStudio } from "../lib/structural-studio";
-import { createDocumentIdentity } from "../lib/document-identity";
-import { createStructuralDocument, prepareStructuralCalculation, recordStructuralCalculation, sealStructuralDocument, traceJson, type StructuralCalculationRecord } from "../lib/structural-traceability";
-import { inspectStructuralSourceReferences, runSupportedStructuralAnalysis, structuralAnalysisBlockers } from "../lib/source-reference-integrity";
-import { projectIntegrityIssues } from "../lib/project-integrity";
+import { createSafeCsv } from "../lib/safe-csv";
+import { parseStructuralDraft } from "../lib/structural-draft";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
-import { FloorPlateStudy } from "./FloorPlateStudy";
-import { resolvePlanHandoffGeometry } from "../lib/project-integrity";
 
-type Props = { home?: boolean; compactKernel?: boolean };
+type Props = { home?: boolean };
 type WorkspaceView = "model" | "alternatives" | "loads" | "checks" | "quantities";
-type StructuralShortlistItem = { id: StructuralSystem; name: string; score: number };
-
-const structuralSystemIds: StructuralSystem[] = ["concrete", "precast", "steel", "light", "hybrid"];
-const isStructuralSystem = (value: unknown): value is StructuralSystem => structuralSystemIds.includes(value as StructuralSystem);
 
 const usageLabels: Record<StructuralConceptInput["usage"], string> = {
   residential: "Konut",
@@ -36,15 +28,6 @@ const usageLabels: Record<StructuralConceptInput["usage"], string> = {
   storage: "Depo / lojistik",
   assembly: "Toplanma / sosyal",
 };
-
-function resolveStructuralUsage(value: unknown): StructuralConceptInput["usage"] {
-  const label = String(value ?? "").trim().toLocaleLowerCase("tr-TR");
-  if (label === "residential" || label.includes("konut") || label.includes("villa") || label.includes("yaşam")) return "residential";
-  if (label === "office" || label === "commercial" || label.includes("ofis") || label.includes("ticari")) return "office";
-  if (label === "storage" || label.includes("depo") || label.includes("lojistik")) return "storage";
-  if (label === "assembly" || label.includes("toplanma") || label.includes("sosyal") || label.includes("eğitim")) return "assembly";
-  return "industrial";
-}
 
 function addMember(group: THREE.Group, size: [number, number, number], position: [number, number, number], material: THREE.Material) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
@@ -74,48 +57,22 @@ function StructuralFallback({ input }: { input: StructuralConceptInput }) {
 }
 
 function NumericField({ label, value, min, max, step, unit, onChange }: { label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (value: number) => void }) {
-  const [draft, setDraft] = useState(String(value));
-  const [draftSource, setDraftSource] = useState(value);
-  if (draftSource !== value) {
-    setDraftSource(value);
-    setDraft(String(value));
-  }
-  const commit = () => {
-    if (!draft.trim()) { setDraft(String(value)); return; }
-    const parsed = Number(draft);
-    if (!Number.isFinite(parsed)) { setDraft(String(value)); return; }
-    const next = Math.min(max, Math.max(min, parsed));
-    onChange(next);
-    setDraft(String(next));
-  };
-  return <label className="engineering-number-field"><span>{label}</span><div><input type="number" min={min} max={max} step={step} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><b>{unit}</b></div></label>;
+  return <label className="engineering-number-field"><span>{label}</span><div><input type="number" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Math.min(max, Math.max(min, Number(event.target.value) || min)))} /><b>{unit}</b></div></label>;
 }
 
-export function StructuralDesigner(props: Parameters<typeof StructuralDesignerSession>[0] = {}) {
-  const { project } = useProjectKernel();
-  return <StructuralDesignerSession key={project.id} {...props} />;
-}
-
-function StructuralDesignerSession({ home = false, compactKernel = false }: Props) {
+export function StructuralDesigner({ home = false }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const transferApplied = useRef(false);
+  const transferApplied = useRef("");
+  const [moduleReady, setModuleReady] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
   const handoffSeen = useRef("");
   const { patchModule, thread, project, hydrated } = useProjectKernel();
-  const sourceGeometry = project.modules["structural-concept"] as { units?: unknown; sourceRevision?: string | null; inputElementIds?: string[] | null; modelContext?: { floorPlates?: Array<{ level: number; width: number; depth: number }>; selectedLevel?: number }; input?: Partial<StructuralConceptInput>; handoff?: { id?: string } } | undefined;
-  const planSourceElements = (project.modules["plan-editor"] as { elements?: Array<{ id: string }> } | undefined)?.elements;
-  const sourceElementIds = Array.isArray(planSourceElements) ? planSourceElements.filter(element => element && typeof element.id === "string").map(element => element.id) : [];
-  const floorSource = sourceGeometry?.modelContext?.floorPlates;
-  const floorGeometry = useMemo(() => Array.isArray(floorSource) ? floorSource.filter(plate => !!plate && typeof plate === "object" && !Array.isArray(plate)) : [], [floorSource]);
-  const invalidSource = projectIntegrityIssues(project).some(issue => issue.startsWith("structural-concept:") || (sourceGeometry?.sourceRevision && issue.startsWith("plan-editor:")));
-  const invalidFloors = structuralAnalysisBlockers(sourceGeometry).length > 0 || (project.modules["plan-editor"] as { floorCoordination?: unknown } | undefined)?.floorCoordination !== undefined;
-  const analysisBlocked = invalidSource || invalidFloors;
-  const geometrySupport = useMemo(() => ({ status: analysisBlocked ? invalidFloors ? new Set(floorGeometry.map(plate => `${plate.width}/${plate.depth}`)).size > 1 ? "unsupported-nonuniform-floor-analysis" : "unsupported-invalid-floor-geometry" : "unsupported-source-integrity" : "uniform-concept-only", floorPlates: floorSource ?? [], selectedLevel: sourceGeometry?.modelContext?.selectedLevel ?? null, fullBuildingAnalysis: false, technicalApproval: false }), [floorGeometry, floorSource, analysisBlocked, invalidFloors, sourceGeometry?.modelContext?.selectedLevel]);
   const [view, setView] = useState<WorkspaceView>("model");
   const [webglState, setWebglState] = useState<"checking" | "ready" | "fallback">("checking");
   const [system, setSystem] = useState<StructuralSystem>("concrete");
   const [usage, setUsage] = useState<StructuralConceptInput["usage"]>("office");
   const [designBasis, setDesignBasis] = useState<keyof typeof DESIGN_BASIS>("tr");
-  const [soilClass, setSoilClass] = useState("ZD");
+  const [soilClass, setSoilClass] = useState("Bilinmiyor");
   const [width, setWidth] = useState(24);
   const [depth, setDepth] = useState(18);
   const [floors, setFloors] = useState(4);
@@ -141,66 +98,35 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
   const [showSlabs, setShowSlabs] = useState(true);
   const [showLoads, setShowLoads] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Bağımsız ön tasarım girdileri");
-  const [modelHydrated, setModelHydrated] = useState(false);
-  const [mcdaShortlist, setMcdaShortlist] = useState<StructuralShortlistItem[]>([]);
 
   const input = useMemo<StructuralConceptInput>(() => ({
     system, usage, width, depth, floors, floorHeight, baysX, baysY, columnSize, beamDepth, slabThickness,
     superDeadLoad, liveLoad, roofSnowLoad, basicWindSpeed, sds, sd1, importance, behaviorFactor,
     concreteStrength, steelYield,
   }), [basicWindSpeed, baysX, baysY, beamDepth, behaviorFactor, columnSize, concreteStrength, depth, floorHeight, floors, importance, liveLoad, roofSnowLoad, sds, sd1, slabThickness, steelYield, superDeadLoad, system, usage, width]);
-  // Unsupported geometry returns before result consumers render; no uniform engine is invoked.
-  const result = useMemo(() => analysisBlocked ? null : runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorSource } }, () => calculateStructuralConcept(input)), [analysisBlocked, floorSource, input])!;
+  const result = useMemo(() => calculateStructuralConcept(input), [input]);
   const architecturalScheme = useMemo(() => {
     const architecture = project.modules["architectural-program"] as { architecturalScheme?: unknown } | undefined;
     return architecture?.architecturalScheme;
   }, [project.modules]);
-  const structuralStudio = useMemo(() => analysisBlocked ? null : runSupportedStructuralAnalysis({ modelContext: { floorPlates: floorSource } }, () => createStructuralStudio({
+  const structuralStudio = useMemo(() => createStructuralStudio({
     reference: project.id,
     input,
     architecturalScheme,
+    geometryMode: "input",
     repetition,
     transportDistance,
     fireRating,
-  })), [analysisBlocked, architecturalScheme, fireRating, floorSource, input, project.id, repetition, transportDistance])!;
-  const alternatives = useMemo(() => structuralStudio?.alternatives ?? [], [structuralStudio]);
+  }), [architecturalScheme, fireRating, input, project.id, repetition, transportDistance]);
+  const alternatives = structuralStudio.alternatives;
   const activeAlternative = alternatives.find((alternative) => alternative.system === system) ?? alternatives[0];
-  const checkCounts = useMemo(() => result?.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }) ?? { pass: 0, review: 0, block: 0 }, [result]);
-  const calculationOptions = useMemo(() => ({ designBasis, soilClass, repetition, transportDistance, fireRating }), [designBasis, soilClass, repetition, transportDistance, fireRating]);
-  const calculationContent = useMemo(() => prepareStructuralCalculation(project, input, calculationOptions), [project, input, calculationOptions]);
-  const calculationKey = calculationContent ? traceJson(calculationContent) : "";
-  const [calculation, setCalculation] = useState<{ key: string; record: StructuralCalculationRecord } | null>(null);
-  const [traceError, setTraceError] = useState("");
-  const latestTraceContext = useRef({ project, input, calculationOptions, calculationKey });
-  useEffect(() => { latestTraceContext.current = { project, input, calculationOptions, calculationKey }; }, [project, input, calculationOptions, calculationKey]);
-  const registryKey = traceJson((project.modules["structural-concept"] as { calculationRegistry?: unknown } | undefined)?.calculationRegistry ?? {});
-  useEffect(() => {
-    if (!hydrated || !modelHydrated) return;
-    let cancelled = false;
-    if (!calculationKey) {
-      patchModule("structural-concept", { calculationId: null, referenceStatus: "pending-calculation" });
-      return;
-    }
-    recordStructuralCalculation(JSON.parse(calculationKey)).then(record => {
-      if (cancelled || latestTraceContext.current.calculationKey !== calculationKey) return;
-      const existing = (JSON.parse(registryKey) as Record<string, unknown>)[record.id];
-      if (existing && traceJson(existing) !== traceJson(record)) throw new Error("Calculation registry conflict");
-      setTraceError("");
-      setCalculation({ key: calculationKey, record });
-      patchModule("structural-concept", { calculationId: record.id, referenceStatus: "linked-concept-calculation", calculationRegistry: { [record.id]: record } });
-    }).catch(() => {
-      if (cancelled) return;
-      setCalculation(null);
-      setTraceError("Hesap kaynak kaydı oluşturulamadı; izlenebilir çıktı hazır değil.");
-      patchModule("structural-concept", { calculationId: null, referenceStatus: "pending-calculation" });
-    });
-    return () => { cancelled = true; };
-  }, [calculationKey, registryKey, hydrated, modelHydrated, patchModule]);
+  const checkCounts = useMemo(() => result.checks.reduce((totals, check) => ({ ...totals, [check.state]: totals[check.state] + 1 }), { pass: 0, review: 0, block: 0 }), [result.checks]);
 
-  useEffect(() => {
-    if (!hydrated || !modelHydrated) return;
-    patchModule("structural-concept", { schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", input, designBasis, soilClass, result: analysisBlocked ? null : result, alternatives: analysisBlocked ? [] : alternatives, structuralStudio: analysisBlocked ? null : structuralStudio, geometrySupport, architectureContext: { architecturalScheme }, mcdaShortlist, status: analysisBlocked ? "Katlara göre değişen geometri analizi desteklenmiyor; hesap aktarımı engellendi" : "v114-preliminary-system-comparison" });
-  }, [alternatives, architecturalScheme, designBasis, hydrated, input, mcdaShortlist, modelHydrated, patchModule, result, soilClass, structuralStudio, analysisBlocked, geometrySupport]);
+  const saveDraft = () => {
+    if (!hydrated || moduleReady !== project.id || !parseStructuralDraft(input)) return;
+    patchModule("structural-concept", { schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", input, designBasis, soilClass, result, alternatives, structuralStudio, architectureContext: { architecturalScheme }, needsReview: true, source: "user-declared-not-reviewed", status: "preliminary-expert-review-pending" });
+    setSaveNotice("Tüm geometri, yük ve malzeme girdileri çalışma projenize eklendi. Hesap kaydı ve yetkili mühendis incelemesi ayrı işlemlerdir.");
+  };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -308,47 +234,9 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
     };
   }, [baysX, baysY, beamDepth, columnSize, depth, floorHeight, floors, showLoads, showSlabs, slabThickness, system, width]);
 
-  const exportTrace = async (format: "JSON" | "PDF" | "DXF" | "CSV") => {
-    if (!calculationContent) return null;
-    const record = calculation?.key === calculationKey ? calculation.record : await recordStructuralCalculation(calculationContent);
-    const existing = (JSON.parse(registryKey) as Record<string, unknown>)[record.id];
-    if (existing && traceJson(existing) !== traceJson(record)) throw new Error("Calculation registry conflict");
-    const manifest = await createStructuralDocument(record, project, input, calculationOptions, format);
-    return { calculationRecord: record, documentManifest: manifest };
-  };
-  const saveDownload = async (name: string, bytes: string | Uint8Array, mime: string, trace: Awaited<ReturnType<typeof exportTrace>>) => {
-    const assertCurrent = () => {
-      const latest = latestTraceContext.current;
-      if (latest.project.id !== project.id || latest.project.revision !== project.revision || latest.calculationKey !== calculationKey) throw new Error("Project changed during export");
-    };
-    assertCurrent();
-    // CSV downloads include a UTF-8 BOM for Excel. Hash the delivered bytes,
-    // including that BOM, rather than the pre-download string.
-    const payload = typeof bytes === "string" && mime.includes("csv") && !bytes.startsWith("\uFEFF") ? `\uFEFF${bytes}` : bytes;
-    if (trace) {
-      const documentRecord = await sealStructuralDocument(trace.documentManifest, name, payload);
-      assertCurrent();
-      patchModule("structural-concept", { calculationId: trace.calculationRecord.id, calculationRegistry: { [trace.calculationRecord.id]: trace.calculationRecord }, documentRegistry: { [documentRecord.id]: documentRecord } });
-    }
-    downloadTextFile(name, payload, mime);
-  };
-  const exportJson = async () => {
-    try {
-    const trace = await exportTrace("JSON");
-    const bytes = JSON.stringify({
-    schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", projectId: project.id, revision: project.revision, units: sourceGeometry?.units ?? null,
-    documentIdentity: trace?.documentManifest.identity ?? createDocumentIdentity({ projectCode: project.id, module: "STR", revision: project.revision, sourceRevision: sourceGeometry?.sourceRevision ?? undefined, elementIds: inspectStructuralSourceReferences(project).status === "invalid" ? undefined : sourceGeometry?.inputElementIds ?? undefined, sourceContext: { projectId: project.id, revision: project.revision, elementIds: sourceElementIds } }),
-    traceability: trace,
-    sourceReferenceValidation: inspectStructuralSourceReferences(project), designBasis, soilClass, input, result: analysisBlocked ? null : result, structuralStudio: analysisBlocked ? null : structuralStudio, geometrySupport, architecturalScheme, generatedAt: new Date().toISOString(),
-    }, null, 2);
-    await saveDownload("arkem-v114-tasiyici-sistem-studyosu.json", bytes, "application/json", trace);
-    } catch { setTraceError("JSON kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
-  };
-  const exportCsv = async () => { if (analysisBlocked) { setSyncStatus("CSV reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
-    try {
-    const trace = await exportTrace("CSV");
-    const bytes = [
-    "system,score,status,column,beam,floor,relative_cost,duration_weeks,carbon_proxy_kgco2e,factory_share,mass_index,project_id,revision,calculation_id,document_reference,source_element_ids",
+  const exportJson = () => downloadTextFile("arkem-v114-tasiyici-sistem-studyosu.json", JSON.stringify({ schema: "ARKEM-STRUCTURAL-CONCEPT/3.0", previousSchema: "ARKEM-STRUCTURAL-CONCEPT/2.0", designBasis, soilClass, soilVerification: "user-declared-not-applied", input, result, structuralStudio, architecturalScheme, generatedAt: new Date().toISOString() }, null, 2), "application/json");
+  const exportCsv = () => downloadTextFile("arkem-v114-on-boyutlandirma.csv", createSafeCsv([
+    ["system","illustrative_score","status","column","beam","floor","relative_cost_index","indicative_duration_weeks","illustrative_carbon_kgco2e","factory_share_percent","mass_index","project_id","revision","geometry_source","boundary"],
     ...alternatives.map((alternative) => [
       alternative.label,
       alternative.score.toFixed(1),
@@ -360,18 +248,10 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       alternative.indices.durationWeeks.toFixed(1),
       alternative.indices.embodiedCarbonProxy.toFixed(0),
       alternative.indices.factoryShare.toFixed(0),
-      alternative.indices.massIndex.toFixed(1),
-      project.id, project.revision, trace?.calculationRecord.id ?? "", trace?.documentManifest.identity.reference ?? "", JSON.stringify(trace?.documentManifest.elementIds ?? []),
-    ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")),
-    ].join("\n");
-    await saveDownload("arkem-v114-on-boyutlandirma.csv", bytes, "text/csv;charset=utf-8", trace);
-    } catch { setTraceError("CSV kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
-  };
-  const exportDxf = async () => {
-    if (analysisBlocked) return;
-    try {
-    const trace = await exportTrace("DXF");
-    const bytes = createGridDxf(width, depth, baysX, baysY, {
+      alternative.indices.massIndex.toFixed(1), project.id, project.revision, "form-input", "Ön tarama; mühendis onayı, teklif ve EPD değildir. Beton/metal karbon katsayıları temsili varsayımdır.",
+    ]),
+  ]), "text/csv;charset=utf-8");
+  const exportDxf = () => downloadTextFile("arkem-kurumsal-aks-plani.dxf", createGridDxf(width, depth, baysX, baysY, {
     projectName: project.name,
     projectCode: project.id,
     module: "STR / YAPISAL ON TASARIM",
@@ -382,16 +262,9 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
     coordinateSystem: project.coordinateReference,
     scale: "MODEL 1:1",
     preparedBy: "ARKEMX",
-    checkedBy: "MUHENDIS DOGRULAMASI GEREKLI",
-    traceability: trace,
-    });
-    await saveDownload("arkem-kurumsal-aks-plani.dxf", bytes, "application/dxf", trace);
-    } catch { setTraceError("DXF kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
-  };
+    checkedBy: "YETKILI MUHENDIS DOGRULAMASI GEREKLI",
+  }), "application/dxf");
   const exportPdf = async () => {
-    if (analysisBlocked) { setSyncStatus("PDF reddedildi: katlara göre değişen geometri analizi desteklenmiyor."); return; }
-    try {
-    const trace = await exportTrace("PDF");
     const gridLines: TechnicalSheetPolyline[] = [];
     for (let x = 0; x <= baysX; x += 1) {
       const px = width / Math.max(1, baysX) * x;
@@ -406,15 +279,13 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       projectCode: project.id,
       module: "ARKEMX / YAPISAL ON TASARIM",
       drawingTitle: `${SYSTEM_LABELS[system]} Aks ve Ön Boyutlandırma Paftası`,
-      drawingSubtitle: `${DESIGN_BASIS[designBasis].label} / ${soilClass} zemin / ${floors} kat`,
+      drawingSubtitle: `${DESIGN_BASIS[designBasis].label} / ${soilClass} kullanıcı beyanı · hesapta uygulanmaz / ${floors} kat`,
       revision: project.revision,
       status: "Kavramsal / ön boyutlandırma",
       sheetNo: "STR-001",
       scale: "OTOMATIK / METRE",
       coordinateSystem: project.coordinateReference,
       checkedBy: "Yetkili mühendis doğrulaması gerekli",
-      ...(trace ? trace.documentManifest.identityInput : {}),
-      traceability: trace,
       polylines: [
         ...gridLines,
         { role: "primary", points: [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: depth }, { x: 0, y: depth }] },
@@ -433,55 +304,31 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       notes: [
         `${DESIGN_BASIS[designBasis].references.join(", ")} referans ailesi ön değerlendirme için seçilmiştir.`,
         `Malzeme girdileri: fck ${concreteStrength} MPa, fy ${steelYield} MPa; taşıyıcı sistem ${SYSTEM_LABELS[system]}.`,
-        `Ön miktarlar: beton ${result.quantities.concreteVolume.toFixed(1)} m³, donatı ${result.quantities.reinforcementTonnage.toFixed(1)} t, çelik ${result.quantities.steelTonnage.toFixed(1)} t.`,
+        `Brüt bileşen toplamı (birleşimler düşülmedi): beton ${result.quantities.concreteVolume.toFixed(1)} m³, donatı ${result.quantities.reinforcementTonnage.toFixed(1)} t, çelik ${result.quantities.steelTonnage.toFixed(1)} t.`,
         `V114 ön boyutlandırma: ${activeAlternative.preliminary.column}; ${activeAlternative.preliminary.beam}; ${activeAlternative.preliminary.floor}.`,
         "Nihai analiz; geometri, zemin, yük, stabilite, birleşim, temel, yangın ve uygulama verileriyle yetkili mühendis tarafından kurulmalıdır.",
       ],
       legend: [["Yapı oturumu", "primary"], ["Aks sistemi", "grid"]],
     });
-    await saveDownload("arkem-yapisal-on-tasarim-kurumsal-pafta.pdf", pdf, "application/pdf", trace);
-    } catch { setTraceError("PDF kaynak zinciri doğrulanamadı; çıktı oluşturulmadı."); }
+    downloadTextFile("arkem-yapisal-on-tasarim-kurumsal-pafta.pdf", pdf, "application/pdf");
   };
   const importUpstream = useCallback(() => {
     const source = thread.canonical;
     const architecture = project.modules["architectural-program"] as { architecturalScheme?: { schema?: string; plate?: { width?: number; depth?: number; floors?: number; floorHeight?: number }; program?: { use?: string } } } | undefined;
     const scheme = architecture?.architecturalScheme;
     const plate = scheme?.schema === "ARKEM-ARCH-SCHEME/3.0" ? scheme.plate : undefined;
-    const comparison = project.modules["system-comparison"] as { shortlist?: unknown[]; ranking?: Array<{ id?: unknown; name?: unknown; score?: unknown }> } | undefined;
-    const shortlistIds = Array.isArray(comparison?.shortlist) ? comparison.shortlist.filter(isStructuralSystem) : [];
-    const rankedShortlist = Array.isArray(comparison?.ranking)
-      ? comparison.ranking.filter((item) => isStructuralSystem(item.id) && shortlistIds.includes(item.id as StructuralSystem)).map((item) => ({
-          id: item.id as StructuralSystem,
-          name: typeof item.name === "string" ? item.name : SYSTEM_LABELS[item.id as StructuralSystem],
-          score: typeof item.score === "number" ? item.score : 0,
-        }))
-      : [];
-    const shortlistItems: StructuralShortlistItem[] = rankedShortlist.length
-      ? rankedShortlist
-      : shortlistIds.map((id) => ({ id, name: SYSTEM_LABELS[id], score: 0 }));
-    setMcdaShortlist(shortlistItems);
-    const planInput = sourceGeometry?.input;
-    const plan = project.modules["plan-editor"];
-    let planGeometry: ReturnType<typeof resolvePlanHandoffGeometry> | undefined;
-    try { if (plan) planGeometry = resolvePlanHandoffGeometry(plan); } catch { /* Existing source blockers remain visible. */ }
-    if (planGeometry) setWidth(planGeometry.width); else if (typeof planInput?.width === "number") setWidth(planInput.width); else if (typeof plate?.width === "number") setWidth(Math.max(6, Math.min(80, plate.width))); else if (source.structure.width > 0) setWidth(Math.max(6, Math.min(80, source.structure.width)));
-    if (planGeometry) setDepth(planGeometry.depth); else if (typeof planInput?.depth === "number") setDepth(planInput.depth); else if (typeof plate?.depth === "number") setDepth(Math.max(6, Math.min(60, plate.depth))); else if (source.structure.depth > 0) setDepth(Math.max(6, Math.min(60, source.structure.depth)));
+    if (typeof plate?.width === "number") setWidth(Math.max(6, Math.min(80, plate.width))); else if (source.structure.width > 0) setWidth(Math.max(6, Math.min(80, source.structure.width)));
+    if (typeof plate?.depth === "number") setDepth(Math.max(6, Math.min(60, plate.depth))); else if (source.structure.depth > 0) setDepth(Math.max(6, Math.min(60, source.structure.depth)));
     if (typeof plate?.floors === "number") setFloors(Math.max(1, Math.min(20, plate.floors))); else if (source.architecture.floors > 0) setFloors(Math.max(1, Math.min(20, source.architecture.floors)));
     if (typeof plate?.floorHeight === "number") setFloorHeight(Math.max(2.6, Math.min(8, plate.floorHeight))); else if (source.architecture.floorHeight > 0) setFloorHeight(Math.max(2.6, Math.min(8, source.architecture.floorHeight)));
     if (source.structure.baysX > 0) setBaysX(Math.max(1, Math.min(12, source.structure.baysX)));
     if (source.structure.baysY > 0) setBaysY(Math.max(1, Math.min(10, source.structure.baysY)));
-    if (typeof planInput?.liveLoad === "number") setLiveLoad(planInput.liveLoad);
     const recommended = source.structure.recommendedSystem.toLocaleLowerCase("tr-TR");
-    if (shortlistItems[0]) setSystem(shortlistItems[0].id);
-    else if (recommended.includes("hafif")) setSystem("light"); else if (recommended.includes("prefabrik")) setSystem("precast"); else if (recommended === "betonarme" || recommended.includes("concrete")) setSystem("concrete"); else if (recommended.includes("karma")) setSystem("hybrid"); else if (recommended.includes("çelik")) setSystem("steel");
-    const projectUse = scheme?.program?.use || source.architecture.use;
-    if (projectUse) setUsage(resolveStructuralUsage(projectUse));
-    setSyncStatus(shortlistItems.length
-      ? "Plan geometrisi ve MCDA kısa listesi aktarıldı · " + shortlistItems.length + " sistem"
-      : plate ? "V113 mekânsal şeması, çekirdek ve plaka geometrisi aktarıldı"
-      : source.structure.baysX || source.architecture.grossArea ? "Plan ve mimari program verisi aktarıldı"
-      : "Aktarılacak üst model verisi bulunamadı");
-  }, [project.modules, thread.canonical, sourceGeometry]);
+    if (recommended.includes("hafif")) setSystem("light"); else if (recommended.includes("prefabrik")) setSystem("precast"); else if (recommended === "betonarme" || recommended.includes("concrete")) setSystem("concrete"); else if (recommended.includes("karma")) setSystem("hybrid"); else if (recommended.includes("çelik")) setSystem("steel");
+    const projectUse = (scheme?.program?.use || source.architecture.use).toLocaleLowerCase("tr-TR");
+    if (projectUse.includes("konut")) setUsage("residential"); else if (projectUse.includes("ofis")) setUsage("office"); else if (projectUse.includes("depo")) setUsage("storage"); else if (projectUse) setUsage("industrial");
+    setSyncStatus(plate ? "V113 mekânsal şeması, çekirdek ve plaka geometrisi aktarıldı" : source.structure.baysX || source.architecture.grossArea ? "Plan, mimari program ve MCDA kararı aktarıldı" : "Aktarılacak üst model verisi bulunamadı");
+  }, [project.modules, thread.canonical]);
 
   useEffect(() => {
     if (!hydrated || !project.experience.autoHandoff) return;
@@ -493,38 +340,13 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
   }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
 
   useEffect(() => {
-    if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
+    if (!hydrated || transferApplied.current === project.id) return;
     const timer = window.setTimeout(() => {
-    const saved = project.modules["structural-concept"] as { input?: Partial<StructuralConceptInput>; designBasis?: keyof typeof DESIGN_BASIS; soilClass?: string; structuralStudio?: { production?: { repetition?: number; transportDistance?: number; fireRating?: number } }; mcdaShortlist?: StructuralShortlistItem[] } | undefined;
-    const value = saved?.input;
-    let explicitShortlist: StructuralShortlistItem[] = [];
-    try {
-      const key = "arkemx-structural-transfer:" + project.id;
-      const raw = window.sessionStorage.getItem(key);
-      const parsed = raw ? JSON.parse(raw) as { schema?: string; projectId?: string; shortlist?: Array<{ id?: unknown; name?: unknown; score?: unknown }> } : {};
-      if (parsed.schema === "ARKEM-MCDA-STRUCTURAL-TRANSFER/1.0" && parsed.projectId === project.id && Array.isArray(parsed.shortlist)) {
-        explicitShortlist = parsed.shortlist.filter((item) => isStructuralSystem(item.id)).map((item) => ({
-          id: item.id as StructuralSystem,
-          name: typeof item.name === "string" ? item.name : SYSTEM_LABELS[item.id as StructuralSystem],
-          score: typeof item.score === "number" ? item.score : 0,
-        }));
-        window.sessionStorage.removeItem(key);
-      }
-    } catch {
-      explicitShortlist = [];
-    }
-    if (explicitShortlist.length) {
-      importUpstream();
-      setMcdaShortlist(explicitShortlist);
-      setSystem(explicitShortlist[0].id);
-      if (typeof saved?.structuralStudio?.production?.repetition === "number") setRepetition(saved.structuralStudio.production.repetition);
-      if (typeof saved?.structuralStudio?.production?.transportDistance === "number") setTransportDistance(saved.structuralStudio.production.transportDistance);
-      if (typeof saved?.structuralStudio?.production?.fireRating === "number") setFireRating(saved.structuralStudio.production.fireRating);
-      if (saved?.designBasis) setDesignBasis(saved.designBasis);
-      if (saved?.soilClass) setSoilClass(saved.soilClass);
-      setSyncStatus("MCDA kısa listesi ve güncel plan geometrisi aktarıldı · " + explicitShortlist.length + " sistem");
-    } else if (value) {
+    const saved = project.modules["structural-concept"] as { input?: Partial<StructuralConceptInput>; designBasis?: keyof typeof DESIGN_BASIS; soilClass?: string; structuralStudio?: { production?: { repetition?: number; transportDistance?: number; fireRating?: number } } } | undefined;
+    const value = parseStructuralDraft(saved?.input);
+    setDesignBasis("tr"); setSoilClass("Bilinmiyor"); setRepetition(70); setTransportDistance(120); setFireRating(90);
+    setSaveNotice("");
+    if (value) {
       if (value.system) setSystem(value.system);
       if (value.usage) setUsage(value.usage);
       if (typeof value.width === "number") setWidth(value.width);
@@ -538,25 +360,24 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
       if (typeof value.slabThickness === "number") setSlabThickness(value.slabThickness);
       if (typeof value.superDeadLoad === "number") setSuperDeadLoad(value.superDeadLoad);
       if (typeof value.liveLoad === "number") setLiveLoad(value.liveLoad);
-      if (typeof value.roofSnowLoad === "number") setRoofSnowLoad(value.roofSnowLoad);
-      if (typeof value.basicWindSpeed === "number") setBasicWindSpeed(value.basicWindSpeed);
-      if (typeof value.sds === "number") setSds(value.sds);
-      if (typeof value.sd1 === "number") setSd1(value.sd1);
-      if (typeof value.importance === "number") setImportance(value.importance);
-      if (typeof value.behaviorFactor === "number") setBehaviorFactor(value.behaviorFactor);
-      if (typeof value.concreteStrength === "number") setConcreteStrength(value.concreteStrength);
-      if (typeof value.steelYield === "number") setSteelYield(value.steelYield);
-      if (typeof saved?.structuralStudio?.production?.repetition === "number") setRepetition(saved.structuralStudio.production.repetition);
-      if (typeof saved?.structuralStudio?.production?.transportDistance === "number") setTransportDistance(saved.structuralStudio.production.transportDistance);
-      if (typeof saved?.structuralStudio?.production?.fireRating === "number") setFireRating(saved.structuralStudio.production.fireRating);
-      if (saved?.designBasis) setDesignBasis(saved.designBasis);
-      if (saved?.soilClass) setSoilClass(saved.soilClass);
-      if (Array.isArray(saved?.mcdaShortlist)) setMcdaShortlist(saved.mcdaShortlist.filter((item) => isStructuralSystem(item.id)));
-      setSyncStatus("Kayıtlı taşıyıcı ön tasarım otomatik açıldı");
+      setRoofSnowLoad(value.roofSnowLoad); setBasicWindSpeed(value.basicWindSpeed);
+      setSds(value.sds); setSd1(value.sd1); setImportance(value.importance); setBehaviorFactor(value.behaviorFactor);
+      setConcreteStrength(value.concreteStrength); setSteelYield(value.steelYield);
+      if (typeof saved?.structuralStudio?.production?.repetition === "number" && saved.structuralStudio.production.repetition >= 0 && saved.structuralStudio.production.repetition <= 100) setRepetition(saved.structuralStudio.production.repetition);
+      if (typeof saved?.structuralStudio?.production?.transportDistance === "number" && saved.structuralStudio.production.transportDistance >= 0 && saved.structuralStudio.production.transportDistance <= 2000) setTransportDistance(saved.structuralStudio.production.transportDistance);
+      if (typeof saved?.structuralStudio?.production?.fireRating === "number" && saved.structuralStudio.production.fireRating >= 30 && saved.structuralStudio.production.fireRating <= 240) setFireRating(saved.structuralStudio.production.fireRating);
+      if (saved?.designBasis && Object.hasOwn(DESIGN_BASIS, saved.designBasis)) setDesignBasis(saved.designBasis);
+      if (saved?.soilClass && ["Bilinmiyor", "ZA", "ZB", "ZC", "ZD", "ZE", "ZF / sahaya özel"].includes(saved.soilClass)) setSoilClass(saved.soilClass);
+      setSyncStatus("Kayıtlı geometri, yükler ve malzemeler açıldı; uzman doğrulaması bekliyor");
     } else {
-      importUpstream();
+      setSystem("concrete"); setUsage("office"); setDesignBasis("tr"); setSoilClass("Bilinmiyor");
+      setWidth(24); setDepth(18); setFloors(4); setFloorHeight(3.4); setBaysX(5); setBaysY(4);
+      setColumnSize(.5); setBeamDepth(.6); setSlabThickness(.16); setSuperDeadLoad(2.2); setLiveLoad(3.5);
+      setRoofSnowLoad(.75); setBasicWindSpeed(30); setSds(1); setSd1(.45); setImportance(1); setBehaviorFactor(6); setConcreteStrength(30); setSteelYield(355);
+      setRepetition(70); setTransportDistance(120); setFireRating(90);
+      setSyncStatus(saved?.input ? "Kayıtlı girdiler eksik veya aralık dışı; kayıt korunuyor, üzerine yazılmadı. Örnek senaryo gösteriliyor." : "Örnek senaryo · kendi girdilerinizi düzenleyin veya proje verisini aktarın.");
     }
-    setModelHydrated(true);
+    transferApplied.current = project.id; setModuleReady(project.id);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, importUpstream, project.id, project.modules]);
@@ -568,34 +389,19 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
     setSlabThickness(alternative.preliminary.numeric.slabThickness);
   };
 
-  if (analysisBlocked) return <section className="structural-designer engineering-workbench" data-testid="structural-designer">
-    {traceError && <p role="alert">{traceError}</p>}
-    <p role="alert" data-testid="nonuniform-floor-warning">Kaynak veya kat geometrisi mevcut tek tip kat motoruyla bütün yapı olarak analiz edilemiyor. Bütün yapı hesabı ve teknik sonuç aktarımı engellendi. Kaynakları geçerliyse aşağıdaki kat bazlı ön çalışma kullanılabilir.</p>
-    <ProjectKernelBar module="STRUCTURAL" moduleKey="structural-concept" confidence="Kat bazlı analiz bekleniyor" compact={compactKernel} />
-    <h2>Kayıtlı kaynak</h2>
-    {invalidSource ? <p>Kaynak ölçüleri doğrulanmadı; geometri sonucu gösterilmiyor.</p> : <><p>Seçili kat: K{sourceGeometry?.modelContext?.selectedLevel} · {width} × {depth} m</p>
-    <ul>{floorGeometry.map(plate => <li key={plate.level}>K{plate.level}: {plate.width} × {plate.depth} m</li>)}</ul></>}
-    <a href="/plan-ve-aks">Plan ve aks ekranına dön</a>
-    <button type="button" onClick={exportJson}>Girdileri ve analiz sınırını indir</button>
-    {modelHydrated && <FloorPlateStudy input={input} />}
-  </section>;
   return <section className={`structural-designer engineering-workbench${home ? " home-designer" : ""}`} data-testid="structural-designer">
-    {traceError && <p role="alert">{traceError}</p>}
-    <p role="status" data-testid="structural-trace-status">{calculation?.key === calculationKey && calculationKey ? "Eleman ve hesap kaynakları bağlı · kavramsal ön değerlendirme" : "Hesap kaynak bağlantısı bekleniyor · izlenebilir teknik teslim henüz hazır değil"}</p>
-    {analysisBlocked ? <p role="alert" data-testid="nonuniform-floor-warning">Katlara göre değişen geometri korunuyor; bu ön hesap motoru farklı kat plakalarını analiz edemiyor. Görüntü kavramsaldır; hesap aktarımı ve PDF/CSV teknik sonuç ihracı engellendi.</p> : null}
-    <ProjectKernelBar moduleKey="structural-concept" module="STRUCTURAL CONCEPT STUDIO 2.0" confidence="Beş sistem / ön boyutlandırma" compact={compactKernel} />
+    <ProjectKernelBar module="STRUCTURAL SYSTEM STUDIO 2.0" confidence="Ön çalışma · bağımsız mühendis kontrolü gerekir" /><div className="module-example-notice"><b>Başlangıç değerleri örnektir; proje değerlerinizi ve kaynaklarını kontrol edin.</b><p>Yük, malzeme, geometri ve deprem girdileri yetkili kaynakla henüz doğrulanmadı. Göreli maliyet, süre ve karbon değerleri temsili göstergedir. Zemin sınıfı bilinmiyorsa açık bırakın. Kaydı açmak onaylı hesap açmak değildir.</p><button type="button" disabled={!hydrated || moduleReady !== project.id} onClick={saveDraft}>Girdileri çalışma projeme kaydet</button>{saveNotice && <p role="status">{saveNotice}</p>}</div>
     <div className="designer-head"><div><p className="eyebrow">V114 / Taşıyıcı Sistem Stüdyosu 2.0</p><h2>Aynı geometriyi kurun.<br/><em>Beş sistemi ölçerek karşılaştırın.</em></h2></div><p>Betonarme, Betonarme Prefabrik, yapısal çelik, hafif çelik ve karma sistemi aynı aks, yük ve mimari şema üzerinde ön boyutlandırın. Maliyet, süre, karbon, kütle ve üretilebilirlik göstergelerini birlikte okuyun; sonuç nihai statik analiz veya uygulama projesi değildir.</p><div className="engineering-sync"><span>DİJİTAL DEVİR TESLİM</span><b>{syncStatus}</b><button onClick={importUpstream}>V113 / Plan / program verisini aktar ↘</button></div></div>
-    <div className="v114-source-band" data-state={structuralStudio.source.architecturalSchemeConnected ? structuralStudio.source.authoritativeGeometry ? "verified" : "derived" : "missing"}><div><span>V114 / TAŞIYICI SİSTEM STÜDYOSU 2.0</span><b>{structuralStudio.source.architecturalSchemeConnected ? "V113 mekânsal şeması bağlı" : "V113 mekânsal şeması bulunamadı"}</b><small>{structuralStudio.geometry.width.toFixed(1)} × {structuralStudio.geometry.depth.toFixed(1)} m · {structuralStudio.geometry.floors} kat · {structuralStudio.geometry.maximumSpan.toFixed(1)} m en büyük açıklık</small></div><div><span>{mcdaShortlist.length ? "MCDA KISA LİSTE BAŞLANGICI" : "ÖNERİLEN ÖN İNCELEME"}</span><b>{mcdaShortlist[0]?.name ?? structuralStudio.recommendation.label}</b><small>{mcdaShortlist[0] ? mcdaShortlist[0].score.toFixed(1) + " / 100 · kullanıcı kısa listesi" : structuralStudio.recommendation.score.toFixed(1) + " / 100 · sistem kararı değildir"}</small></div><div><span>AKTİF ÖN BOYUTLANDIRMA</span><b>{activeAlternative.preliminary.column}</b><small>{activeAlternative.preliminary.beam}</small></div></div>
-    {mcdaShortlist.length ? <div className="engineering-mcda-handoff" role="status"><div><span>MCDA KISA LİSTESİ · {mcdaShortlist.length}</span><b>Ön tasarım seçili alternatiflerle başladı.</b></div><div>{mcdaShortlist.map((item) => <span key={item.id} className={system === item.id ? "active" : ""}>{item.name}<small>{item.score.toFixed(1)}</small></span>)}</div></div> : null}
+    <div className="v114-source-band" data-state={structuralStudio.source.architecturalSchemeConnected ? structuralStudio.source.authoritativeGeometry ? "verified" : "derived" : "missing"}><div><span>V114 / TAŞIYICI SİSTEM STÜDYOSU 2.0</span><b>{structuralStudio.source.architecturalSchemeConnected ? "V113 mekânsal şeması bağlı" : "V113 mekânsal şeması bulunamadı"}</b><small>{structuralStudio.geometry.width.toFixed(1)} × {structuralStudio.geometry.depth.toFixed(1)} m · {structuralStudio.geometry.floors} kat · {structuralStudio.geometry.maximumSpan.toFixed(1)} m en büyük açıklık</small></div><div><span>ÖNERİLEN ÖN İNCELEME</span><b>{structuralStudio.recommendation.label}</b><small>{structuralStudio.recommendation.score.toFixed(1)} / 100 · sistem kararı değildir</small></div><div><span>AKTİF ÖN BOYUTLANDIRMA</span><b>{activeAlternative.preliminary.column}</b><small>{activeAlternative.preliminary.beam}</small></div></div>
     <div className="designer-workspace engineering-layout">
       <aside className="engineering-controls">
-        <div className="designer-tabs">{(Object.keys(SYSTEM_LABELS) as StructuralSystem[]).map((key) => <button key={key} className={[system === key ? "active" : "", mcdaShortlist.some((item) => item.id === key) ? "shortlisted" : ""].filter(Boolean).join(" ")} onClick={() => { const alternative = alternatives.find((item) => item.system === key); if (alternative) activateAlternative(alternative); }}>{SYSTEM_LABELS[key]}</button>)}</div>
+        <div className="designer-tabs">{(Object.keys(SYSTEM_LABELS) as StructuralSystem[]).map((key) => <button key={key} className={system === key ? "active" : ""} onClick={() => { const alternative = alternatives.find((item) => item.system === key); if (alternative) activateAlternative(alternative); }}>{SYSTEM_LABELS[key]}</button>)}</div>
         <div className="engineering-control-scroll">
-          <section><strong>01 / TASARIM ESASI</strong><label><span>Kullanım sınıfı</span><select value={usage} onChange={(event) => setUsage(event.target.value as StructuralConceptInput["usage"])}>{Object.entries(usageLabels).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label><label><span>Standart paketi</span><select value={designBasis} onChange={(event) => setDesignBasis(event.target.value as keyof typeof DESIGN_BASIS)}>{Object.entries(DESIGN_BASIS).map(([key, value]) => <option value={key} key={key}>{value.label}</option>)}</select></label><div className="basis-reference">{DESIGN_BASIS[designBasis].references.map((reference) => <span key={reference}>{reference}</span>)}</div></section>
+          <section><strong>01 / TASARIM ESASI</strong><label><span>Kullanım sınıfı</span><select value={usage} onChange={(event) => setUsage(event.target.value as StructuralConceptInput["usage"])}>{Object.entries(usageLabels).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label><label><span>Referans standart listesi</span><select value={designBasis} onChange={(event) => setDesignBasis(event.target.value as keyof typeof DESIGN_BASIS)}>{Object.entries(DESIGN_BASIS).map(([key, value]) => <option value={key} key={key}>{value.label}</option>)}</select></label><div className="basis-reference">{DESIGN_BASIS[designBasis].references.map((reference) => <span key={reference}>{reference}</span>)}</div><p className="basis-scope-note">Bu seçim yalnız referans listesini belirler; standardın tüm hükümlerinin uygulandığı veya teknik uygunluğun doğrulandığı anlamına gelmez.</p></section>
           <section><strong>02 / GEOMETRİ & AKS</strong><div className="engineering-field-grid"><NumericField label="Genişlik" value={width} min={6} max={80} step={.5} unit="m" onChange={setWidth}/><NumericField label="Derinlik" value={depth} min={6} max={60} step={.5} unit="m" onChange={setDepth}/><NumericField label="Kat adedi" value={floors} min={1} max={20} step={1} onChange={setFloors}/><NumericField label="Kat yüksekliği" value={floorHeight} min={2.6} max={8} step={.1} unit="m" onChange={setFloorHeight}/><NumericField label="X açıklık adedi" value={baysX} min={1} max={12} step={1} onChange={setBaysX}/><NumericField label="Y açıklık adedi" value={baysY} min={1} max={10} step={1} onChange={setBaysY}/></div><div className="engineering-inline-output"><span>X açıklığı<b>{result.geometry.spanX.toFixed(2)} m</b></span><span>Y açıklığı<b>{result.geometry.spanY.toFixed(2)} m</b></span><span>Toplam yükseklik<b>{result.geometry.height.toFixed(2)} m</b></span></div></section>
           <section><strong>03 / KESİT & MALZEME</strong><div className="engineering-field-grid"><NumericField label="Kolon eni" value={columnSize} min={.12} max={1.2} step={.05} unit="m" onChange={setColumnSize}/><NumericField label="Kiriş yüksekliği" value={beamDepth} min={.25} max={1.5} step={.05} unit="m" onChange={setBeamDepth}/><NumericField label="Döşeme" value={slabThickness} min={.08} max={.4} step={.01} unit="m" onChange={setSlabThickness}/></div><div className="engineering-field-grid"><label><span>Beton</span><select value={concreteStrength} onChange={(event) => setConcreteStrength(Number(event.target.value))}>{[25,30,35,40,45,50].map((value) => <option value={value} key={value}>C{value}/{value + (value < 40 ? 7 : 10)}</option>)}</select></label><label><span>Yapı çeliği</span><select value={steelYield} onChange={(event) => setSteelYield(Number(event.target.value))}>{[275,355,460].map((value) => <option value={value} key={value}>S{value}</option>)}</select></label></div></section>
           <section><strong>04 / YÜKLER</strong><div className="engineering-field-grid"><NumericField label="Ek sabit yük" value={superDeadLoad} min={.5} max={8} step={.1} unit="kN/m²" onChange={setSuperDeadLoad}/><NumericField label="Hareketli yük" value={liveLoad} min={1.5} max={15} step={.5} unit="kN/m²" onChange={setLiveLoad}/><NumericField label="Kar yükü" value={roofSnowLoad} min={0} max={5} step={.05} unit="kN/m²" onChange={setRoofSnowLoad}/><NumericField label="Temel rüzgâr hızı" value={basicWindSpeed} min={20} max={55} step={1} unit="m/s" onChange={setBasicWindSpeed}/></div></section>
-          <section><strong>05 / DEPREM ÖN GİRDİSİ</strong><div className="engineering-field-grid"><NumericField label="SDS" value={sds} min={.1} max={2.5} step={.05} onChange={setSds}/><NumericField label="SD1" value={sd1} min={.05} max={1.5} step={.05} onChange={setSd1}/><NumericField label="I" value={importance} min={1} max={1.5} step={.1} onChange={setImportance}/><NumericField label="R" value={behaviorFactor} min={2} max={8} step={.5} onChange={setBehaviorFactor}/></div><label><span>Zemin sınıfı</span><select value={soilClass} onChange={(event) => setSoilClass(event.target.value)}>{["ZA","ZB","ZC","ZD","ZE","ZF / sahaya özel"].map((value) => <option key={value}>{value}</option>)}</select></label><p className="engineering-caution">SDS ve SD1 değerleri burada kullanıcı girdisidir. Koordinata bağlı AFAD tehlike verisi ve zemin etüdü doğrulanmadan proje değeri sayılmaz.</p></section>
+          <section><strong>05 / DEPREM ÖN GİRDİSİ</strong><div className="engineering-field-grid"><NumericField label="SDS" value={sds} min={.1} max={2.5} step={.05} onChange={setSds}/><NumericField label="SD1" value={sd1} min={.05} max={1.5} step={.05} onChange={setSd1}/><NumericField label="I" value={importance} min={1} max={1.5} step={.1} onChange={setImportance}/><NumericField label="R" value={behaviorFactor} min={2} max={8} step={.5} onChange={setBehaviorFactor}/></div><label><span>Zemin sınıfı</span><select value={soilClass} onChange={(event) => setSoilClass(event.target.value)}>{["Bilinmiyor","ZA","ZB","ZC","ZD","ZE","ZF / sahaya özel"].map((value) => <option key={value}>{value}</option>)}</select></label><p className="engineering-caution">Zemin sınıfı yalnız kullanıcı beyanıdır; bu hesapta uygulanmaz. ZF için sahaya özel yetkili inceleme gerekir. SDS ve SD1 değerleri burada kullanıcı girdisidir. Koordinata bağlı AFAD tehlike verisi ve zemin etüdü doğrulanmadan proje değeri sayılmaz.</p></section>
           <section><strong>06 / ÜRETİM, YANGIN & LOJİSTİK</strong><div className="engineering-field-grid"><NumericField label="Tekrar oranı" value={repetition} min={0} max={100} step={5} unit="%" onChange={setRepetition}/><NumericField label="Taşıma mesafesi" value={transportDistance} min={0} max={2000} step={10} unit="km" onChange={setTransportDistance}/><NumericField label="Yangın hedefi" value={fireRating} min={30} max={240} step={30} unit="dk" onChange={setFireRating}/></div><p className="engineering-caution">Süre ve maliyet değerleri göreli ön göstergedir. Fabrika kapasitesi, taşıma güzergâhı, vinç erişimi, yangın senaryosu ve güncel tekliflerle doğrulanmalıdır.</p></section>
         </div>
       </aside>
@@ -603,17 +409,16 @@ function StructuralDesignerSession({ home = false, compactKernel = false }: Prop
         <header className="engineering-toolbar"><div>{(["model","alternatives","loads","checks","quantities"] as WorkspaceView[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "model" ? "Analitik model" : item === "alternatives" ? "Sistem alternatifleri" : item === "loads" ? "Yük izi" : item === "checks" ? "Ön kontroller" : "Miktar / çıktı"}</button>)}</div><div><button className={showSlabs ? "active" : ""} onClick={() => setShowSlabs((value) => !value)}>Döşeme</button><button className={showLoads ? "active" : ""} onClick={() => setShowLoads((value) => !value)}>Yük oku</button></div></header>
         <div className="engineering-viewport">
           <div className={`designer-canvas${webglState === "fallback" ? " is-fallback" : ""}`} ref={hostRef}>{webglState !== "ready" && <StructuralFallback input={input}/>}<div className="engineering-model-id"><span>{webglState === "ready" ? "CANLI WEBGL MODEL" : "TEKNİK SVG MODEL"}</span><b>{SYSTEM_LABELS[system]} · {floors} kat · {baysX}×{baysY} açıklık</b></div><small>{webglState === "ready" ? "Döndür: sürükle · Yaklaş: kaydır · Kaydır: sağ tuş" : "Grafik desteğinden bağımsız hesap ve çıktı modu"}</small></div>
-          <div className="engineering-kpis"><article><small>Toplam alan</small><strong>{structuralStudio.geometry.totalArea.toLocaleString("tr-TR")} m²</strong></article><article><small>En büyük açıklık</small><strong>{structuralStudio.geometry.maximumSpan.toFixed(2)} m</strong></article><article><small>{mcdaShortlist.length ? "Kısa liste başlangıcı" : "Önerilen ön inceleme"}</small><strong>{mcdaShortlist[0]?.name ?? structuralStudio.recommendation.label}</strong></article><article><small>Aktif maliyet / süre*</small><strong>{activeAlternative.indices.relativeCost.toFixed(0)} · {activeAlternative.indices.durationWeeks.toFixed(1)} hf</strong></article></div>
+          <div className="engineering-kpis"><article><small>Toplam alan</small><strong>{structuralStudio.geometry.totalArea.toLocaleString("tr-TR")} m²</strong></article><article><small>En büyük açıklık</small><strong>{structuralStudio.geometry.maximumSpan.toFixed(2)} m</strong></article><article><small>Önerilen ön inceleme</small><strong>{structuralStudio.recommendation.label}</strong></article><article><small>Aktif maliyet / süre*</small><strong>{activeAlternative.indices.relativeCost.toFixed(0)} · {activeAlternative.indices.durationWeeks.toFixed(1)} hf</strong></article></div>
         </div>
         {view === "model" && <section className="engineering-panel model-panel"><header><div><span>MODEL ÖZETİ</span><b>Parametrik taşıyıcı sistem veri tablosu</b></div><small>{DESIGN_BASIS[designBasis].label} · {soilClass}</small></header><div className="engineering-data-grid">{[["Kat alanı", `${result.geometry.floorArea.toFixed(1)} m²`],["Kolon / kat", `${result.geometry.columnsPerFloor}`],["En büyük açıklık", `${result.geometry.maxSpan.toFixed(2)} m`],["Yükseklik / genişlik", `${(result.geometry.height / Math.max(width, depth)).toFixed(3)}`],["Sismik ağırlık", `${Math.round(result.loads.seismicWeight).toLocaleString("tr-TR")} kN`],["Rüzgâr basınç göstergesi", `${result.loads.windPressureProxy.toFixed(2)} kN/m²`]].map(([label, value]) => <p key={label}><span>{label}</span><b>{value}</b></p>)}</div><p className="engineering-definition">Analitik model; geometri, yük kabulleri ve ön boyutlandırma arasındaki tutarlılığı sınar. Rijit diyafram, düzensizlik, temel–zemin etkileşimi, birleşim ve ikinci mertebe etkileri nihai analiz modelinde ayrıca tanımlanır.</p></section>}
         {view === "alternatives" && <section className="engineering-panel structural-alternatives v114-alternatives" data-previous-contract="V84 / TAŞIYICI SİSTEM KARŞILAŞTIRMASI"><header><div><span>V114 / TAŞIYICI SİSTEM STÜDYOSU 2.0</span><b>Aynı V113 geometrisi üzerinde beş sistem ve Ön boyutlandırma</b></div><small>Ön eleme · nihai sistem kararı değildir</small></header><div className="v114-recommendation"><span>EN YÜKSEK BİLEŞİK PUAN</span><b>{structuralStudio.recommendation.label} · {structuralStudio.recommendation.score.toFixed(1)}</b><p>{structuralStudio.recommendation.reason}</p></div><div className="v114-alternative-grid">{alternatives.map((alternative, index) => <article className={system === alternative.system ? "active" : ""} data-state={alternative.status} key={alternative.system}><header><span>{String(index + 1).padStart(2, "0")} / {alternative.system.toLocaleUpperCase("tr-TR")}</span><b>{alternative.label}</b>{system === alternative.system && <em>MODELLENİYOR</em>}</header><p className="v114-system-description">{alternative.description}</p><div className="v114-score"><strong>{alternative.score.toFixed(1)}</strong><span>{alternative.status === "fits" ? "uygun ön inceleme" : alternative.status === "review" ? "uzman incelemesi" : "kritik kısıt"}</span></div><dl><div><dt>Göreli maliyet*</dt><dd>{alternative.indices.relativeCost.toFixed(0)}</dd></div><div><dt>Taşıyıcı süre*</dt><dd>{alternative.indices.durationWeeks.toFixed(1)} hf</dd></div><div><dt>Karbon göstergesi*</dt><dd>{(alternative.indices.embodiedCarbonProxy / 1000).toFixed(0)} tCO₂e</dd></div><div><dt>Fabrika payı</dt><dd>%{alternative.indices.factoryShare.toFixed(0)}</dd></div><div><dt>Göreli kütle</dt><dd>{alternative.indices.massIndex.toFixed(0)}</dd></div><div><dt>Ön kontrol</dt><dd className={alternative.criticalChecks ? "risk" : alternative.reviewChecks ? "watch" : "good"}>{alternative.criticalChecks} kritik · {alternative.reviewChecks} incele</dd></div></dl><div className="v114-preliminary"><span>ÖN BOYUTLANDIRMA</span><p><b>Kolon</b>{alternative.preliminary.column}</p><p><b>Kiriş</b>{alternative.preliminary.beam}</p><p><b>Döşeme</b>{alternative.preliminary.floor}</p><p><b>Yatay sistem</b>{alternative.preliminary.lateral}</p></div><p className="v114-risk"><i>!</i>{alternative.risks[0]}</p><button onClick={() => activateAlternative(alternative)}>{system === alternative.system ? "Aktif model ✓" : "Kesitleri modele uygula"}</button></article>)}</div><footer><b>* Göreli göstergeler:</b><p>Maliyet, süre ve karbon; aynı geometri üzerindeki yön karşılaştırmasıdır. Güncel keşif / teklif, üretici EPD’si, nakliye senaryosu, şantiye programı ve EN 15978 kapsamlı sertifikalı LCA sonucu değildir.</p></footer></section>}
-        {view === "loads" && <section className="engineering-panel"><header><div><span>YÜK İZİ & KOMBİNASYONLAR</span><b>Her sonucun formülü ve birimi görünür</b></div><small>Ön değerlendirme</small></header><div className="load-trace-table"><div className="head"><span>KOD</span><span>FORMÜL / KABUL</span><span>SONUÇ</span></div>{result.trace.map((row) => <div key={row.code}><b>{row.code}</b><span>{row.formula}</span><strong>{row.result}</strong></div>)}</div><div className="engineering-load-cards"><article><span>SERVİS</span><b>{result.loads.serviceAreaLoad.toFixed(2)} kN/m²</b><small>G + Q</small></article><article><span>DEPREM KÜTLESİ</span><b>{Math.round(result.loads.seismicMassTonnes).toLocaleString("tr-TR")} t</b><small>Kullanım katılım katsayılı</small></article><article><span>TABAN KESME*</span><b>{Math.round(result.dynamics.baseShearProxy).toLocaleString("tr-TR")} kN</b><small>Spektral talep göstergesi</small></article><article><span>KOLON PAYI*</span><b>{Math.round(result.loads.tributaryColumn).toLocaleString("tr-TR")} kN</b><small>Eşit dağılım varsayımı</small></article></div></section>}
+        {view === "loads" && <section className="engineering-panel"><header><div><span>YÜK İZİ & KOMBİNASYONLAR</span><b>Her sonucun formülü ve birimi görünür</b></div><small>Ön değerlendirme</small></header><div className="load-trace-table"><div className="head"><span>KOD</span><span>FORMÜL / KABUL</span><span>SONUÇ</span></div>{result.trace.map((row) => <div key={row.code}><b>{row.code}</b><span>{row.formula}</span><strong>{row.result}</strong></div>)}</div><div className="engineering-load-cards"><article><span>SERVİS</span><b>{result.loads.serviceAreaLoad.toFixed(2)} kN/m²</b><small>G + Q</small></article><article><span>DEPREM KÜTLESİ</span><b>{Math.round(result.loads.seismicMassTonnes).toLocaleString("tr-TR")} t</b><small>Kullanım katılım katsayılı</small></article><article><span>TABAN KESME*</span><b>{Math.round(result.dynamics.baseShearProxy).toLocaleString("tr-TR")} kN</b><small>Spektral talep göstergesi</small></article><article><span>ZEMİN KAT ORTALAMA KOLON PAYI*</span><b>{Math.round(result.loads.tributaryColumn).toLocaleString("tr-TR")} kN</b><small>Eşit dağılım varsayımı</small></article></div></section>}
         {view === "checks" && <section className="engineering-panel v114-check-panel"><header><div><span>V114 / KARAR VE KAYNAK KONTROLLERİ</span><b>Geometri · sistem · deprem · yangın · üretim</b></div><small>{structuralStudio.checks.filter((check) => check.state === "pass").length}/{structuralStudio.checks.length} doğrudan geçti</small></header><div className="engineering-checks v114-checks">{structuralStudio.checks.map((check) => <article className={check.state === "risk" ? "block" : check.state} key={check.code}><i>{check.state === "pass" ? "✓" : check.state === "review" ? "!" : "×"}</i><div><span>{check.code}</span><b>{check.label}</b><p>{check.note}</p></div><strong>{check.value}</strong><small>{check.state === "pass" ? "kayıtlı" : check.state === "review" ? "doğrulama gerekli" : "kritik veri"}</small></article>)}</div><header className="v114-detail-head"><div><span>AKTİF SİSTEM ÖN KONTROLÜ</span><b>{activeAlternative.label} · kesit ve talep göstergeleri</b></div><small>{checkCounts.pass} geçti / {checkCounts.review} incele / {checkCounts.block} kritik</small></header><div className="engineering-checks">{result.checks.map((check) => <article className={check.state} key={check.id}><i>{check.state === "pass" ? "✓" : check.state === "review" ? "!" : "×"}</i><div><b>{check.title}</b><p>{check.note}</p></div><strong>{check.value}</strong><small>{check.limit}</small></article>)}</div></section>}
-        {view === "quantities" && <section className="engineering-panel"><header><div><span>MİKTAR & AÇIK FORMAT ÇIKTI</span><b>Model girdisine bağlı ön miktarlar</b></div><small>Revizyonlanabilir veri</small></header><div className="quantity-board"><article><span>Beton</span><b>{result.quantities.concreteVolume.toFixed(1)} m³</b><small>Taşıyıcı ön hacim</small></article><article><span>Donatı</span><b>{result.quantities.reinforcementTonnage.toFixed(1)} t</b><small>Katsayılı ön miktar</small></article><article><span>Yapı çeliği</span><b>{result.quantities.steelTonnage.toFixed(1)} t</b><small>Sistem yoğunluk göstergesi</small></article><article><span>Çatı alanı</span><b>{result.quantities.rainRoofArea.toFixed(0)} m²</b><small>Su / enerji ön girdisi</small></article></div><div className="engineering-export-actions"><button onClick={exportPdf}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf}><span>CAD</span><b>DWG uyumlu katmanlı DXF</b><i>↓</i></button><button onClick={exportJson}><span>JSON</span><b>Tüm girdiler + izlenebilir sonuç</b><i>↓</i></button><button onClick={exportCsv}><span>CSV</span><b>Ön boyutlandırma tablosu</b><i>↓</i></button></div></section>}
+        {view === "quantities" && <section className="engineering-panel"><header><div><span>MİKTAR & AÇIK FORMAT ÇIKTI</span><b>Model girdisine bağlı ön miktarlar</b></div><small>Revizyonlanabilir veri</small></header><div className="quantity-board"><article><span>Beton</span><b>{result.quantities.concreteVolume.toFixed(1)} m³</b><small>Brüt bileşen toplamı; birleşimler düşülmedi</small></article><article><span>Donatı</span><b>{result.quantities.reinforcementTonnage.toFixed(1)} t</b><small>Katsayılı ön miktar</small></article><article><span>Yapı çeliği</span><b>{result.quantities.steelTonnage.toFixed(1)} t</b><small>Sistem yoğunluk göstergesi</small></article><article><span>Çatı alanı</span><b>{result.quantities.rainRoofArea.toFixed(0)} m²</b><small>Su / enerji ön girdisi</small></article></div><div className="engineering-export-actions"><button onClick={exportPdf}><span>PDF</span><b>A3 kurumsal teknik pafta</b><i>↓</i></button><button onClick={exportDxf}><span>CAD</span><b>DWG uyumlu katmanlı DXF</b><i>↓</i></button><button onClick={exportJson}><span>JSON</span><b>Tüm girdiler + izlenebilir sonuç</b><i>↓</i></button><button onClick={exportCsv}><span>CSV</span><b>Ön boyutlandırma tablosu</b><i>↓</i></button></div></section>}
       </main>
     </div>
     <footer className="engineering-disclaimer"><b>Hesap sınırı</b><p>Bu motor ön fizibilite, veri hazırlığı ve alternatif karşılaştırması içindir. Sonuçlar; yetkili mühendis tarafından doğrulanmış geometri, zemin, deprem, rüzgâr, kar, kullanım, yangın, stabilite, birleşim ve temel verileriyle kurulacak hesap modelinin yerine geçmez. “*” işaretli değerler yönetmelik sonucu değil, talep büyüklüğünü görünür kılan göstergelerdir.</p></footer>
     {home && <div className="designer-home-more"><a href="/tasarim-calismalari">Tam ekran stüdyoyu, plan editörünü, BIM ve VR karar akışını açın <span>↗</span></a></div>}
   </section>;
 }
-

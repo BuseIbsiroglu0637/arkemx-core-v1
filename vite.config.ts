@@ -10,7 +10,6 @@ const { d1, r2 } = hostingConfig;
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
-const isLocalDemo = process.env.ARKEMX_LOCAL_DEMO === "1";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -46,12 +45,12 @@ export default defineConfig(async () => {
 
   return {
     server: {
-      host: isLocalDemo ? "127.0.0.1" : "0.0.0.0",
-      ...(isLocalDemo ? { port: 5173, strictPort: true } : {}),
+      host: "0.0.0.0",
       allowedHosts: ["terminal.local"],
-      ...(isCodexSeatbeltSandbox
-        ? { watch: { useFsEvents: false, usePolling: true } }
-        : {}),
+      watch: {
+        ignored: ["**/.sites-runtime/**"],
+        ...(isCodexSeatbeltSandbox ? { useFsEvents: false, usePolling: true } : {}),
+      },
     },
     plugins: [
       vinext(),

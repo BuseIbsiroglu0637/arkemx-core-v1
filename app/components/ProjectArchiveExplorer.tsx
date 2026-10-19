@@ -1,6 +1,7 @@
 "use client";
 
-import Image from "next/image";
+import { ProjectPhoto } from "./ProjectPhoto";
+import { selectProjectPhoto } from "../lib/project-photo";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { V3PublishedProjectRecord } from "../lib/project-evidence";
@@ -21,23 +22,25 @@ const filters: readonly ProjectArchiveFilter[] = [
   { id: "commercial", label: "Ticari", matches: (project) => normalized(project.facts.buildingType.value).includes("ticari") },
   { id: "agricultural", label: "Tarımsal", matches: (project) => /tarım|hayvancılık/.test(normalized(project.facts.buildingType.value)) },
   { id: "precast", label: "Betonarme Prefabrik", matches: (project) => verifiedValue(project, "system").includes("prefabrik") },
-  { id: "steel", label: "Çelik", matches: (project) => verifiedValue(project, "system").includes("çelik") },
+  { id: "steel", label: "Çelik", matches: (project) => /çelik/.test(verifiedValue(project, "system")) && !/hafif çelik/.test(verifiedValue(project, "system")) },
   { id: "light-steel", label: "Hafif Çelik", matches: (project) => verifiedValue(project, "system").includes("hafif çelik") },
 ] as const;
 
 export function ProjectArchiveExplorer({ projects }: { projects: readonly V3PublishedProjectRecord[] }) {
   const [activeFilter, setActiveFilter] = useState(filters[0].id);
-  const filter = filters.find((item) => item.id === activeFilter) ?? filters[0];
+  const availableFilters = filters.map((item) => ({ ...item, count: projects.filter(item.matches).length }))
+    .filter((item) => item.id === "all" || item.count > 0);
+  const filter = availableFilters.find((item) => item.id === activeFilter) ?? availableFilters[0];
   const visibleProjects = useMemo(() => projects.filter(filter.matches), [filter, projects]);
 
   return <div className="v31-project-archive" data-testid="project-archive-explorer">
     <nav aria-label="Proje arşivi filtreleri">
-      {filters.map((item) => {
-        const count = projects.filter(item.matches).length;
+      {availableFilters.map((item) => {
+        const count = item.count;
         return <button
           type="button"
-          className={item.id === activeFilter ? "is-active" : ""}
-          aria-pressed={item.id === activeFilter}
+          className={item.id === filter.id ? "is-active" : ""}
+          aria-pressed={item.id === filter.id}
           onClick={() => setActiveFilter(item.id)}
           key={item.id}
         >{item.label}<small>{count}</small></button>;
@@ -46,7 +49,7 @@ export function ProjectArchiveExplorer({ projects }: { projects: readonly V3Publ
     <p className="v31-project-filter-result" aria-live="polite"><strong>{filter.label}</strong> · {visibleProjects.length} proje kaydı</p>
     {visibleProjects.length ? <div className="v31-project-archive-grid">
       {visibleProjects.map((project) => {
-        const cover = project.publishedMedia.find((item) => item.contentType.startsWith("image/"));
+        const cover = selectProjectPhoto(project.slug, project.publishedMedia);
         const cardFacts = [
           project.facts.location,
           project.facts.buildingType,
@@ -57,7 +60,7 @@ export function ProjectArchiveExplorer({ projects }: { projects: readonly V3Publ
         return <article id={project.slug} key={project.slug}>
           <Link className="v31-project-archive-media" href={`/projeler/${project.slug}`} data-analytics="project_open" data-analytics-context={project.slug}>
             {cover
-              ? <Image src={cover.href} alt={cover.caption || `${project.shortTitle} proje kaydı`} width={1280} height={800} unoptimized />
+              ? <ProjectPhoto src={cover.href} alt={cover.caption || `${project.shortTitle} proje kaydı`} sizes="(max-width: 760px) 100vw, 40vw" />
               : <span><b>PROJE MEDYASI</b><small>Kaynak ve yayın hakkı eşleşmesi bekleniyor</small></span>}
           </Link>
           <header><span>{project.code}</span><em>{recordLabel}</em></header>

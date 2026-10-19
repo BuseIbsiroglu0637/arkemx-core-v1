@@ -1533,3 +1533,54 @@ body main > section:has(> .v4-site-header) > .v4-site-header + .shell > p:not(.e
     transition: none !important;
   }
 }
+
+/* Denetim: belge arşivi, sayfa başlıkları ve alt menü hizası. */
+.knowledge-intro > .shell {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: start;
+  gap: 24px !important;
+}
+.knowledge-intro article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+.knowledge-intro article p { margin: 0; }
+.resource-library-v2 .resource-filters { align-items: end; }
+.resource-library-v2 .resource-more-filters {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+  font-size: 11px;
+  font-weight: 750;
+  color: #324654;
+}
+.resource-library-v2 .resource-more-filters select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid #cbd3d8;
+  border-radius: 0;
+  background: #fff;
+  color: #183346;
+  font: inherit;
+}
+.resource-library-v2 .resource-card { align-items: stretch; }
+.resource-library-v2 .resource-card-copy,
+.resource-library-v2 .resource-source { align-self: start; min-width: 0; }
+.system-detail-hero h1 {
+  font-weight: 750;
+  line-height: 1.06;
+  letter-spacing: -.045em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 601px) {
+  .v4-footer-navigation { align-items: start; }
+  .v4-footer-accordion { align-self: start; }
+}
+@media (max-width: 700px) {
+  .knowledge-intro > .shell { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .resource-library-v2 .resource-more-filters { min-width: 0; width: 100%; }
+}

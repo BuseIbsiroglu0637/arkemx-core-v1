@@ -191,13 +191,13 @@ const yapikurMedia: readonly V3ProjectArchiveMedia[] = [
 ];
 
 const yapikurFacts: ProjectFacts = {
-  location: fact("Lokasyon", "Kastamonu Merkez", "doğrulandı", "ARKEM kurumsal proje arşivi"),
+  location: fact("Lokasyon", "Kastamonu Merkez", "doğrulandı", "05.02.2025 Yapıkur Plaza statik hesap raporu · Yapı Bilgileri"),
   buildingType: fact("Yapı türü", "Ticari yapı · plaza", "doğrulandı", "ARKEM kurumsal proje arşivi"),
-  system: fact("Taşıyıcı sistem", "Betonarme prefabrik", "doğrulandı", "ARKEM proje arşivi · temel, üretim ve montaj kayıtları"),
-  year: pendingFact("Yıl", "Yıl bilgisi yayın kaydında açıklanmadı"),
+  system: fact("Taşıyıcı sistem", "Betonarme prefabrik · çatı ve arakat kirişleri mafsallı model", "doğrulandı", "05.02.2025 Yapıkur Plaza statik hesap raporu · bölüm 1.2"),
+  year: fact("Belge tarihi", "05.02.2025 · statik hesap raporu; yapım/teslim yılı değil", "doğrulandı", "05.02.2025 Yapıkur Plaza statik hesap raporu · kapak"),
   area: pendingFact("Alan", "Alan bilgisi yayın kaydında açıklanmadı"),
   client: pendingFact("Müşteri", "Müşteri bilgisi yayın kaydında açıklanmadı"),
-  arkemRole: fact("ARKEM kapsamı", "Projelendirme; temel, üretim ve montaj süreç kaydı", "doğrulandı", "ARKEM proje arşivi · temel, üretim ve montaj kayıtları"),
+  arkemRole: fact("Müellif kaydı", "Özenç Öztürk · Yüksek İnşaat Mühendisi · statik proje müellifi", "doğrulandı", "05.02.2025 Yapıkur Plaza statik hesap raporu · Müellif Bilgileri"),
   projectStatus: fact("Proje durumu", "Temel, üretim ve montaj kayıtları mevcut", "kısmi doğrulama", "ARKEM proje arşivi"),
 };
 
@@ -277,15 +277,15 @@ export const v3Projects: readonly V3ProjectRecord[] = [
     code: "P-003",
     title: "Yapıkur Plaza — Kastamonu Merkez",
     shortTitle: "Yapıkur Plaza",
-    summary: "Kastamonu Merkez ticari yapı kaydı; projelendirme, temel üretimi, prefabrik üretim ve montaj süreçleriyle sunulur.",
+    summary: "Kastamonu Merkez'de önüretimli betonarme taşıyıcı sistem: 05.02.2025 tarihli statik hesap raporu, temel ve montaj saha kayıtları.",
     archiveVisible: true,
     homepageFeatured: true,
     homepagePriority: 2,
     evidenceStatus: "kısmi doğrulama",
     facts: yapikurFacts,
     caseStudy: caseStudyFor({
-      "03": { summary: "Plaza yapısı betonarme prefabrik taşıyıcı sistemle kayıtlıdır.", evidenceNeeded: "ARKEM proje arşivi · temel, üretim ve montaj kayıtları", status: "doğrulandı" },
-      "04": { summary: "Projelendirme kaydı temel, üretim ve montaj süreçleriyle aynı teknik dosyada ilişkilendirilmiştir.", evidenceNeeded: "ARKEM kurumsal proje arşivi", status: "doğrulandı" },
+      "03": { summary: "Statik hesap raporunda taşıyıcı sistem temelde ankastre, çatı ve arakat kirişleri mafsallı MFB1 model olarak tanımlanır. Bu bilgi tasarım modeline aittir.", evidenceNeeded: "05.02.2025 Yapıkur Plaza statik hesap raporu · bölüm 1.2", status: "doğrulandı" },
+      "04": { summary: "05.02.2025 tarihli hesap raporunda proje müellifi Özenç Öztürk olarak kayıtlıdır. Statik proje müellifliği, saha yükleniciliği veya üretici rolü anlamına gelmez.", evidenceNeeded: "05.02.2025 Yapıkur Plaza statik hesap raporu · Müellif Bilgileri", status: "doğrulandı" },
       "05": { summary: "Temel üretimi ile prefabrik eleman üretim ve montaj süreçleri gerçek proje medyasında kayıtlıdır.", evidenceNeeded: "ARKEM proje arşivi · temel, üretim ve montaj video kayıtları", status: "doğrulandı" },
       "06": { summary: "Montaj sahası ve prefabrik eleman yerleşimi gerçek hava görüntülerinde görülür.", evidenceNeeded: "ARKEM proje arşivi · üretim ve montaj video kaydı", status: "doğrulandı" },
     }),

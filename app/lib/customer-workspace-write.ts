@@ -25,7 +25,7 @@ export const CUSTOMER_PROJECT_ACTIVITY_SQL = `
   INSERT INTO customer_activities (
     owner_email, event_type, title, detail, created_at
   )
-  SELECT ?, 'project', 'Proje hesaba kaydedildi', ?, ?
+  SELECT ?, 'project', 'Proje buluta kaydedildi', ?, ?
   WHERE EXISTS (
     SELECT 1
     FROM customer_projects

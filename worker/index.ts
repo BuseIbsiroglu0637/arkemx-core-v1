@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { withResponseSecurity } from "../app/lib/response-security";
 
 interface Env {
   ASSETS: Fetcher;
@@ -40,7 +41,7 @@ const worker = {
       }, allowedWidths);
     }
 
-    const response = await handler.fetch(request, env, ctx);
+    const response = withResponseSecurity(request, await handler.fetch(request, env, ctx));
     const isDevelopmentPreview = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "terminal.local";
     if (!isDevelopmentPreview || !response.headers.get("content-type")?.includes("text/html")) return response;
 

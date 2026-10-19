@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+JSON.parse(readFileSync(resolve(project, 'dist/.openai/hosting.json'), 'utf8'));
+const entry = pathToFileURL(resolve(project, 'dist/server/index.js'));
+entry.searchParams.set('sites-validation', `${process.pid}-${Date.now()}`);
+const worker = await import(entry.href);
+if (typeof worker.default?.fetch !== 'function') throw new Error('Worker default.fetch is missing');
+console.log('Validated Sites artifact: hosting manifest and callable Worker fetch.');

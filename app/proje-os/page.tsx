@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ProjectOperatingSystem } from "../components/ProjectOperatingSystem";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { SiteFooter } from "../components/SiteChrome";
+import { ModuleWorkspaceHeader } from "../components/ModuleWorkspaceHeader";
 
 export const metadata: Metadata = {
   title: "Arkem Proje OS 2.0 | RFI, Revizyon ve Şantiye Yönetimi",
@@ -22,12 +23,14 @@ const capabilities = [
 ];
 
 export default function ProjectOsPage() {
-  return <main className="inner-page os-page">
-    <section className="os-page-hero"><SiteHeader/><div className="shell os-page-hero-copy"><p className="eyebrow light">ARKEMX / Dijital Proje Teslimi</p><h1>Proje yönetimi değil.<br/><em>Projenin işletim sistemi.</em></h1><p>Tasarım, program, doküman, karar, bütçe, saha, tedarik ve teslim verisini birbirinden kopuk dosyalar olmaktan çıkaran dijital proje omurgası.</p><div className="actions"><a className="button copper" href="#canli-demo">Canlı Demoyu Açın <span>↓</span></a><a className="button ghost" href="/iletisim">Projeniz İçin Görüşün <span>↗</span></a></div></div><div className="shell os-hero-strip">{["CDE","OPENBIM","4B","COST","RFI","360°","SUPPLY","ASSET DATA"].map((item)=><span key={item}>{item}</span>)}</div></section>
-    <section className="section shell os-intro"><div><p className="eyebrow">Parçalı Süreçten Tek Veri Zincirine</p><h2>Doğru bilgi,<br/><em>doğru anda.</em></h2></div><div><p>Arkem Proje OS; yeni bir yazılım satın alma vaadinden önce, projede hangi verinin kim tarafından üretileceğini, nasıl onaylanacağını ve hangi kararı besleyeceğini tanımlar.</p><p>Canlı prototip, işveren ve proje ekiplerinin tek ekranda görebileceği omurgayı gösterir. Gerçek uygulama; proje ölçeği, kullanıcı rolleri ve mevcut yazılımlara göre yapılandırılır.</p></div></section>
+  return <main className="inner-page os-page module-workspace-page">
+    <ModuleWorkspaceHeader title="Proje yönetimi çalışma örneğini inceleyin" description="Görev ve kayıt ilişkisinin nasıl kurulabileceğini deneyin. Bütçe, ilerleme, program ve saha panelleri örnek veridir; gerçek proje performansı değildir." target="proje-os-motoru" example />
+  <section id="proje-os-motoru" className="os-live-section"><div className="section shell"><ProjectOperatingSystem/></div></section>
+    
     <section className="os-capability-section"><div className="section shell"><div className="section-heading"><div><p className="eyebrow light">On Bağlı Modül</p><h2>Dosya aramayın.<br/><em>Kararı yönetin.</em></h2></div><p>Her modül tek başına çalışabilir; asıl değer, aynı proje kimliği ve denetlenebilir kayıt zinciriyle bağlandığında oluşur.</p></div><div className="os-capability-grid">{capabilities.map(([no,title,copy])=><article key={no}><span>{no}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
-    <section id="proje-os-motoru" className="os-live-section"><div className="section shell"><div className="section-heading"><div><p className="eyebrow">V116 / Etkileşimli Proje OS 2.0</p><h2>Issue’dan teslimata<br/><em>aynı iz üzerinde ilerleyin.</em></h2></div><p>Görevleri sorumlusuyla izleyin; V115 koordinasyon kaydını RFI’a dönüştürün, revizyonu ayırın, program ve bütçe etkisini aynı proje kaydında görün.</p></div><ProjectOperatingSystem demo/></div></section>
+    
     <section className="os-implementation"><div className="section shell"><div><p className="eyebrow light">Kurulum Mimarisi</p><h2>Önce süreç.<br/><em>Sonra teknoloji.</em></h2></div><div className="os-implementation-grid"><article><span>01 / TEMEL</span><h3>Proje protokolü ve veri sözlüğü</h3><p>Rol, onay, isimlendirme, revizyon, teslim seviyesi ve karar kayıt standardı.</p><b>Ortak veri ortamı + doküman + karar</b></article><article><span>02 / BAĞLI</span><h3>Model, program ve saha eşlemesi</h3><p>BIM elemanları, 4B program, 360° gerçeklik ve kalite kayıtlarının ortak koordinat sistemi.</p><b>Açık BIM + 4B + saha gerçekliği</b></article><article><span>03 / YAŞAYAN</span><h3>Analitik, otomasyon ve dijital ikiz</h3><p>Gerçek veri sağlandığında risk sinyalleri, varlık pasaportu, sensör ve işletme entegrasyonu.</p><b>Kural tabanlı kontrol + varlık verisi + dijital ikiz</b></article></div></div></section>
-    <SiteFooter/>
+  <section className="section shell os-intro"><div><p className="eyebrow">Parçalı Süreçten Tek Veri Zincirine</p><h2>Doğru bilgi,<br/><em>doğru anda.</em></h2></div><div><p>Arkem Proje OS; yeni bir yazılım satın alma vaadinden önce, projede hangi verinin kim tarafından üretileceğini, nasıl onaylanacağını ve hangi kararı besleyeceğini tanımlar.</p><p>Canlı prototip, işveren ve proje ekiplerinin tek ekranda görebileceği omurgayı gösterir. Gerçek uygulama; proje ölçeği, kullanıcı rolleri ve mevcut yazılımlara göre yapılandırılır.</p></div></section>
+  <SiteFooter/>
   </main>;
 }

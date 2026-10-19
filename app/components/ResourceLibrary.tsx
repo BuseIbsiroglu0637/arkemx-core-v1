@@ -116,6 +116,8 @@ export function resourceAnchor(title: string) {
 export function ResourceLibrary() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tümü");
+  const mainCategories = ["Tümü", "Temel Mevzuat", "İmar & Ruhsat", "Zemin & Deprem", "Yapısal Tasarım", "Çelik & Hafif Çelik"];
+  const otherCategories = categories.filter((item) => !mainCategories.includes(item));
   const [selected, setSelected] = useState<Resource | null>(null);
   const visible = useMemo(() => {
     const normalized = query.toLocaleLowerCase("tr-TR").trim();
@@ -141,7 +143,7 @@ export function ResourceLibrary() {
     <div className="knowledge-dashboard">
       <div><small>BİLGİ BANKASI</small><strong>{resources.length}</strong><span>doğrulanmış başlangıç kaynağı</span></div>
       <div><small>KAPSAM</small><strong>{categories.length - 1}</strong><span>mevzuat ve teknik başlık</span></div>
-      <div><small>KAYNAK POLİTİKASI</small><strong>Resmî</strong><span>Mevzuat · AFAD · Bakanlık · TSE · OpenBIM</span></div>
+      <div><small>KAYNAK POLİTİKASI</small><strong>Resmî</strong><span>Güncel bağlantıya yönlendirme</span></div>
     </div>
     <nav className="resource-guided-paths" aria-label="Proje aşamasına göre doküman yolları">
       {[
@@ -156,7 +158,7 @@ export function ResourceLibrary() {
     </nav>
     <div className="resource-tools">
       <label><span>Kanun, yönetmelik, standart veya disiplin arayın</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Örn. deprem, hafif çelik, ruhsat, İSG…" /></label>
-      <div className="resource-filters" aria-label="Bilgi bankası kategorisi">{categories.map((item) => <button type="button" key={item} className={category === item ? "active" : ""} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
+      <div className="resource-filters" aria-label="Bilgi bankası kategorisi">{mainCategories.map((item) => <button type="button" key={item} className={category === item ? "active" : ""} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}<label className="resource-more-filters"><span>Diğer konular</span><select aria-label="Diğer kaynak kategorileri" value={otherCategories.includes(category) ? category : ""} onChange={(event) => setCategory(event.target.value)}><option value="" disabled>Diğer kategoriler</option>{otherCategories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label></div>
     </div>
     <div className="resource-list-head"><p aria-live="polite"><b>{visible.length}</b> kaynak gösteriliyor</p><span>Son kürasyon: 28 Temmuz 2026</span></div>
     <div className="resource-grid" id="bilgi-bankasi">{visible.map((item, index) => <article id={resourceAnchor(item.title)} key={`${item.title}-${index}`} className="resource-card">
