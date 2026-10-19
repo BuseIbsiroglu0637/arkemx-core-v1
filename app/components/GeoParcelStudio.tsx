@@ -155,8 +155,10 @@ function ascii(value: string) {
 }
 
 export function GeoParcelStudio() {
-  const { project } = useProjectKernel();
-  return <ScopedGeoParcelStudio key={project.id} />;
+  const { project, hydrated } = useProjectKernel();
+  const context = (project.modules["geo-parcel"] as { briefContext?: {signature?: string} } | undefined)?.briefContext;
+  if (!hydrated) return <p role="status">Parsel kaydı açılıyor…</p>;
+  return <ScopedGeoParcelStudio key={`${project.id}:${context?.signature ?? ""}`} />;
 }
 
 function ScopedGeoParcelStudio() {

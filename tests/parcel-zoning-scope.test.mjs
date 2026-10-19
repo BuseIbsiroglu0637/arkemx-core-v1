@@ -53,7 +53,8 @@ test('component uses synchronous identity scope and invalidates confirmation on 
   assert.match(source, /inputsConfirmed: false, \.\.\.change/);
   assert.match(source, /if \(!hydrated \|\| !planningHydrated\) return/);
   assert.match(source, /legacyPlanning: legacyPlanning\.current/);
-  assert.match(source, /ScopedGeoParcelStudio key=\{project.id\}/);
+  assert.ok(source.includes('ScopedGeoParcelStudio key={`${project.id}:${context?.signature ?? ""}`}'));
+  assert.match(source, /if \(!hydrated\)/);
 });
 
 test('model, apply, persistence and expert actions share the design readiness gate', () => {

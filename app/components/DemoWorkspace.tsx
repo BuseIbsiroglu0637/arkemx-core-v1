@@ -8,6 +8,7 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 // Evidence from the 2026-10-19 entry checks and recorded browser tests.
 const defaultCheck = { verified: "Sayfa açılıyor.", pending: "İşlev ve çıktı testleri bekliyor." };
 const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean }> = {
+  GIS: { verified: "Brief aktarımı ve ölçüt kaydı test edildi.", pending: "Canlı parsel ve çıktılar test bekliyor." },
   PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true },
   ARC: { verified: "Örnek proje verisi açılıyor.", pending: "Diğer işlev ve çıktılar test bekliyor." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
@@ -22,7 +23,7 @@ export function DemoBanner() {
 
 export function DemoContact({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  return ["/dijital-proje-merkezi", "/proje-karar-asistani"].includes(pathname ?? "") ? null : children;
+  return ["/dijital-proje-merkezi", "/proje-karar-asistani", "/arsa-fizibilite-studyosu"].includes(pathname ?? "") ? null : children;
 }
 
 export function DemoWorkspace() {

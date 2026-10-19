@@ -117,3 +117,28 @@ body.arkem-corporate-site .demo-brief-page .decision-submit:hover{background:#24
 .demo-active-project-name{font-size:13px;color:#536c5d;margin:0 0 24px;line-height:1.6}.demo-active-project-name strong{font-weight:500}
 
 .demo-check-ready{width:fit-content;display:inline-block;padding:3px 9px;border-radius:20px;background:#e5eee1;color:#315f4e;font-size:11px;font-weight:600;letter-spacing:0}
+
+.demo-gis-page{--copper:#315f4e;--brand-copper:#315f4e;--ds-copper:#315f4e;--ds-copper-strong:#244a3d}
+.demo-gis-content{padding-top:24px;padding-bottom:48px}
+.demo-gis-page .eyebrow{color:#315f4e}
+.demo-site-brief,.demo-land-search{padding:24px;border:1px solid #d6ddd6;border-radius:10px;background:#fff;margin-bottom:24px}
+.demo-site-brief h2,.demo-land-search h2{font-size:20px;font-weight:500;margin:0 0 20px}
+.demo-site-brief dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin:0 0 20px}
+.demo-site-brief dt{font-size:12px;color:#63766d;margin-bottom:6px}
+.demo-site-brief dd{font-size:14px;line-height:1.6;margin:0}
+.demo-site-brief small,.demo-site-note{font-size:12px;color:#63766d;line-height:1.7}
+.demo-land-choice{border:0;padding:0;margin:0 0 24px;display:flex;gap:12px;flex-wrap:wrap}
+.demo-land-choice legend{font-size:16px;font-weight:500;padding:0 0 14px}
+.demo-land-choice button,.demo-site-brief button,.demo-land-search button{cursor:pointer;padding:12px 20px;border:1px solid #a9bcac;border-radius:7px;background:#fff;color:#315140;font:inherit;font-size:14px;min-height:44px}
+.demo-land-choice button[aria-pressed=true],.demo-land-search button{background:#163f37;color:#fff;border-color:#163f37}
+.demo-land-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:20px 0}
+.demo-land-fields label{font-size:12px;display:grid;gap:8px;color:#536c5d}
+.demo-land-fields input{border:1px solid #cbd5cd;border-radius:6px;min-height:44px;padding:10px;font:inherit;font-size:14px;color:#183a34;background:#fff;width:100%}
+.demo-land-search>p{font-size:13px;line-height:1.7}.demo-land-search a,.demo-site-next a,.demo-site-missing a{font-size:13px;color:#315f4e;text-decoration:underline;text-underline-offset:3px}
+.demo-site-note{margin-top:18px}.demo-site-notice{font-size:13px;color:#315f4e;line-height:1.7}.demo-site-missing{font-size:13px;line-height:1.7}
+.demo-site-next{padding:24px 0;margin-top:24px;border-top:1px solid #d6ddd6}
+.demo-parcel-workspace>button:focus-visible,.demo-land-choice button:focus-visible,.demo-land-search :focus-visible{outline:3px solid #64826c;outline-offset:3px}
+.demo-gis-page .geo-wide-action,.demo-gis-page .parcel-search-submit{background:#163f37;border-color:#163f37;color:#fff}
+.demo-gis-page .geo-studio-top{background:#edf3ec;color:#183a34;border-color:#d6ddd6}
+.demo-gis-page .geo-studio-top b,.demo-gis-page .geo-studio-top span{color:#315140}
+@media(max-width:700px){.demo-site-brief,.demo-land-search{padding:18px}.demo-site-brief dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.demo-land-fields{grid-template-columns:1fr}.demo-land-choice button{flex:1}.demo-site-next{padding:20px 0}}

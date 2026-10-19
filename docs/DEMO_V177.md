@@ -81,3 +81,14 @@ Açık işler: bulut/cihazlar arası kayıt bu demo kapsamına dahil değil. On 
 
 Kullanıcının onayıyla PIR kartına “Hazır” etiketi ve “Demo akışı ve örnek çıktılar doğrulandı” notu eklendi. Önceki dosya/PDF testi bekliyor notu, kullanıcının sunduğu PDF/TXT/JSON örneğinin içerik ve görsel kontrolü tamamlandığından kaldırıldı. Dayanak: brief formu, rapor ve kopyalama tarayıcı kontrolleri, 24 test/derleme kaydı; çıktı incelemesi için output/ARKEMX_Brief_Cikti_Kontrolu_2026-10-19.md. Etiket demo kapsamındaki hazır olmayı belirtir; tüm senaryolar veya resmî mühendislik onayı değildir. Sonraki adım PIR → GIS veri aktarımını bağlayıp test etmek; hazır etiketinden modüller arası aktarımın tamamlandığı sonucu çıkarılmamalıdır.
 Kontrol: PIR kartındaki Hazır etiketinin ve demo doğrulama notunun görünürlüğü tarayıcıda doğrulandı; kart brief ekranını açıyor. Bu etiket değişikliğinde hesap testleri tekrarlanmadı.
+
+
+## GIS demo ve PIR veri devri — 2026-10-19
+
+Dayanak: kullanıcı hazır PIR kartından sonraki modüle geçilmesini istedi.
+
+Yapılan iş: GIS sayfası sadeleştirildi. Kayıtlı briefin bölgesi, kullanım amacı, hedef yapı alanı ve sistem tercihi görünür; hedef yapı alanı arsa alanı veya imar hakkı olarak kullanılmaz. Yeni projede bölge/kullanım/sistem hedefleri aktarılır; mevcut parsel kimliği, sınırı ve imar kanıtları değiştirilmez. Değişen brief için açık bir güncelleme düğmesi vardır. Arsam var mevcut harita/parsel stüdyosunu açar; Arsa arıyorum ayrı bölge/arsa alanı/bütçe ölçütlerini kaydeder. Ölçüt kaydı ilan getirmez ve seçilmiş arsa sayılmaz. MAS bağımsız /hizli-yerlesim rotasına taşındı; GIS açılırken MAS varsayılanlarının kaydedilmesi önlendi. Sonraki modül bağlantısı eklendi.
+
+Kontrol: 29/29 test geçti (brief-site-context, project-library, module-workspaces, parcel-zoning-scope, parcel-journey-gates). Brief eşlemesi, mevcut parseli koruma, belirsiz sistem/alan, ölçüt doğrulaması, proje izolasyonu ve mevcut parsel geçiş kapıları kontrol edildi. Tarayıcıda Kastamonu/Merkez, 600 m² brief özeti görüldü; ters alan aralığı reddedildi; 700–900 m² / 2.000.000 TL deneme ölçütleri kaydedilip yenilemede korundu. Arsam var akışında Kastamonu/Merkez otomatik seçildi, 197 mahalle/köy listesi ve Leaflet haritası açıldı. Parselsiz projede ileri parsel adımları kilitli kaldı. Aktif demo proje Arsa arıyorum görünümünde bırakıldı. Dar ekran görüntüsü: output/ARKEMX_GIS_Demo_2026-10-19.png (çalışma alanı kökünde).
+
+Açık işler: gerçek ada/parsel sorgusu, sınır geometrisi ve GIS çıktıları bu adımda uçtan uca doğrulanmadı; GIS kartı kısmen test edildi olarak işaretlidir. Otomatik ilan servisi bağlı değildir. Sonraki adım MAS kavramsal yerleşiminin bu proje bağlamıyla çalışmasını ve çıktısını test etmek. Bu kayıt resmî teknik onay değildir.

@@ -18,6 +18,10 @@ test("all reviewed module routes render a compact, labelled entry and direct wor
       assert.match(html, /Projeye farklı/); assert.match(html, /href="\/projeler\/isil-kilic-hafif-celik-villa"/);
       assert.equal((html.match(/<h1\b/g) || []).length, 1, route); continue;
     }
+    if (route === "arsa-fizibilite-studyosu") {
+      assert.match(html,/Parsel ve bağlam/); assert.match(html,/id="geo-studyo"/);
+      assert.equal((html.match(/<h1\b/g) || []).length,1,route); continue;
+    }
     if (route === "proje-karar-asistani") {
       assert.match(html, /Yatırım briefi/); assert.match(html, /id="karar-motoru"/);
       assert.doesNotMatch(html, /Örnek briefi doldur/); assert.doesNotMatch(html, /Özeti WhatsApp ile gönder/);
@@ -29,9 +33,11 @@ test("all reviewed module routes render a compact, labelled entry and direct wor
   }
 });
 test("working surfaces precede explanatory blocks and scenario-only panels are explicit", () => {
-  for (const [route, tool, intro] of [["arsa-fizibilite-studyosu", "GeoParcelStudio/", "tool-page-intro"], ["mimari-program-studyosu", "ArchitecturalProgramStudio/", "architecture-intro"], ["muhendislik-koordinasyon", "EngineeringCoordinationStudio/", "coordination-intro"], ["proje-os", "ProjectOperatingSystem/", "os-capability-section"], ["tasarim-calismalari", "AdvancedPlanEditor/", "ThreeModelViewer/"]]) {
+  for (const [route, tool, intro] of [["mimari-program-studyosu", "ArchitecturalProgramStudio/", "architecture-intro"], ["muhendislik-koordinasyon", "EngineeringCoordinationStudio/", "coordination-intro"], ["proje-os", "ProjectOperatingSystem/", "os-capability-section"], ["tasarim-calismalari", "AdvancedPlanEditor/", "ThreeModelViewer/"]]) {
     const source = read(`app/${route}/page.tsx`); assert.ok(source.indexOf(tool) < source.indexOf(intro), route);
   }
+  assert.match(read("app/arsa-fizibilite-studyosu/page.tsx"), /DemoParcelWorkspace/);
+  assert.doesNotMatch(read("app/arsa-fizibilite-studyosu/page.tsx"), /SiteIntelligenceStudio/);
   for (const component of ["ProjectOperatingSystem", "DemolitionDecisionStudio"]) assert.match(read(`app/components/${component}.tsx`), /exampleOnly: true/);
   assert.doesNotMatch(read("app/components/SystemComparisonTool.tsx"), /needsReview: false/);
   assert.match(read("app/components/SystemComparisonTool.tsx"), /!inputsConfirmed/);
