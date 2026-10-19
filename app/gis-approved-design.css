@@ -1,0 +1,113 @@
+/* GIS v177 approved simple workspace: scoped to the demo parcel route.
+   Presentational only; the authoritative source and workflow checks are unchanged. */
+.demo-gis-page { --gis-green:#15463d; --gis-green-dark:#103d34; --gis-line:#d4e0dc; --gis-muted:#58716e; color:#1b3940; }
+.demo-gis-page .demo-brief-heading { margin-top:20px; padding:25px 30px; border:1px solid #d8e6dd; border-radius:12px; background:linear-gradient(110deg,#edf4ef,#f7faf7); text-align:left; }
+.demo-gis-page .demo-brief-heading .eyebrow { margin:0 0 8px; font-size:11px; font-weight:750; letter-spacing:.15em; color:#476a62; }
+.demo-gis-page .demo-brief-heading h1 { font-size:clamp(28px,3vw,39px); font-weight:750; letter-spacing:-.028em; line-height:1.2; margin:0 0 7px; text-align:left; color:#123a35; }
+.demo-gis-page .demo-brief-heading>p:last-child { margin:0; font-size:15px; line-height:1.55; color:#526e6d; text-align:left; }
+.demo-gis-page .demo-gis-content { padding-top:14px; }
+.demo-gis-page .demo-project-summary { display:flex; align-items:center; gap:28px; min-height:76px; margin-bottom:14px; padding:16px 22px; border:1px solid var(--gis-line); border-radius:10px; background:#fff; }
+.demo-gis-page .demo-project-summary>div { display:grid; gap:5px; min-width:160px; }
+.demo-gis-page .demo-project-summary small { font-size:12px; color:var(--gis-muted); }
+.demo-gis-page .demo-project-summary strong { font-size:17px; font-weight:750; overflow-wrap:anywhere; color:#173b35; }
+.demo-gis-page .demo-project-summary>p { margin:0; border-left:1px solid var(--gis-line); padding-left:24px; color:var(--gis-muted); font-size:13px; line-height:1.65; }
+.demo-gis-page .demo-owned-brief { margin-bottom:12px!important; padding:10px 18px!important; background:#f9fbf9!important; }
+.demo-gis-page .demo-owned-brief>summary { font-size:13px!important; }
+.demo-gis-page .demo-land-choice { display:flex; align-items:center; margin:0 0 16px; gap:10px; }
+.demo-gis-page .demo-land-choice legend { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.demo-gis-page .demo-land-choice button { min-height:46px; padding:10px 19px; font-weight:650; }
+.demo-gis-page .demo-land-choice button[aria-pressed=true] { background:var(--gis-green); color:white; border-color:var(--gis-green); }
+.demo-gis-page .geo-parcel-studio[data-guided=true] { border:0!important; box-shadow:none!important; background:transparent!important; overflow:visible!important; border-radius:0!important; }
+.demo-gis-page .geo-parcel-studio>.geo-studio-top, .demo-gis-page .geo-parcel-studio>.parcel-output-promise { display:none!important; }
+.demo-gis-page .geo-parcel-studio>.parcel-journey { margin:0 0 16px!important; }
+.demo-gis-page .parcel-journey>ol { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; padding:8px!important; background:#fff!important; border:1px solid var(--gis-line)!important; border-radius:10px; }
+.demo-gis-page .parcel-journey>ol>li>button { min-height:70px!important; border:0!important; border-radius:8px; padding:10px 12px!important; gap:10px!important; }
+.demo-gis-page .parcel-journey .parcel-step-number { display:grid; place-items:center; width:31px; height:31px; min-width:31px; flex-basis:31px; font-size:12px; border-radius:50%; }
+.demo-gis-page .parcel-journey button b { font-size:13px!important; }
+.demo-gis-page .parcel-journey button small { font-size:10px!important; line-height:1.45; margin-top:2px; }
+.demo-gis-page .parcel-journey button[aria-current=step] { background:#e9f2ee!important; color:var(--gis-green-dark)!important; }
+.demo-gis-page .parcel-journey button[aria-current=step] .parcel-step-number { background:var(--gis-green); color:white; border-color:var(--gis-green); }
+.demo-gis-page .parcel-journey button[aria-current=step] small { color:#476e61!important; }
+.demo-gis-page .gis-source-disclosure, .demo-gis-page .gis-layers-disclosure, .demo-gis-page .gis-external-tools, .demo-gis-page .gis-expert-disclosure { margin:10px 0; padding:0; border:1px solid var(--gis-line); border-radius:8px; background:#f8faf8; }
+.demo-gis-page .gis-source-disclosure>summary, .demo-gis-page .gis-layers-disclosure>summary, .demo-gis-page .gis-external-tools>summary, .demo-gis-page .gis-expert-disclosure>summary { cursor:pointer; padding:13px 16px; font-size:13px; font-weight:650; color:#315549; }
+.demo-gis-page .gis-source-disclosure>summary span { float:right; font-size:11px; font-weight:400; color:var(--gis-muted); }
+.demo-gis-page .gis-source-disclosure>.geo-integration-map { margin:0!important; border:0!important; border-top:1px solid var(--gis-line)!important; border-radius:0!important; }
+.demo-gis-page .geo-parcel-studio[data-guided=true]>.geo-workspace { display:grid; grid-template-columns:minmax(275px,310px) minmax(0,1fr); gap:16px; margin:0 0 18px!important; min-height:0; align-items:start; width:auto; border:0!important; overflow:visible!important; border-radius:0; background:transparent; }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-controls, .demo-gis-page .geo-parcel-studio[data-guided=true] .geo-stage { min-width:0; border:1px solid var(--gis-line)!important; border-radius:11px; background:#fff; overflow:hidden; }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-controls { padding:0; border-right:1px solid var(--gis-line)!important; }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-control-section { padding:20px!important; }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-control-section h3 { font-size:22px!important; margin:5px 0 10px!important; }
+.demo-gis-page .parcel-kicker { color:#3e7061; font-size:10px; }
+.demo-gis-page .parcel-input-hint { font-size:12px!important; margin:0 0 13px; line-height:1.55; color:var(--gis-muted); }
+.demo-gis-page .parcel-search-fields { gap:10px!important; }
+.demo-gis-page .parcel-search-fields .parcel-field-heading { margin:8px 0 0!important; }
+.demo-gis-page .parcel-search-fields :is(select,input) { min-height:44px!important; border-radius:7px; background:#fff; }
+.demo-gis-page .parcel-search-submit { min-height:48px; background:var(--gis-green)!important; color:#fff!important; }
+.demo-gis-page .parcel-import-quick { width:100%; min-height:44px; margin:10px 0 8px; padding:10px 13px; background:#fff; color:var(--gis-green); border:1px solid #9dbbb0; border-radius:7px; font-size:13px; font-weight:650; cursor:pointer; }
+.demo-gis-page .parcel-directory-caption { font-size:11px; color:var(--gis-muted); }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-stage { padding:14px!important; }
+.demo-gis-page .geo-stage-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; height:auto!important; min-height:45px; padding:0 0 12px!important; border:0!important; background:transparent!important; }
+.demo-gis-page .geo-stage-toolbar .gis-view-tabs { display:flex; gap:4px; height:auto; flex:0 1 auto; }
+.demo-gis-page .geo-stage-toolbar .gis-view-tabs button { min-height:41px; padding:8px 15px; border:1px solid var(--gis-line); border-radius:6px; background:#f6f8f7; font-size:13px; color:#3c5c58; }
+.demo-gis-page .geo-stage-toolbar .gis-view-tabs button.active { background:var(--gis-green)!important; color:white!important; border-color:var(--gis-green)!important; }
+.demo-gis-page .geo-stage-toolbar .gis-map-settings { display:flex; align-items:center; flex-wrap:wrap; gap:9px; height:auto; flex:0 1 auto; }
+.demo-gis-page .gis-map-settings>span { font-size:12px; color:var(--gis-muted); }
+.demo-gis-page .parcel-basemap-choices { display:flex; align-items:center; gap:2px; }
+.demo-gis-page .parcel-basemap-choices button { min-height:38px; border:1px solid var(--gis-line); border-radius:5px; padding:8px 10px; background:#fff; font-size:12px; color:#35534b; }
+.demo-gis-page .parcel-basemap-choices button[aria-pressed=true] { border-color:var(--gis-green)!important; background:#e6f0e9!important; color:var(--gis-green)!important; font-weight:750; }
+.demo-gis-page .geo-stage-toolbar .gis-fit-map { font-size:11px; padding:7px; border:0; color:var(--gis-green); background:transparent; }
+.demo-gis-page .parcel-basemap-bar { display:block; padding:0 2px 9px; font-size:12px; }
+.demo-gis-page .parcel-basemap-bar p { margin:3px 0 0; font-size:11px; line-height:1.45; color:var(--gis-muted); }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-map-frame { height:520px; border:1px solid #cadad3; border-radius:8px; }
+.demo-gis-page .gis-terrain-empty { min-height:420px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; padding:36px; border:1px solid var(--gis-line); border-radius:8px; text-align:center; background:#f3f6f4; }
+.demo-gis-page .gis-terrain-empty b { font-size:17px; color:#23483f; }
+.demo-gis-page .gis-terrain-empty p { max-width:440px; margin:0; line-height:1.65; font-size:13px; color:var(--gis-muted); }
+.demo-gis-page .gis-layers-disclosure { margin:8px 0 12px; }
+.demo-gis-page .gis-layers-disclosure .v111-layer-dock { margin:0; border-radius:0; }
+.demo-gis-page .gis-map-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; padding:13px; background:#f3f7f4; border:1px solid var(--gis-line); border-radius:8px; }
+.demo-gis-page .gis-map-facts>span { display:grid; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.demo-gis-page .gis-map-facts small { font-size:11px; color:var(--gis-muted); }
+.demo-gis-page .gis-map-facts b { font-size:12px; line-height:1.45; font-weight:650; color:#245244; }
+.demo-gis-page .gis-external-tools .geo-connectors { margin:0!important; border-top:1px solid var(--gis-line); }
+.demo-gis-page .geo-parcel-studio[data-guided=true] .geo-results { grid-column:1/-1; }
+.demo-gis-page .parcel-next-action, .demo-gis-page .gis-expert-disclosure, .demo-gis-page .v109-parcel-center.parcel-advanced { margin-left:0!important; margin-right:0!important; }
+.demo-gis-page .parcel-outcome { margin:18px 0 24px; }
+.demo-gis-page .parcel-delivery { margin:0 0 16px; padding:22px; border:1px solid var(--gis-line); border-radius:11px; background:#fff; color:#193f37; }
+.demo-gis-page .parcel-delivery h3 { color:#153e35!important; font-size:23px!important; }
+.demo-gis-page .parcel-delivery p { color:var(--gis-muted); font-size:13px!important; margin:0; }
+.demo-gis-page .parcel-delivery>header>svg { color:var(--gis-green); }
+.demo-gis-page .parcel-delivery-actions { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:17px 0 13px; }
+.demo-gis-page .parcel-delivery-actions button { display:flex; gap:10px; align-items:flex-start; min-height:89px; padding:13px!important; border:1px solid #d4e0dc!important; background:#f9fbfa!important; color:#194239!important; border-radius:8px; }
+.demo-gis-page .parcel-delivery-actions button:disabled { opacity:.55; cursor:not-allowed; }
+.demo-gis-page .parcel-delivery-actions button svg { flex:none; color:#245e4f!important; }
+.demo-gis-page .parcel-delivery-actions button b { font-size:13px; }
+.demo-gis-page .parcel-delivery-actions button small { font-size:10px; line-height:1.45; color:#55736c; }
+.demo-gis-page .parcel-delivery>small { color:var(--gis-muted); font-size:11px; }
+.demo-gis-page .parcel-next-modules { margin-top:14px; padding:18px; border:1px solid var(--gis-line); border-radius:11px; background:#fff; }
+.demo-gis-page .parcel-next-modules h3 { font-size:22px!important; color:#173b35; }
+.demo-gis-page .parcel-next-modules p { font-size:12px!important; margin-bottom:14px; color:var(--gis-muted); }
+.demo-gis-page .parcel-next-modules nav { gap:10px; }
+.demo-gis-page .parcel-next-modules a { border:1px solid var(--gis-line); border-radius:7px; padding:13px; background:#fafcfb; }
+.demo-gis-page .parcel-next-modules a b { font-size:14px; }
+.demo-gis-page .parcel-next-modules a small { font-size:11px; }
+.demo-gis-page :is(button,a,summary,input,select):focus-visible { outline:3px solid #6a9985; outline-offset:2px; }
+@media(max-width:1100px) {
+  .demo-gis-page .geo-parcel-studio[data-guided=true]>.geo-workspace { grid-template-columns:minmax(0,1fr); }
+  .demo-gis-page .parcel-delivery-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:740px) {
+  .demo-gis-page .demo-brief-heading { padding:18px; }
+  .demo-gis-page .demo-project-summary { flex-wrap:wrap; gap:8px; padding:14px; }
+  .demo-gis-page .demo-project-summary>p { width:100%; border-left:0; border-top:1px solid var(--gis-line); padding:10px 0 0; }
+  .demo-gis-page .parcel-journey>ol { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .demo-gis-page .geo-parcel-studio[data-guided=true] .geo-map-frame { height:390px; }
+  .demo-gis-page .geo-stage-toolbar .gis-view-tabs button { padding:8px 10px; font-size:12px; }
+  .demo-gis-page .gis-map-facts { grid-template-columns:1fr; }
+}
+@media(max-width:470px) {
+  .demo-gis-page .geo-parcel-studio[data-guided=true] .geo-stage { padding:10px!important; }
+  .demo-gis-page .parcel-journey>ol>li>button { min-height:72px!important; padding:8px!important; }
+  .demo-gis-page .gis-map-settings { width:100%; justify-content:flex-start; }
+  .demo-gis-page .parcel-delivery-actions { grid-template-columns:1fr; }
+  .demo-gis-page .geo-parcel-studio[data-guided=true] .geo-map-frame { height:330px; }
+}
