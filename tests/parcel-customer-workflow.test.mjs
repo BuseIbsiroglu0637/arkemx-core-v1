@@ -90,5 +90,6 @@ test('Customer delivery is visible, with four formats and real continuation rout
  for(const text of ['A3 teknik pafta','A4 özet rapor','Düzenlenebilir DXF','Harita KML dosyası','/proje-on-planlama','/yapi-sistemi-karsilastirma']) assert.ok(source.includes(text));
  assert.ok(!source.includes('<details'));
  const geo=readFileSync(new URL('../app/components/GeoParcelStudio.tsx',import.meta.url),'utf8');
- assert.ok(geo.includes('İmar bilgisi olmadan devam et'));assert.ok(geo.includes('const contourLocal: { x: number; y: number }[][] = []'));
+ const zoningReview=readFileSync(new URL('../app/components/ParcelZoningReview.tsx',import.meta.url),'utf8');
+ assert.ok(zoningReview.includes('İmar bilgisi olmadan devam et'));assert.ok(geo.includes('const contourLocal: { x: number; y: number }[][] = []'));
 });

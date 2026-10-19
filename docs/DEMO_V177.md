@@ -135,3 +135,18 @@ Tarayıcı: masaüstü formu 947 px, viewport 1351 px, yatay taşma yok; önceki
 Kanıt: çalışma alanı output/ARKEMX_Imar_On_Inceleme_2026-10-19.png ve output/ARKEMX_Imar_Yeni_Mobil_2026-10-19.png. Test viewport ayarı kaldırıldı. Kod incelemesinde hook sırası, form etiketleri, kontrollü girdiler, parsel anahtarıyla state izolasyonu ve kaynak değişiminde kontrol iptali gözden geçirildi.
 
 Açık işler: canlı belediye sorgusu demo modunda kapalıdır. Belge içeriği/uzman onayı eklenmedi. Tam koşullarla gerçek proje üzerinden yerleşim ve PDF/DXF içeriklerinin uçtan uca doğrulaması sonraki adımdır; bu kayıt resmî teknik onay değildir.
+
+
+## Yerleşim ve çıktılar düzeni — 2026-10-19
+
+Dayanak: kullanıcı paylaştığı 4. adım ekranlarının önceki imar adımıyla aynı sade, yeşil ve anlaşılır düzende düzenlenmesini istedi.
+
+Yapılan iş: seçili yerleşim, brüt alan, boyutlar ve çalışma dayanağı üstte tek özette toplandı. Kullanım, taşıyıcı sistem, genişlik/derinlik ve kat alanları harita yanındaki düzenleme paneline taşındı. Yön, konum, ön cephe ve otopark aynı panelde açılır ayrıntı olarak korundu. Alttaki ikinci düzenleme alanı ve eski yinelenen alternatif paneli kaldırıldı. Üç alternatiften sonra PDF/DXF/KML çıktı kartları, ardından sonraki modül bağlantıları gelir. Alternatif çizimleri gerçek geometri üzerinden devam eder; renkleri yeşil temaya uyarlandı. Yalnız parsel durumunda seçili alternatif işareti gösterilmez ve yapı düzenleme alanları kapanır. Geçersiz yerleşimde alanlar düzeltmeye açık kalır; uygun olmayan yapı geometri çıktısına eklenmez. Mevcut hesap, parsel kapsamı, kavramsal çalışma ve dışa aktarma korumaları değiştirilmedi.
+
+Kontrol: 45/45 test başarılı (parcel-customer-workflow, parcel-enhancements, parcel-zoning-scope, gis-map-terrain-ui, parcel-journey-gates, zoning-review). Önceki imar bileşeni ayrımından kalan bir kaynak-konumu testi yeni bileşene yönlendirildi. TypeScript --noEmit ve üretim/Worker derlemesi başarılı; sonrasında yalnız genişlik/derinlik alanlarının adımı .01 olarak ayarlandı. Diff kontrolü temiz.
+
+Tarayıcı: DEMO — Kastamonu Konut üzerinde genişlik 29.6 m'den 28 m'ye değiştirilince Özel ölçüler ve 1057.3 m² brüt alan görüldü; seçili alternatif işareti kalktı. Dengeli kütle seçilince 24.26 × 17.97 m / 2 kat ve 871.9 m² görüldü. Yapı kaldırılınca yalnız parsel açıklaması, sıfır seçili alternatif ve kapalı ölçü alanları doğrulandı. Sonunda ilk Geniş taban seçimi geri yüklendi (29.6 × 18.88 m / 2 kat; 1117.7 m²). Yeni sekmede aynı kayıt geri geldi. Masaüstü 1351/1351, tablet 805/805, mobil 375/375 px sayfa/kaydırma genişliği: yatay taşma yok. Mobil alternatifler tek sütun ve çıktılardan önce; masaüstünde üç sütun. Kontrollü input etiketleri, fieldset kapıları ve kaynak durumları gözden geçirildi; test viewport ayarı kaldırıldı.
+
+Geliştirme sunucusu: yeni CSS importu ve derleme sonrasında geliştirme önbelleği çakışması görüldü; yalnız bu repo için 5175 sunucusu --force ile yeniden başlatıldı ve temiz sekmede etkileşimler çalıştı. Tarayıcı ekran görüntüsü API'si yeni sekmelerde Unable to capture screenshot döndürdüğünden bu adımın görsel kanıt dosyası üretilemedi; tarayıcı kontrolü DOM, ölçüler, hesaplanmış stiller ve kullanıcı etkileşimleriyle yapıldı. Görsel ekran görüntüsü incelemesi doğrulanacak.
+
+Açık işler / sonraki adım: tam belgeye dayalı imar koşullarıyla yerleşim ve indirilen PDF/DXF içerikleri ayrıca uçtan uca incelenecek. Bu düzenleme hesaplı imar onayı veya 13 modülün tamamlandığı anlamına gelmez. Sonraki modüle aynı parsel/yerleşim kaydının aktarımını birlikte denemek.

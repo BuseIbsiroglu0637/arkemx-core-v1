@@ -14,7 +14,7 @@ export function ParcelAlternativePreview({ parcel, building, label }: { parcel: 
   const minY = Math.min(...boundary.map(p => p.north)), maxY = Math.max(...boundary.map(p => p.north));
   const scale = Math.min(260 / Math.max(1, maxX - minX), 140 / Math.max(1, maxY - minY));
   const path = (points: GeoPoint[]) => points.map(p => { const v = toLocalMeters(p, origin); return `${150 + (v.east - (minX+maxX)/2)*scale},${90 - (v.north-(minY+maxY)/2)*scale}`; }).join(' ');
-  return <svg viewBox="0 0 300 180" role="img" aria-label={label} className="parcel-alternative-preview"><polygon points={path(parcel)} fill="#e8ded0" stroke="#8c502c" strokeWidth="1.5"/>{building.length >= 3 && <polygon points={path(building)} fill="#244954" stroke="#102e39" strokeWidth="1.5"/>}<path d="M278 34V16m-4 6 4-6 4 6" fill="none" stroke="#244954" strokeWidth="1.5"/><text x="278" y="46" textAnchor="middle" fontSize="10" fill="#244954">K</text></svg>;
+  return <svg viewBox="0 0 300 180" role="img" aria-label={label} className="parcel-alternative-preview"><polygon points={path(parcel)} fill="#e8f0e9" stroke="#4b7965" strokeWidth="1.5"/>{building.length >= 3 && <polygon points={path(building)} fill="#225c4f" stroke="#164438" strokeWidth="1.5"/>}<path d="M278 34V16m-4 6 4-6 4 6" fill="none" stroke="#244954" strokeWidth="1.5"/><text x="278" y="46" textAnchor="middle" fontSize="10" fill="#244954">K</text></svg>;
 }
 type Props = {
   parcel: GeoPoint[]; alternatives: Alternative[]; selectedId: string; concept: boolean;
@@ -30,7 +30,7 @@ export function ParcelOutcomePanel(p: Props) {
     <div className="parcel-alternatives">{p.alternatives.map(a => <article key={a.id} data-selected={p.hasBuilding && p.selectedId === a.id}>
       <ParcelAlternativePreview parcel={p.parcel} building={a.polygon} label={`${a.label}: parsel üzerinde öneri yerleşimi, ölçeksiz`}/>
       <div className="parcel-alternative-body"><h4>{a.label}</h4><p>{a.note}</p><dl><div><dt>Öneri brüt alanı</dt><dd>{a.grossArea.toLocaleString('tr-TR')} m²</dd></div><div><dt>Yapı tabanı</dt><dd>{a.footprint.toLocaleString('tr-TR')} m²</dd></div><div><dt>Boyut / kat</dt><dd>{a.width} × {a.depth} m / {a.floors} kat</dd></div></dl>
-      <button type="button" aria-pressed={p.selectedId === a.id} disabled={a.status !== 'fits' || p.busy} onClick={() => p.onSelect(a.id)}>{p.selectedId === a.id ? <Check aria-hidden="true"/> : <Layers aria-hidden="true"/>}{a.status !== 'fits' ? 'Geometri için uzman incelemesi gerekli' : p.selectedId === a.id ? 'Haritada seçili' : 'Bu yerleşimi seç'}</button></div>
+      <button type="button" aria-pressed={p.hasBuilding && p.selectedId === a.id} disabled={a.status !== 'fits' || p.busy} onClick={() => p.onSelect(a.id)}>{p.hasBuilding && p.selectedId === a.id ? <Check aria-hidden="true"/> : <Layers aria-hidden="true"/>}{a.status !== 'fits' ? 'Geometri için uzman incelemesi gerekli' : p.hasBuilding && p.selectedId === a.id ? 'Haritada seçili' : 'Bu yerleşimi seç'}</button></div>
     </article>)}</div><button type="button" className="parcel-without-building" disabled={!p.hasBuilding || p.busy} onClick={p.onRemove}>{p.hasBuilding ? 'Yapıyı kaldır, yalnız parsel ile devam et' : 'Yalnız parsel çıktısı seçili'}</button></>}
     {!p.hideDelivery && <ParcelTechnicalDownloads {...p}/>}
     <section className="parcel-next-modules" aria-label="Aynı projeyle devam edin"><h3>Sonraki adımlar</h3><p>Seçiminizi bu projenin devam kaydına aktarın. Mevcut modül girdileriniz silinmez; imar belirsizliği sonraki çalışmalarda görünür kalır.</p><nav>{[
