@@ -111,3 +111,12 @@
   .demo-gis-page .parcel-delivery-actions { grid-template-columns:1fr; }
   .demo-gis-page .geo-parcel-studio[data-guided=true] .geo-map-frame { height:330px; }
 }
+
+.demo-gis-page .gis-output-placeholder { margin:14px 0 20px; padding:22px; border:1px solid var(--gis-line); border-radius:11px; background:#fff; }
+.demo-gis-page .gis-output-placeholder h3 { margin:0 0 8px; font-size:22px; color:#173e36; }
+.demo-gis-page .gis-output-placeholder>p { max-width:780px; margin:0 0 16px; font-size:12px; line-height:1.6; color:var(--gis-muted); }
+.demo-gis-page .gis-placeholder-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.demo-gis-page .gis-placeholder-actions button { min-height:70px; display:grid; align-content:center; justify-items:start; gap:6px; padding:14px; border:1px solid var(--gis-line); border-radius:8px; background:#f6f8f7; color:#6c827c; text-align:left; cursor:not-allowed; font-size:13px; font-weight:650; }
+.demo-gis-page .gis-placeholder-actions button small { font-size:11px; font-weight:400; }
+@media(max-width:850px) { .demo-gis-page .gis-placeholder-actions { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:460px) { .demo-gis-page .gis-placeholder-actions { grid-template-columns:minmax(0,1fr); } }
