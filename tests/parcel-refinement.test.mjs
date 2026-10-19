@@ -55,6 +55,14 @@ test('Kastamonu anomaly stays research-only, never copied to rights',async()=>{
  const old=globalThis.fetch;globalThis.fetch=async()=>Response.json({features:[{attributes:{objectid:639,planid:1,taks:1.5,emsalkaks:.5}}]});
  try{const body=await researchKastamonu([{lat:41.49,lng:34.01},{lat:41.491,lng:34.01},{lat:41.49,lng:34.011}],new AbortController().signal);assert.equal(body.status,'research-only');assert.equal(body.entitlementAvailable,false);assert.equal(body.authoritative,false);assert.ok(body.plans[0].qualityIssues.some(x=>x.includes('TAKS')));assert.equal(body.partial,true);}finally{globalThis.fetch=old;}
 });
-test('Esri basemap and artificial administrative options have been removed',()=>{
- for(const file of ['app/lib/parcel-basemaps.ts','app/components/GeoParcelStudio.tsx','app/components/ZoningIntegrationCenter.tsx']){const text=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');assert.doesNotMatch(text,/World_Imagery|FALLBACK_PROVINCES|FALLBACK_DISTRICTS|FALLBACK_NEIGHBORHOODS/);}
+test('imagery is display-only and synthetic administrative fallbacks remain excluded',()=>{
+ for(const file of ['app/lib/parcel-basemaps.ts','app/components/GeoParcelStudio.tsx','app/components/ZoningIntegrationCenter.tsx']){
+  const text=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+  assert.doesNotMatch(text,/FALLBACK_PROVINCES|FALLBACK_DISTRICTS|FALLBACK_NEIGHBORHOODS/);
+ }
+ const basemaps=fs.readFileSync(new URL('../app/lib/parcel-basemaps.ts',import.meta.url),'utf8');
+ const studio=fs.readFileSync(new URL('../app/components/GeoParcelStudio.tsx',import.meta.url),'utf8');
+ assert.match(basemaps,/World_Imagery/);
+ assert.match(basemaps,/attribution:/);
+ assert.match(studio,/Harita görünümü parselin kot veya imar verisini doğrulamaz/);
 });
