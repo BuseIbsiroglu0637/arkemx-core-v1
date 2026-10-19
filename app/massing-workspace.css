@@ -1,0 +1,58 @@
+/* MAS follows the brief/GIS demo panels; all geometry comes from the current source. */
+#main-content .demo-massing{--mas-green:#174d46;--mas-ink:#102f40;--mas-line:#d6e1df;--mas-muted:#587080;display:grid;gap:20px;color:var(--mas-ink);max-width:1500px;margin:auto}
+#main-content .demo-massing *{box-sizing:border-box;min-width:0}
+#main-content .demo-massing :is(h1,h2,h3,p){margin:0!important}
+#main-content .demo-massing h1{font-size:34px!important;line-height:1.2!important;letter-spacing:-.035em!important;color:var(--mas-ink)!important;font-weight:750!important}
+#main-content .demo-massing h2{font-size:22px!important;line-height:1.35!important;color:var(--mas-ink)!important}
+#main-content .demo-massing h3{font-size:19px!important;line-height:1.4!important;color:var(--mas-ink)!important}
+#main-content .demo-massing p{font-size:14px!important;line-height:1.75!important;color:var(--mas-muted)!important}
+#main-content .demo-massing :is(header>span,header>div>span,.mas-save>div>span){font-size:10px!important;letter-spacing:.14em;color:var(--mas-green)!important;font-weight:650}
+#main-content .demo-massing :is(.mas-heading,.mas-project,.mas-basis,.mas-empty,.mas-save){padding:24px;background:#fff;border:1px solid var(--mas-line);border-radius:9px;display:grid;gap:16px}
+#main-content .demo-massing .mas-heading{background:#eef5f1;display:flex;justify-content:space-between;gap:24px;align-items:center}
+#main-content .demo-massing .mas-heading h1{margin:6px 0 10px!important}
+#main-content .demo-massing :is(button,a){font-size:13px!important;line-height:1.5!important;min-height:44px;padding:11px 16px;border:1px solid #a9c5b9;background:#fff;color:var(--mas-green);border-radius:5px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:normal!important;cursor:pointer}
+#main-content .demo-massing :is(button,a):focus-visible{outline:3px solid #70aa90;outline-offset:3px}
+#main-content .demo-massing :is(button,a)>svg{width:18px;height:18px;flex-shrink:0}
+#main-content .demo-massing .mas-project>div>small{font-size:10px;letter-spacing:.1em;color:var(--mas-muted)}
+#main-content .demo-massing .mas-project>div>p{display:flex;align-items:center;gap:8px;margin-top:8px!important;font-size:13px!important}
+#main-content .demo-massing .mas-project>div>p svg{width:17px;height:17px;color:var(--mas-green);flex-shrink:0}
+#main-content .demo-massing .mas-project dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin:0;padding-top:16px;border-top:1px solid var(--mas-line)}
+#main-content .demo-massing dt{font-size:12px;line-height:1.5;color:var(--mas-muted)}
+#main-content .demo-massing dd{font-size:16px;line-height:1.6;color:var(--mas-ink);font-weight:650;margin:5px 0 0;overflow-wrap:anywhere}
+#main-content .demo-massing .mas-project>p{font-size:12px!important}
+#main-content .demo-massing .mas-basis header{background:transparent;padding:0;display:grid;gap:6px}
+#main-content .demo-massing .mas-basis>[role=group]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#main-content .demo-massing .mas-basis button{display:flex;flex-direction:column;align-items:start;text-align:left;padding:16px;background:#fff}
+#main-content .demo-massing .mas-basis button b{font-size:15px}
+#main-content .demo-massing .mas-basis button small{font-size:12px;line-height:1.6}
+#main-content .demo-massing button[aria-pressed=true]{background:var(--mas-green)!important;border-color:var(--mas-green)!important;color:#fff!important}
+#main-content .demo-massing button:disabled{opacity:.5;cursor:not-allowed}
+#main-content .demo-massing .mas-note{padding:14px 18px;border:1px solid #cfdfd5;border-radius:6px;background:#edf5ef;font-size:13px!important;color:#456755!important}
+#main-content .demo-massing .mas-assumptions{background:transparent;border:0;border-top:1px solid var(--mas-line);padding:12px 0 0;margin:0}
+#main-content .demo-massing summary{font-size:13px;line-height:1.6;color:var(--mas-green);cursor:pointer}
+#main-content .demo-massing .mas-assumptions>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:16px}
+#main-content .demo-massing label{display:grid;gap:8px;font-size:13px;line-height:1.5;color:var(--mas-ink)}
+#main-content .demo-massing label small{font-size:11px;color:var(--mas-muted);line-height:1.6}
+#main-content .demo-massing :is(input,select){width:100%;height:44px;background:#fff!important;color:var(--mas-ink)!important;border:1px solid #b9cfc3;border-radius:5px;font-size:15px;padding:9px 12px}
+#main-content .demo-massing :is(input,select,summary):focus-visible{outline:3px solid #70aa90;outline-offset:3px}
+#main-content .demo-massing .mas-comparison{display:grid;gap:18px}
+#main-content .demo-massing .mas-comparison>header{display:grid;gap:8px;padding:0;background:transparent}
+#main-content .demo-massing .mas-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#main-content .demo-massing .mas-cards article{background:white;border:1px solid var(--mas-line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+#main-content .demo-massing .mas-cards article[data-selected=true]{border:2px solid var(--mas-green);box-shadow:0 0 0 2px #174d4610}
+#main-content .demo-massing .parcel-alternative-preview{display:block;width:100%;height:190px;background:#f0f5f1;border-bottom:1px solid var(--mas-line)}
+#main-content .demo-massing .mas-cards article>div{padding:20px;display:flex;flex-direction:column;gap:12px;flex:1}
+#main-content .demo-massing .mas-cards p{font-size:13px!important;min-height:44px}
+#main-content .demo-massing .mas-cards dl{margin:0 0 6px;display:block}
+#main-content .demo-massing .mas-cards dl>div{padding:9px 0;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #e3ebe6}
+#main-content .demo-massing .mas-cards dd{font-size:13px;text-align:right;margin:0}
+#main-content .demo-massing .mas-cards button{margin-top:auto;width:100%}
+#main-content .demo-massing .mas-comparison>p{font-size:12px!important}
+#main-content .demo-massing .mas-save h2{margin:6px 0!important}
+#main-content .demo-massing .mas-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+#main-content .demo-massing .mas-actions>button:first-child{background:var(--mas-green);color:white;border-color:var(--mas-green)}
+#main-content .demo-massing .mas-actions>span{font-size:12px;color:var(--mas-muted)}
+#main-content .demo-massing .mas-save>small{font-size:12px;line-height:1.7;color:var(--mas-muted)}
+#main-content .demo-massing footer{padding:0;background:transparent;color:var(--mas-muted);font-size:12px;line-height:1.7}
+@media(max-width:1000px){#main-content .demo-massing .mas-project dl{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .demo-massing .mas-cards{grid-template-columns:1fr}#main-content .demo-massing .parcel-alternative-preview{height:180px}}
+@media(max-width:640px){#main-content .demo-massing{gap:16px}#main-content .demo-massing .mas-heading{display:grid}#main-content .demo-massing h1{font-size:28px!important}#main-content .demo-massing :is(.mas-heading,.mas-project,.mas-basis,.mas-empty,.mas-save){padding:18px}#main-content .demo-massing .mas-project dl,#main-content .demo-massing .mas-basis>[role=group],#main-content .demo-massing .mas-assumptions>div{grid-template-columns:1fr}#main-content .demo-massing .mas-actions{align-items:stretch;flex-direction:column}#main-content .demo-massing .mas-actions>*{width:100%}}

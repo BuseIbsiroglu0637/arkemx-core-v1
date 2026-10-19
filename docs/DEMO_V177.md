@@ -174,3 +174,22 @@ Kod kontrolü: gis-map-terrain-ui 3/3 test geçti. Bu tur uygulama koduna düzel
 Kanıt: çalışma alanı output/gis-harita-kapanis-2026-10-19/ altında 01-sokak.png, 02-sokak-cevre.png, 03-uydu.png, 04-uydu-odak.png, 05-yenileme-sonrasi.png; dosyalar açılarak incelendi.
 
 Kapsam sınırı: yalnız boş harita işi kapandı. Bu kontrol GIS modülünün tamamı, çıktı dosyaları, resmî kadastro/aplikasyon doğruluğu veya teknik/idari onay anlamına gelmez. Sonraki adım MAS modülünde brief/GIS girdilerinin örnek başlangıç değerleri yerine kontrollü aktarımı.
+
+
+## MAS — GIS kaynaklı karşılaştırma başlangıcı, 2026-10-19
+
+Dayanak: kullanıcı GIS boş harita işi kapandıktan sonra MAS modülüne geçilmesini istedi. İlk kontrolde proje adı doğru olmasına rağmen eski MAS formunun 46×72 m sentetik parsel, Sanayi/Depo, Yapısal Çelik ve .60/1.20/12.5 imar varsayımlarıyla otomatik kayıt ürettiği görülmüştü.
+
+Yapılan iş: demo MAS ekranı brief/GIS bilgileri, çalışma dayanağı, üç geometri tabanlı alternatif ve açık kayıt/JSON akışıyla değiştirildi. Eski SiteIntelligenceStudio demo dışı kullanım için korundu. Yeni akış varsayılan sentetik dikdörtgen veya sistem seçmez; güncel projeye bağlı GIS kaynak sınırını yeniden doğrular. Kayıtlı parsel kimliği, kaynak kimliği, ham sınır, CRS, geçerli geometri ve kaynak türü kontrol edilir. Örnek, koordinat çevresi, kimliği eksik/çelişkili veya değişmiş kaynak kabul edilmez.
+
+Üç alternatif mevcut createParcelConcept/createZoningMassingModel motorlarını ve ParcelAlternativePreview geometri çizimini kullanır. Kaynak sınır alanı, PIR hedefi ve GIS seçimi ayrı tutulur; kartlarda hedefe fark gösterilir. Kullanıcı kavramsal modu açıkça seçer. İmar modu yalnız güncel geometriyle eşleşmiş belge/tarih/net alan/koşul kontrolü tamam ise açılır. Bilinmeyen imar alanları doldurulmaz. Kat yüksekliği GIS'ten gelir, eksikse 3.4 m açık tasarım varsayımıdır; cephe yönü düzenlenebilir.
+
+Kayıt: açılışta otomatik quick-site-scenario yazımı yok. Kaydetmeden seçimler yereldir; eski MAS kaydı üzerine yazılmaz. Seçim açık kaydet eylemiyle ARKEM-MAS/1 olarak aynı projede tutulur, GIS veya mimari program değiştirilmez. Geri yükleme proje/kaynak/brief imzasını, sonuç geometrisini ve onay statüsünü doğrular; eski sentetik veya değişmiş sonuç kayıtları uygulanmaz. JSON snapshot'ı undefined koordinat alanları içermez ve tam JSON round-trip testinden geçer. Mimari programa bağlantı ancak güncel seçim kaydedilmişse görünür. Bu bağlantı sonraki modülün girdilerini otomatik değiştirmez.
+
+Arayüz: yeşil/beyaz tema, tek proje özeti, üç kart ve kayıt alanı. Eski 7 adımlı teknik başlık demo MAS'ta kullanılmaz. İletişim katmanı bu demo sayfasında gizlendi; kartları örtmez. Modül merkezi MAS notu doğrulanan akışa göre güncellendi; tüm modül Hazır olarak işaretlenmedi.
+
+Kontrol: 24/24 massing-workspace, parcel-customer-workflow ve zoning-review testi geçti. Kaynak sınırını koruma, yanlış kimlik/CRS/örnek kaynağı engelleme, kavramsal sonuçta imar uydurmama, farklı proje/eski kaynak/tahrif edilmiş sonucu reddetme ve geçerli kaynaklı imar modu test edildi. TypeScript --noEmit ve üretim/Worker derlemesi başarılı; derlemeden sonra yalnız modül notu ve iletişim görünürlük listesi düzenlendi. Hook sırası, proje/kaynak anahtarıyla state izolasyonu, etiketler, düğme kapıları ve JSON güvenliği React kontrolünde incelendi. Diff kontrolü temiz.
+
+Tarayıcı: DEMO — Kastamonu Konut için Budamış 210/15 kaynak sınırı 1597.8 m², brief hedefi 600 m² ve GIS seçimi 1117.7 m² doğru geldi. Kavramsal üç alternatif 1117.7 / 871.9 / 648 m²; hedef farkları +517.7 / +271.9 / +48 m² gösterildi. GIS ile aynı Geniş taban MAS'a kaydedildi; yenilemede geri geldi. JSON indirilip dosya okundu: doğru proje/kimlik, 5 sınır noktası, 4 yapı noktası, authoritative:false, zoningPending:true ve planning:null. GIS girdileri değiştirilmedi. Masaüstü 1351/1351 px ve mobil 375/375 px sayfa/kaydırma genişliği; taşma yok. Viewport ayarı kaldırıldı. Kanıtlar çalışma alanı output/ARKEMX_MAS_Yeni_Masaustu_2026-10-19.png, ARKEMX_MAS_Yeni_Mobil_2026-10-19.png ve ARKEMX_MAS_Karsilastirma_2026-10-19.png; kaydedilip açılarak incelendi.
+
+Açık işler / sonraki adım: belgeye dayalı imar modunun gerçek projede tarayıcı testi bekliyor. Kaynak parsel yokken bu yeni demo akışı geometri hesabı üretmez; arsasız bağımsız senaryo ayrıca ele alınacak. MAS seçiminden ARC girdilerine kontrollü aktarım sonraki adımdır; mevcut mahal programı otomatik ezilmedi. Bu tur MAS'ın tüm işlevlerinin veya 13 modülün tamamlandığı iddiası değildir; teknik/idari onay verilmedi.
