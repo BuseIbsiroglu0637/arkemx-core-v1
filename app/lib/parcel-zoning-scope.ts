@@ -2,6 +2,9 @@ import type { ZoningForm } from './zoning';
 
 export type ParcelPlanningDraft = {
   mode?: 'zoning' | 'concept';
+  documentReference?: string;
+  documentDate?: string;
+  sourceGeometryKey?: string;
   zoning: ZoningForm;
   parkingPer100: number;
   inputsConfirmed: boolean;
@@ -12,7 +15,7 @@ export type ParcelPlanningScopes = Record<string, ParcelPlanningDraft>;
 
 export function emptyParcelPlanning(): ParcelPlanningDraft {
   return {
-    mode: 'zoning',
+    mode: 'zoning', documentReference: '', documentDate: '', sourceGeometryKey: '',
     zoning: {
       landUse: 'Kullanıcı girişi bekleniyor', planName: '', planScale: '', planId: '',
       buildingOrder: '', taks: 0, kaks: 0, hmax: 0,
@@ -64,7 +67,7 @@ export function restorePlanningScopes(value: unknown): ParcelPlanningScopes {
       || (typeof item.zoning![field] === 'number' && !Number.isFinite(item.zoning![field])))) continue;
     if (!['user-declared', 'municipal-viewer', 'approved-plan', 'certified-document'].includes(item.zoning.verification)) continue;
     if (typeof item.parkingPer100 !== 'number' || !Number.isFinite(item.parkingPer100)) continue;
-    result[key] = { mode: item.mode === 'concept' ? 'concept' : 'zoning', zoning: { ...item.zoning }, parkingPer100: item.parkingPer100, inputsConfirmed: item.inputsConfirmed === true,
+    result[key] = { documentReference: typeof item.documentReference === 'string' ? item.documentReference.slice(0,300) : '', documentDate: typeof item.documentDate === 'string' ? item.documentDate.slice(0,10) : '', sourceGeometryKey: typeof item.sourceGeometryKey === 'string' ? item.sourceGeometryKey.slice(0,30000) : '', mode: item.mode === 'concept' ? 'concept' : 'zoning', zoning: { ...item.zoning }, parkingPer100: item.parkingPer100, inputsConfirmed: item.inputsConfirmed === true,
       netPlotArea: typeof item.netPlotArea === 'number' && Number.isFinite(item.netPlotArea) && item.netPlotArea > 0 && item.netPlotArea <= 1e8 ? item.netPlotArea : null,
       netAreaBasis: typeof item.netAreaBasis === 'string' ? item.netAreaBasis.slice(0, 300) : '',
     };

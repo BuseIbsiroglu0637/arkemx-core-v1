@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { DEMO_ENABLED } from '../lib/demo';
 import { useProjectKernel } from './ProjectKernel';
 import { parcelIdentityKey, type ParcelIdentity } from '../lib/parcel-record';
 import type { GeoPoint } from '../lib/geo';
@@ -36,6 +37,10 @@ export function MunicipalPlanResearch({ identity, points, eligible, onResolved, 
         patchModule('municipal-plan-research', { scopes: { ...saved?.scopes, [parcelIdentityKey(identity)]: { ...result, targetIdentity: { ...identity }, geometryKey: scope.geometryKey, needsReview: true } } });
       }
     };
+    if (DEMO_ENABLED) {
+      publish(municipalResearchState('demo-disabled', scope, 'Demo modunda otomatik imar sorgusu kapalı. Resmî kaynağı açabilir veya belge bilgilerinizi taslak olarak girebilirsiniz.'));
+      return () => { cancelled = true; controller.abort(); };
+    }
     if (!supported) {
       publish(municipalResearchState('unsupported', scope, 'Bu bölge için otomatik parsel imar kaynağı henüz bağlı değil.'));
       return () => { cancelled = true; controller.abort(); };
@@ -54,7 +59,7 @@ export function MunicipalPlanResearch({ identity, points, eligible, onResolved, 
   const portal = resolveZoningPortal(identity.province, identity.district, identity.neighborhood);
   const result = state.key === key ? state.result : municipalResearchState(supported ? 'loading' : 'unsupported', scope);
   const needsOfficialCheck = result.status === 'action-required';
-  const label = { idle: 'İmar araştırması hazır', loading: 'İmar kaynağı kontrol ediliyor…', 'research-only': 'Askı planı adayı bulundu · imar koşulu değil', 'not-found': 'Askı katmanında kayıt yok · imar durumu belirsiz', unavailable: 'İmar kaynağına erişilemedi', unsupported: 'Otomatik imar kaynağı yok', 'action-required': 'Belediye kaynağı bulundu · resmî ekranda kontrol gerekli', 'authority-required': 'Yetkili idare doğrulaması gerekli' }[result.status];
+  const label = { 'demo-disabled': 'Demo modunda otomatik sorgu kapalı', idle: 'İmar araştırması hazır', loading: 'İmar kaynağı kontrol ediliyor…', 'research-only': 'Askı planı adayı bulundu · imar koşulu değil', 'not-found': 'Askı katmanında kayıt yok · imar durumu belirsiz', unavailable: 'İmar kaynağına erişilemedi', unsupported: 'Otomatik imar kaynağı yok', 'action-required': 'Belediye kaynağı bulundu · resmî ekranda kontrol gerekli', 'authority-required': 'Yetkili idare doğrulaması gerekli' }[result.status];
   return <section className="parcel-municipal-research" aria-label="Seçili parselin belediye plan araştırması" data-research-status={result.status} aria-busy={result.status === 'loading'}>
     <header><b>İmar kaynağı ve sorgu sonucu</b><span role="status" aria-live="polite">{label}</span></header>
     <div className="municipal-capability"><b>{portal?.authority || result.authority || 'Yetkili idare araştırması'}</b><p>{identity.province} / {identity.district} · {identity.neighborhood} · Ada {identity.block} / Parsel {identity.parcelNo}</p>{portal && <a href={portal.href} target="_blank" rel="noreferrer">{needsOfficialCheck ? 'Belediyenin e-imar girişine git ↗' : 'Resmî kaynakta incele ↗'}</a>}</div>
@@ -67,7 +72,7 @@ export function MunicipalPlanResearch({ identity, points, eligible, onResolved, 
     </div>}
     {result.status === 'research-only' && <p>Kaynakta {result.plans.length} plan adayı bulundu. Güncel plan, plan notları ve parselin tamamına uygulanabilirlik doğrulanmadığı için imar hesabına aktarılmadı.</p>}
     {result.status === 'not-found' && <p>Bu sorguda, araştırılan kaynakta parselinizle kesişen plan kaydı bulunamadı. Bu sonuç parselin plansız olduğunu göstermez.</p>}
-    {(result.status === 'unavailable' || result.status === 'unsupported' || result.status === 'authority-required') && <p>{result.message || 'Bu bölge için otomatik imar kaynağına erişilemedi.'}</p>}
+    {(result.status === 'demo-disabled' || result.status === 'unavailable' || result.status === 'unsupported' || result.status === 'authority-required') && <p>{result.message || 'Bu bölge için otomatik imar kaynağına erişilemedi.'}</p>}
     {result.status !== 'loading' && <p>İmar bilgisi girmek isteğe bağlıdır; imar girmeden kavramsal yerleşime devam edebilirsiniz.</p>}
     {(result.status === 'research-only' || result.status === 'not-found') && <details><summary>Kaynak ve plan ayrıntıları{result.partial ? ' · kısmi kapsam' : ''}</summary>
       <p>Sorgu zamanı: {result.observedAt?.replace('T', ' ').slice(0, 16)} UTC.</p>
@@ -81,6 +86,6 @@ export function MunicipalPlanResearch({ identity, points, eligible, onResolved, 
         {plan.note && <p>{plan.note}</p>}{plan.qualityIssues?.map(issue => <p key={issue}>{issue}</p>)}
       </li>)}</ul>
     </details>}
-    {supported && !needsOfficialCheck && result.status !== 'authority-required' && <button type="button" disabled={result.status === 'loading'} onClick={() => setAttempt(value => value + 1)}>Plan kaynağını yeniden kontrol et</button>}
+    {!DEMO_ENABLED && supported && !needsOfficialCheck && result.status !== 'authority-required' && <button type="button" disabled={result.status === 'loading'} onClick={() => setAttempt(value => value + 1)}>Plan kaynağını yeniden kontrol et</button>}
   </section>;
 }

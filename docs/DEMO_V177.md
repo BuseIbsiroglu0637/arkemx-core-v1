@@ -114,3 +114,24 @@ Bulunan hata: altlık temizliğinde layer.off() önce çalışınca Leaflet map 
 Kontrol: 31/31 GIS, konum, parsel akışı ve imar kapsam testi geçti. TypeScript ve üretim/Worker derlemesi başarılı. Eski arazi testi, önceki arazi önizleme düzeltmesindeki bağımsız terrainPreviewReady ve hasBuilding kapılarını kontrol edecek şekilde güncellendi. Tarayıcıda altlık değişimleri, odaklama, katman aç/kapa, 3B, koordinatlar ve KML kartından indirme doğrulandı. 375 px mobil genişlikte yatay taşma yok. Son etkileşim aralığında konsol hatası yok. Görsel karşılaştırma ve sınırları design-qa.md kaydında; ekranlar çalışma alanı output/ARKEMX_Parsel_Panel*.png altında. Test viewport değişikliği kaldırıldı.
 
 Açık işler: bu çalışmada yeni canlı TKGM sorgusu yapılmadı; mevcut kaynak sınırı kullanıldı. PDF/DXF içerikleri tekrar incelenmedi. Uydu çözünürlüğü kaynak ve bölgeyle sınırlı. GIS modülünün tüm senaryolarının tamamlandığı veya resmî teknik onay alındığı anlamına gelmez. Sonraki adım: kullanıcı görsel değerlendirmesi ve GIS → MAS veri devri.
+
+
+## İmar ön incelemesi — 2026-10-19
+
+Dayanak: kullanıcı 2026-10-19 sistem/arayüz incelemesindeki önerileri uygulamayı onayladı.
+
+Yapılan iş: imar adımı harita yan sütunundan ayrıldı. Belgem var / Resmî kaynağı bul / İmar bilgisi olmadan devam et yolları eklendi. Geniş ana panelde belge referansı ve tarihi, imar koşulları, alan özeti ve kayıt; sağda kaynak sınır alanı, net imar alanı, brief hedefi ve belge durumu var. Mobil tek sütun. Teknik çıktılar ve sonraki modül kartları bu adımda ana formu daraltmaz. Belge dosyası yüklenmez; yalnız referans tutulduğu açıkça yazılıdır.
+
+Belge referansı/tarihi imar taslağının parsel kapsamına taşındı; kaynak bağlantısı tek alanda. Kaynak alanları değişince belge eşleşmesi ve kullanıcı girdi kontrolü geçersizleşir. Belge eşleşmesi kaynak CRS, geometri kaynağı/tarihi ve mevcut sınır kaydı anahtarına bağlıdır. Emsal tek yerde girilir; alan cetveli aynı değeri ve belge kaynağını kullanır. Geometri alanı net alana otomatik yazılmaz. Alan bilgisi yokken dört büyük boş sonuç kutusu yerine tek açıklama var. Ayrıntılı kat/mahal cetveli isteğe bağlıdır; belge/kaynak yolları arasında geçişte belge formu unmount edilmez, kaydedilmemiş satırlar korunur.
+
+Kayıt: ana eylem taslağı kaydeder; sınır, kaynak tarihi/referansı, mevcut sınır eşleşmesi, net alan/dayanak ve imar girdi kontrolü eksikse eksikleri listeler, hesaplı yerleşime geçmez. Eksikler tamamlandığında mevcut design adımını açar. İmar bilinmiyorsa ayrı kavramsal yol korunur. Kullanıcı kontrolü uzman/idare onayı değildir. Önceki imar koşulları geri yüklenir; yeni belge eşleşmesi açıkça tekrar istenir.
+
+Demo: MunicipalPlanResearch demo bayrağını kontrol ederek otomatik POST göndermeden doğru durum metnini gösterir. API istemcisi ayrıca 403/demo:true yanıtını ayrı demo-disabled durumuna çevirir; sahte parsel eşleşme hatası üretmez. Genel API POST engeli kaldırılmadı; kapsam doğrulaması ve bilinmeyen kaynakları reddetme korumaları devam eder.
+
+Kontrol: 53/53 test geçti (zoning-review, municipal-plan-research, parcel-enhancements, parcel-zoning-scope, gis-map-terrain-ui, project-library). Belge tarihi, güncel kaynak/sınır eşleşmesi, eski taslağı koruma, demo 403 ile gerçek kapsam hatasını ayırma ve veri onayını yükseltmeme test edildi. TypeScript --noEmit ve üretim/Worker derlemesi başarılı. Sonrasında yalnız açıklama ve CSS durum metni düzenlendi; diff kontrolü temiz.
+
+Tarayıcı: masaüstü formu 947 px, viewport 1351 px, yatay taşma yok; önceki form 392 px idi. Demo kaynak mesajı doğru. Ayrı TEST — Proje kayıt kontrolü projesinde Ankara/Çankaya/100.Yıl 1/2 sentetik kimliği kullanıldı, parsel sorgusu yapılmadı. TEST olarak işaretli belge referansı, 2026-10-19 tarihi, 1000 m² net alan, 1.20 emsal girildi; 1200 m² aritmetik kapasite görüldü. Eksik kaynak sınırı/koşullarla taslak kaydedildi ama yerleşim açılmadı. Belge referansı/net alan/emsal yenilemede korundu; tarih ayrı giriş ve kayıtla kontrol edildi. 375 px mobilde sayfa genişliği 375 px. Asıl DEMO — Kastamonu Konut projesi geri açıldı; sentetik girdiler bu projeye aktarılmadı. Geliştirme güncellemesi sonrası proje açmada ilk denemede doğrulama hatası görüldü; temiz proje listesi yenilemesinden sonra iki proje açıldı. Bu geçici geliştirme durumunun nedeni ayrı stabilizasyon incelemesinde doğrulanabilir.
+
+Kanıt: çalışma alanı output/ARKEMX_Imar_On_Inceleme_2026-10-19.png ve output/ARKEMX_Imar_Yeni_Mobil_2026-10-19.png. Test viewport ayarı kaldırıldı. Kod incelemesinde hook sırası, form etiketleri, kontrollü girdiler, parsel anahtarıyla state izolasyonu ve kaynak değişiminde kontrol iptali gözden geçirildi.
+
+Açık işler: canlı belediye sorgusu demo modunda kapalıdır. Belge içeriği/uzman onayı eklenmedi. Tam koşullarla gerçek proje üzerinden yerleşim ve PDF/DXF içeriklerinin uçtan uca doğrulaması sonraki adımdır; bu kayıt resmî teknik onay değildir.

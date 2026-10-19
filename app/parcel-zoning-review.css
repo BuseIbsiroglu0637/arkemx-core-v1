@@ -1,0 +1,72 @@
+/* Dedicated zoning step; does not inherit the narrow map sidebar layout. */
+#main-content .demo-gis-page [hidden]{display:none!important}
+#main-content .demo-gis-page .zoning-review{color:#183c3a;margin:18px 0 28px}
+#main-content .demo-gis-page .zoning-review-header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;padding:24px;background:#edf5f0;border:1px solid #d1e1d8;border-radius:10px}
+#main-content .demo-gis-page .zoning-review h2{font-size:28px!important;font-weight:700!important;line-height:1.3!important;margin:8px 0!important;color:#163b35!important}
+#main-content .demo-gis-page .zoning-review h3{font-size:21px!important;font-weight:650!important;line-height:1.35!important;color:#173c35!important;margin:0 0 12px!important;letter-spacing:-.02em}
+#main-content .demo-gis-page .zoning-review p{font-size:14px!important;line-height:1.7!important;color:#536f64!important;margin:10px 0 16px!important;max-width:none}
+#main-content .demo-gis-page .zoning-review-header p{display:flex;gap:8px;align-items:center;margin:0!important;font-size:13px!important;overflow-wrap:anywhere}
+#main-content .demo-gis-page .zoning-review-header>strong{font-size:12px;padding:8px 12px;border:1px solid #c4d9cc;border-radius:5px;background:#fff;color:#356149;white-space:nowrap}
+#main-content .demo-gis-page .zoning-review-header span,#main-content .demo-gis-page .zoning-review-main section>span{font-size:11px;letter-spacing:.08em;color:#517559;display:block;margin-bottom:12px}
+#main-content .demo-gis-page .zoning-route-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+#main-content .demo-gis-page .zoning-route-choices button{display:flex!important;align-items:flex-start;gap:14px;padding:18px!important;min-height:96px;min-width:0;text-align:left;background:#fff!important;color:#174d46!important;border:1px solid #c4d9cf!important;border-radius:8px;font:inherit}
+#main-content .demo-gis-page .zoning-route-choices button[aria-pressed=true]{background:#e9f3ec!important;border:2px solid #37775f!important;padding:17px!important}
+#main-content .demo-gis-page .zoning-route-choices button:disabled{opacity:.5;cursor:not-allowed}
+#main-content .demo-gis-page .zoning-route-choices b{font-size:15px;line-height:1.4;display:block}
+#main-content .demo-gis-page .zoning-route-choices small{display:block;font-size:12px;line-height:1.6;font-weight:400;color:#5a776a;margin-top:5px}
+#main-content .demo-gis-page .zoning-review svg{flex-shrink:0;width:20px;height:20px}
+#main-content .demo-gis-page .zoning-review-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;align-items:start}
+#main-content .demo-gis-page .zoning-review-main{display:grid;gap:18px;min-width:0}
+#main-content .demo-gis-page .zoning-review-main>section,#main-content .demo-gis-page .zoning-parcel-summary{padding:24px;border:1px solid #d4e1d9;border-radius:9px;background:#fff;min-width:0}
+#main-content .demo-gis-page .zoning-document-fields{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+#main-content .demo-gis-page .zoning-source-url{grid-column:1/-1}
+#main-content .demo-gis-page .zoning-review label{display:flex;flex-direction:column;gap:7px;font-size:13px!important;line-height:1.5!important;font-weight:500;letter-spacing:0;color:#365a49;text-transform:none}
+#main-content .demo-gis-page .zoning-review :is(input,select,textarea):not([type=checkbox]):not([type=range]){width:100%;min-width:0;min-height:44px;border:1px solid #c7d9ce;border-radius:6px;background:#fff;font-size:16px!important;line-height:1.4;padding:10px 12px;box-sizing:border-box;color:#244d3b}
+#main-content .demo-gis-page .zoning-source-confirm,#main-content .demo-gis-page .zoning-review .parcel-input-confirmation{display:flex!important;flex-direction:row!important;gap:12px;align-items:flex-start;padding:14px;background:#f1f6f0;border:1px solid #d2e2d2;border-radius:6px;margin:18px 0 0}
+#main-content .demo-gis-page .zoning-review input[type=checkbox]{accent-color:#174d46;width:18px;height:18px;min-width:18px;margin:2px 0 0;flex:none}
+#main-content .demo-gis-page .zoning-review .parcel-input-confirmation span{font-size:13px!important;line-height:1.6!important;color:#3d604d!important;font-weight:400}
+#main-content .demo-gis-page .zoning-review .geo-control-section{padding:0!important;background:transparent;border:0;overflow:visible;height:auto;max-height:none;min-height:0}
+#main-content .demo-gis-page .zoning-review .geo-control-section>span,#main-content .demo-gis-page .zoning-review .geo-zoning-source-grid{display:none!important}
+#main-content .demo-gis-page .zoning-review :is(.geo-field-grid,.geo-planning-grid){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important;margin:16px 0!important}
+#main-content .demo-gis-page .zoning-review .geo-zoning-control>label{margin:16px 0}
+#main-content .demo-gis-page .zoning-review .geo-caution{font-size:12px!important;background:#f5f8f2!important;color:#597051!important;border-color:#d6dfc9!important;padding:12px!important;line-height:1.6!important}
+#main-content .demo-gis-page .zoning-review .parcel-area-budget{padding:0!important;border:0!important;margin:0!important;background:transparent!important}
+#main-content .demo-gis-page .zoning-review .parcel-budget-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#main-content .demo-gis-page .zoning-review .parcel-area-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+#main-content .demo-gis-page .zoning-review .parcel-area-totals article{padding:16px;background:#f1f6f0;border:1px solid #d5e1d4;border-radius:6px;min-width:0}
+#main-content .demo-gis-page .zoning-review .parcel-area-totals strong{display:block;font-size:24px!important;line-height:1.3;overflow-wrap:normal;word-break:normal;color:#24513d;margin:10px 0}
+#main-content .demo-gis-page .zoning-review .parcel-area-totals :is(span,small){font-size:12px;line-height:1.6;display:block;color:#5b7462}
+#main-content .demo-gis-page .zoning-review .parcel-area-details{padding:16px;border:1px solid #d0dfd2;border-radius:6px;margin:20px 0}
+#main-content .demo-gis-page .zoning-review summary{cursor:pointer;min-height:32px;font-size:13px;font-weight:600;line-height:1.6;color:#3a664e}
+#main-content .demo-gis-page .zoning-review .parcel-area-rows fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0;border:1px solid #ccdccd;border-radius:6px;padding:16px}
+#main-content .demo-gis-page .zoning-review .parcel-budget-basis{grid-column:1/-1}
+#main-content .demo-gis-page .zoning-review button:not(.zoning-route-choices button){min-height:44px;padding:12px 16px!important;border-radius:6px;border:1px solid #276147!important;background:#174d46!important;color:#fff!important;font-size:13px!important;line-height:1.5;cursor:pointer}
+#main-content .demo-gis-page .zoning-review button:disabled{opacity:.5;cursor:not-allowed}
+#main-content .demo-gis-page .zoning-review .parcel-budget-save{display:grid;gap:12px;margin:18px 0}
+#main-content .demo-gis-page .zoning-review .parcel-budget-save span{font-size:13px;line-height:1.7;background:#edf4eb;color:#355d44;padding:12px;border-radius:6px}
+#main-content .demo-gis-page .zoning-review .parcel-budget-save span:empty{display:none}
+#main-content .demo-gis-page .zoning-review .parcel-budget-missing{background:#f5f7ed;padding:14px;border:1px solid #dbe2c9;font-size:13px;color:#52683f;line-height:1.7;border-radius:6px}
+#main-content .demo-gis-page .zoning-review .parcel-area-budget>small{display:block;font-size:11px;line-height:1.7;color:#687c66}
+#main-content .demo-gis-page .zoning-parcel-summary{position:sticky;top:20px}
+#main-content .demo-gis-page .zoning-parcel-summary .parcel-boundary-preview svg{width:100%;height:130px;max-height:130px}
+#main-content .demo-gis-page .zoning-parcel-summary dl{margin:16px 0 0}
+#main-content .demo-gis-page .zoning-parcel-summary dl>div{padding:12px 0;border-bottom:1px solid #e2eae2}
+#main-content .demo-gis-page .zoning-parcel-summary dt{font-size:12px;color:#6a8072;line-height:1.6}
+#main-content .demo-gis-page .zoning-parcel-summary dd{font-size:17px;font-weight:600;margin:4px 0 0;color:#244d3b;overflow-wrap:anywhere;line-height:1.5}
+#main-content .demo-gis-page .zoning-parcel-summary>p{font-size:12px!important}
+#main-content .demo-gis-page .zoning-review .parcel-municipal-research{padding:18px;background:#f4f8f3;border:1px solid #d4e2d1;border-radius:6px;margin:16px 0}
+#main-content .demo-gis-page .zoning-review a{color:#246444;text-decoration:underline;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+#main-content .demo-gis-page .zoning-review :is(button,input,select,textarea,a):focus-visible{outline:3px solid #7ba98a;outline-offset:3px}
+@media(max-width:1000px){#main-content .demo-gis-page .zoning-review-grid{grid-template-columns:minmax(0,1fr) 240px}#main-content .demo-gis-page .zoning-review-main>section{padding:18px}}
+@media(max-width:740px){#main-content .demo-gis-page .zoning-review-grid{grid-template-columns:1fr}#main-content .demo-gis-page .zoning-parcel-summary{position:static;order:-1}#main-content .demo-gis-page .zoning-parcel-summary .parcel-boundary-preview{display:none}#main-content .demo-gis-page .zoning-parcel-summary dl{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}#main-content .demo-gis-page .zoning-parcel-summary dd{font-size:15px}#main-content .demo-gis-page .zoning-route-choices{grid-template-columns:1fr}#main-content .demo-gis-page .zoning-route-choices button{min-height:76px}#main-content .demo-gis-page .zoning-review-header{flex-direction:column;padding:18px}#main-content .demo-gis-page .zoning-review .geo-field-grid,#main-content .demo-gis-page .zoning-review .geo-planning-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:420px){#main-content .demo-gis-page .zoning-document-fields,#main-content .demo-gis-page .zoning-review .parcel-budget-inputs,#main-content .demo-gis-page .zoning-review .parcel-area-totals,#main-content .demo-gis-page .zoning-review .parcel-area-rows fieldset{grid-template-columns:1fr}#main-content .demo-gis-page .zoning-review .geo-field-grid{grid-template-columns:1fr!important}}
+
+#main-content .demo-gis-page .zoning-document-route{display:grid;gap:18px;min-width:0}
+#main-content .demo-gis-page .zoning-document-route>section{padding:24px;border:1px solid #d4e1d9;border-radius:9px;background:#fff;min-width:0}
+#main-content .demo-gis-page .zoning-document-route>section>span{font-size:11px;letter-spacing:.08em;color:#517559;display:block;margin-bottom:12px}
+#main-content .demo-gis-page .zoning-review .parcel-area-budget>header{display:flex;align-items:flex-start;gap:16px;justify-content:space-between}
+#main-content .demo-gis-page .zoning-review .parcel-area-budget>header .parcel-evidence-tag{font-size:11px;white-space:normal;max-width:140px}
+@media(max-width:740px){#main-content .demo-gis-page .zoning-document-route>section{padding:18px}}
+
+#main-content .demo-gis-page .zoning-review .parcel-municipal-research header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+#main-content .demo-gis-page .zoning-review .parcel-municipal-research [role=status]{color:#38634b!important;font-size:12px!important;line-height:1.6!important}

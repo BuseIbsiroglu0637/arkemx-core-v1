@@ -27,7 +27,7 @@ export type MunicipalPlanCandidate = {
 };
 
 export type MunicipalResearchResult = {
-  status: 'idle' | 'loading' | 'research-only' | 'not-found' | 'unsupported' | 'unavailable' | 'action-required' | 'authority-required';
+  status: 'demo-disabled' | 'idle' | 'loading' | 'research-only' | 'not-found' | 'unsupported' | 'unavailable' | 'action-required' | 'authority-required';
   scope: MunicipalResearchScope | null;
   authoritative: false;
   entitlementAvailable: false;
@@ -147,6 +147,7 @@ export function createMunicipalResearchClient(fetcher: typeof fetch = (...args) 
     });
     const raw = await readBoundedJson(response, 120_000);
     signal.throwIfAborted();
+    if (response.status === 403 && object(raw)?.demo === true) return municipalResearchState('demo-disabled', scope, 'Demo modunda otomatik imar sorgusu kapalı. Resmî kaynağı açabilir veya belge bilgilerinizi taslak olarak girebilirsiniz.');
     const result = adaptMunicipalResearchResult(raw, scope, now());
     if (!response.ok && result.status !== 'unavailable') return municipalResearchState('unavailable', scope, 'Kaynak sorgusu tamamlanamadı.');
     if (result.status === 'research-only' || result.status === 'not-found') {
