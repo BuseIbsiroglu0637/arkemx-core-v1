@@ -19,12 +19,34 @@ export function loadProjectLibrary(storage: DeviceStorage): ProjectKernelState[]
   if (raw !== null || backup !== null) throw new Error("Proje listesi okunamadı. Kayıtların üzerine yazılmadı.");
   return [];
 }
+/**
+ * Validate what the browser can actually save, not a transient React object.
+ * Optional undefined properties are omitted by JSON in both local project
+ * storage and the library. Other invalid values must still fail closed.
+ */
+function persistableSnapshot(project: ProjectKernelState): ProjectKernelState {
+  let serialized: string | undefined;
+  try {
+    serialized = JSON.stringify(project, (_key, value: unknown) => {
+      if (typeof value === "number" && !Number.isFinite(value)) throw new Error("Non-finite project number");
+      if (typeof value === "bigint" || typeof value === "function" || typeof value === "symbol") throw new Error("Non-JSON project value");
+      return value;
+    });
+  } catch {
+    throw new Error("Proje kaydında JSON'a dönüştürülemeyen veri var. Kayıtlar değiştirilmedi.");
+  }
+  if (!serialized) throw new Error("Proje kaydı boş. Kayıtlar değiştirilmedi.");
+  const snapshot = JSON.parse(serialized) as unknown;
+  if (!isKernelProject(snapshot)) throw new Error("Proje kaydı geçerli değil. Kimlik, modül bağlantısı veya veri yapısı kontrol edilmeli; kayıtlar değiştirilmedi.");
+  return snapshot;
+}
+
 export function saveLibraryProject(storage: DeviceStorage, project: ProjectKernelState): ProjectKernelState[] {
-  if (!isKernelProject(project)) throw new Error("Proje kaydı geçerli değil.");
+  const snapshot = persistableSnapshot(project);
   const projects = loadProjectLibrary(storage);
-  const previous = projects.find(p => p.id === project.id);
-  if (previous && Date.parse(previous.updatedAt) > Date.parse(project.updatedAt)) return projects;
-  const next = [...projects.filter(p => p.id !== project.id), project].sort((a,b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  const previous = projects.find(p => p.id === snapshot.id);
+  if (previous && Date.parse(previous.updatedAt) > Date.parse(snapshot.updatedAt)) return projects;
+  const next = [...projects.filter(p => p.id !== snapshot.id), snapshot].sort((a,b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   const raw = storage.getItem(PROJECT_LIBRARY_KEY);
   if (parse(raw)) storage.setItem(PROJECT_LIBRARY_BACKUP_KEY, raw!);
   storage.setItem(PROJECT_LIBRARY_KEY, encodeProjectEnvelope(next));
