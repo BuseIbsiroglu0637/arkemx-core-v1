@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { site } from "../data/site";
 import { downloadTextFile } from "../lib/engineering";
+import { DEMO_ENABLED } from "../lib/demo";
 import { positiveArea } from "../lib/readiness-input";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
@@ -118,7 +119,7 @@ export function ProjectDecisionAssistant() {
 
 
   const summary = useMemo(() => [
-    "Merhaba Arkem Yapı Sistemleri, Proje Karar Asistanı özetimi iletiyorum.",
+    DEMO_ENABLED ? "ARKEMX DEMO — Yatırım briefi ön değerlendirmesi" : "Merhaba Arkem Yapı Sistemleri, Proje Karar Asistanı özetimi iletiyorum.",
     "",
     `Yapı / ihtiyaç: ${labelOf(goals, goal)}`,
     `Mevcut aşama: ${labelOf(stages, stage)}`,
@@ -170,12 +171,20 @@ export function ProjectDecisionAssistant() {
     window.print();
   };
 
-  const downloadReport = () => downloadTextFile("arkem-proje-on-hazirlik.json", JSON.stringify({ schema: "ARKEM-BRIEF/1.0", method: "rule-based", methodVersion: "readiness-1.1", documentVerification: "user-declared-not-reviewed", input: { goal, stage, system, location, area, documents, priorities }, result, generatedAt }, null, 2), "application/json");
+  const fillDemo = () => {
+    setGoal("konut"); setStage("fikir"); setSystem("kararsiz");
+    setLocation("Kastamonu / Merkez"); setArea("600");
+    setDocuments(["arsa", "mimari"]); setPriorities(["butce", "guvenlik"]);
+    setResultVisible(false); setCopied(false); setGeneratedAt("");
+  };
+
+  const downloadReport = () => downloadTextFile("arkem-proje-on-hazirlik.json", JSON.stringify({ schema: "ARKEM-BRIEF/1.0", demo: DEMO_ENABLED, method: "rule-based", methodVersion: "readiness-1.1", documentVerification: "user-declared-not-reviewed", input: { goal, stage, system, location, area, documents, priorities }, result, generatedAt }, null, 2), "application/json");
 
   return <div className="decision-assistant">
-    <ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Müşteri beyanı · inceleme bekliyor" />
-    <form className="decision-form" onSubmit={submit}>
-      <div className="decision-form-heading"><p className="eyebrow">Proje Verisi</p><h2>İhtiyacı adım adım<br/><em>somutlaştıralım.</em></h2><p>Bu ekranda ön çalışma hazırlanır. Hesaba kaydetme ve ARKEM’e gönderme ayrı işlemlerdir.</p></div>
+    {DEMO_ENABLED ? <details className="demo-brief-settings"><summary>Proje ayarları ve kayıt</summary><ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Demo · ön değerlendirme" /></details> : <ProjectKernelBar module="PROJECT DEFINITION & READINESS" confidence="Müşteri beyanı · inceleme bekliyor" />}
+    {DEMO_ENABLED && <div className="demo-brief-toolbar"><p>Örnek verilerle deneyebilir veya kendi girdilerinizi kullanabilirsiniz. Belge seçimleri örnektir; gerçek doğrulama yapılmaz.</p><button type="button" onClick={fillDemo}>Örnek briefi doldur</button></div>}
+    <form className="decision-form" onSubmit={submit} onChange={() => { setResultVisible(false); setCopied(false); }}>
+      <div className="decision-form-heading"><p className="eyebrow">Proje Verisi</p><h2>İhtiyacı adım adım<br/><em>somutlaştıralım.</em></h2><p>{DEMO_ENABLED ? "Alanları değiştirip yol haritasını oluşturun. Demo çalışması bu tarayıcıda tutulur; başvuru gönderilmez." : "Bu ekranda ön çalışma hazırlanır. Hesaba kaydetme ve ARKEM’e gönderme ayrı işlemlerdir."}</p></div>
 
       <section className="decision-step" aria-labelledby="step-project"><div className="decision-step-title"><span>01</span><div><h3 id="step-project">Projenin çerçevesi</h3><p>Yapı türü ve mevcut aşamayı seçin.</p></div></div><div className="decision-fields">
         <label><span>Yapı / ihtiyaç türü</span><select required value={goal} onChange={(event) => setGoal(event.target.value)}><option value="" disabled>Seçin</option>{goals.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
@@ -193,14 +202,14 @@ export function ProjectDecisionAssistant() {
     </form>
 
     {resultVisible && <section className="decision-result" id="karar-sonucu" aria-live="polite">
-      <header className="decision-report-head"><div><b>ARKEM</b><span>YAPI SİSTEMLERİ</span></div><div><strong>Proje Ön Hazırlık Raporu</strong><small>{generatedAt}</small></div></header>
+      <header className="decision-report-head"><div><b>ARKEM</b><span>YAPI SİSTEMLERİ</span></div><div><strong>{DEMO_ENABLED ? "DEMO — Proje Ön Hazırlık Raporu" : "Proje Ön Hazırlık Raporu"}</strong><small>{generatedAt}</small></div></header>
       <div className="decision-score"><div><span>Beyan tamlığı gösterimi</span><strong>{result.score}<small>/100</small></strong></div><div className="score-track" aria-hidden="true"><span style={{ width: `${result.score}%` }}/></div><p>Bu puan yalnızca paylaştığınız ön bilgilerin tamamlanma seviyesini gösterir; mühendislik uygunluğu, maliyet veya onay sonucu değildir.</p></div>
       <div className="decision-recommendation"><p className="eyebrow">Önerilen İlk Hizmet</p><h2>{result.service.title}</h2><p>Mevcut aşamanıza göre ilk teknik görüşmenin bu hizmet çerçevesinde başlaması daha verimli görünür.</p><Link className="text-link" href={result.service.href}>Hizmet kapsamını inceleyin <span aria-hidden="true">↗</span></Link></div>
       <div className="decision-roadmap"><p className="eyebrow">Öncelikli Yol Haritası</p><ol>{result.nextSteps.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}</ol></div>
       <div className="decision-maturity"><div><p className="eyebrow">Disiplin Bazlı Beyan Tamlığı</p><h2>Tek toplam puanın<br/><em>arkasını görün.</em></h2><p>Puanlar formda beyan edilen bilgileri örnekler. Belgeler incelenmedi; yüksek bir puan teknik doğrulama veya eksiksiz proje anlamına gelmez.</p></div><section>{result.maturity.map((item) => <article key={item.discipline}><span>{item.discipline}</span><i><b style={{ width: `${item.score}%` }}></b></i><strong>{item.score}<small>/100</small></strong></article>)}</section><aside><span>ERKEN RİSK KAYDI</span>{result.riskFlags.length ? result.riskFlags.map((flag) => <p key={flag}><i>!</i>{flag}</p>) : <p className="good"><i>✓</i>İşaretlediğiniz belgelerin tümü uzman incelemesi bekliyor</p>}</aside></div>
       <div className="decision-checklist"><div><p className="eyebrow">Belge Kontrolü</p><h2>Görüşme dosyanızı tamamlayın.</h2><p>Bu liste zorunlu belge listesi değildir; yalnızca formda henüz işaretlemediğiniz genel veri başlıklarını gösterir.</p></div><ul>{documentOptions.map(([value, label]) => <li key={value} className={documents.includes(value) ? "ready" : "missing"}><span aria-hidden="true">{documents.includes(value) ? "✓" : "○"}</span>{label}<small>{documents.includes(value) ? "Beyan edildi · incelenmedi" : "İşaretlenmedi"}</small></li>)}</ul></div>
       <div className="decision-next-tool"><div><p className="eyebrow">Sonraki Dijital Adım</p><h2>Taşıyıcı sistem alternatiflerini birlikte görün.</h2></div><Link className="text-link" href="/yapi-sistemi-karsilastirma">Yapı Sistemi Karşılaştırma Aracını açın <span aria-hidden="true">↗</span></Link></div>
-      <div className="decision-actions"><a className="button copper" href={`https://wa.me/${site.whatsappHref}?text=${encodeURIComponent(summary)}`} target="_blank" rel="noreferrer">Özeti WhatsApp ile gönder <span aria-hidden="true">↗</span></a><button type="button" onClick={printReport}>PDF olarak kaydet / yazdır</button><button type="button" onClick={downloadReport}>Teknik JSON indir</button><button type="button" onClick={copySummary}>{copied ? "Özet kopyalandı ✓" : "Özeti kopyala"}</button></div>
+      <div className="decision-actions">{DEMO_ENABLED ? <button type="button" className="button copper" onClick={() => downloadTextFile("arkem-demo-yatirim-briefi.txt", summary, "text/plain;charset=utf-8")}>Özeti metin olarak indir</button> : <a className="button copper" href={`https://wa.me/${site.whatsappHref}?text=${encodeURIComponent(summary)}`} target="_blank" rel="noreferrer">Özeti WhatsApp ile gönder <span aria-hidden="true">↗</span></a>}<button type="button" onClick={printReport}>PDF olarak kaydet / yazdır</button><button type="button" onClick={downloadReport}>Teknik JSON indir</button><button type="button" onClick={copySummary}>{copied ? "Özet kopyalandı ✓" : "Özeti kopyala"}</button></div>
     </section>}
   </div>;
 }

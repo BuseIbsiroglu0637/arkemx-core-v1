@@ -24,3 +24,13 @@ Kontrol: 13/13 modül bağlantısının hedefi HTTP 200 ve ilgili bölüm kimli�
 ## Kart durum notları — 2026-10-19
 
 Kullanıcının isteğiyle her kart altına küçük doğrulama notu eklendi. 13/13 açılış kontrolü dayanak alındı; genel kartlar “Sayfa açılıyor / İşlev ve çıktı testleri bekliyor” gösterir. ARC örnek veri açılışını, BEP seçim ve sonuç güncellemesini, LCA karbon paneli açılışını belirtir. Bu notlar tam işlev onayı değildir; doğrulanmış bir arıza olmadan “çalışmıyor” etiketi eklenmedi. Kalan hesap ve çıktı senaryoları modül bazında doğrulanacak; sonuçlara göre kart notları güncellenecek.
+
+## Yatırım briefi demo dönüşümü — 2026-10-19
+
+Kullanıcı ilk modülün işlevleri korunarak demo haline getirilmesini istedi. PIR giriş sayfası sadeleştirildi; kurumsal üst/alt bölümler ve WhatsApp bağlantıları bu ekrandan kaldırıldı. Proje kimliği, kayıt, aktarım ve JSON araçları “Proje ayarları ve kayıt” açılır bölümünde korundu. Form seçenekleri, puanlama, riskler, yol haritası, belge listesi, kopyalama, yazdırma ve JSON çıktısı korunuyor. Örnek brief düğmesi yalnız formu doldurur; gerçek başvuru oluşturmaz. Özeti metin olarak indirme eklendi; rapor, kopya ve JSON çıktısı demo olarak işaretlenir. Girdi değişince önceki rapor gizlenir ve yeniden değerlendirme gerekir. Mevcut guided intake alanları değiştirilmeden readinessScreening kaydı güncellenir.
+
+Kontrol: TypeScript --noEmit başarılı. npm run build ve paket doğrulaması başarılı. İlk test denemesinde dist henüz bulunmadığı için render testi çalışmadı; derleme sonrasında 24/24 test geçti (module-workspaces, hardening, demo). Render testi yeni PIR demo girişine uyarlandı; diğer modül beklentileri korundu.
+
+Tarayıcı: örnek konut 76/100 ve Projelendirme sonucu; sıfır alanın reddi; 450,5 alanının kabulü; yıkım seçimiyle Patlatmalı Bina Yıkımı sonucu; konum değişince eski raporun gizlenmesi; demo işaretli özetin panoya kopyalanması doğrulandı. JSON/TXT indirme düğmeleri tetiklendi. PDF yazdırma diyalogu ve indirilen dosyaların disk üzerindeki içerikleri ayrıca doğrulanmadı; bu nedenle kartta dosya/PDF çıktıları test bekliyor notu korunuyor. Form dar ekranda görüntülendi. Bunlar mühendislik veya resmî teknik onay değildir.
+
+Açık işler: PDF/dosya içerik kontrolleri ve kalan senaryolar. Sonraki adım: kullanıcının brief ekranı değerlendirmesine göre düzenleme veya sonraki modül.

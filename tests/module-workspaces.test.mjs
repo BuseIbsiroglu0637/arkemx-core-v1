@@ -18,6 +18,11 @@ test("all reviewed module routes render a compact, labelled entry and direct wor
       assert.match(html, /Projeye farklı/); assert.match(html, /href="\/projeler\/isil-kilic-hafif-celik-villa"/);
       assert.equal((html.match(/<h1\b/g) || []).length, 1, route); continue;
     }
+    if (route === "proje-karar-asistani") {
+      assert.match(html, /Yatırım briefi/); assert.match(html, /id="karar-motoru"/);
+      assert.match(html, /Örnek briefi doldur/); assert.doesNotMatch(html, /Özeti WhatsApp ile gönder/);
+      assert.equal((html.match(/<h1\b/g) || []).length, 1, route); continue;
+    }
     assert.match(html, /module-workspace-intro/, route);
     assert.match(html, /Çalışma alanına geç/, route); assert.match(html, /Nereden başlayacağım/, route);
     assert.equal((html.match(/<h1\b/g) || []).length, 1, route);
