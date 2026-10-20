@@ -106,6 +106,7 @@ import "./parcel-zoning-review.css";
 import "./parcel-placement-review.css";
 import "./massing-workspace.css";
 import "./mas-architecture.css";
+import "./bim-workspace.css";
 import { site } from "./data/site";
 import { corporateRegistry } from "./data/corporate-registry";
 import { visibleLocaleRecords } from "./data/locale-routes";

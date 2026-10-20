@@ -12,6 +12,7 @@ const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean; labe
   MAS: { ready: true, label: "Kavramsal demo hazır", verified: "GIS → alternatif seçimi → kayıt/JSON → ARC aktarımı test edildi.", pending: "Belgeli imar ve arsasız senaryolar ayrıca test edilecek." },
   PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true, label: "Demo hazır" },
   ARC: { ready: true, label: "Demo hazır", verified: "Mahal düzenleme, yakınlık şeması, senaryolar ve JSON/CSV test edildi.", pending: "Ölçülü plan ve kat dağılımı sonraki BIM aşamasında ele alınacak." },
+  BIM: { label: "Çalışma sürüyor", verified: "Eksik mahal ekleme, çizimleri koruma, geri alma ve kayıt test edildi.", pending: "Ölçülü yerleşim, kat dağılımı ve teknik çıktılar kontrol edilecek." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
   LCA: { verified: "Karbon paneli açılıyor.", pending: "Hesap ve çıktılar test bekliyor." },
 };
@@ -24,7 +25,7 @@ export function DemoBanner() {
 
 export function DemoContact({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  return ["/dijital-proje-merkezi", "/proje-karar-asistani", "/arsa-fizibilite-studyosu", "/hizli-yerlesim", "/mimari-program-studyosu"].includes(pathname ?? "") ? null : children;
+  return ["/dijital-proje-merkezi", "/proje-karar-asistani", "/arsa-fizibilite-studyosu", "/hizli-yerlesim", "/mimari-program-studyosu", "/tasarim-calismalari"].includes(pathname ?? "") ? null : children;
 }
 
 export function DemoWorkspace() {

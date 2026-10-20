@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createLayeredDxf, downloadTextFile, type DxfPolyline } from "../lib/engineering";
 import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
+import Link from "next/link";
+import { DEMO_ENABLED } from "../lib/demo";
+import { planProgramSync } from "../lib/plan-program-sync";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
 type Tool = "select" | "column" | "wall" | "space" | "core" | "opening" | "load" | "erase";
@@ -18,6 +21,7 @@ type PlanElement = {
   load: number;
   fire: string;
   section: string;
+  sourceSpaceId?: string;
 };
 
 const toolMeta: Record<Tool, { code: string; label: string; hint: string }> = {
@@ -38,12 +42,18 @@ function createId(type: string, level: number, x: number, y: number) {
 }
 
 export function AdvancedPlanEditor() {
+  const { project, hydrated } = useProjectKernel();
+  if (!hydrated) return <p role="status">Plan kaydı yükleniyor…</p>;
+  return <ScopedPlanEditor key={project.id}/>;
+}
+function ScopedPlanEditor() {
   const svgRef = useRef<SVGSVGElement>(null);
   const transferApplied = useRef(false);
   const handoffSeen = useRef("");
+  const [loaded, setLoaded] = useState(false);
   const { patchModule, thread, project, hydrated } = useProjectKernel();
   const [tool, setTool] = useState<Tool>("select");
-  const [view, setView] = useState<View>("structural");
+  const [view, setView] = useState<View>(DEMO_ENABLED ? "architectural" : "structural");
   const [level, setLevel] = useState(1);
   const [floorCount, setFloorCount] = useState(4);
   const [baysX, setBaysX] = useState(6);
@@ -60,8 +70,8 @@ export function AdvancedPlanEditor() {
 
   useEffect(() => {
     if (!hydrated || transferApplied.current) return;
-    transferApplied.current = true;
     const timer = window.setTimeout(() => {
+    transferApplied.current = true;
     const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; elements: PlanElement[] }> | undefined;
     if (saved) {
       if (typeof saved.level === "number") setLevel(saved.level);
@@ -72,6 +82,7 @@ export function AdvancedPlanEditor() {
       if (typeof saved.spanY === "number") setSpanY(saved.spanY);
       if (Array.isArray(saved.elements)) setElements(saved.elements);
       setStatus("Kayıtlı plan ve nesneler otomatik açıldı");
+      setLoaded(true);
       return;
     }
     const source = thread.canonical;
@@ -85,6 +96,7 @@ export function AdvancedPlanEditor() {
     if (width > 0 && nextBaysX > 0) setSpanX(Math.max(2, Math.min(12, width / nextBaysX)));
     if (depth > 0 && nextBaysY > 0) setSpanY(Math.max(2, Math.min(12, depth / nextBaysY)));
     setStatus(source.architecture.grossArea > 0 ? "Mimari plaka, kat ve ölçüler otomatik aktarıldı" : "Yeni proje şeması hazır");
+    setLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [hydrated, project.modules, thread.canonical]);
@@ -139,8 +151,9 @@ export function AdvancedPlanEditor() {
   }, [spanX, spanY, totalDepth, totalWidth, visible]);
 
   useEffect(() => {
+    if (!loaded) return;
     patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, elements, metrics, status: "concept-plan" });
-  }, [baysX, baysY, elements, floorCount, level, metrics, patchModule, spanX, spanY]);
+  }, [loaded, baysX, baysY, elements, floorCount, level, metrics, patchModule, spanX, spanY]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -369,6 +382,12 @@ export function AdvancedPlanEditor() {
     setStatus(`K${level} A3 kurumsal PDF paftası oluşturuldu`);
   };
 
+  const programSync = planProgramSync(project.modules["architectural-program"], elements, { floors: floorCount, x: baysX, y: baysY });
+  const addMissingRooms = () => {
+    if (!loaded || !programSync.canApply) return;
+    commit([...elements, ...programSync.additions], "Eksik mahaller boş hücrelere eklendi; mevcut nesneler korundu");
+    setView("architectural");
+  };
   const showElement = (element: PlanElement) => {
     if (element.type === "column") return layers.columns;
     if (element.type === "wall") return layers.walls;
@@ -377,11 +396,12 @@ export function AdvancedPlanEditor() {
     return layers.loads;
   };
 
-  return <section className="advanced-plan-editor cad-plan-editor" data-testid="advanced-plan-editor">
-    <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" />
-    <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>
+  return <section className={`advanced-plan-editor cad-plan-editor${DEMO_ENABLED ? " bim-demo" : ""}`} data-testid="advanced-plan-editor">
+    {!DEMO_ENABLED && <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" />}
+    {DEMO_ENABLED ? <header className="bim-heading"><span>05 / BIM</span><h1>Plan ve aks modeli</h1><p>{project.name} · Mahalleri yerleştirin, katları ve aksları düzenleyin.</p><small role="status">{status}</small></header> : <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>}
+    {DEMO_ENABLED && <section className="bim-program" aria-label="Mimari program aktarımı"><header><div><h2>Mimari program → plan</h2><p>Eksik mahaller boş aks hücrelerine eklenir. Mevcut çizimler taşınmaz veya silinmez.</p></div><button disabled={!loaded || !programSync.canApply} onClick={addMissingRooms}>{programSync.missing ? `Eksik ${programSync.missing} mahali ekle` : "Mahaller planda"}</button></header>{!programSync.valid ? <p>Geçerli ve aktarılabilir mimari program bekleniyor.</p> : <><ul>{programSync.summary.map(room => <li key={room.id}><b>{room.name}</b><span>{room.placed}/{room.count} planda{room.extra > 0 ? " · Fazla nesne var" : ""}</span></li>)}</ul>{programSync.missing > programSync.free && <p role="alert">Boş hücre sayısı yetersiz. Kat ve aks düzenini gözden geçirin.</p>}</>}<p>Hücreler gerçek oda alanı değildir; yakınlıklar, kapılar ve geçişler bu işlemle doğrulanmaz. Eklemeyi Geri düğmesiyle geri alabilirsiniz.</p></section>}
     <div className="cad-editor-app">
-      <header className="cad-topbar"><div className="cad-project-id"><span>ARKEM / CONCEPT BIM</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>Kaydet / JSON</button></div></header>
+      <header className="cad-topbar"><div className="cad-project-id"><span>ARKEM / CONCEPT BIM</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>JSON indir</button></div></header>
       <div className="cad-editor-grid">
         <aside className="cad-tools"><strong>NESNE ARAÇLARI</strong>{(Object.keys(toolMeta) as Tool[]).map((item) => <button key={item} className={tool === item ? "active" : ""} onClick={() => setTool(item)} title={toolMeta[item].hint}><i>{toolMeta[item].code}</i><span><b>{toolMeta[item].label}</b><small>{toolMeta[item].hint}</small></span></button>)}<strong>YERLEŞİM YÖNÜ</strong><div className="cad-orientation"><button className={orientation === "x" ? "active" : ""} onClick={() => setOrientation("x")}>X doğrultusu →</button><button className={orientation === "y" ? "active" : ""} onClick={() => setOrientation("y")}>Y doğrultusu ↑</button></div><strong>HIZLI ÜRETİM</strong><button className="cad-command" onClick={autoFrame}>Tüm akslara kolon yerleştir</button><button className="cad-command" onClick={duplicateFloor}>Aktif katı üst kata kopyala</button><button className="cad-command danger" onClick={clearFloor}>Aktif katı temizle</button></aside>
         <main className={`cad-canvas view-${view}`}>
@@ -399,7 +419,7 @@ export function AdvancedPlanEditor() {
               if (element.type === "column") return <g className={`cad-element column${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x - 6} y={y - 6} width="12" height="12"/><text x={x + 9} y={y - 8}>{element.label}</text></g>;
               if (element.type === "wall") return <g className={`cad-element wall${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><line x1={x} y1={y} x2={x + (element.orientation === "x" ? cellW : 0)} y2={y + (element.orientation === "y" ? cellH : 0)}/></g>;
               const fill = element.type === "core" ? "url(#core-hatch)" : element.type === "opening" ? "url(#opening-hatch)" : element.type === "load" ? "rgba(185,102,54,.22)" : view === "loads" ? `rgba(45,126,157,${Math.min(.56, .12 + element.load / 20)})` : "rgba(107,161,180,.11)";
-              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={cellW - 6} height={cellH - 6} fill={fill}/><text x={x + cellW / 2} y={y + cellH / 2 - 3} textAnchor="middle">{element.label}</text><text className="sub" x={x + cellW / 2} y={y + cellH / 2 + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type.toUpperCase()}</text></g>;
+              return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={cellW - 6} height={cellH - 6} fill={fill}/><title>{element.label}</title><text x={x + cellW / 2} y={y + cellH / 2 - 3} textAnchor="middle">{element.type === "core" ? "Çekirdek" : element.label.length > 14 ? element.label.slice(0, 13) + "…" : element.label}</text><text className="sub" x={x + cellW / 2} y={y + cellH / 2 + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type.toUpperCase()}</text></g>;
             })}
             {view === "coordination" && <g className="cad-centers"><line x1={originX + metrics.massCenter.x * scale} y1={originY} x2={originX + metrics.massCenter.x * scale} y2={originY + totalDepth * scale}/><line x1={originX} y1={originY + metrics.massCenter.y * scale} x2={originX + totalWidth * scale} y2={originY + metrics.massCenter.y * scale}/><circle className="mass" cx={originX + metrics.massCenter.x * scale} cy={originY + metrics.massCenter.y * scale} r="8"/><circle className="rigidity" cx={originX + metrics.rigidityCenter.x * scale} cy={originY + metrics.rigidityCenter.y * scale} r="8"/><text x={originX + metrics.massCenter.x * scale + 12} y={originY + metrics.massCenter.y * scale - 12}>KM</text><text x={originX + metrics.rigidityCenter.x * scale + 12} y={originY + metrics.rigidityCenter.y * scale + 19}>KR</text></g>}
             <text x={originX} y={VIEWBOX.height - 20} fill="#71858d" fontSize="9">K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m · Aks {baysX}×{baysY} · Ölçek ekran uyarlamalı</text>
@@ -414,7 +434,8 @@ export function AdvancedPlanEditor() {
           <section><strong>TEKNİK ÇIKTI</strong><div className="cad-export"><button onClick={exportPdf}>PDF<span>A3 kurumsal pafta</span></button><button onClick={exportDxf}>CAD<span>DWG uyumlu DXF</span></button><button onClick={exportJson}>JSON<span>Model verisi</span></button><button onClick={exportCsv}>CSV<span>Ön metraj</span></button></div></section>
         </aside>
       </div>
-      <footer className="cad-editor-foot"><b>Model statüsü · Konsept</b><p>Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir. Kesitler, yükler ve düzensizlikler yetkili proje müelliflerince doğrulanmalıdır.</p></footer>
+      <div className="cad-editor-foot"><b>Model statüsü · Konsept</b><p>Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir. Kesitler, yükler ve düzensizlikler yetkili proje müelliflerince doğrulanmalıdır.</p></div>
     </div>
+    {DEMO_ENABLED && <nav className="bim-next" aria-label="Sonraki modüller"><Link href="/mimari-program-studyosu#mimari-motor">← Mimari programa dön</Link><Link href="/yapi-sistemi-karsilastirma#sistem-karsilastirma">Sistem seçimine devam et →</Link></nav>}
   </section>;
 }

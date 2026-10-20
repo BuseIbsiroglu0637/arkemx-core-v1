@@ -1,0 +1,52 @@
+#main-content .bim-demo-page{padding-top:24px;padding-bottom:32px}
+#main-content .bim-demo{background:#f5f8f6;color:#173a40;padding:0;box-shadow:none}
+#main-content .bim-demo .bim-heading{padding:0 0 22px}
+#main-content .bim-demo .bim-heading h1{font-size:26px!important;line-height:1.35!important;margin:6px 0!important}
+#main-content .bim-demo .bim-heading span{font-size:12px;color:#37675b}
+#main-content .bim-demo .bim-heading p{font-size:14px;line-height:1.7;margin:6px 0;color:#59717c}
+#main-content .bim-demo .bim-heading small{font-size:12px;color:#37675b}
+#main-content .bim-demo .bim-program{padding:20px;border:1px solid #cfddd7;border-radius:8px;background:white;margin-bottom:20px}
+#main-content .bim-demo .bim-program header{display:flex;justify-content:space-between;align-items:center;gap:20px}
+#main-content .bim-demo .bim-program h2{font-size:18px;line-height:1.5;margin:0;color:#173a40}
+#main-content .bim-demo .bim-program p{font-size:13px;line-height:1.7;color:#59717c;margin:8px 0}
+#main-content .bim-demo .bim-program ul{display:flex;flex-wrap:wrap;gap:10px;padding:0;list-style:none;margin:16px 0}
+#main-content .bim-demo .bim-program li{display:flex;flex-direction:column;gap:5px;padding:12px;background:#f3f8f4;border-radius:5px;font-size:13px;min-width:130px}
+#main-content .bim-demo .bim-program li span{color:#59717c}
+#main-content .bim-demo :is(button,input,select){font-size:13px;line-height:1.5}
+#main-content .bim-demo button{min-height:44px;cursor:pointer}
+#main-content .bim-demo .bim-program button,#main-content .bim-demo .bim-next a{padding:11px 16px;background:#174d46;color:white;border:1px solid #174d46;border-radius:5px;font-size:13px;text-decoration:none}
+#main-content .bim-demo button:disabled{opacity:.5;cursor:not-allowed}
+#main-content .bim-demo .cad-editor-app{border:1px solid #cfddd7;border-radius:8px;overflow:hidden}
+#main-content .bim-demo .cad-topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;height:auto;padding:14px;background:white;color:#173a40}
+#main-content .bim-demo .cad-topbar :is(span,b){font-size:13px;color:#173a40}
+#main-content .bim-demo .cad-topbar :is(nav,.cad-top-actions){display:flex;flex-wrap:wrap;gap:6px}
+#main-content .bim-demo .cad-topbar button{padding:10px 12px;background:#f3f8f4;color:#174d46;border:1px solid #cfddd7;border-radius:5px}
+#main-content .bim-demo :is(.cad-topbar button.active,.cad-tools button.active,.cad-orientation button.active,.cad-floor-tabs button.active){background:#174d46;color:white;border-color:#174d46}
+#main-content .bim-demo .cad-editor-grid{display:grid;grid-template-columns:175px minmax(0,1fr) 250px;min-height:0}
+#main-content .bim-demo :is(.cad-tools,.cad-inspector){min-width:0;background:white;max-height:none;overflow:visible}
+#main-content .bim-demo .cad-tools{padding:12px}
+#main-content .bim-demo :is(.cad-tools>strong,.cad-inspector section>strong){font-size:12px;line-height:1.5;letter-spacing:normal;color:#37675b}
+#main-content .bim-demo .cad-tools>button b{font-size:12px}
+#main-content .bim-demo .cad-tools>button small{display:none}
+#main-content .bim-demo :is(.cad-command,.cad-orientation button){font-size:12px;line-height:1.5}
+#main-content .bim-demo .cad-canvas{min-width:0;background:#f7faf8}
+#main-content .bim-demo .cad-canvas-toolbar{display:flex;flex-wrap:wrap;gap:8px;height:auto;padding:12px;background:#edf4ef}
+#main-content .bim-demo .cad-canvas-toolbar>span{display:none}
+#main-content .bim-demo .cad-canvas-toolbar :is(b,small){font-size:12px;line-height:1.6;color:#31595c}
+#main-content .bim-demo .cad-canvas svg{width:100%;height:auto;min-height:360px}
+#main-content .bim-demo .cad-element text{font-size:12px}
+#main-content .bim-demo .cad-element text.sub{font-size:9px}
+#main-content .bim-demo .cad-statusbar{height:auto;display:flex;flex-wrap:wrap;gap:8px;padding:10px;font-size:11px;background:#edf4ef;color:#31595c}
+#main-content .bim-demo .cad-inspector label:not(.cad-layer){font-size:12px}
+#main-content .bim-demo .cad-inspector :is(input,select){height:44px;font-size:14px}
+#main-content .bim-demo .cad-inspector :is(p,small,.cad-metrics span,.cad-metrics b,.cad-layer,.cad-layer b,.cad-export span){font-size:12px;line-height:1.6}
+#main-content .bim-demo .cad-layer input{width:18px;height:18px;accent-color:#174d46}
+#main-content .bim-demo .cad-export{grid-template-columns:1fr 1fr}
+#main-content .bim-demo .cad-export button{color:#174d46}
+#main-content .bim-demo .cad-editor-foot{display:block;background:#edf4ef;padding:16px}
+#main-content .bim-demo .cad-editor-foot :is(b,p){font-size:12px;line-height:1.7;color:#426657}
+#main-content .bim-demo .bim-next{display:flex!important;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:20px}
+#main-content .bim-demo .cad-topbar .cad-sync{background:#174d46!important;color:white!important;border-color:#174d46!important}
+#main-content .bim-demo :is(button,a,input,select):focus-visible{outline:3px solid #75ae94!important;outline-offset:3px!important}
+@media(max-width:1100px){#main-content .bim-demo .cad-editor-grid{grid-template-columns:160px minmax(0,1fr)}#main-content .bim-demo .cad-inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){#main-content .bim-demo .cad-editor-grid{grid-template-columns:1fr}#main-content .bim-demo .cad-tools{display:flex;flex-wrap:wrap;gap:6px}#main-content .bim-demo .cad-tools>strong{width:100%}#main-content .bim-demo .cad-tools>button:not(.cad-command){width:auto;flex:1 1 44%;grid-template-columns:28px 1fr;border:1px solid #cfddd7}#main-content .bim-demo .cad-tools>.cad-command{width:auto;flex:1 1 100%}#main-content .bim-demo .cad-inspector{display:block}#main-content .bim-demo .bim-program header{flex-direction:column;align-items:stretch}#main-content .bim-demo .bim-program{padding:14px}#main-content .bim-demo .cad-canvas svg{min-height:0}#main-content .bim-demo .bim-next a{width:100%;text-align:center}}

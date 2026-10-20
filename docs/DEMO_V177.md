@@ -290,3 +290,17 @@ Açık işler / sonraki adım: BIM ekranında 21 mahal ihtiyacına karşılık m
 ## GIS demo hazır etiketi — 2026-10-20
 
 Kullanıcı açıkça Parsel & bağlam kartının da hazır işaretlenmesini istedi. GIS kartı Demo hazır olarak güncellendi. Bu bir kullanıcı kararıdır; yeni test sonucu değildir. Daha önce doğrulanan brief/harita/KML notu ve bekleyen canlı sorgu/PDF/DXF içerik kontrolü notu korundu. Sonraki adım açık kontrolleri tamamlamak; resmî teknik onay anlamına gelmez.
+
+## BIM — sade plan ekranı ve eksik mahal aktarımı, 2026-10-20
+
+Dayanak: kullanıcı sıradaki modüle geçilmesini istedi. İlk kontrolde aynı projedeki ARC programı 21 mahal içerirken mevcut plan 16 mahal ve iki çekirdek içeriyordu; Banyo 0/4 ve Ortak giriş 0/1 idi.
+
+Yapılan iş: demo BIM ekranı kısa proje başlığı, program/plan adet karşılaştırması, mevcut nesne araçları, kat/aks yönetimi ve çıktı araçlarıyla düzenlendi. Tanıtım, galeri, VR ve tekrar eden proje barları bu demo çalışma ekranından ayrıldı; demo dışı sayfa korundu. Aynı rotanın #tasiyici-on-tasarim hedefi ayrı STR görünümünde çalışır; BIM açılışında STR bileşeni de birlikte kurulmaz. Sistem seçimine devam bağlantısı eklendi. İletişim düğmesi planı örtmez.
+
+Aktarım: açık düğmeyle yalnız eksik mahaller boş hücrelere eklenir. sourceSpaceId eşleşmesi önceliklidir; eski kimliksiz nesneler tam adla eşlenir. Mevcut nesnelerin özellikleri, kimliği, koordinatları ve fazladan nesneler korunur; boşluk ve çekirdek hücreleri kullanılmaz. Yer yetmezse kısmi aktarım yapılmaz. Kaynak eksik, belirsiz, geçersiz veya needsReview ise işlem kapalıdır. Aynı kayıt ikinci kez çoğaltılmaz. Eski Geri/İleri komutları ekleme için çalışır. Proje kapsamlı keyed editör ve yükleme kapısı eklenerek kayıt yüklenmeden boş plan yazılması önlendi.
+
+Doğrulama: 6 yeni veri koruma/kapasite/tekrar aktarım/kimlik testi ile 9 MAS-ARC regresyon testi, toplam 15/15 başarılı. TypeScript --noEmit ve üretim/Worker/artifact derlemesi başarılı; son küçük metin/HTML düzeltmelerinden sonra TypeScript ve diff kontrolü tekrarlandı. React incelemesi: hook sırası, projeye bağlı state izolasyonu, kayıt yükleme kapısı, kullanıcı eylemiyle aktarım, kararlı anahtarlar ve etiketli gezinme kontrol edildi.
+
+Tarayıcı: DEMO — Kastamonu Konut üzerinde dört Banyo ve bir Ortak giriş eklendi. Aktif K1 nesneleri 17 → 22; geri alınca 17, ileri alınca 22. DOM çizim karşılaştırmasında önceki 17 nesnenin tüm çizim içeriği birebir aynı. Yenileme sonrası Salon 4/4, Yatak odası 8/8, Mutfak 4/4, Banyo 4/4, Ortak giriş 1/1 korundu. K2'de mevcut tek çekirdek korundu; K1'e dönüldü. Masaüstü 1351/1351 px ve mobil 375/375 px genişlik; taşma yok. Geçici viewport kaldırıldı. Kanıt: output/ARKEMX_BIM_Masaustu_2026-10-20.png ve output/ARKEMX_BIM_Mobil_2026-10-20.png.
+
+Açık işler / sonraki adım: boş hücrelere ekleme gerçek oda alanı/kapı/koridor veya yakınlık çözümü değildir. Bu örnekte boş hücreler K1'de bulunduğu için yeni beş mahal K1'e eklendi; işlevsel kat dağılımı ayrıca tasarlanacak. Mevcut eski plandaki çekirdek/mahal çakışmaları bu tur düzeltilmedi. Katlara dağılım, ölçülü oda sınırları ve komşulukları karşılayan plan düzenlemesi ile PDF/DXF/CSV/JSON çıktı içerik kontrolü bekliyor. Ana sayfada BIM Çalışma sürüyor olarak tutuldu; hazır veya resmî teknik onay işareti verilmedi.

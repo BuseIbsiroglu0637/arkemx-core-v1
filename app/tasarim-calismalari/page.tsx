@@ -7,10 +7,12 @@ import { StructuralDesigner } from "../components/StructuralDesigner";
 import { VRExperience } from "../components/VRExperience";
 import { AdvancedPlanEditor } from "../components/AdvancedPlanEditor";
 import { designs } from "../data/platform";
+import { DEMO_ENABLED } from "../lib/demo";
+import { DemoDesignWorkspace } from "../components/DemoDesignWorkspace";
 
 export const metadata: Metadata={title:"Taşıyıcı Sistem Stüdyosu ve 3B Tasarım | ARKEM",description:"V113 mimari geometrisini kullanarak betonarme, prefabrik betonarme, yapısal çelik, hafif çelik ve karma sistemleri ön boyutlandırma düzeyinde karşılaştırın.",alternates:{canonical:"/tasarim-calismalari"}};
 
-export default function Page(){return <main className="inner-page design-page module-workspace-page">
+export default function Page(){if (DEMO_ENABLED) return <DemoDesignWorkspace/>; return <main className="inner-page design-page module-workspace-page">
   <ModuleWorkspaceHeader title="Planınızı ve tasarım seçeneklerini geliştirin" description="Plan ve aks şemasını hazırlayın; ön tasarım seçeneklerini uzmanınıza aktarın. Temsili model ve göstergeler uygulama hesabı değildir." target="plan-editor" />
   <section id="plan-editor" className="plan-editor-section"><div className="section shell"><AdvancedPlanEditor/></div></section>
   <section id="tasiyici-on-tasarim" className="section shell designer-section"><StructuralDesigner/></section>
