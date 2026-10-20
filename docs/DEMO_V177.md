@@ -266,3 +266,13 @@ Tarayıcı: DEMO — Kastamonu Konut üzerinde Kompakt senaryo uygulandı; oran 
 Kanıt: çalışma alanı output/ARKEMX_V83_Matris_Masaustu_2026-10-20.png, output/ARKEMX_V83_Matris_Mobil_2026-10-20.png ve output/ARKEMX_V83_Kartlar_Mobil_2026-10-20.png kaydedilip açılarak incelendi. Test başında yerel sunucu kapalı ve React/Vinext dosyaları eksikti; kilit dosyasıyla npm ci tamamlandı (527 paket), package.json/package-lock değişmedi. Sunucu yalnız 127.0.0.1:5175 adresinde yeniden başlatıldı; sayfa 200 yanıtıyla ve kayıtlı proje verisiyle açıldı. Hata durumunda kalan eski tarayıcı sekmesi yerine çalışan yeni test sekmesi sonuç olarak açık bırakıldı.
 
 Açık işler / sonraki adım: bu çalışma V83 arayüzü ve senaryo uygulama/geri alma doğrulamasıdır; senaryoların mühendislik, enerji veya ruhsat uygunluğu onaylanmadı. Sekizden fazla mahal içeren matrisin tüm kayıtları ayrı listede yönetilir; sekiz mahal sınırı arayüzde belirtilir. Sonraki çalışma aynı programın nesne tabanlı plan aktarımı veya diğer mimari sekmelerin düzenlenmesidir. ARC veya 13 modülün bütünü tamamlandı iddiası yok.
+
+## ARC — gereksiz alanların kaldırılması, 2026-10-20
+
+Dayanak: kullanıcı mimari program ekranındaki büyük tanıtım alanı ve performans kontrollerinin altındaki tekrarlanan aktarım bandını göstererek fazlalıkları kaldırmamızı istedi.
+
+Yapılan iş: demo görünümünde site menüsü ve büyük tanıtım başlığı kaldırıldı; çalışma alanında küçük, tek h1 başlık ve proje adı kaldı. Performans sekmesinde tekrarlanan dört KPI kartı ve koyu sonraki veri aktarımı bandı kaldırıldı. Altı kontrolün değerleri, durumları ve açıklamaları korunup okunur yazı boyutlarına getirildi; teknik satır kodları demo görünümünde gizlendi. Alttaki ana Plan aşamasına devam et düğmesi, program ayarları ve çıktılar korundu. Demo dışı görünüm ve hesap/kayıt mantığı değiştirilmedi.
+
+Doğrulama: TypeScript --noEmit ve üretim/Worker/artifact derlemesi başarılı; diff kontrolü temiz. Gerçek tarayıcıda altı sonuç mevcut, tekrarlanan aktarım bandı yok. Masaüstü sayfa/içerik genişliği 1351/1351 px, mobil 375/375 px; yatay taşma yok. Başlık 26 px. Geçici viewport kaldırıldı. Kanıt: çalışma alanı output/ARKEMX_ARC_Sade_Masaustu_2026-10-20.png ve output/ARKEMX_ARC_Sade_Mobil_2026-10-20.png.
+
+Açık işler / sonraki adım: bu tur arayüz sadeleştirmesidir. Testte mevcut kaydın performans sekmesinde komşuluk %0 görüldü; önceki kayıttaki 3/3 şema sonucuyla fark ayrıca doğrulanacak. Bu değer değiştirilmedi veya başarılı gösterilmedi. Sonraki iş plan aktarımı öncesinde etkin kayıt/şema ilişkisini incelemek. Resmî teknik onay veya modülün bütünü tamamlandı iddiası yok.

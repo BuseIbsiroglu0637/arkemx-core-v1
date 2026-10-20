@@ -25,7 +25,7 @@
 #main-content .arc-demo{background:#f5f8f6;color:#173a40;box-shadow:none;overflow:visible;padding:0;--arc-green:#174d46}
 #main-content .arc-demo :is(h2,h3,p){max-width:none}
 #main-content .arc-demo .arc-demo-title{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 0;background:transparent}
-#main-content .arc-demo .arc-demo-title h2{font-size:26px;line-height:1.35;margin:6px 0;color:#163440}
+#main-content .arc-demo .arc-demo-title h1{font-size:26px!important;line-height:1.35!important;margin:6px 0!important;font-weight:650!important;color:#163440;letter-spacing:normal}
 #main-content .arc-demo .arc-demo-title p,#main-content .arc-demo .arc-demo-next p{font-size:14px;line-height:1.7;color:#59717c;margin:4px 0}
 #main-content .arc-demo .arc-demo-title span{font-size:12px;color:#37675b}
 #main-content .arc-demo :is(.arc-source-details,.arc-program-settings){border:1px solid #cfddd7;border-radius:8px;background:#fff;min-width:0}
@@ -89,7 +89,7 @@
 #main-content .arc-demo .architect-zoning :is(header span,header b,p,button,button b,button small,button strong,.zone-board b,.zone-board small){font-size:13px;line-height:1.6}
 #main-content .arc-demo .architect-kpis :is(span,small){font-size:12px;line-height:1.6}
 @media(max-width:900px){#main-content .arc-demo .arc-room-list{grid-template-columns:1fr}#main-content .arc-demo .architect-controls>.architect-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .arc-demo .architect-zoning{grid-template-columns:1fr}}
-@media(max-width:600px){#main-content .arc-demo .arc-demo-title,#main-content .arc-demo .arc-room-editor>header,#main-content .arc-demo .arc-demo-next{flex-direction:column;align-items:stretch}#main-content .arc-demo .arc-program-summary{grid-template-columns:1fr;gap:8px}#main-content .arc-demo .arc-program-summary article{padding:14px}#main-content .arc-demo .arc-program-summary b{font-size:23px}#main-content .arc-demo .arc-room-editor{padding:14px}#main-content .arc-demo .arc-room-list>article{padding:14px}#main-content .arc-demo .architect-main>header nav button{flex:1 1 42%;padding:9px}#main-content .arc-demo .architect-controls{grid-template-columns:1fr}#main-content .arc-demo .architect-export{grid-template-columns:1fr}#main-content .arc-demo .architect-controls>.architect-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .arc-demo .arc-room-list>article>header{flex-wrap:wrap}#main-content .arc-demo .arc-demo-title h2{font-size:24px}}
+@media(max-width:600px){#main-content .arc-demo .arc-demo-title,#main-content .arc-demo .arc-room-editor>header,#main-content .arc-demo .arc-demo-next{flex-direction:column;align-items:stretch}#main-content .arc-demo .arc-program-summary{grid-template-columns:1fr;gap:8px}#main-content .arc-demo .arc-program-summary article{padding:14px}#main-content .arc-demo .arc-program-summary b{font-size:23px}#main-content .arc-demo .arc-room-editor{padding:14px}#main-content .arc-demo .arc-room-list>article{padding:14px}#main-content .arc-demo .architect-main>header nav button{flex:1 1 42%;padding:9px}#main-content .arc-demo .architect-controls{grid-template-columns:1fr}#main-content .arc-demo .architect-export{grid-template-columns:1fr}#main-content .arc-demo .architect-controls>.architect-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .arc-demo .arc-room-list>article>header{flex-wrap:wrap}#main-content .arc-demo .arc-demo-title h1{font-size:24px!important}}
 #main-content .arc-demo .arc-relationship-editor{padding:22px;color:#173a40}
 #main-content .arc-demo .arc-relationship-editor h2{font-size:21px;line-height:1.4;margin:0 0 6px;color:#173a40}
 #main-content .arc-demo .arc-relationship-editor p{font-size:13px;line-height:1.7;margin:8px 0;color:#59717c}
@@ -199,3 +199,26 @@
 @media(max-width:600px){#main-content .arc-demo .arc-decision-matrix{padding:14px}#main-content .arc-demo .arc-decision-header h2{font-size:22px}#main-content .arc-demo .arc-decision-current,#main-content .arc-demo .arc-decision-relations>header{flex-direction:column;align-items:stretch}#main-content .arc-demo .arc-decision-cards>article{padding:16px}#main-content .arc-demo .arc-decision-cards>article.is-applied{padding:15px}#main-content .arc-demo .arc-matrix-scroll table{min-width:610px}#main-content .arc-demo .arc-matrix-scroll th:first-child{width:110px}#main-content .arc-demo .arc-matrix-scroll-hint{display:block;font-size:12px}}
 #main-content .arc-demo .arc-matrix-scroll:focus-visible{outline:3px solid #75ae94;outline-offset:3px}
 #main-content .arc-demo .arc-decision-matrix :focus-visible{outline:3px solid #548774!important;outline-offset:3px!important;box-shadow:0 0 0 2px white!important}
+
+/* Compact demo workspace: one page title and one main plan handoff. */
+#main-content .architectural-program-page:has(.arc-demo) .architecture-live-section>.section{padding-top:0!important;padding-bottom:0!important}
+#main-content .arc-demo .architect-checks>header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0 0 16px;background:transparent}
+#main-content .arc-demo .architect-checks>header span{font-size:12px;color:#37675b}
+#main-content .arc-demo .architect-checks>header b{display:block;font-size:16px;line-height:1.5;color:#173a40}
+#main-content .arc-demo .architect-checks>header>strong{font-size:14px;color:#174d46;white-space:nowrap}
+#main-content .arc-demo .architect-checks>article{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:start;gap:14px;padding:18px 0;border-bottom:1px solid #d9e3dd;min-width:0}
+#main-content .arc-demo .architect-checks>article>i{display:grid;place-items:center;width:30px;height:30px;font-size:18px;font-style:normal}
+#main-content .arc-demo .architect-checks>article>div>span{display:none}
+#main-content .arc-demo .architect-checks>article b{font-size:14px;line-height:1.6;color:#173a40}
+#main-content .arc-demo .architect-checks>article p{font-size:13px;line-height:1.7;color:#59717c;margin:4px 0 0}
+#main-content .arc-demo .architect-checks>article>strong{font-size:14px;line-height:1.6;color:#173a40;text-align:right}
+@media(max-width:600px){
+#main-content .arc-demo .arc-demo-title h1{font-size:24px!important}
+#main-content .arc-demo .architect-checks{padding:14px}
+#main-content .arc-demo .architect-checks>header{align-items:start}
+#main-content .arc-demo .architect-checks>article{grid-template-columns:30px minmax(0,1fr);gap:8px 12px}
+#main-content .arc-demo .architect-checks>article>strong{grid-column:2;text-align:left}
+}
+#main-content .arc-demo .arc-demo-title h1{font-size:26px!important;line-height:1.35!important;margin:6px 0!important;font-weight:650!important}
+#main-content .architectural-program-page:has(.arc-demo) .architecture-live-section>.section{padding-top:0!important;padding-bottom:0!important}
+@media(max-width:600px){#main-content .arc-demo .arc-demo-title h1{font-size:24px!important}}
