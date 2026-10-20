@@ -276,3 +276,13 @@ Yapılan iş: demo görünümünde site menüsü ve büyük tanıtım başlığ�
 Doğrulama: TypeScript --noEmit ve üretim/Worker/artifact derlemesi başarılı; diff kontrolü temiz. Gerçek tarayıcıda altı sonuç mevcut, tekrarlanan aktarım bandı yok. Masaüstü sayfa/içerik genişliği 1351/1351 px, mobil 375/375 px; yatay taşma yok. Başlık 26 px. Geçici viewport kaldırıldı. Kanıt: çalışma alanı output/ARKEMX_ARC_Sade_Masaustu_2026-10-20.png ve output/ARKEMX_ARC_Sade_Mobil_2026-10-20.png.
 
 Açık işler / sonraki adım: bu tur arayüz sadeleştirmesidir. Testte mevcut kaydın performans sekmesinde komşuluk %0 görüldü; önceki kayıttaki 3/3 şema sonucuyla fark ayrıca doğrulanacak. Bu değer değiştirilmedi veya başarılı gösterilmedi. Sonraki iş plan aktarımı öncesinde etkin kayıt/şema ilişkisini incelemek. Resmî teknik onay veya modülün bütünü tamamlandı iddiası yok.
+
+## Modül merkezi durumları ve BIM başlangıcı — 2026-10-20
+
+Yapılan iş: kullanıcı önceki modülleri hazır durumuna göre işaretleyip sıradakine geçmemizi istedi. Ana sayfada PIR ve ARC Demo hazır, MAS Kavramsal demo hazır; GIS Kısmen doğrulandı olarak güncellendi. Hazır kapsamı test edilmiş demo akışıdır; MAS'ın belgeye dayalı/arsasız senaryoları ve GIS'in canlı sorgu/PDF/DXF incelemesi açıkça bekleyen iş olarak kaldı. Diğer modüller hazır işaretlenmedi.
+
+Dayanak: önceki kayıtlı PIR/GIS/MAS/ARC testleri ve 20 Ekim tarayıcı kontrolü. ARC şemasında mesafe hedefi 3/3 ve gözden geçirilen 0/3 görüldü. Kaynaktaki satisfied = withinTarget && confirmed kuralı nedeniyle performans sekmesindeki %0 değeriyle geometrik 3/3 arasında çelişki yok; önceki açık soru açıklığa kavuştu. İlişkiler kullanıcı adına onaylanmadı.
+
+Doğrulama: ana sayfa kart metinleri ve hazır rozetleri gerçek tarayıcıda görüldü; diff kontrolü temiz. Kanıt output/ARKEMX_Modul_Durumlari_2026-10-20.png. BIM kartından /tasarim-calismalari#plan-editor açıldı; aynı DEMO — Kastamonu Konut projesi, 29.60 × 18.88 m, iki kat ve mevcut plan nesneleri geldi. Bu tur etiket düzenlemesidir; hesap motoru değiştirilmedi.
+
+Açık işler / sonraki adım: BIM ekranında 21 mahal ihtiyacına karşılık mevcut plan nesneleri eski listeyi gösteriyor; Banyo ve Ortak girişin plan nesnelerine kontrollü aktarımı ve katlara dağılımı doğrulanacak. Mevcut elle düzenlenmiş nesneleri ezmeden ARC → BIM devamlılığı ve sade arayüz ele alınacak. BIM/13 modül bütünü tamamlandı veya resmî teknik onay verildi iddiası yok.

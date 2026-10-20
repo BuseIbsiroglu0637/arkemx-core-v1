@@ -5,13 +5,13 @@ import { type ReactNode, type FormEvent, useState } from "react";
 import { useProjectKernel } from "./ProjectKernel";
 import { PROJECT_MODULES } from "../lib/project-graph";
 
-// Evidence from the 2026-10-19 entry checks and recorded browser tests.
+// Evidence: docs/DEMO_V177.md; readiness describes the tested demo scope.
 const defaultCheck = { verified: "Sayfa açılıyor.", pending: "İşlev ve çıktı testleri bekliyor." };
-const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean }> = {
-  GIS: { verified: "Brief aktarımı ve ölçüt kaydı test edildi.", pending: "Canlı parsel ve çıktılar test bekliyor." },
-  MAS: { verified: "Brief/GIS aktarımı, seçim kaydı ve JSON test edildi.", pending: "İmar belgeli ve arsasız senaryoların uçtan uca testi bekliyor." },
-  PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true },
-  ARC: { verified: "Mahal, komşuluk yerleşimi ve JSON/CSV test edildi.", pending: "Ölçülü plan, kat dağılımı ve uzman incelemesi bekliyor." },
+const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean; label?: string }> = {
+  GIS: { label: "Kısmen doğrulandı", verified: "Brief aktarımı, harita katmanları ve KML indirme test edildi.", pending: "Canlı sorgu ve PDF/DXF içerik kontrolü bekliyor." },
+  MAS: { ready: true, label: "Kavramsal demo hazır", verified: "GIS → alternatif seçimi → kayıt/JSON → ARC aktarımı test edildi.", pending: "Belgeli imar ve arsasız senaryolar ayrıca test edilecek." },
+  PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true, label: "Demo hazır" },
+  ARC: { ready: true, label: "Demo hazır", verified: "Mahal düzenleme, yakınlık şeması, senaryolar ve JSON/CSV test edildi.", pending: "Ölçülü plan ve kat dağılımı sonraki BIM aşamasında ele alınacak." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
   LCA: { verified: "Karbon paneli açılıyor.", pending: "Hesap ve çıktılar test bekliyor." },
 };
@@ -54,8 +54,8 @@ export function DemoWorkspace() {
     </section>
     <h2 className="demo-modules-title">Modüller <span>13</span></h2>
     <nav className="demo-module-grid" aria-label="Proje modülleri">{PROJECT_MODULES.map((module, index) => {
-      const check: typeof defaultCheck & { ready?: boolean } = moduleChecks[module.code] ?? defaultCheck;
-      return <Link key={module.id} href={module.route} aria-label={`${module.code} — ${module.label}`} aria-describedby={`check-${module.code}`}><span className="demo-module-code">{String(index + 1).padStart(2, "0")} / {module.code}</span><h2>{module.label}</h2><small className="demo-module-check" id={`check-${module.code}`} title="Son kontrol: 19 Ekim 2026">{check.ready && <span className="demo-check-ready">Hazır</span>}<span className="demo-check-verified">{check.verified}</span>{check.pending && <span className="demo-check-pending">{check.pending}</span>}</small><span className="demo-module-arrow" aria-hidden="true">↗</span></Link>;
+      const check: typeof defaultCheck & { ready?: boolean; label?: string } = moduleChecks[module.code] ?? defaultCheck;
+      return <Link key={module.id} href={module.route} aria-label={`${module.code} — ${module.label}`} aria-describedby={`check-${module.code}`}><span className="demo-module-code">{String(index + 1).padStart(2, "0")} / {module.code}</span><h2>{module.label}</h2><small className="demo-module-check" id={`check-${module.code}`} title="Durum güncellemesi: 20 Ekim 2026">{check.label && <span className={check.ready ? "demo-check-ready" : "demo-check-pending"}>{check.label}</span>}<span className="demo-check-verified">{check.verified}</span>{check.pending && <span className="demo-check-pending">{check.pending}</span>}</small><span className="demo-module-arrow" aria-hidden="true">↗</span></Link>;
     })}</nav>
   </section>;
 }
