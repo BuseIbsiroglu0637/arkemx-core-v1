@@ -12,7 +12,7 @@ const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean; labe
   MAS: { ready: true, label: "Kavramsal demo hazır", verified: "GIS → alternatif seçimi → kayıt/JSON → ARC aktarımı test edildi.", pending: "Belgeli imar ve arsasız senaryolar ayrıca test edilecek." },
   PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true, label: "Demo hazır" },
   ARC: { ready: true, label: "Demo hazır", verified: "Mahal düzenleme, yakınlık şeması, senaryolar ve JSON/CSV test edildi.", pending: "Ölçülü plan ve kat dağılımı sonraki BIM aşamasında ele alınacak." },
-  BIM: { label: "Çalışma sürüyor", verified: "Eksik mahal ekleme, çizimleri koruma, geri alma ve kayıt test edildi.", pending: "Ölçülü yerleşim, kat dağılımı ve teknik çıktılar kontrol edilecek." },
+  BIM: { label: "Çalışma sürüyor", verified: "Mahal aktarımı, düzenleme/geri alma, kat işlemleri, kayıt ve temel çıktılar test edildi.", pending: "Bir mahal–çekirdek çakışması var; ölçülü yerleşim ve kat dağılımı bekliyor." },
   BEP: { verified: "Seçim ve sonuç güncellemesi çalışıyor.", pending: "JSON çıktısı test bekliyor." },
   LCA: { verified: "Karbon paneli açılıyor.", pending: "Hesap ve çıktılar test bekliyor." },
 };

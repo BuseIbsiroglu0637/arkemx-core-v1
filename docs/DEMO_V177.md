@@ -304,3 +304,23 @@ Doğrulama: 6 yeni veri koruma/kapasite/tekrar aktarım/kimlik testi ile 9 MAS-A
 Tarayıcı: DEMO — Kastamonu Konut üzerinde dört Banyo ve bir Ortak giriş eklendi. Aktif K1 nesneleri 17 → 22; geri alınca 17, ileri alınca 22. DOM çizim karşılaştırmasında önceki 17 nesnenin tüm çizim içeriği birebir aynı. Yenileme sonrası Salon 4/4, Yatak odası 8/8, Mutfak 4/4, Banyo 4/4, Ortak giriş 1/1 korundu. K2'de mevcut tek çekirdek korundu; K1'e dönüldü. Masaüstü 1351/1351 px ve mobil 375/375 px genişlik; taşma yok. Geçici viewport kaldırıldı. Kanıt: output/ARKEMX_BIM_Masaustu_2026-10-20.png ve output/ARKEMX_BIM_Mobil_2026-10-20.png.
 
 Açık işler / sonraki adım: boş hücrelere ekleme gerçek oda alanı/kapı/koridor veya yakınlık çözümü değildir. Bu örnekte boş hücreler K1'de bulunduğu için yeni beş mahal K1'e eklendi; işlevsel kat dağılımı ayrıca tasarlanacak. Mevcut eski plandaki çekirdek/mahal çakışmaları bu tur düzeltilmedi. Katlara dağılım, ölçülü oda sınırları ve komşulukları karşılayan plan düzenlemesi ile PDF/DXF/CSV/JSON çıktı içerik kontrolü bekliyor. Ana sayfada BIM Çalışma sürüyor olarak tutuldu; hazır veya resmî teknik onay işareti verilmedi.
+
+## BIM — etkileşim ve çıktı testleri, 2026-10-20
+
+Dayanak: kullanıcı modülü test edip her şeyin yolunda olup olmadığını kontrol etmemizi istedi. Test öncesi arkem-plan-modeli.json indirildi. Başlangıç iki kat, 21 mahal ve iki çekirdekten oluşan 23 nesneydi; K1'de 22, K2'de bir nesne vardı.
+
+Bulgu ve düzeltmeler:
+- Etiket/özellik değişimi Geri geçmişine alınmıyordu. Her alan odaklandığında başlayan düzenleme oturumu tek geçmiş girdisiyle kaydedildi; İleri geçmişi temizlenir. Tarayıcıda TEST — Ortak giriş etiketi düzenlendi, Geri ve İleri ile doğrulandı, başlangıç adı geri getirildi.
+- PDF/DXF geometrisinin Y yönü ekrandaki planı ters gösteriyordu. Editörün aşağı artan satırları yerel metre modelinde yukarı artan koordinatlara dönüştürüldü; kolon, X/Y duvarları ve hücreler aynı dönüşümü kullanır.
+- Yerel plan metre verisi coğrafi dönüşüm yapılmadan WGS84 olarak etiketleniyordu. PDF/DXF/JSON artık Yerel plan / metre; coğrafi dönüşüm yok bilgisini taşır; JSON editör/çıktı Y yönlerini belirtir. Projenin GIS kaynak CRS kaydı değiştirilmedi.
+- PDF, bu modülde bulunmayan A4 rapora yönlendiriyordu; BIM'e özel JSON model notu eklendi. Diğer modüllerin A4 notu varsayılanı korunur.
+- CSV mahal m² toplamı gerçek net mahal alanı değil, aks hücresi alanıydı. Tutarlı beş sütun ve basis alanı ile hesap dayanağı açıklandı.
+- Eski modelde K1'de yatak odası ile çekirdek aynı hücrede. Model değiştirilmeden hücre çakışması sayacı ekran ve PDF notuna eklendi.
+
+Tarayıcı: dört görünüm açıldı, mahal/çekirdek katmanı kapatılıp açıldı (kapalıyken SVG mahal sayısı 0), 35 aks kolonu üretildi ve geri alındı; K1 üst kata kopyalanıp geri alındı (K2 yeniden bir çekirdek), K1 temizlenip geri alındı. Yenileme sonrası 21/21 mahal kaydı korundu. Son JSON ile ilk dosyanın elements/floorCount/baysX/baysY/spanX/spanY alanları birebir eşit; 23 nesne ve tüm özellikler/koordinatlar korundu. Test sonunda K1 ve Mimari görünüm, açık katmanlar bırakıldı. Son konsol kontrolünde hata yok.
+
+Çıktılar: gerçek tarayıcı düğmeleriyle JSON/CSV/DXF/PDF indirildi. JSON şema ve veri geri dönüşü; CSV 21 mahal, eşit beş sütun ve alan dayanağı; DXF 21 mahal poligonu/84 köşe, metre sınırları ve üst sıra yönü doğrulandı. Son PDF tek A3 yatay sayfa, Türkçe gömülü yazı tipi, doğru yerel koordinat ve JSON notu içeriyor. Poppler ile yeniden çizilip açılarak incelendi; çakışan eski nesnelerin etiketi örtüşüyor ve bu durum ekranda/raporda açık. Kanıt output/ARKEMX_BIM_PDF_Kontrol_2026-10-20.png, output/ARKEMX_BIM_Test_2026-10-20.png, output/ARKEMX_BIM_Test_Mobil_2026-10-20.png.
+
+Otomatik kontroller: plan-program-sync (6), plan-geometry (2), teknik çıktı (3), toplam 11/11 başarılı; TypeScript --noEmit ve üretim/Worker/artifact derlemesi başarılı. Mobil 375/375 px, masaüstü 1351 px düzeni incelendi; geçici viewport kaldırıldı. Diff kontrolü temiz.
+
+Açık işler / sonraki adım: bir mahal–çekirdek çakışması bilinçli olarak yerinde bırakıldı; kullanıcı yerleşimiyle çözülmeli. Gerçek mahal alanları, duvar/kapı/koridor, yakınlıkların ölçülü plan üzerinde sağlanması ve işlevsel kat dağılımı tamamlanmadı. Tüm araç kombinasyonları veya mühendislik uygunluğu test edildi iddiası yok. Ana sayfada BIM Çalışma sürüyor ve çakışma notuyla bırakıldı.

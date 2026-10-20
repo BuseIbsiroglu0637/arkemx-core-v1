@@ -7,6 +7,7 @@ export type TechnicalSheetPolyline = { points: TechnicalSheetPoint[]; role?: "pr
 export type TechnicalSheetInput = {
   projectName: string; projectCode: string; module: string; drawingTitle: string;
   drawingSubtitle?: string; revision?: string; status?: string; sheetNo?: string;
+  detailsNote?: string;
   scale?: string; coordinateSystem?: string; preparedBy?: string; checkedBy?: string;
   /** Degrees clockwise from page-up. Omit when north has not been established. */
   northAngleDegrees?: number;
@@ -161,7 +162,7 @@ export async function createCorporateTechnicalPdf(input: TechnicalSheetInput, su
       text(page, label, sx + 33, sy, regular, 9, C.slate, sw - 33); sy -= 19;
     });
   }
-  text(page, "Tam veri, kaynak ve notlar: A4 özet rapor", sx, 192, regular, 8, C.slate, sw);
+  text(page, input.detailsNote ?? "Tam veri, kaynak ve notlar: A4 özet rapor", sx, 192, regular, 8, C.slate, sw);
   page.drawRectangle({ x: 32, y: 65, width: right - 32, height: 99, color: C.pale, borderColor: C.line, borderWidth: .7 });
   text(page, "KAPSAM VE KAYNAK", 46, 144, bold, 8.5, C.copper);
   text(page, clean(input.drawingSubtitle, DISCLAIMER), 46, 126, regular, 9, C.navy, 625, 2);
