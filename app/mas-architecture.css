@@ -143,3 +143,59 @@
 #main-content .arc-demo .v113-plan-board:before{display:none}
 #main-content .arc-demo .v113-exit-node{width:4%;height:auto;aspect-ratio:1;min-width:0;min-height:0;font-size:9px}
 @media(max-width:740px){#main-content .arc-demo .v113-plan-board>article span{display:block;font-size:8px;line-height:1.1}#main-content .arc-demo .v113-plan-board>article b{display:none}#main-content .arc-demo .arc-node-key{display:grid;gap:7px;margin:0;padding:0 14px 14px}#main-content .arc-demo .arc-node-key>div{display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.5}#main-content .arc-demo .arc-node-key dt{color:#37675b;font-weight:650}#main-content .arc-demo .arc-node-key dd{margin:0;color:#526c77}}
+/* V83 demo cards and read-only relationship table. */
+#main-content .arc-demo .arc-decision-matrix{padding:24px;background:#fff;color:#173a40;min-width:0}
+#main-content .arc-demo .arc-decision-header{padding:0;margin-bottom:20px;background:transparent}
+#main-content .arc-demo .arc-decision-header>span{font-size:11px;letter-spacing:.1em;color:#37675b}
+#main-content .arc-demo .arc-decision-header h2{font-size:25px;line-height:1.4;color:#173a40;margin:8px 0}
+#main-content .arc-demo .arc-decision-matrix p{font-size:13px;line-height:1.8;color:#59717c;margin:6px 0}
+#main-content .arc-demo .arc-decision-current{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#edf5ef;padding:16px 18px;border:1px solid #d3e2d8;border-radius:7px;margin-bottom:20px}
+#main-content .arc-demo .arc-decision-current b{font-size:15px;line-height:1.5;color:#174d46}
+#main-content .arc-demo .arc-decision-matrix button{min-height:44px;padding:10px 16px;border:1px solid #174d46;border-radius:5px;background:#174d46;color:#fff;font-size:13px;line-height:1.6;cursor:pointer;white-space:normal}
+#main-content .arc-demo .arc-decision-current button,#main-content .arc-demo .arc-decision-relations>header button{background:white;color:#174d46;flex-shrink:0}
+#main-content .arc-demo .arc-decision-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#main-content .arc-demo .arc-decision-cards>article{display:flex;flex-direction:column;padding:20px;min-width:0;background:#fff;border:1px solid #cfded5;border-radius:8px}
+#main-content .arc-demo .arc-decision-cards>article.is-applied{border:2px solid #174d46;padding:19px;background:#f6faf7}
+#main-content .arc-demo .arc-decision-cards article>header{display:flex;justify-content:space-between;align-items:center;min-height:26px;background:transparent;padding:0}
+#main-content .arc-demo .arc-decision-cards article>header span{font-size:12px;color:#59717c}
+#main-content .arc-demo .arc-decision-cards article>header b{font-size:11px;color:#174d46;background:#dceee1;border-radius:20px;padding:4px 10px}
+#main-content .arc-demo .arc-decision-sketch{height:98px;display:flex;align-items:center;justify-content:center;background:#f3f7f4;border-radius:5px;margin:14px 0}
+#main-content .arc-demo .arc-decision-sketch i{display:block;border:2px solid #548774;background:#dfeee4;max-width:100%}
+#main-content .arc-demo .arc-decision-cards h3{font-size:19px;line-height:1.45;color:#173a40;margin:0 0 6px}
+#main-content .arc-demo .arc-decision-cards article>p{min-height:47px}
+#main-content .arc-demo .arc-decision-cards dl{display:grid;gap:10px;margin:16px 0}
+#main-content .arc-demo .arc-decision-cards dl>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#main-content .arc-demo .arc-decision-cards dt{font-size:13px;color:#59717c;line-height:1.5}
+#main-content .arc-demo .arc-decision-cards dt small{display:block;font-size:11px}
+#main-content .arc-demo .arc-decision-cards dd{font-size:16px;color:#173a40;font-weight:650;margin:0}
+#main-content .arc-demo .arc-decision-cards details{border-top:1px solid #e1e9e3;margin-bottom:16px}
+#main-content .arc-demo .arc-decision-cards summary{padding:12px 0;font-size:12px}
+#main-content .arc-demo .arc-decision-cards article>button{width:100%;margin-top:auto}
+#main-content .arc-demo .arc-decision-matrix .arc-decision-note{font-size:12px;line-height:1.8;margin:14px 0;color:#59717c}
+#main-content .arc-demo .arc-decision-relations{border-top:1px solid #d5e1d9;margin-top:26px;padding-top:22px;min-width:0}
+#main-content .arc-demo .arc-decision-relations>header{display:flex;align-items:center;justify-content:space-between;gap:18px;background:transparent;margin-bottom:16px}
+#main-content .arc-demo .arc-decision-relations h3{font-size:21px;line-height:1.4;color:#173a40;margin:0 0 6px}
+#main-content .arc-demo .arc-matrix-scroll{overflow:auto;max-width:100%;border:1px solid #cadbd0;border-radius:7px}
+#main-content .arc-demo .arc-matrix-scroll table{border-collapse:separate;border-spacing:0;width:100%;min-width:610px;table-layout:fixed;background:white}
+#main-content .arc-demo .arc-matrix-scroll caption{font-size:12px;line-height:1.7;padding:12px;text-align:left;color:#59717c;background:#f5f9f6}
+#main-content .arc-demo .arc-matrix-scroll th,#main-content .arc-demo .arc-matrix-scroll td{padding:12px 8px;height:58px;text-align:center;border-right:1px solid #dce6df;border-bottom:1px solid #dce6df;color:#173a40;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+#main-content .arc-demo .arc-matrix-scroll th{background:#f1f7f3;font-weight:600}
+#main-content .arc-demo .arc-matrix-scroll th:first-child{position:sticky;left:0;z-index:1;width:140px;text-align:left;padding-left:14px;background:#f1f7f3}
+#main-content .arc-demo .arc-matrix-scroll th b{display:block;font-size:12px;color:#37675b}
+#main-content .arc-demo .arc-matrix-scroll th span{display:block;font-size:12px;font-weight:500;margin-top:4px}
+#main-content .arc-demo .arc-matrix-scroll tr:last-child>*{border-bottom:0}
+#main-content .arc-demo .arc-matrix-scroll tr>*:last-child{border-right:0}
+#main-content .arc-demo .arc-matrix-mark{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:34px;min-height:34px;border-radius:5px;font-weight:700;font-size:14px}
+#main-content .arc-demo .arc-matrix-mark.required,#main-content .arc-demo .arc-matrix-legend b.required{background:#dceee1;color:#174d46}
+#main-content .arc-demo .arc-matrix-mark.preferred,#main-content .arc-demo .arc-matrix-legend b.preferred{background:#eff5f0;border:1px solid #b8d0c0;color:#37675b}
+#main-content .arc-demo .arc-matrix-mark abbr{text-decoration:none}
+#main-content .arc-demo .arc-matrix-mark small{font-size:12px}
+#main-content .arc-demo .arc-matrix-self,#main-content .arc-demo .arc-matrix-empty{color:#91a49a;font-size:18px}
+#main-content .arc-demo .arc-matrix-legend{display:flex;flex-wrap:wrap;gap:12px 20px;padding-top:16px;background:transparent}
+#main-content .arc-demo .arc-matrix-legend>span{display:flex;align-items:center;gap:7px;font-size:12px;color:#59717c;line-height:1.6}
+#main-content .arc-demo .arc-matrix-legend b{display:inline-flex;justify-content:center;align-items:center;min-width:28px;height:28px;border-radius:4px;background:#f1f5f2;color:#37675b}
+#main-content .arc-demo .arc-matrix-scroll-hint{display:none}
+@media(max-width:1000px){#main-content .arc-demo .arc-decision-cards{grid-template-columns:1fr}#main-content .arc-demo .arc-decision-cards article>p{min-height:0}#main-content .arc-demo .arc-decision-sketch{height:84px}}
+@media(max-width:600px){#main-content .arc-demo .arc-decision-matrix{padding:14px}#main-content .arc-demo .arc-decision-header h2{font-size:22px}#main-content .arc-demo .arc-decision-current,#main-content .arc-demo .arc-decision-relations>header{flex-direction:column;align-items:stretch}#main-content .arc-demo .arc-decision-cards>article{padding:16px}#main-content .arc-demo .arc-decision-cards>article.is-applied{padding:15px}#main-content .arc-demo .arc-matrix-scroll table{min-width:610px}#main-content .arc-demo .arc-matrix-scroll th:first-child{width:110px}#main-content .arc-demo .arc-matrix-scroll-hint{display:block;font-size:12px}}
+#main-content .arc-demo .arc-matrix-scroll:focus-visible{outline:3px solid #75ae94;outline-offset:3px}
+#main-content .arc-demo .arc-decision-matrix :focus-visible{outline:3px solid #548774!important;outline-offset:3px!important;box-shadow:0 0 0 2px white!important}
