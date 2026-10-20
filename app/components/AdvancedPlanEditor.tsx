@@ -6,6 +6,7 @@ import { createCorporateTechnicalPdf } from "../lib/technical-sheet";
 import Link from "next/link";
 import { DEMO_ENABLED } from "../lib/demo";
 import { planProgramSync } from "../lib/plan-program-sync";
+import { planFloorLayout } from "../lib/plan-floor-layout";
 import { planCellBounds, planCellConflicts, PLAN_LOCAL_CRS } from "../lib/plan-geometry";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
@@ -394,6 +395,13 @@ function ScopedPlanEditor() {
 
   const conflictingCells = planCellConflicts(elements);
   const programSync = planProgramSync(project.modules["architectural-program"], elements, { floors: floorCount, x: baysX, y: baysY });
+  const floorLayout = planFloorLayout(elements, programSync.summary, { floors: floorCount, x: baysX, y: baysY });
+  const currentFloors = Array.from({ length: floorCount }, (_, i) => ({ level: i + 1, rooms: elements.filter(e => e.type === "space" && e.level === i + 1).length }));
+  const applyFloorLayout = () => {
+    if (!loaded || !programSync.valid || !floorLayout.valid || !floorLayout.moved) return;
+    commit(floorLayout.elements, "Kat dağılımı uygulandı; çekirdekler ve mahal özellikleri korundu");
+    setSelectedId(null); setLevel(1); setView("architectural");
+  };
   const addMissingRooms = () => {
     if (!loaded || !programSync.canApply) return;
     commit([...elements, ...programSync.additions], "Eksik mahaller boş hücrelere eklendi; mevcut nesneler korundu");
@@ -410,7 +418,8 @@ function ScopedPlanEditor() {
   return <section className={`advanced-plan-editor cad-plan-editor${DEMO_ENABLED ? " bim-demo" : ""}`} data-testid="advanced-plan-editor">
     {!DEMO_ENABLED && <ProjectKernelBar module="PARAMETRIC PLAN AUTHORING" confidence="Konsept BIM şeması" />}
     {DEMO_ENABLED ? <header className="bim-heading"><span>05 / BIM</span><h1>Plan ve aks modeli</h1><p>{project.name} · Mahalleri yerleştirin, katları ve aksları düzenleyin.</p><small role="status">{status}</small></header> : <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>}
-    {DEMO_ENABLED && <section className="bim-program" aria-label="Mimari program aktarımı"><header><div><h2>Mimari program → plan</h2><p>Eksik mahaller boş aks hücrelerine eklenir. Mevcut çizimler taşınmaz veya silinmez.</p></div><button disabled={!loaded || !programSync.canApply} onClick={addMissingRooms}>{programSync.missing ? `Eksik ${programSync.missing} mahali ekle` : "Mahaller planda"}</button></header>{!programSync.valid ? <p>Geçerli ve aktarılabilir mimari program bekleniyor.</p> : <><ul>{programSync.summary.map(room => <li key={room.id}><b>{room.name}</b><span>{room.placed}/{room.count} planda{room.extra > 0 ? " · Fazla nesne var" : ""}</span></li>)}</ul>{programSync.missing > programSync.free && <p role="alert">Boş hücre sayısı yetersiz. Kat ve aks düzenini gözden geçirin.</p>}</>}{conflictingCells > 0 && <p role="alert">{conflictingCells} hücrede mahal, çekirdek veya boşluk üst üste geliyor. Yerleşimi gözden geçirin.</p>}<p>Hücreler gerçek oda alanı değildir; yakınlıklar, kapılar ve geçişler bu işlemle doğrulanmaz. Eklemeyi Geri düğmesiyle geri alabilirsiniz.</p></section>}
+    {DEMO_ENABLED && <section className="bim-program" aria-label="Mimari program aktarımı"><header><div><h2>Mimari program → plan</h2><p>Eksik mahaller boş aks hücrelerine eklenir. Mevcut çizimler taşınmaz veya silinmez.</p></div><button disabled={!loaded || !programSync.canApply} onClick={addMissingRooms}>{programSync.missing ? `Eksik ${programSync.missing} mahali ekle` : "Mahaller planda"}</button></header>{!programSync.valid ? <p>Geçerli ve aktarılabilir mimari program bekleniyor.</p> : <><ul>{programSync.summary.map(room => <li key={room.id}><b>{room.name}</b><span>{room.placed}/{room.count} planda{room.extra > 0 ? " · Fazla nesne var" : ""}</span></li>)}</ul>{programSync.missing > programSync.free && <p role="alert">Boş hücre sayısı yetersiz. Kat ve aks düzenini gözden geçirin.</p>}</>}{conflictingCells > 0 ? <p role="alert">{conflictingCells} hücrede mahal, çekirdek veya boşluk üst üste geliyor. Yerleşimi gözden geçirin.</p> : loaded && <p>Hücre çakışması bulunmadı.</p>}<p>Hücreler gerçek oda alanı değildir; yakınlıklar, kapılar ve geçişler bu işlemle doğrulanmaz. Eklemeyi Geri düğmesiyle geri alabilirsiniz.</p></section>}
+    {DEMO_ENABLED && <section className="bim-program bim-layout" aria-label="Kat dağılımı"><header><div><h2>Katlara dağılım</h2><p>Mevcut: {currentFloors.map(f => `K${f.level}: ${f.rooms} mahal`).join(" · ")}</p></div><button disabled={!loaded || !programSync.valid || !floorLayout.valid || !floorLayout.moved} onClick={applyFloorLayout}>{floorLayout.moved ? "Dağılım taslağını uygula" : "Dağılım yerinde"}</button></header>{floorLayout.valid ? <><p>Taslak: {floorLayout.floors.map(f => `K${f.level}: ${f.rooms} mahal`).join(" · ")} · {floorLayout.moved} mahalin konumu değişecek.</p><p>{floorLayout.reason}</p></> : <p>{floorLayout.reason}</p>}<p>Bu adet dağılımı bir taslaktır. Oda alanları, yakınlıklar ve katlar arası erişim ayrıca düzenlenir. Geri ile önceki yerleşime dönebilirsiniz.</p></section>}
     <div className="cad-editor-app">
       <header className="cad-topbar"><div className="cad-project-id"><span>ARKEM / CONCEPT BIM</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>JSON indir</button></div></header>
       <div className="cad-editor-grid">
