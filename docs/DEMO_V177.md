@@ -286,3 +286,7 @@ Dayanak: önceki kayıtlı PIR/GIS/MAS/ARC testleri ve 20 Ekim tarayıcı kontro
 Doğrulama: ana sayfa kart metinleri ve hazır rozetleri gerçek tarayıcıda görüldü; diff kontrolü temiz. Kanıt output/ARKEMX_Modul_Durumlari_2026-10-20.png. BIM kartından /tasarim-calismalari#plan-editor açıldı; aynı DEMO — Kastamonu Konut projesi, 29.60 × 18.88 m, iki kat ve mevcut plan nesneleri geldi. Bu tur etiket düzenlemesidir; hesap motoru değiştirilmedi.
 
 Açık işler / sonraki adım: BIM ekranında 21 mahal ihtiyacına karşılık mevcut plan nesneleri eski listeyi gösteriyor; Banyo ve Ortak girişin plan nesnelerine kontrollü aktarımı ve katlara dağılımı doğrulanacak. Mevcut elle düzenlenmiş nesneleri ezmeden ARC → BIM devamlılığı ve sade arayüz ele alınacak. BIM/13 modül bütünü tamamlandı veya resmî teknik onay verildi iddiası yok.
+
+## GIS demo hazır etiketi — 2026-10-20
+
+Kullanıcı açıkça Parsel & bağlam kartının da hazır işaretlenmesini istedi. GIS kartı Demo hazır olarak güncellendi. Bu bir kullanıcı kararıdır; yeni test sonucu değildir. Daha önce doğrulanan brief/harita/KML notu ve bekleyen canlı sorgu/PDF/DXF içerik kontrolü notu korundu. Sonraki adım açık kontrolleri tamamlamak; resmî teknik onay anlamına gelmez.

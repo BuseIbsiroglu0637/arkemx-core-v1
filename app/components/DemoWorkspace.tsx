@@ -8,7 +8,7 @@ import { PROJECT_MODULES } from "../lib/project-graph";
 // Evidence: docs/DEMO_V177.md; readiness describes the tested demo scope.
 const defaultCheck = { verified: "Sayfa açılıyor.", pending: "İşlev ve çıktı testleri bekliyor." };
 const moduleChecks: Record<string, typeof defaultCheck & { ready?: boolean; label?: string }> = {
-  GIS: { label: "Kısmen doğrulandı", verified: "Brief aktarımı, harita katmanları ve KML indirme test edildi.", pending: "Canlı sorgu ve PDF/DXF içerik kontrolü bekliyor." },
+  GIS: { ready: true, label: "Demo hazır", verified: "Brief aktarımı, harita katmanları ve KML indirme test edildi.", pending: "Canlı sorgu ve PDF/DXF içerik kontrolü bekliyor." },
   MAS: { ready: true, label: "Kavramsal demo hazır", verified: "GIS → alternatif seçimi → kayıt/JSON → ARC aktarımı test edildi.", pending: "Belgeli imar ve arsasız senaryolar ayrıca test edilecek." },
   PIR: { verified: "Demo akışı ve örnek çıktılar doğrulandı.", pending: "", ready: true, label: "Demo hazır" },
   ARC: { ready: true, label: "Demo hazır", verified: "Mahal düzenleme, yakınlık şeması, senaryolar ve JSON/CSV test edildi.", pending: "Ölçülü plan ve kat dağılımı sonraki BIM aşamasında ele alınacak." },
