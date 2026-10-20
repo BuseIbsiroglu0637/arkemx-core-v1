@@ -14,6 +14,7 @@ export type TechnicalSheetInput = {
   polylines: TechnicalSheetPolyline[]; metrics?: Array<[string, string]>; notes?: string[];
   legend?: Array<[string, "primary" | "secondary" | "grid" | "warning"]>;
   coordinates?: Array<[string, string, string]>;
+  labels?: {x:number;y:number;width:number;lines:string[]}[];
 };
 export type TechnicalSheetAssets = { regularFont: Uint8Array; boldFont: Uint8Array; logo: Uint8Array };
 const C = { navy: rgb(.035, .13, .18), copper: rgb(.65, .32, .16), slate: rgb(.29, .37, .41), line: rgb(.76, .81, .81), pale: rgb(.94, .96, .95), white: rgb(1, 1, 1), grid: rgb(.70, .78, .79), warning: rgb(.70, .21, .18) };
@@ -108,6 +109,14 @@ function geometryPlot(page: PDFPage, input: TechnicalSheetInput, box: Box, regul
       if (!point.label) return;
       const q = mapped[i]; page.drawCircle({ x: q.x, y: q.y, size: 2.3, color: C.white, borderColor: color, borderWidth: .8 });
       text(page, point.label, q.x + 5, q.y + 5, bold, 8, C.navy, 80);
+    });
+  });
+  (input.labels ?? []).forEach(label=>{
+    const q=map(label),maxWidth=Math.max(10,label.width*factor-4);
+    label.lines.forEach((line,i)=>{
+      const font=i===0?bold:regular,size=i===0?7:Math.min(6,maxWidth*.98/Math.max(1,font.widthOfTextAtSize(line,1)));
+      const fitted=bounded(line,font,size,maxWidth,1)[0]??"";
+      page.drawText(fitted,{x:q.x-font.widthOfTextAtSize(fitted,size)/2,y:q.y+8-i*9,font,size,color:C.navy});
     });
   });
   // Never invent a north direction for non-georeferenced module drawings.

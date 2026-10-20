@@ -273,6 +273,7 @@ export function createLayeredDxf(input: {
   width: number;
   depth: number;
   polylines?: DxfPolyline[];
+  labels?: {x:number;y:number;width:number;lines:string[]}[];
   grid?: { baysX: number; baysY: number };
   notes?: string[];
   sheet?: DxfSheetMeta;
@@ -488,6 +489,9 @@ export function createLayeredDxf(input: {
   fittedText(logoX + logoW * 1.52, frameTop - brandHeight * .48, textHeight * 1.35, "ARKEM", titleInnerWidth - logoW * 1.52, "ARKEM_LOGO", 0, "ARKEM_SANS_BOLD", textHeight * .8);
   fittedText(logoX + logoW * 1.54, brandBottom + brandHeight * .18, textHeight * .48, "YAPI SISTEMLERI / ARKEMX", titleInnerWidth - logoW * 1.54, "ARKEM_LOGO");
 
+  (input.labels ?? []).forEach(label=>label.lines.forEach((value,i)=>{
+    fittedText(label.x-label.width/2+.1,label.y+textHeight*.7-i*textHeight*.95,textHeight*.7,value,Math.max(.2,label.width-.2),"NOKTA_YAZI",0,"ARKEM_SANS");
+  }));
   const labelHeight = 2.5 * paperUnit;
   const valueHeight = 3.5 * paperUnit;
   fittedText(titleX + innerPad, brandBottom - innerPad * 1.1, labelHeight, "PROJE", titleInnerWidth, "ARKEM_BILGI", 0, "ARKEM_SANS_BOLD");

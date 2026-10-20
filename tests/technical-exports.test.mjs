@@ -26,6 +26,13 @@ function records(dxf) {
   for (let i = 0; i < lines.length; i += 2) { const code = Number(lines[i]); const value = lines[i + 1]; if (code === 0) { entity = { type: value }; result.push(entity); } else if (entity) entity[code] = value; }
   return result;
 }
+test("Room labels use bounded local annotations without adding geometry vertices",()=>{
+  const dxf=createLayeredDxf({title:"Measured room",width:30,depth:20,polylines:[{layer:"MAHAL",points:[{x:0,y:0},{x:4,y:0},{x:4,y:4},{x:0,y:4}]}],
+    labels:[{x:2,y:2,width:4,lines:["Yatak odası","4.00×4.00 m","16.0 m²"]}]});
+  const r=records(dxf),labels=r.filter(e=>e.type==="TEXT"&&e[8]==="NOKTA_YAZI");
+  assert.equal(labels.length,3);assert.ok(labels.every(e=>Number(e[10])>0&&Number(e[10])<4));
+  assert.equal(r.filter(e=>e.type==="VERTEX"&&e[8]==="MAHAL").length,4);
+});
 test("DXF preserves signed metre model coordinates and enforces readable paper typography", () => {
   for (const multiplier of [.1, 1, 100]) {
     const poly = input.polylines[0].points.map(p => ({ x: p.x * multiplier, y: p.y * multiplier }));

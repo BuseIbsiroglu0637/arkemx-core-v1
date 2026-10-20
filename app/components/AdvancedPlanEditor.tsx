@@ -7,6 +7,9 @@ import Link from "next/link";
 import { DEMO_ENABLED } from "../lib/demo";
 import { planProgramSync } from "../lib/plan-program-sync";
 import { planFloorLayout } from "../lib/plan-floor-layout";
+import { createMeasuredPlan, measuredCurrent, type RoomGeometry, type CorridorGeometry } from "../lib/measured-plan";
+import { MeasuredRoom, MeasuredCorridor } from "./MeasuredPlanLayer";
+import { MeasuredCoreDoor } from "./MeasuredCoreDoor";
 import { planCellBounds, planCellConflicts, PLAN_LOCAL_CRS } from "../lib/plan-geometry";
 import { ProjectKernelBar, useProjectKernel } from "./ProjectKernel";
 
@@ -24,6 +27,7 @@ type PlanElement = {
   fire: string;
   section: string;
   sourceSpaceId?: string;
+  roomWidth?: number; doorWidth?: number; roomGeometry?: RoomGeometry; corridorGeometry?: CorridorGeometry;
 };
 
 const toolMeta: Record<Tool, { code: string; label: string; hint: string }> = {
@@ -63,6 +67,7 @@ function ScopedPlanEditor() {
   const [baysY, setBaysY] = useState(5);
   const [spanX, setSpanX] = useState(4.5);
   const [spanY, setSpanY] = useState(4.2);
+  const [corridorWidth, setCorridorWidth] = useState(1.2);
   const [orientation, setOrientation] = useState<"x" | "y">("x");
   const [elements, setElements] = useState<PlanElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -75,7 +80,7 @@ function ScopedPlanEditor() {
     if (!hydrated || transferApplied.current) return;
     const timer = window.setTimeout(() => {
     transferApplied.current = true;
-    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; elements: PlanElement[] }> | undefined;
+    const saved = project.modules["plan-editor"] as Partial<{ level: number; floorCount: number; baysX: number; baysY: number; spanX: number; spanY: number; corridorWidth: number; elements: PlanElement[] }> | undefined;
     if (saved) {
       if (typeof saved.level === "number") setLevel(saved.level);
       if (typeof saved.floorCount === "number") setFloorCount(saved.floorCount);
@@ -83,6 +88,7 @@ function ScopedPlanEditor() {
       if (typeof saved.baysY === "number") setBaysY(saved.baysY);
       if (typeof saved.spanX === "number") setSpanX(saved.spanX);
       if (typeof saved.spanY === "number") setSpanY(saved.spanY);
+      if (typeof saved.corridorWidth === "number") setCorridorWidth(saved.corridorWidth);
       if (Array.isArray(saved.elements)) setElements(saved.elements);
       setStatus("Kayıtlı plan ve nesneler otomatik açıldı");
       setLoaded(true);
@@ -116,6 +122,10 @@ function ScopedPlanEditor() {
   const cellW = spanX * scale;
   const cellH = spanY * scale;
 
+  const measuredGrid = useMemo(() => ({ floors: floorCount, baysX, baysY, spanX, spanY, corridorWidth }), [floorCount, baysX, baysY, spanX, spanY, corridorWidth]);
+  const measuredProposal = useMemo(() => createMeasuredPlan(elements, project.modules["architectural-program"], measuredGrid), [elements, project.modules, measuredGrid]);
+  const measuredReady = measuredCurrent(elements, project.modules["architectural-program"], measuredGrid);
+  const hasMeasured = elements.some(e => e.roomGeometry);
   const metrics = useMemo(() => {
     const floorArea = totalWidth * totalDepth;
     const columns = visible.filter((element) => element.type === "column");
@@ -129,7 +139,7 @@ function ScopedPlanEditor() {
     const coreArea = cores.length * spanX * spanY;
     const loadArea = loads.length * spanX * spanY;
     const totalLiveLoad = loads.reduce((sum, load) => sum + load.load * spanX * spanY, 0);
-    const massPoints = [...rooms, ...loads].map((element) => ({ x: (element.x + .5) * spanX, y: (element.y + .5) * spanY, weight: element.type === "load" ? Math.max(element.load, 1) : 1 }));
+    const massPoints = [...rooms, ...loads].map((element) => ({ x: measuredReady && element.roomGeometry ? element.roomGeometry.x+element.roomGeometry.width/2 : (element.x + .5) * spanX, y: measuredReady && element.roomGeometry ? element.roomGeometry.y+element.roomGeometry.depth/2 : (element.y + .5) * spanY, weight: element.type === "load" ? Math.max(element.load, 1) : 1 }));
     const massWeight = massPoints.reduce((sum, point) => sum + point.weight, 0);
     const massCenter = massPoints.length ? {
       x: massPoints.reduce((sum, point) => sum + point.x * point.weight, 0) / massWeight,
@@ -150,13 +160,13 @@ function ScopedPlanEditor() {
     } : { x: totalWidth / 2, y: totalDepth / 2 };
     const eccentricity = Math.hypot(massCenter.x - rigidityCenter.x, massCenter.y - rigidityCenter.y);
     const eccentricityRatio = eccentricity / Math.max(totalWidth, totalDepth) * 100;
-    return { floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, eccentricity, eccentricityRatio };
-  }, [spanX, spanY, totalDepth, totalWidth, visible]);
+    return { roomArea: measuredReady ? rooms.reduce((sum, e) => sum + (e.roomGeometry?.area ?? 0), 0) : rooms.length * spanX * spanY, floorArea, columns: columns.length, walls: walls.length, rooms: rooms.length, cores: cores.length, openings: openings.length, wallLength, openingArea, openingRatio: openingArea / Math.max(floorArea, 1) * 100, coreArea, loadArea, totalLiveLoad, massCenter, rigidityCenter, eccentricity, eccentricityRatio };
+  }, [measuredReady, spanX, spanY, totalDepth, totalWidth, visible]);
 
   useEffect(() => {
     if (!loaded) return;
-    patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, elements, metrics, status: "concept-plan" });
-  }, [loaded, baysX, baysY, elements, floorCount, level, metrics, patchModule, spanX, spanY]);
+    patchModule("plan-editor", { level, floorCount, baysX, baysY, spanX, spanY, corridorWidth, elements, metrics, measurementNeedsReview: hasMeasured && !measuredReady, status: "concept-plan" });
+  }, [loaded, hasMeasured, measuredReady, baysX, baysY, corridorWidth, elements, floorCount, level, metrics, patchModule, spanX, spanY]);
 
   const commit = (next: PlanElement[], message: string) => {
     setHistory((current) => [...current.slice(-29), elements]);
@@ -297,14 +307,35 @@ function ScopedPlanEditor() {
     importUpstream();
   }, [hydrated, importUpstream, project.experience.autoHandoff, project.modules]);
 
-  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.0", units: "m", coordinateSystem: PLAN_LOCAL_CRS, editorYAxis: "down", exportYAxis: "up", floorCount, baysX, baysY, spanX, spanY, elements, metrics }, null, 2), "application/json");
-  const exportCsv = () => downloadTextFile("arkem-plan-metraj.csv", `type,count,quantity,unit,basis\ncolumns,${metrics.columns},${metrics.columns},each,object_count\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m,grid_span_length\nrooms,${metrics.rooms},${(metrics.rooms * spanX * spanY).toFixed(2)},m2,grid_cell_area_not_net_room_area\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2,grid_cell_area\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2,grid_cell_area\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN,load_times_grid_cell_area`, "text/csv;charset=utf-8");
+  const exportJson = () => downloadTextFile("arkem-plan-modeli.json", JSON.stringify({ schema: "ARKEM-PLAN/1.0", units: "m", coordinateSystem: PLAN_LOCAL_CRS, editorYAxis: "down", exportYAxis: "up", floorCount, baysX, baysY, spanX, spanY, corridorWidth, measuredReady, measurementSchema: hasMeasured ? "ARKEM-MEASURED-PLAN/1.0" : undefined, elements, metrics }, null, 2), "application/json");
+  const exportCsv = () => downloadTextFile("arkem-plan-metraj.csv", `type,count,quantity,unit,basis\ncolumns,${metrics.columns},${metrics.columns},each,object_count\nwalls,${metrics.walls},${metrics.wallLength.toFixed(2)},m,grid_span_length\nrooms,${metrics.rooms},${metrics.roomArea.toFixed(2)},m2,${measuredReady ? "programme_net_area" : "grid_cell_area_not_net_room_area"}\ncores,${metrics.cores},${metrics.coreArea.toFixed(2)},m2,grid_cell_area\nopenings,${metrics.openings},${metrics.openingArea.toFixed(2)},m2,grid_cell_area\nload_zones,${visible.filter((element) => element.type === "load").length},${metrics.totalLiveLoad.toFixed(2)},kN,load_times_grid_cell_area`, "text/csv;charset=utf-8");
   const buildPlanPolylines = () => {
     const polylines: DxfPolyline[] = [{
       layer: "ON_YAPI",
       points: [{ x: 0, y: 0 }, { x: totalWidth, y: 0 }, { x: totalWidth, y: totalDepth }, { x: 0, y: totalDepth }],
     }];
     visible.forEach((element) => {
+      if (element.roomGeometry && measuredReady) {
+        const r=element.roomGeometry,left=r.x,right=r.x+r.width,bottom=totalDepth-r.y-r.depth,top=totalDepth-r.y;
+        const dl=(left+right-r.doorWidth)/2,dr=dl+r.doorWidth,dy=r.side==="bottom"?bottom:top;
+        const points=r.side==="bottom"?[{x:dl,y:bottom,label:undefined},{x:left,y:bottom},{x:left,y:top},{x:right,y:top},{x:right,y:bottom},{x:dr,y:bottom}]:
+          [{x:dr,y:top,label:undefined},{x:right,y:top},{x:right,y:bottom},{x:left,y:bottom},{x:left,y:top},{x:dl,y:top}];
+        polylines.push({layer:"MAHAL",closed:false,points});
+        const sign=r.side==="bottom"?1:-1;
+        polylines.push({layer:"KAPI",closed:false,points:[{x:dl,y:dy},{x:dl,y:dy+sign*r.doorWidth}]});
+        polylines.push({layer:"KAPI",closed:false,points:Array.from({length:13},(_,i)=>({x:dl+r.doorWidth*Math.sin(i*Math.PI/24),y:dy+sign*r.doorWidth*Math.cos(i*Math.PI/24)}))});
+        polylines.push({layer:"BAGLANTI",closed:false,points:r.route.map(p=>({x:p.x,y:totalDepth-p.y}))});
+        return;
+      }
+      if (element.corridorGeometry && measuredReady) {
+        const c=element.corridorGeometry;
+        polylines.push({layer:"KORIDOR",points:[{x:c.x,y:totalDepth-c.y-c.depth},{x:c.x+c.width,y:totalDepth-c.y-c.depth},{x:c.x+c.width,y:totalDepth-c.y},{x:c.x,y:totalDepth-c.y}]});
+        const left=element.x*spanX,right=left+spanX,bottom=totalDepth-c.y,top=bottom+spanY,dl=c.doorX-c.doorWidth/2,dr=c.doorX+c.doorWidth/2;
+        polylines.push({layer:"CEKIRDEK",closed:false,points:[{x:dl,y:bottom,label:undefined},{x:left,y:bottom},{x:left,y:top},{x:right,y:top},{x:right,y:bottom},{x:dr,y:bottom}]});
+        polylines.push({layer:"KAPI",closed:false,points:[{x:dl,y:bottom},{x:dl,y:bottom+c.doorWidth}]});
+        polylines.push({layer:"KAPI",closed:false,points:Array.from({length:13},(_,i)=>({x:dl+c.doorWidth*Math.sin(i*Math.PI/24),y:bottom+c.doorWidth*Math.cos(i*Math.PI/24)}))});
+        return;
+      }
       const x = element.x * spanX;
       const y = totalDepth - element.y * spanY;
       const layer = element.type === "column" ? "KOLON" : element.type === "wall" ? "PERDE" : element.type === "space" ? "MAHAL" : element.type === "core" ? "CEKIRDEK" : element.type === "opening" ? "BOSLUK" : "YAZI";
@@ -324,6 +355,14 @@ function ScopedPlanEditor() {
     });
     return polylines;
   };
+  const measuredLabels = measuredReady ? visible.flatMap(e=>{
+    if(e.roomGeometry) {
+      const r=e.roomGeometry;
+      return [{x:r.x+r.width/2,y:totalDepth-r.y-r.depth/2,width:r.width,lines:[e.label,r.width.toFixed(2)+"×"+r.depth.toFixed(2),r.area.toFixed(1)+" m²"]}];
+    }
+    if(e.type==="core")return [{x:(e.x+.5)*spanX,y:totalDepth-(e.y+.5)*spanY,width:spanX,lines:["Çekirdek"]}];
+    return [];
+  }) : [];
   const exportDxf = () => {
     const dxf = createLayeredDxf({
       title: `ARKEM KAT PLANI / K${level}`,
@@ -331,6 +370,7 @@ function ScopedPlanEditor() {
       depth: totalDepth,
       grid: { baysX, baysY },
       polylines: buildPlanPolylines(),
+      labels: measuredLabels,
       notes: [`KAT: K${level}`, `${visible.length} NESNE / ${metrics.columns} KOLON / ${metrics.walls} PERDE-DUVAR`],
       sheet: {
         projectName: project.name,
@@ -350,7 +390,7 @@ function ScopedPlanEditor() {
     setStatus(`K${level} kurumsal antetli CAD paftası oluşturuldu`);
   };
   const exportPdf = async () => {
-    const roleByLayer = (layer: string) => layer === "ON_YAPI" || layer === "KOLON" || layer === "PERDE"
+    const roleByLayer = (layer: string) => layer === "BAGLANTI" || layer === "KORIDOR" ? "grid" as const : layer === "ON_YAPI" || layer === "KOLON" || layer === "PERDE"
       ? "primary" as const
       : layer === "BOSLUK"
         ? "warning" as const
@@ -361,7 +401,7 @@ function ScopedPlanEditor() {
       module: "ARKEMX / PARAMETRIK PLAN",
       drawingTitle: `K${level} Mimari ve Taşıyıcı Kurgu Planı`,
       drawingSubtitle: `${baysX} × ${baysY} aks / ${visible.length} nesne / ${view} görünümü`,
-      detailsNote: "Tam model: JSON çıktısı. Hücreler net oda alanı değildir.",
+      detailsNote: measuredReady ? "Net alanlar programdan. Duvar kalınlığı modellenmedi." : "Tam model: JSON çıktısı. Hücreler net oda alanı değildir.",
       revision: project.revision,
       status: "Kavramsal BIM şeması",
       sheetNo: `ARC-${String(level).padStart(3, "0")}`,
@@ -372,7 +412,8 @@ function ScopedPlanEditor() {
         closed: polyline.closed,
         role: roleByLayer(polyline.layer),
       })),
-      metrics: [
+      labels: measuredLabels,
+      metrics: [...(measuredReady ? [["Program net alanı", metrics.roomArea.toFixed(1)+" m²"], ["Oda kapıları", metrics.rooms+" bağlantı"]] as [string,string][] : []),
         ["Kat alanı", `${metrics.floorArea.toFixed(1)} m²`],
         ["Aks düzeni", `${baysX} × ${baysY}`],
         ["Aks açıklığı", `${spanX.toFixed(2)} × ${spanY.toFixed(2)} m`],
@@ -402,6 +443,11 @@ function ScopedPlanEditor() {
     commit(floorLayout.elements, "Kat dağılımı uygulandı; çekirdekler ve mahal özellikleri korundu");
     setSelectedId(null); setLevel(1); setView("architectural");
   };
+  const applyMeasured = () => {
+    if (!loaded || !measuredProposal.valid) return;
+    commit(measuredProposal.elements, "Oda ölçüleri, kapılar ve koridor bağlantıları uygulandı");
+    setTool("select"); setSelectedId(null); setView("architectural");
+  };
   const addMissingRooms = () => {
     if (!loaded || !programSync.canApply) return;
     commit([...elements, ...programSync.additions], "Eksik mahaller boş hücrelere eklendi; mevcut nesneler korundu");
@@ -420,19 +466,29 @@ function ScopedPlanEditor() {
     {DEMO_ENABLED ? <header className="bim-heading"><span>05 / BIM</span><h1>Plan ve aks modeli</h1><p>{project.name} · Mahalleri yerleştirin, katları ve aksları düzenleyin.</p><small role="status">{status}</small></header> : <div className="plan-editor-head"><div><p className="eyebrow light">Arkem Plan & Taşıyıcı Kurgu Editörü</p><h2>Aksları tanımlayın.<br/><em>Nesne tabanlı plan üretin.</em></h2></div><p>Kolon, perde, çekirdek, mahal, döşeme boşluğu ve yük bölgelerini kat bazında yönetin; kütle–rijitlik merkezlerini izleyin ve açık formatta teknik çıktı alın.</p></div>}
     {DEMO_ENABLED && <section className="bim-program" aria-label="Mimari program aktarımı"><header><div><h2>Mimari program → plan</h2><p>Eksik mahaller boş aks hücrelerine eklenir. Mevcut çizimler taşınmaz veya silinmez.</p></div><button disabled={!loaded || !programSync.canApply} onClick={addMissingRooms}>{programSync.missing ? `Eksik ${programSync.missing} mahali ekle` : "Mahaller planda"}</button></header>{!programSync.valid ? <p>Geçerli ve aktarılabilir mimari program bekleniyor.</p> : <><ul>{programSync.summary.map(room => <li key={room.id}><b>{room.name}</b><span>{room.placed}/{room.count} planda{room.extra > 0 ? " · Fazla nesne var" : ""}</span></li>)}</ul>{programSync.missing > programSync.free && <p role="alert">Boş hücre sayısı yetersiz. Kat ve aks düzenini gözden geçirin.</p>}</>}{conflictingCells > 0 ? <p role="alert">{conflictingCells} hücrede mahal, çekirdek veya boşluk üst üste geliyor. Yerleşimi gözden geçirin.</p> : loaded && <p>Hücre çakışması bulunmadı.</p>}<p>Hücreler gerçek oda alanı değildir; yakınlıklar, kapılar ve geçişler bu işlemle doğrulanmaz. Eklemeyi Geri düğmesiyle geri alabilirsiniz.</p></section>}
     {DEMO_ENABLED && <section className="bim-program bim-layout" aria-label="Kat dağılımı"><header><div><h2>Katlara dağılım</h2><p>Mevcut: {currentFloors.map(f => `K${f.level}: ${f.rooms} mahal`).join(" · ")}</p></div><button disabled={!loaded || !programSync.valid || !floorLayout.valid || !floorLayout.moved} onClick={applyFloorLayout}>{floorLayout.moved ? "Dağılım taslağını uygula" : "Dağılım yerinde"}</button></header>{floorLayout.valid ? <><p>Taslak: {floorLayout.floors.map(f => `K${f.level}: ${f.rooms} mahal`).join(" · ")} · {floorLayout.moved} mahalin konumu değişecek.</p><p>{floorLayout.reason}</p></> : <p>{floorLayout.reason}</p>}<p>Bu adet dağılımı bir taslaktır. Oda alanları, yakınlıklar ve katlar arası erişim ayrıca düzenlenir. Geri ile önceki yerleşime dönebilirsiniz.</p></section>}
+    {DEMO_ENABLED && <section className="bim-program" aria-label="Oda ölçüleri ve bağlantılar">
+      <header><div><h2>Oda ölçüleri, kapılar ve koridor</h2><p>{measuredReady ? "Ölçülü taslak güncel · " + elements.filter(e=>e.roomGeometry).length + " oda koridor üzerinden çekirdeğe bağlı." : hasMeasured ? "Girdiler değişti; ölçülü taslağı güncelleyin." : "Net alanları mimari programdan alarak ölçülü bir taslak oluşturun."}</p></div>
+      <button disabled={!loaded || !measuredProposal.valid || measuredReady} onClick={applyMeasured}>{hasMeasured ? "Ölçülü taslağı güncelle" : "Ölçülü taslak oluştur"}</button></header>
+      <label className="bim-corridor-input">Koridor genişliği (m)<input type="number" min=".9" max="3" step=".1" value={corridorWidth} onChange={e=>setCorridorWidth(Number(e.target.value))}/></label>
+      {!measuredProposal.valid && <p role="alert">{measuredProposal.reason}</p>}
+      <p>Başlangıç: 1,20 m koridor, 0,90 m kapı; oda eni alan üzerinden türetilir. Odayı seçerek en ve kapı ölçüsünü değiştirebilirsiniz. Sınırlar net iç alan şemasıdır; duvar kalınlığı, bağımsız bölüm ve kaçış uygunluğu doğrulanmış değildir.</p>
+    </section>}
     <div className="cad-editor-app">
       <header className="cad-topbar"><div className="cad-project-id"><span>ARKEM / CONCEPT BIM</span><b>K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m</b></div><nav aria-label="Plan görünümü">{(["architectural","structural","loads","coordination"] as View[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "architectural" ? "Mimari" : item === "structural" ? "Taşıyıcı" : item === "loads" ? "Yükler" : "Koordinasyon"}</button>)}</nav><div className="cad-top-actions"><button className="cad-sync" onClick={importUpstream}>Üst veriyi aktar ↘</button><button onClick={undo} disabled={!history.length}>↶ Geri</button><button onClick={redo} disabled={!future.length}>↷ İleri</button><button onClick={exportJson}>JSON indir</button></div></header>
       <div className="cad-editor-grid">
         <aside className="cad-tools"><strong>NESNE ARAÇLARI</strong>{(Object.keys(toolMeta) as Tool[]).map((item) => <button key={item} className={tool === item ? "active" : ""} onClick={() => setTool(item)} title={toolMeta[item].hint}><i>{toolMeta[item].code}</i><span><b>{toolMeta[item].label}</b><small>{toolMeta[item].hint}</small></span></button>)}<strong>YERLEŞİM YÖNÜ</strong><div className="cad-orientation"><button className={orientation === "x" ? "active" : ""} onClick={() => setOrientation("x")}>X doğrultusu →</button><button className={orientation === "y" ? "active" : ""} onClick={() => setOrientation("y")}>Y doğrultusu ↑</button></div><strong>HIZLI ÜRETİM</strong><button className="cad-command" onClick={autoFrame}>Tüm akslara kolon yerleştir</button><button className="cad-command" onClick={duplicateFloor}>Aktif katı üst kata kopyala</button><button className="cad-command danger" onClick={clearFloor}>Aktif katı temizle</button></aside>
-        <main className={`cad-canvas view-${view}`}>
+        <div className={`cad-canvas view-${view}`} role="region" aria-label="Plan çizimi" tabIndex={0}>
           <div className="cad-canvas-toolbar"><span>SNAP · AKS / 1 mm gösterim hassasiyeti</span><div><b>{toolMeta[tool].label.toUpperCase()}</b><small>{status}</small></div><span>KUZEY ↑</span></div>
+          <p className="measured-mobile-hint">Ayrıntılar için çizimi yana kaydırın.</p>
           <svg ref={svgRef} viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`} onClick={placeElement} aria-label={`K${level} nesne tabanlı teknik plan editörü`} role="application">
             <defs><pattern id="plan-dot-grid" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#94a9b2" opacity=".42"/></pattern><pattern id="core-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#829aa4" strokeWidth="2"/></pattern><pattern id="opening-hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="9" stroke="#b96636" strokeWidth="1" opacity=".6"/></pattern></defs>
             <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="url(#plan-dot-grid)"/>
             <rect x={originX} y={originY} width={totalWidth * scale} height={totalDepth * scale} fill="#fbfcfb" stroke="#718993" strokeWidth="1.4"/>
             {Array.from({ length: baysX + 1 }, (_, index) => <g key={`x-${index}`}><line x1={originX + index * cellW} y1={originY - 28} x2={originX + index * cellW} y2={originY + totalDepth * scale + 28} stroke="#86a0aa" strokeWidth=".75" strokeDasharray="5 4"/><circle cx={originX + index * cellW} cy={originY - 42} r="13" fill="#f7f9f8" stroke="#b96636"/><text x={originX + index * cellW} y={originY - 38.5} textAnchor="middle" fontSize="9" fill="#173243">{String.fromCharCode(65 + index)}</text></g>)}
             {Array.from({ length: baysY + 1 }, (_, index) => <g key={`y-${index}`}><line x1={originX - 28} y1={originY + index * cellH} x2={originX + totalWidth * scale + 28} y2={originY + index * cellH} stroke="#86a0aa" strokeWidth=".75" strokeDasharray="5 4"/><circle cx={originX - 42} cy={originY + index * cellH} r="13" fill="#f7f9f8" stroke="#b96636"/><text x={originX - 42} y={originY + index * cellH + 3.5} textAnchor="middle" fontSize="9" fill="#173243">{index + 1}</text></g>)}
+            {layers.spaces && visible.filter(e=>e.corridorGeometry).map(e=><MeasuredCorridor key={"corridor-"+e.id} value={e.corridorGeometry!} originX={originX} originY={originY} scale={scale}/>)}
             {visible.filter(showElement).map((element) => {
+              if(element.roomGeometry) return <MeasuredRoom key={element.id} value={element.roomGeometry} label={element.label} selected={selectedId===element.id} originX={originX} originY={originY} scale={scale} onSelect={event=>selectElement(event,element.id)}/>;
               const x = originX + element.x * cellW;
               const y = originY + element.y * cellH;
               const selectedClass = element.id === selectedId ? " selected" : "";
@@ -441,17 +497,18 @@ function ScopedPlanEditor() {
               const fill = element.type === "core" ? "url(#core-hatch)" : element.type === "opening" ? "url(#opening-hatch)" : element.type === "load" ? "rgba(185,102,54,.22)" : view === "loads" ? `rgba(45,126,157,${Math.min(.56, .12 + element.load / 20)})` : "rgba(107,161,180,.11)";
               return <g className={`cad-element cell ${element.type}${selectedClass}`} key={element.id} onClick={(event) => selectElement(event, element.id)}><rect x={x + 3} y={y + 3} width={cellW - 6} height={cellH - 6} fill={fill}/><title>{element.label}</title><text x={x + cellW / 2} y={y + cellH / 2 - 3} textAnchor="middle">{element.type === "core" ? "Çekirdek" : element.label.length > 14 ? element.label.slice(0, 13) + "…" : element.label}</text><text className="sub" x={x + cellW / 2} y={y + cellH / 2 + 11} textAnchor="middle">{element.type === "load" || view === "loads" ? `${element.load.toFixed(1)} kN/m²` : element.type.toUpperCase()}</text></g>;
             })}
+            {layers.spaces && visible.filter(e=>e.corridorGeometry).map(e=><MeasuredCoreDoor key={"core-door-"+e.id} value={e.corridorGeometry!} originX={originX} originY={originY} scale={scale}/>)}
             {view === "coordination" && <g className="cad-centers"><line x1={originX + metrics.massCenter.x * scale} y1={originY} x2={originX + metrics.massCenter.x * scale} y2={originY + totalDepth * scale}/><line x1={originX} y1={originY + metrics.massCenter.y * scale} x2={originX + totalWidth * scale} y2={originY + metrics.massCenter.y * scale}/><circle className="mass" cx={originX + metrics.massCenter.x * scale} cy={originY + metrics.massCenter.y * scale} r="8"/><circle className="rigidity" cx={originX + metrics.rigidityCenter.x * scale} cy={originY + metrics.rigidityCenter.y * scale} r="8"/><text x={originX + metrics.massCenter.x * scale + 12} y={originY + metrics.massCenter.y * scale - 12}>KM</text><text x={originX + metrics.rigidityCenter.x * scale + 12} y={originY + metrics.rigidityCenter.y * scale + 19}>KR</text></g>}
             <text x={originX} y={VIEWBOX.height - 20} fill="#71858d" fontSize="9">K{level} · {totalWidth.toFixed(2)} × {totalDepth.toFixed(2)} m · Aks {baysX}×{baysY} · Ölçek ekran uyarlamalı</text>
           </svg>
           <div className="cad-statusbar"><span>X: — m · Y: — m · SNAP: AKS</span><span>{visible.length} nesne · K{level}/{floorCount}</span><span>ARKEM-PLAN/1.0</span></div>
-        </main>
+        </div>
         <aside className="cad-inspector">
           <section><strong>KAT & AKS YÖNETİMİ</strong><div className="cad-floor-tabs">{Array.from({ length: floorCount }, (_, index) => <button key={index + 1} className={level === index + 1 ? "active" : ""} onClick={() => { setLevel(index + 1); setSelectedId(null); }}>K{index + 1}</button>)}</div><label>Kat adedi<input type="number" min="1" max="12" value={floorCount} onChange={(event) => { const count = Math.max(1, Math.min(12, Number(event.target.value))); setFloorCount(count); setLevel((current) => Math.min(current, count)); }}/></label><div className="cad-input-grid"><label>X açıklık<input type="number" min="1" max="12" value={baysX} onChange={(event) => setBaysX(Math.max(1, Math.min(12, Number(event.target.value))))}/></label><label>Y açıklık<input type="number" min="1" max="10" value={baysY} onChange={(event) => setBaysY(Math.max(1, Math.min(10, Number(event.target.value))))}/></label><label>X açıklığı<input type="number" min="2" max="15" step=".1" value={spanX} onChange={(event) => setSpanX(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label><label>Y açıklığı<input type="number" min="2" max="15" step=".1" value={spanY} onChange={(event) => setSpanY(Math.max(2, Math.min(15, Number(event.target.value))))}/><i>m</i></label></div></section>
           <section><strong>KATMANLAR</strong>{Object.entries(layers).map(([key, value]) => <label className="cad-layer" key={key}><input type="checkbox" checked={value} onChange={(event) => setLayers((current) => ({ ...current, [key]: event.target.checked }))}/><span>{key === "columns" ? "Kolonlar" : key === "walls" ? "Perde / duvar" : key === "spaces" ? "Mahal / çekirdek" : key === "openings" ? "Boşluklar" : "Yük bölgeleri"}</span><b>{value ? "AÇIK" : "KAPALI"}</b></label>)}</section>
-          <section className="cad-properties"><strong>NESNE ÖZELLİKLERİ</strong>{selected ? <><div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.id.slice(0, 18)}</small></span></div><label>Etiket<input value={selected.label} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ label: event.target.value })}/></label><label>Hareketli yük<input type="number" min="0" max="25" step=".5" value={selected.load} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ load: Number(event.target.value) })}/><i>kN/m²</i></label><label>Yangın sınıfı<select value={selected.fire} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ fire: event.target.value })}>{["R 30","R 60","R 90","REI 120","Projede belirlenecek"].map((value) => <option key={value}>{value}</option>)}</select></label><label>Ön kesit<input value={selected.section} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ section: event.target.value })}/></label><button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button></> : <p>Plan üzerinde bir nesne seçin veya yerleştirme aracıyla yeni nesne oluşturun.</p>}</section>
+          <section className="cad-properties"><strong>NESNE ÖZELLİKLERİ</strong>{selected ? <><div className="cad-selected-type"><i>{toolMeta[selected.type].code}</i><span><b>{toolMeta[selected.type].label}</b><small>{selected.id.slice(0, 18)}</small></span></div><label>Etiket<input value={selected.label} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ label: event.target.value })}/></label>{selected.type === "space" && <><label>Oda eni (m)<input type="number" min="1.2" max="12" step=".1" value={selected.roomWidth ?? selected.roomGeometry?.width ?? ""} placeholder="Otomatik" onFocus={()=>{propertyEditStarted.current=false;}} onChange={e=>updateSelected({roomWidth:e.target.value===""?undefined:Number(e.target.value)})}/></label><label>Kapı genişliği (m)<input type="number" min=".6" max="1.5" step=".05" value={selected.doorWidth ?? .9} onFocus={()=>{propertyEditStarted.current=false;}} onChange={e=>updateSelected({doorWidth:Number(e.target.value)})}/></label>{selected.roomGeometry && <p>Uygulanan: {selected.roomGeometry.width.toFixed(2)} × {selected.roomGeometry.depth.toFixed(2)} m · {selected.roomGeometry.area.toFixed(1)} m². Seçili odanın kesik çizgisi çekirdeğe giden koridor rotasıdır.</p>}</>}<label>Hareketli yük<input type="number" min="0" max="25" step=".5" value={selected.load} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ load: Number(event.target.value) })}/><i>kN/m²</i></label><label>Yangın sınıfı<select value={selected.fire} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ fire: event.target.value })}>{["R 30","R 60","R 90","REI 120","Projede belirlenecek"].map((value) => <option key={value}>{value}</option>)}</select></label><label>Ön kesit<input value={selected.section} onFocus={() => { propertyEditStarted.current = false; }} onChange={(event) => updateSelected({ section: event.target.value })}/></label><button className="cad-delete-selected" onClick={() => { commit(elements.filter((element) => element.id !== selected.id), "Seçili nesne silindi"); setSelectedId(null); }}>Seçili nesneyi sil</button></> : <p>Plan üzerinde bir nesne seçin veya yerleştirme aracıyla yeni nesne oluşturun.</p>}</section>
           <section className="cad-metrics"><strong>MODEL KONTROLÜ</strong><div><span>Kat alanı</span><b>{metrics.floorArea.toFixed(1)} m²</b></div><div><span>Kolon / perde</span><b>{metrics.columns} / {metrics.walls}</b></div><div><span>Perde uzunluğu</span><b>{metrics.wallLength.toFixed(1)} m</b></div><div><span>Boşluk oranı</span><b className={metrics.openingRatio > 25 ? "risk" : ""}>%{metrics.openingRatio.toFixed(1)}</b></div><div><span>KM–KR dışmerkezlik</span><b className={metrics.eccentricityRatio > 10 ? "risk" : metrics.eccentricityRatio > 5 ? "watch" : "good"}>{metrics.eccentricity.toFixed(2)} m</b></div><small>Merkez hesabı, tanımlı nesnelere bağlı kavramsal göstergedir; deprem düzensizlik hesabı değildir.</small></section>
-          <section><strong>TEKNİK ÇIKTI</strong><div className="cad-export"><button onClick={exportPdf}>PDF<span>A3 kurumsal pafta</span></button><button onClick={exportDxf}>CAD<span>DWG uyumlu DXF</span></button><button onClick={exportJson}>JSON<span>Model verisi</span></button><button onClick={exportCsv}>CSV<span>Ön metraj</span></button></div></section>
+          <section><strong>TEKNİK ÇIKTI</strong><div className="cad-export"><button disabled={hasMeasured && !measuredReady} onClick={exportPdf}>PDF<span>A3 kurumsal pafta</span></button><button disabled={hasMeasured && !measuredReady} onClick={exportDxf}>CAD<span>DWG uyumlu DXF</span></button><button onClick={exportJson}>JSON<span>Model verisi</span></button><button disabled={hasMeasured && !measuredReady} onClick={exportCsv}>CSV<span>Ön metraj</span></button></div></section>
         </aside>
       </div>
       <div className="cad-editor-foot"><b>Model statüsü · Konsept</b><p>Bu editör nesne yerleşimi, veri hazırlığı ve disiplinler arası karar kaydı içindir. Mimari uygulama projesi, statik analiz modeli, yangın projesi veya ruhsat paftası değildir. Kesitler, yükler ve düzensizlikler yetkili proje müelliflerince doğrulanmalıdır.</p></div>

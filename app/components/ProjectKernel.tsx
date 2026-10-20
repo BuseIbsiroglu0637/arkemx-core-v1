@@ -376,6 +376,7 @@ function synchronizeModules(sourceModules: Record<string, unknown>, handoffIds: 
 
     if (handoffId === "H-03" && modules["plan-editor"]) {
       const plan = record(modules["plan-editor"]);
+      if (plan.measurementNeedsReview === true) return;
       const target = record(modules["structural-concept"]);
       const input = record(target.input);
       const baysX = numeric(plan.baysX);

@@ -1,0 +1,17 @@
+#main-content .bim-demo .bim-corridor-input{display:flex;align-items:center;gap:12px;font-size:13px;color:#31595c;margin:14px 0}
+#main-content .bim-demo .bim-corridor-input input{width:100px;min-height:44px;border:1px solid #b7cdc1;border-radius:5px;padding:8px;background:white;color:#173a40!important}
+#main-content .bim-demo .measured-corridor rect{fill:#dceee4;stroke:#85b49b;stroke-width:1}
+#main-content .bim-demo .measured-corridor text{fill:#31595c;font-size:9px}
+#main-content .bim-demo .measured-room{cursor:pointer}
+#main-content .bim-demo .measured-room>rect{fill:#f4f8f6;stroke:#31595c;stroke-width:1.4}
+#main-content .bim-demo .measured-room.selected>rect{fill:#e0f0e7;stroke:#174d46;stroke-width:2}
+#main-content .bim-demo .measured-room text{font-size:11px;fill:#173a40;pointer-events:none}
+#main-content .bim-demo .measured-room text.measured-dim{font-size:9px;fill:#526c77}
+#main-content .bim-demo .measured-room .measured-door-gap{stroke:#f4f8f6;stroke-width:4}
+#main-content .bim-demo .measured-room .measured-door{fill:none;stroke:#174d46;stroke-width:1}
+#main-content .bim-demo .measured-room .measured-route{fill:none;stroke:#267c58;stroke-width:2;stroke-dasharray:4 3;pointer-events:none}
+#main-content .bim-demo .measured-core-door .measured-door-gap{stroke:#dceee4;stroke-width:4}
+#main-content .bim-demo .measured-core-door .measured-door{fill:none;stroke:#174d46;stroke-width:1}
+#main-content .bim-demo .measured-mobile-hint{display:none}
+@media(max-width:650px){#main-content .bim-demo .cad-canvas{overflow-x:auto}#main-content .bim-demo .cad-canvas svg{min-width:760px;max-width:none}#main-content .bim-demo .measured-mobile-hint{display:block;font-size:12px;line-height:1.6;padding:10px;margin:0;color:#426657}}
+#main-content .bim-demo .cad-canvas:focus-visible{outline:3px solid #75ae94!important;outline-offset:3px!important}
